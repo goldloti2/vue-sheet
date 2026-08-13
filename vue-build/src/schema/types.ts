@@ -17,6 +17,9 @@ export interface TableSchema {
   // 這張表的 ID 欄（sheetHeader 值）。系統欄位，不放進 columns（見文件 6.5 節）
   idColumn: string
   columns: SchemaColumn[]
+  // detail 頁的顯示順序（欄位 key 陣列）。省略時沿用 columns 的順序；
+  // 跟 columns 定義順序分開，是因為之後表單（FormPageTemplate）可能需要不同順序
+  detailOrder?: string[]
 }
 
 function columnHeader (column: SchemaColumn): string {
@@ -75,4 +78,15 @@ export function formatColumnValue (row: object, column: SchemaColumn): string {
 export function formatField (row: object, schema: TableSchema, key: string): string {
   const column = schema.columns.find(candidate => candidate.key === key)
   return column ? formatColumnValue(row, column) : ''
+}
+
+// detail 頁該用的欄位順序：有設 detailOrder 就照它排，沒設就沿用 columns 順序
+export function detailColumns (schema: TableSchema): SchemaColumn[] {
+  if (!schema.detailOrder) {
+    return schema.columns
+  }
+
+  return schema.detailOrder
+    .map(key => schema.columns.find(column => column.key === key))
+    .filter((column): column is SchemaColumn => column !== undefined)
 }

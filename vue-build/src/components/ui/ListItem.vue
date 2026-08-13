@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+  import { RouterLink } from 'vue-router'
   import { useLongPress } from '@/composables/useLongPress'
 
   interface ListItemProps {
@@ -6,6 +7,7 @@
     topRight?: string
     bottomLeft?: string
     bottomRight?: string
+    to?: string
   }
 
   defineProps<ListItemProps>()
@@ -18,7 +20,7 @@
 </script>
 
 <template>
-  <div class="list-item" v-on="longPress">
+  <component :is="to ? RouterLink : 'div'" class="list-item" :to="to" v-on="longPress">
     <div class="list-item__row">
       <span class="list-item__title text-title-medium font-weight-bold">{{ title }}</span>
       <span class="list-item__field text-body-medium text-medium-emphasis list-item__field--right">{{ topRight }}</span>
@@ -28,14 +30,17 @@
       <span class="list-item__field text-body-medium text-medium-emphasis list-item__field--left">{{ bottomLeft }}</span>
       <span class="list-item__field text-body-medium text-medium-emphasis list-item__field--right">{{ bottomRight }}</span>
     </div>
-  </div>
+  </component>
 </template>
 
 <style scoped>
 .list-item {
+  display: block;
   box-sizing: border-box;
   width: 100%;
   padding: 12px 16px;
+  color: inherit;
+  text-decoration: none;
   border-left: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
   border-right: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
   border-bottom: thin solid rgba(var(--v-border-color), var(--v-border-opacity));

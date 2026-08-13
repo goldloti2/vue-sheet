@@ -1,9 +1,10 @@
+import type { TableKey } from '@/schema'
 import type { MaybeRefOrGetter } from 'vue'
 import { readonly, shallowRef, toValue, watch } from 'vue'
 import { fetchTable } from '@/services/appScript'
 
 export function useTableList<Row> (
-  table: MaybeRefOrGetter<string>,
+  table: MaybeRefOrGetter<TableKey>,
   filters?: MaybeRefOrGetter<Record<string, string> | undefined>,
 ) {
   const data = shallowRef<Row[]>([])
@@ -26,7 +27,7 @@ export function useTableList<Row> (
       loading.value = true
       error.value = null
 
-      fetchTable<Row[]>(currentTable, currentFilters)
+      fetchTable<Row>(currentTable, currentFilters)
         .then(result => {
           if (cancelled) {
             return

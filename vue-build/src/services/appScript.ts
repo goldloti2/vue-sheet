@@ -1,6 +1,10 @@
 // 前端 ↔ Apps Script Web App 的對接層
 // 目前為空殼，等 Apps Script 後端（Code.gs）部署出網址後再實作
 
+import type { TableKey } from '@/schema'
+import { schemas } from '@/schema'
+import { coerceRow } from '@/schema/types'
+
 export type SheetAction = 'create' | 'update' | 'delete' | 'bulkUpdate'
 
 interface ApiSuccess<T> {
@@ -18,7 +22,7 @@ export type ApiResponse<T> = ApiSuccess<T> | ApiFailure
 // 假資料：各表自己的 mock CSV，由使用這套框架的專案自行提供並在這裡註冊
 const mockTables: Record<string, string> = {}
 
-function splitCsvLine(line: string): string[] {
+function splitCsvLine (line: string): string[] {
   const values: string[] = []
   let current = ''
   let inQuotes = false
@@ -47,7 +51,7 @@ function splitCsvLine(line: string): string[] {
   return values
 }
 
-function parseCsv(text: string): Record<string, string>[] {
+function parseCsv (text: string): Record<string, string>[] {
   const lines = text.trim().split(/\r?\n/)
   const headers = splitCsvLine(lines[0])
   return lines.slice(1).map(line => {
@@ -57,25 +61,29 @@ function parseCsv(text: string): Record<string, string>[] {
 }
 
 // GET：list/get，query string 帶 table + 篩選欄位
-export async function fetchTable<T>(
-  table: string,
+// 回傳前先照 schema 把 raw 字串轉成該有的型別（見《GoogleSheet後端App-通用架構》文件 6.1 節）
+export async function fetchTable<Row> (
+  table: TableKey,
   filters?: Record<string, string>,
-): Promise<T> {
+): Promise<Row[]> {
   const csv = mockTables[table]
-  if (!csv) throw new Error(`no mock data for table "${table}"`)
+  if (!csv) {
+    throw new Error(`no mock data for table "${table}"`)
+  }
 
+  const schema = schemas[table]
   const rows = parseCsv(csv)
-  const filtered = filters
+  const filteredRows = filters
     ? rows.filter(row => Object.entries(filters).every(([key, value]) => row[key] === value))
     : rows
 
-  return filtered as T
+  return filteredRows.map(row => coerceRow<Row>(row, schema))
 }
 
 // POST：create/update/delete/bulkUpdate，body 帶 action 欄位
-export async function mutateTable<T>(
+export async function mutateTable<T> (
   action: SheetAction,
-  table: string,
+  table: TableKey,
   payload: Record<string, unknown>,
 ): Promise<T> {
   throw new Error(`mutateTable not implemented yet (action=${action}, table=${table}, payload=${JSON.stringify(payload)})`)

@@ -1,0 +1,52 @@
+export interface SchemaColumn {
+  key: string
+  label: string
+  // 省略時預設跟 label 同值（見《GoogleSheet後端App-通用架構》文件 6.6 節）
+  sheetHeader?: string
+  type: 'text' | 'number' | 'date'
+}
+
+export interface TableSchema {
+  // 對應 Google Sheet 分頁的實際名稱，也是打 API 時 table= 的值
+  sheetName: string
+  // 這張表的 ID 欄（sheetHeader 值）。系統欄位，不放進 columns（見文件 6.5 節）
+  idColumn: string
+  columns: SchemaColumn[]
+}
+
+function columnHeader (column: SchemaColumn): string {
+  return column.sheetHeader ?? column.label
+}
+
+function coerceValue (raw: string, type: SchemaColumn['type']): string | number | Date | null {
+  if (raw === '') {
+    return null
+  }
+
+  switch (type) {
+    case 'number': {
+      const parsed = Number(raw)
+      return Number.isNaN(parsed) ? null : parsed
+    }
+    case 'date': {
+      const parsed = new Date(raw)
+      return Number.isNaN(parsed.getTime()) ? null : parsed
+    }
+    default: {
+      return raw
+    }
+  }
+}
+
+// 把後端/mock 回來的原始字串 row，照 schema 轉成該有的型別
+export function coerceRow<Row> (row: Record<string, string>, schema: TableSchema): Row {
+  const result: Record<string, unknown> = {
+    id: row[schema.idColumn] ?? '',
+  }
+
+  for (const column of schema.columns) {
+    result[column.key] = coerceValue(row[columnHeader(column)] ?? '', column.type)
+  }
+
+  return result as Row
+}

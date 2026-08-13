@@ -1,10 +1,15 @@
-export interface SchemaColumn {
+export type SchemaColumn = {
   key: string
   label: string
   // 省略時預設跟 label 同值（見《GoogleSheet後端App-通用架構》文件 6.6 節）
   sheetHeader?: string
-  type: 'text' | 'number' | 'date'
-}
+} & (
+  | { type: 'text' }
+  | { type: 'number' }
+  | { type: 'date' }
+  // 外鍵欄位（見文件 4.2 節一對多關聯慣例）；refTable 對應 schema/index.ts 的 schemas 裡的 key
+  | { type: 'ref', refTable: string }
+)
 
 export interface TableSchema {
   // 對應 Google Sheet 分頁的實際名稱，也是打 API 時 table= 的值

@@ -11,6 +11,11 @@ export type SchemaColumn = {
   | { type: 'ref', refTable: string }
 )
 
+export interface SortSpec {
+  key: string
+  direction: 'asc' | 'desc'
+}
+
 export interface TableSchema {
   // 對應 Google Sheet 分頁的實際名稱，也是打 API 時 table= 的值
   sheetName: string
@@ -20,6 +25,8 @@ export interface TableSchema {
   // detail 頁的顯示順序（欄位 key 陣列）。省略時沿用 columns 的順序；
   // 跟 columns 定義順序分開，是因為之後表單（FormPageTemplate）可能需要不同順序
   detailOrder?: string[]
+  // 列表頁預設排序，多筆依序當 tiebreaker。省略/空陣列 = 維持原始（row number）順序
+  defaultSort?: SortSpec[]
 }
 
 function columnHeader (column: SchemaColumn): string {
@@ -96,4 +103,43 @@ export function detailColumns (schema: TableSchema): SchemaColumn[] {
   return schema.detailOrder
     .map(key => schema.columns.find(column => column.key === key))
     .filter((column): column is SchemaColumn => column !== undefined)
+}
+
+// null/undefined 一律排最後（不管 asc/desc），其餘依實際型別比較（Date 比時間、number 比大小、其餘當字串比較）
+function compareValues (a: unknown, b: unknown): number {
+  if (a === null || a === undefined) {
+    return b === null || b === undefined ? 0 : 1
+  }
+  if (b === null || b === undefined) {
+    return -1
+  }
+  if (a instanceof Date && b instanceof Date) {
+    return a.getTime() - b.getTime()
+  }
+  if (typeof a === 'number' && typeof b === 'number') {
+    return a - b
+  }
+  return String(a).localeCompare(String(b))
+}
+
+// 列表頁排序：照 schema.defaultSort 依序當 tiebreaker；沒設定就回傳原始順序（row number）
+export function sortRows<Row> (rows: readonly Row[], schema: TableSchema): Row[] {
+  const sortSpecs = schema.defaultSort ?? []
+  if (sortSpecs.length === 0) {
+    return [...rows]
+  }
+
+  // eslint-disable-next-line unicorn/no-array-sort
+  return [...rows].sort((rowA, rowB) => {
+    for (const spec of sortSpecs) {
+      const result = compareValues(
+        (rowA as Record<string, unknown>)[spec.key],
+        (rowB as Record<string, unknown>)[spec.key],
+      )
+      if (result !== 0) {
+        return spec.direction === 'desc' ? -result : result
+      }
+    }
+    return 0
+  })
 }

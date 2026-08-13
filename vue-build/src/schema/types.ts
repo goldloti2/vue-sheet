@@ -55,3 +55,24 @@ export function coerceRow<Row> (row: Record<string, string>, schema: TableSchema
 
   return result as Row
 }
+
+// coerceRow 的反向操作：把已轉型別的欄位值照 type 格式化成畫面顯示用的字串
+export function formatColumnValue (row: object, column: SchemaColumn): string {
+  const value = (row as Record<string, unknown>)[column.key]
+
+  if (value === null || value === undefined) {
+    return ''
+  }
+
+  if (column.type === 'date' && value instanceof Date) {
+    return value.toLocaleDateString()
+  }
+
+  return String(value)
+}
+
+// 只知道欄位 key、還沒有 column 物件時用這個（例如列表頁只想挑幾個欄位顯示）
+export function formatField (row: object, schema: TableSchema, key: string): string {
+  const column = schema.columns.find(candidate => candidate.key === key)
+  return column ? formatColumnValue(row, column) : ''
+}

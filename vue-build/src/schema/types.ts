@@ -59,6 +59,13 @@ export function coerceRow<Row> (row: Record<string, string>, schema: TableSchema
   return result as Row
 }
 
+function formatDate (date: Date): string {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}/${month}/${day}`
+}
+
 // coerceRow 的反向操作：把已轉型別的欄位值照 type 格式化成畫面顯示用的字串
 export function formatColumnValue (row: object, column: SchemaColumn): string {
   const value = (row as Record<string, unknown>)[column.key]
@@ -68,7 +75,7 @@ export function formatColumnValue (row: object, column: SchemaColumn): string {
   }
 
   if (column.type === 'date' && value instanceof Date) {
-    return value.toLocaleDateString()
+    return formatDate(value)
   }
 
   return String(value)

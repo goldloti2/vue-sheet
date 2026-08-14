@@ -143,3 +143,63 @@ export function sortRows<Row> (rows: readonly Row[], schema: TableSchema): Row[]
     return 0
   })
 }
+
+// 依單一鍵值排序，鍵值是 number 就數字比較，否則當字串比較（用於分組鍵，不吃 schema）
+export function sortByKey<Row> (rows: readonly Row[], key: (row: Row) => string | number): Row[] {
+  // eslint-disable-next-line unicorn/no-array-sort
+  return [...rows].sort((rowA, rowB) => {
+    const keyA = key(rowA)
+    const keyB = key(rowB)
+    if (typeof keyA === 'number' && typeof keyB === 'number') {
+      return keyA - keyB
+    }
+    return String(keyA).localeCompare(String(keyB))
+  })
+}
+
+export interface GroupLevel<Row> {
+  // 排序用；分開於 label 是為了避免依顯示字串排序出錯（例如「10月」< 「2月」）
+  sortKey: (row: Row) => string | number
+  label: (row: Row) => string
+}
+
+export type RowGroup<Row>
+  = | { label: string, rows: Row[] }
+    | { label: string, subgroups: RowGroup<Row>[] }
+
+function buildGroups<Row> (rows: readonly Row[], levels: readonly GroupLevel<Row>[]): RowGroup<Row>[] {
+  const [level, ...restLevels] = levels
+  if (!level) {
+    return []
+  }
+
+  const groups: { label: string, rows: Row[] }[] = []
+  for (const row of rows) {
+    const label = level.label(row)
+    const lastGroup = groups.at(-1)
+    if (lastGroup?.label === label) {
+      lastGroup.rows.push(row)
+    } else {
+      groups.push({ label, rows: [row] })
+    }
+  }
+
+  if (restLevels.length === 0) {
+    return groups
+  }
+
+  return groups.map(group => ({
+    label: group.label,
+    subgroups: buildGroups(group.rows, restLevels),
+  }))
+}
+
+// 依多層分組鍵把 rows 分成巢狀分組（由外到內）。levels 依序疊加穩定排序，
+// 原本的排序（例如 sortRows 排好的 defaultSort）會保留成最內層的 tiebreaker
+export function groupRows<Row> (rows: readonly Row[], levels: readonly GroupLevel<Row>[]): RowGroup<Row>[] {
+  let sorted = [...rows]
+  for (let i = levels.length - 1; i >= 0; i--) {
+    sorted = sortByKey(sorted, levels[i].sortKey)
+  }
+  return buildGroups(sorted, levels)
+}

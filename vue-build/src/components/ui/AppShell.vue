@@ -1,6 +1,8 @@
 <script lang="ts" setup>
-  import { shallowRef } from 'vue'
-  import { useRoute } from 'vue-router'
+  import { mdiArrowLeft } from '@mdi/js'
+  import { computed, shallowRef } from 'vue'
+  import { useRoute, useRouter } from 'vue-router'
+  import { navigationCount } from '@/router'
 
   export interface AppNavItem {
     title: string
@@ -13,18 +15,32 @@
     navItems?: AppNavItem[]
   }
 
-  withDefaults(defineProps<AppShellProps>(), {
+  const props = withDefaults(defineProps<AppShellProps>(), {
     title: 'AAAA',
     navItems: () => [],
   })
 
   const drawer = shallowRef(true)
   const route = useRoute()
+  const router = useRouter()
+
+  // 導覽列的目的地不用返回按鈕；其他方式進來的頁面（例如點列表項目進 detail）都算
+  const showBack = computed(() => !props.navItems.some(item => item.to === route.path))
+
+  function handleLeadingIconClick () {
+    if (showBack.value) {
+      if (navigationCount.value > 1) {
+        router.back()
+      }
+    } else {
+      drawer.value = !drawer.value
+    }
+  }
 </script>
 
 <template>
   <v-app-bar>
-    <v-app-bar-nav-icon @click="drawer = !drawer" />
+    <v-app-bar-nav-icon :icon="showBack ? mdiArrowLeft : undefined" @click="handleLeadingIconClick" />
     <v-app-bar-title>{{ title }}</v-app-bar-title>
   </v-app-bar>
 

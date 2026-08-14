@@ -6,7 +6,11 @@
 <template>
   <v-app>
     <AppShell :nav-items="navItems">
-      <router-view />
+      <router-view v-slot="{ Component }">
+        <keep-alive>
+          <component :is="Component" />
+        </keep-alive>
+      </router-view>
     </AppShell>
   </v-app>
 </template>

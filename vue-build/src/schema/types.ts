@@ -94,17 +94,6 @@ export function formatField (row: object, schema: TableSchema, key: string): str
   return column ? formatColumnValue(row, column) : ''
 }
 
-// detail 頁該用的欄位順序：有設 detailOrder 就照它排，沒設就沿用 columns 順序
-export function detailColumns (schema: TableSchema): SchemaColumn[] {
-  if (!schema.detailOrder) {
-    return schema.columns
-  }
-
-  return schema.detailOrder
-    .map(key => schema.columns.find(column => column.key === key))
-    .filter((column): column is SchemaColumn => column !== undefined)
-}
-
 // null/undefined 一律排最後（不管 asc/desc），其餘依實際型別比較（Date 比時間、number 比大小、其餘當字串比較）
 function compareValues (a: unknown, b: unknown): number {
   if (a === null || a === undefined) {

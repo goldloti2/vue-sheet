@@ -1,16 +1,47 @@
 <script lang="ts" setup>
   import type { TableSchema } from '@/schema/types'
+  import { computed } from 'vue'
   import DetailField from '@/components/ui/DetailField.vue'
-  import { detailColumns, formatColumnValue } from '@/schema/types'
+  import { formatColumnValue } from '@/schema/types'
 
-  interface SchemaDetailFieldsProps {
+  interface ExtraField {
+    key: string
+    label: string
+    value: string
+  }
+
+  const props = defineProps<{
     schema: TableSchema
     row: object | null
     loading: boolean
     error: string | null
-  }
+    // 不是 schema 真實欄位、只在這個畫面顯示用的欄位（例如跨表算出來的總額）；
+    // 一樣可以透過 schema.detailOrder 安排跟真實欄位的顯示順序
+    extraFields?: ExtraField[]
+  }>()
 
-  defineProps<SchemaDetailFieldsProps>()
+  const fields = computed<ExtraField[]>(() => {
+    const row = props.row
+    if (!row) {
+      return []
+    }
+
+    const realFields: ExtraField[] = props.schema.columns.map(column => ({
+      key: column.key,
+      label: column.label,
+      value: formatColumnValue(row, column),
+    }))
+
+    const allFields = [...realFields, ...(props.extraFields ?? [])]
+
+    if (!props.schema.detailOrder) {
+      return allFields
+    }
+
+    return props.schema.detailOrder
+      .map(key => allFields.find(field => field.key === key))
+      .filter((field): field is ExtraField => field !== undefined)
+  })
 </script>
 
 <template>
@@ -23,10 +54,10 @@
 
     <template v-else>
       <DetailField
-        v-for="column in detailColumns(schema)"
-        :key="column.key"
-        :label="column.label"
-        :value="formatColumnValue(row, column)"
+        v-for="field in fields"
+        :key="field.key"
+        :label="field.label"
+        :value="field.value"
       />
     </template>
   </v-container>

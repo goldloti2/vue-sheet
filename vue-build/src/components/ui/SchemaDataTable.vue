@@ -25,7 +25,7 @@
 </script>
 
 <template>
-  <v-table>
+  <v-table gridlines="all" :hover="!!rowTo">
     <thead v-if="showHeader">
       <tr>
         <th v-for="column in visibleColumns" :key="column.key">{{ column.label }}</th>

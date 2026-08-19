@@ -22,9 +22,10 @@ export interface TableSchema {
   // 這張表的 ID 欄（sheetHeader 值）。系統欄位，不放進 columns（見文件 6.5 節）
   idColumn: string
   columns: SchemaColumn[]
-  // detail 頁的顯示順序（欄位 key 陣列）。省略時沿用 columns 的順序；
-  // 跟 columns 定義順序分開，是因為之後表單（FormPageTemplate）可能需要不同順序
+  // detail 頁的顯示順序（欄位 key 陣列）。省略時沿用 columns 的順序
   detailOrder?: string[]
+  // 表單頁的欄位順序（欄位 key 陣列）。省略時沿用 columns 的順序；
+  formOrder?: string[]
   // 列表頁預設排序，多筆依序當 tiebreaker。省略/空陣列 = 維持原始（row number）順序
   defaultSort?: SortSpec[]
 }
@@ -92,6 +93,16 @@ export function formatColumnValue (row: object, column: SchemaColumn): string {
 export function formatField (row: object, schema: TableSchema, key: string): string {
   const column = schema.columns.find(candidate => candidate.key === key)
   return column ? formatColumnValue(row, column) : ''
+}
+
+// 把 row 攤成 { columnKey: 值 } 的物件，只帶 schema.columns 裡的真實欄位（不含 id）；
+// 送 create/update 給後端的 payload 用這個組
+export function columnValues (row: object, schema: TableSchema): Record<string, unknown> {
+  const result: Record<string, unknown> = {}
+  for (const column of schema.columns) {
+    result[column.key] = (row as Record<string, unknown>)[column.key]
+  }
+  return result
 }
 
 // null/undefined 一律排最後（不管 asc/desc），其餘依實際型別比較（Date 比時間、number 比大小、其餘當字串比較）

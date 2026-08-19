@@ -8,6 +8,7 @@
     key: string
     label: string
     value: string
+    to?: string
   }
 
   const props = defineProps<{
@@ -26,11 +27,11 @@
       return []
     }
 
-    const realFields: ExtraField[] = props.schema.columns.map(column => ({
-      key: column.key,
-      label: column.label,
-      value: formatColumnValue(row, column),
-    }))
+    const realFields: ExtraField[] = props.schema.columns.map(column => {
+      const value = formatColumnValue(row, column)
+      const to = column.type === 'ref' && value ? `/${column.refTable}/${value}` : undefined
+      return { key: column.key, label: column.label, value, to }
+    })
 
     const allFields = [...realFields, ...(props.extraFields ?? [])]
 
@@ -57,6 +58,7 @@
         v-for="field in fields"
         :key="field.key"
         :label="field.label"
+        :to="field.to"
         :value="field.value"
       />
     </template>

@@ -64,17 +64,19 @@
         scrim
         transition="slide-y-reverse-transition"
       >
-        <v-btn
-          v-for="action in actions"
-          :key="action.key"
-          :aria-label="action.label"
-          color="primary"
-          :icon="action.icon"
-          rounded
-          size="small"
-          :to="action.to"
-          @click="handleActionClick(action)"
-        />
+        <div v-for="action in actions" :key="action.key" class="fab-action">
+          <span class="fab-action__label text-label-large">{{ action.label }}</span>
+
+          <v-btn
+            :aria-label="action.label"
+            color="primary"
+            :icon="action.icon"
+            rounded
+            size="small"
+            :to="action.to"
+            @click="handleActionClick(action)"
+          />
+        </div>
       </v-speed-dial>
     </v-fab>
   </div>
@@ -88,5 +90,25 @@
   display: flex;
   flex-direction: column-reverse;
   gap: 12px;
+}
+
+.fab-action {
+  position: relative;
+  display: flex;
+  justify-content: center;
+}
+
+.fab-action__label {
+  position: absolute;
+  top: 50%;
+  right: 100%;
+  margin-right: 8px;
+  padding: 4px 12px;
+  border-radius: 4px;
+  background: rgb(var(--v-theme-surface-variant));
+  color: rgb(var(--v-theme-on-surface-variant));
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  white-space: nowrap;
+  transform: translateY(-50%);
 }
 </style>

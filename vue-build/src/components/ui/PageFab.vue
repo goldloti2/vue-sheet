@@ -1,7 +1,7 @@
 <script lang="ts" setup>
   import type { RouteLocationRaw } from 'vue-router'
   import { mdiClose, mdiDotsVertical } from '@mdi/js'
-  import { computed, shallowRef } from 'vue'
+  import { computed, onActivated, onDeactivated, shallowRef } from 'vue'
   import { useLayout } from 'vuetify'
 
   export interface FabAction {
@@ -23,6 +23,14 @@
 
   const open = shallowRef(false)
 
+  const isActive = shallowRef(true)
+  onActivated(() => {
+    isActive.value = true
+  })
+  onDeactivated(() => {
+    isActive.value = false
+  })
+
   function handleActionClick (action: FabAction) {
     action.onClick?.()
     open.value = false
@@ -30,56 +38,58 @@
 </script>
 
 <template>
-  <div v-if="actions.length > 0" class="page-fab" :style="offsetStyle">
-    <template v-if="actions.length <= 2">
+  <Teleport :disabled="!isActive" to="body">
+    <div v-if="actions.length > 0" class="page-fab" :style="offsetStyle">
+      <template v-if="actions.length <= 2">
+        <v-fab
+          v-for="action in actions"
+          :key="action.key"
+          :aria-label="action.label"
+          color="primary"
+          :icon="action.icon"
+          rounded
+          size="default"
+          :to="action.to"
+          @click="handleActionClick(action)"
+        />
+      </template>
+
       <v-fab
-        v-for="action in actions"
-        :key="action.key"
-        :aria-label="action.label"
-        color="primary"
-        :icon="action.icon"
-        rounded
+        v-else
+        :color="open ? 'bg-surface-light' : 'primary'"
+        icon
+        rounded="lg"
         size="default"
-        :to="action.to"
-        @click="handleActionClick(action)"
-      />
-    </template>
-
-    <v-fab
-      v-else
-      :color="open ? 'bg-surface-light' : 'primary'"
-      icon
-      rounded="lg"
-      size="default"
-      @click="open = !open"
-    >
-      <v-fab-transition mode="out-in">
-        <v-icon :key="open ? 'close' : 'menu'" :icon="open ? mdiClose : mdiDotsVertical" />
-      </v-fab-transition>
-
-      <v-speed-dial
-        v-model="open"
-        activator="parent"
-        location="top center"
-        scrim
-        transition="slide-y-reverse-transition"
+        @click="open = !open"
       >
-        <div v-for="action in actions" :key="action.key" class="fab-action">
-          <span class="fab-action__label text-label-large">{{ action.label }}</span>
+        <v-fab-transition mode="out-in">
+          <v-icon :key="open ? 'close' : 'menu'" :icon="open ? mdiClose : mdiDotsVertical" />
+        </v-fab-transition>
 
-          <v-btn
-            :aria-label="action.label"
-            color="primary"
-            :icon="action.icon"
-            rounded
-            size="small"
-            :to="action.to"
-            @click="handleActionClick(action)"
-          />
-        </div>
-      </v-speed-dial>
-    </v-fab>
-  </div>
+        <v-speed-dial
+          v-model="open"
+          activator="parent"
+          location="top center"
+          scrim
+          transition="slide-y-reverse-transition"
+        >
+          <div v-for="action in actions" :key="action.key" class="fab-action">
+            <span class="fab-action__label text-label-large">{{ action.label }}</span>
+
+            <v-btn
+              :aria-label="action.label"
+              color="primary"
+              :icon="action.icon"
+              rounded
+              size="small"
+              :to="action.to"
+              @click="handleActionClick(action)"
+            />
+          </div>
+        </v-speed-dial>
+      </v-fab>
+    </div>
+  </Teleport>
 </template>
 
 <style scoped>

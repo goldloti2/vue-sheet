@@ -9,6 +9,8 @@ export type SchemaColumn = {
   | { type: 'date' }
   // 外鍵欄位（見文件 4.2 節一對多關聯慣例）；refTable 對應 schema/index.ts 的 schemas 裡的 key
   | { type: 'ref', refTable: string }
+  // 清單類欄位：只能是 options 裡的其中一個值
+  | { type: 'select', options: string[] }
 )
 
 export interface SortSpec {

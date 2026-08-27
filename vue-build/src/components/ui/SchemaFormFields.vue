@@ -62,6 +62,14 @@
         @update:model-value="(value) => setFieldValue(column, value)"
       />
 
+      <v-select
+        v-else-if="column.type === 'select'"
+        :items="column.options"
+        :label="column.label"
+        :model-value="textValue(column)"
+        @update:model-value="(value) => setTextValue(column, value)"
+      />
+
       <!-- text、ref 都先用純輸入欄；ref 之後再考慮換成關聯資料的選擇器 -->
       <v-text-field
         v-else

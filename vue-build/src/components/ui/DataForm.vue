@@ -6,7 +6,7 @@
     schema: TableSchema
   }>()
 
-  // 跟 SchemaDetailFields 一樣用 object，實際存取時再轉型（見 schema/types.ts 的 formatColumnValue）
+  // 跟 DataDetail 一樣用 object，實際存取時再轉型（見 schema/types.ts 的 formatColumnValue）
   const model = defineModel<object>({ required: true })
 
   const orderedColumns = computed<SchemaColumn[]>(() => {

@@ -1,7 +1,7 @@
 <script lang="ts" setup>
   import type { TemplateRow } from '@/schema/template'
   import { useRoute } from 'vue-router'
-  import SchemaDetailFields from '@/components/ui/SchemaDetailFields.vue'
+  import DataDetail from '@/components/ui/DataDetail.vue'
   import { useTableRow } from '@/composables/useTableRow'
   import { templateSchema } from '@/schema/template'
 
@@ -11,7 +11,7 @@
 
 <template>
   <div>
-    <SchemaDetailFields
+    <DataDetail
       :error="error"
       :loading="loading"
       :row="row"

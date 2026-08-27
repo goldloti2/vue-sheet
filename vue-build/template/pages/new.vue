@@ -2,7 +2,7 @@
   import type { TemplateRow } from '@/schema/template'
   import { ref } from 'vue'
   import { useRouter } from 'vue-router'
-  import SchemaFormFields from '@/components/ui/SchemaFormFields.vue'
+  import DataForm from '@/components/ui/DataForm.vue'
   import { templateSchema } from '@/schema/template'
   import { columnValues } from '@/schema/types'
   import { mutateTable } from '@/services/appScript'
@@ -36,7 +36,7 @@
 
 <template>
   <div>
-    <SchemaFormFields v-model="form" :schema="templateSchema" />
+    <DataForm v-model="form" :schema="templateSchema" />
 
     <v-container>
       <v-alert v-if="error" class="mb-4" :text="error" type="error" />

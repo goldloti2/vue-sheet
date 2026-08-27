@@ -2,8 +2,8 @@
   import type { TemplateRow } from '@/schema/template'
   import type { GroupLevel } from '@/schema/types'
   import { computed } from 'vue'
+  import DataList from '@/components/ui/DataList.vue'
   import GroupedList from '@/components/ui/GroupedList.vue'
-  import ListItem from '@/components/ui/ListItem.vue'
   import { useSortedTableList } from '@/composables/useSortedTableList'
   import { templateSchema } from '@/schema/template'
   import { formatField, groupRows } from '@/schema/types'
@@ -33,7 +33,7 @@
 
       <GroupedList v-else :groups="groupedData">
         <template #default="{ row }">
-          <ListItem
+          <DataList
             :key="row.id"
             :bottom-left="formatField(row, templateSchema, 'status')"
             :bottom-right="formatField(row, templateSchema, 'number')"

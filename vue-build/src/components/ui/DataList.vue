@@ -2,7 +2,7 @@
   import { RouterLink } from 'vue-router'
   import { useLongPress } from '@/composables/useLongPress'
 
-  interface ListItemProps {
+  interface DataListProps {
     title: string
     topRight?: string
     bottomLeft?: string
@@ -10,7 +10,7 @@
     to?: string
   }
 
-  defineProps<ListItemProps>()
+  defineProps<DataListProps>()
 
   const emit = defineEmits<{
     longpress: [event: PointerEvent]

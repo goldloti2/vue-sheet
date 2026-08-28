@@ -1,18 +1,10 @@
+import type { PageAction } from '@/composables/actions/useTableActions'
 import type { InjectionKey } from 'vue'
-import type { RouteLocationRaw } from 'vue-router'
 import { inject, onActivated, onDeactivated, onUnmounted, watch } from 'vue'
 
-export interface AppBarAction {
-  key: string
-  label: string
-  icon: string
-  to?: RouteLocationRaw
-  onClick?: () => void
-}
+export const appBarActionsKey: InjectionKey<(actions: PageAction[]) => void> = Symbol('appBarActions')
 
-export const appBarActionsKey: InjectionKey<(actions: AppBarAction[]) => void> = Symbol('appBarActions')
-
-export function useAppBarActions (source: () => AppBarAction[]) {
+export function useAppBarActions (source: () => PageAction[]) {
   const setActions = inject(appBarActionsKey)
   if (!setActions) {
     return

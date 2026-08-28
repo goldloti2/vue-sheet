@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-  import type { AppBarAction } from '@/composables/useAppBarActions'
+  import type { PageAction } from '@/composables/actions/useTableActions'
   import { mdiArrowLeft, mdiDotsVertical } from '@mdi/js'
   import { computed, provide, shallowRef } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
@@ -26,12 +26,12 @@
 
   const title = computed(() => route.meta.title ?? 'AAAA')
 
-  const appBarActions = shallowRef<AppBarAction[]>([])
+  const appBarActions = shallowRef<PageAction[]>([])
   provide(appBarActionsKey, actions => {
     appBarActions.value = actions
   })
 
-  function handleActionClick (action: AppBarAction) {
+  function handleActionClick (action: PageAction) {
     action.onClick?.()
   }
 

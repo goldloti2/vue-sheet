@@ -1,19 +1,11 @@
 <script lang="ts" setup>
-  import type { RouteLocationRaw } from 'vue-router'
+  import type { PageAction } from '@/composables/actions/useTableActions'
   import { mdiClose, mdiDotsVertical } from '@mdi/js'
   import { computed, onActivated, onDeactivated, shallowRef } from 'vue'
   import { useLayout } from 'vuetify'
 
-  export interface FabAction {
-    key: string
-    label: string
-    icon: string
-    to?: RouteLocationRaw
-    onClick?: () => void
-  }
-
   defineProps<{
-    actions: FabAction[]
+    actions: PageAction[]
   }>()
 
   const { mainRect } = useLayout()
@@ -31,7 +23,7 @@
     isActive.value = false
   })
 
-  function handleActionClick (action: FabAction) {
+  function handleActionClick (action: PageAction) {
     action.onClick?.()
     open.value = false
   }

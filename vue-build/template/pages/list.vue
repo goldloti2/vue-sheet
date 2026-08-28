@@ -1,3 +1,7 @@
+<route lang="json5">
+{ meta: { title: 'list' } }
+</route>
+
 <script lang="ts" setup>
   import type { TemplateRow } from '@/schema/template'
   import type { GroupLevel } from '@/schema/types'

@@ -1,3 +1,7 @@
+<route lang="json5">
+{ meta: { title: 'edit' } }
+</route>
+
 <script lang="ts" setup>
   import type { TemplateRow } from '@/schema/template'
   import { ref, watch } from 'vue'

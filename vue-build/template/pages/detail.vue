@@ -1,3 +1,7 @@
+<route lang="json5">
+{ meta: { title: 'detail' } }
+</route>
+
 <script lang="ts" setup>
   import type { TemplateRow } from '@/schema/template'
   import { useRoute } from 'vue-router'

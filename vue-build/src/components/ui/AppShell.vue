@@ -11,18 +11,18 @@
   }
 
   interface AppShellProps {
-    title?: string
     navItems?: AppNavItem[]
   }
 
   const props = withDefaults(defineProps<AppShellProps>(), {
-    title: 'AAAA',
     navItems: () => [],
   })
 
   const drawer = shallowRef(true)
   const route = useRoute()
   const router = useRouter()
+
+  const title = computed(() => route.meta.title ?? 'AAAA')
 
   // 導覽列的目的地不用返回按鈕；其他方式進來的頁面（例如點列表項目進 detail）都算
   const showBack = computed(() => !props.navItems.some(item => item.to === route.path))

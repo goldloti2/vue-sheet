@@ -1,5 +1,7 @@
 <script lang="ts" setup>
+  import { computed } from 'vue'
   import { RouterLink } from 'vue-router'
+  import ListField from '@/components/ui/ListField.vue'
   import { useLongPress } from '@/composables/useLongPress'
 
   interface DataListProps {
@@ -8,29 +10,83 @@
     bottomLeft?: string
     bottomRight?: string
     to?: string
+    selectable?: boolean
+    selectMode?: boolean
+    selected?: boolean
   }
 
-  defineProps<DataListProps>()
+  const { selectable = false, selectMode } = defineProps<DataListProps>()
 
   const emit = defineEmits<{
     longpress: [event: PointerEvent]
+    toggle: []
   }>()
 
   const longPress = useLongPress(event => emit('longpress', event))
+
+  function onClick (event: MouseEvent, navigate?: (event?: MouseEvent) => Promise<unknown>) {
+    longPress.onClick(event)
+    if (event.defaultPrevented) {
+      return
+    }
+
+    if (selectMode) {
+      event.preventDefault()
+      emit('toggle')
+      return
+    }
+
+    navigate?.(event)
+  }
+
+  // 沒開多選功能就不要綁長按用的 pointer 監聽，普通文字選取/拖曳行為維持原生
+  const pointerHandlers = computed(() => selectable
+    ? {
+      onPointercancel: longPress.onPointercancel,
+      onPointerdown: longPress.onPointerdown,
+      onPointerleave: longPress.onPointerleave,
+      onPointerup: longPress.onPointerup,
+    }
+    : {})
 </script>
 
 <template>
-  <component :is="to ? RouterLink : 'div'" class="list-item" :to="to" v-on="longPress">
-    <div class="list-item__row">
-      <span class="list-item__title text-title-medium font-weight-bold">{{ title }}</span>
-      <span class="list-item__field text-body-medium text-medium-emphasis list-item__field--right">{{ topRight }}</span>
-    </div>
+  <RouterLink v-if="to" v-slot="{ href, navigate }" custom :to="to">
+    <a
+      class="list-item"
+      :class="{ 'list-item--selected': selectMode && selected, 'list-item--no-select': selectable }"
+      :draggable="selectable ? 'false' : undefined"
+      :href="href"
+      v-bind="pointerHandlers"
+      @click="onClick($event, navigate)"
+    >
+      <ListField
+        :bottom-left="bottomLeft"
+        :bottom-right="bottomRight"
+        :select-mode="selectMode"
+        :selected="selected"
+        :title="title"
+        :top-right="topRight"
+      />
+    </a>
+  </RouterLink>
 
-    <div class="list-item__row">
-      <span class="list-item__field text-body-medium text-medium-emphasis list-item__field--left">{{ bottomLeft }}</span>
-      <span class="list-item__field text-body-medium text-medium-emphasis list-item__field--right">{{ bottomRight }}</span>
-    </div>
-  </component>
+  <div
+    v-else
+    class="list-item"
+    :class="{ 'list-item--selected': selectMode && selected, 'list-item--no-select': selectable }"
+    v-bind="pointerHandlers"
+    @click="onClick($event)"
+  >
+    <ListField
+      :bottom-left="bottomLeft"
+      :bottom-right="bottomRight"
+      :select-mode="selectMode"
+      :selected="selected"
+      :title="title"
+      :top-right="topRight"
+    />
+  </div>
 </template>
 
 <style scoped>
@@ -46,25 +102,12 @@
   border-bottom: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
 }
 
-.list-item__row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  column-gap: 12px;
+.list-item--no-select {
+  -webkit-user-drag: none;
+  user-select: none;
 }
 
-.list-item__row + .list-item__row {
-  margin-top: 4px;
-}
-
-.list-item__title {
-  text-align: left;
-}
-
-.list-item__field--left {
-  text-align: left;
-}
-
-.list-item__field--right {
-  text-align: right;
+.list-item--selected {
+  background-color: rgba(var(--v-theme-primary), 0.08);
 }
 </style>

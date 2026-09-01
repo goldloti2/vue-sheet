@@ -1,3 +1,5 @@
-export const schemas = {}
+import type { TableSchema } from './types'
 
-export type TableKey = keyof typeof schemas
+export const schemas: Record<string, TableSchema> = {}
+
+export type TableKey = string

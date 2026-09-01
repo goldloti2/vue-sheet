@@ -60,12 +60,9 @@ function parseCsv (text: string): Record<string, string>[] {
   })
 }
 
-// GET：list/get，query string 帶 table + 篩選欄位
+// GET：list/get，回傳整張表
 // 回傳前先照 schema 把 raw 字串轉成該有的型別（見《GoogleSheet後端App-通用架構》文件 6.1 節）
-export async function fetchTable<Row> (
-  table: TableKey,
-  filters?: Record<string, string>,
-): Promise<Row[]> {
+export async function fetchTable<Row> (table: TableKey): Promise<Row[]> {
   const csv = mockTables[table]
   if (!csv) {
     throw new Error(`no mock data for table "${table}"`)
@@ -73,11 +70,8 @@ export async function fetchTable<Row> (
 
   const schema = schemas[table]
   const rows = parseCsv(csv)
-  const filteredRows = filters
-    ? rows.filter(row => Object.entries(filters).every(([key, value]) => row[key] === value))
-    : rows
 
-  return filteredRows.map(row => coerceRow<Row>(row, schema))
+  return rows.map(row => coerceRow<Row>(row, schema))
 }
 
 // POST：create/update/delete/bulkUpdate，body 帶 action 欄位

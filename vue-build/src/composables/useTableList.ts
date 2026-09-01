@@ -1,59 +1,22 @@
 import type { TableKey } from '@/schema'
 import type { MaybeRefOrGetter } from 'vue'
-import { readonly, shallowRef, toValue, watch } from 'vue'
-import { fetchTable } from '@/services/appScript'
+import { computed, toValue, watchEffect } from 'vue'
+import { useTablesStore } from '@/stores/tables'
 
-export function useTableList<Row> (
-  table: MaybeRefOrGetter<TableKey>,
-  filters?: MaybeRefOrGetter<Record<string, string> | undefined>,
-) {
-  const data = shallowRef<Row[]>([])
-  const loading = shallowRef(false)
-  const error = shallowRef<string | null>(null)
-  const refreshTrigger = shallowRef(0)
+export function useTableList<Row> (table: MaybeRefOrGetter<TableKey>) {
+  const store = useTablesStore()
+  const currentTable = computed(() => toValue(table))
 
-  function refresh () {
-    refreshTrigger.value++
-  }
-
-  watch(
-    [() => toValue(table), () => toValue(filters), refreshTrigger],
-    ([currentTable, currentFilters], _prev, onCleanup) => {
-      let cancelled = false
-      onCleanup(() => {
-        cancelled = true
-      })
-
-      loading.value = true
-      error.value = null
-
-      fetchTable<Row>(currentTable, currentFilters)
-        .then(result => {
-          if (cancelled) {
-            return
-          }
-          data.value = result
-        })
-        .catch((error_: unknown) => {
-          if (cancelled) {
-            return
-          }
-          error.value = error_ instanceof Error ? error_.message : String(error_)
-        })
-        .finally(() => {
-          if (cancelled) {
-            return
-          }
-          loading.value = false
-        })
-    },
-    { immediate: true },
-  )
+  watchEffect(() => {
+    void store.ensureLoaded(currentTable.value)
+  })
 
   return {
-    data: readonly(data),
-    loading: readonly(loading),
-    error: readonly(error),
-    refresh,
+    data: computed(() => (store.rows[currentTable.value] ?? []) as Row[]),
+    loading: computed(() => store.loading[currentTable.value] ?? false),
+    error: computed(() => store.error[currentTable.value] ?? null),
+    refresh: () => {
+      void store.refresh(currentTable.value)
+    },
   }
 }

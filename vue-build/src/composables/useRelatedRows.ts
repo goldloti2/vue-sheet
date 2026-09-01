@@ -1,20 +1,20 @@
 import type { TableKey } from '@/schema'
-import type { TableSchema } from '@/schema/types'
-import type { MaybeRefOrGetter } from 'vue'
 import { computed } from 'vue'
+import { schemas } from '@/schema'
+import { getRelation } from '@/schema/relations'
 import { useSortedTableList } from './useSortedTableList'
 
 export function useRelatedRows<Row extends { id: string }> (
-  table: MaybeRefOrGetter<TableKey>,
-  schema: TableSchema,
-  foreignKey: string,
+  childTable: TableKey,
+  parentTable: TableKey,
 ) {
-  const { data, loading, error, refresh } = useSortedTableList<Row>(table, schema)
+  const { column } = getRelation(childTable, parentTable)
+  const { data, loading, error, refresh } = useSortedTableList<Row>(childTable, schemas[childTable])
 
   const byParentId = computed(() => {
     const map = new Map<string, Row[]>()
     for (const row of data.value as Row[]) {
-      const parentId = (row as Record<string, unknown>)[foreignKey]
+      const parentId = (row as Record<string, unknown>)[column]
       if (typeof parentId !== 'string') {
         continue
       }

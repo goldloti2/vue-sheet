@@ -62,3 +62,36 @@ export function useDeleteAction (table: TableKey, row: Ref<{ id: string } | null
 
   return { actions, dialog, confirm }
 }
+
+export function useBulkDeleteAction (table: TableKey, selectedIds: Ref<ReadonlySet<string>>, onDeleted: () => void) {
+  const dialog = reactive({
+    open: false,
+    loading: false,
+    error: null as string | null,
+  })
+
+  async function confirm () {
+    dialog.loading = true
+    dialog.error = null
+
+    try {
+      await Promise.all([...selectedIds.value].map(id => mutateTable('delete', table, { id })))
+      dialog.open = false
+      onDeleted()
+    } catch (error) {
+      dialog.error = error instanceof Error ? error.message : String(error)
+    } finally {
+      dialog.loading = false
+    }
+  }
+
+  function openDialog () {
+    dialog.open = true
+  }
+
+  const actions = computed<PageAction[]>(() => selectedIds.value.size > 0
+    ? [{ key: 'delete', label: '刪除', icon: mdiDelete, onClick: openDialog }]
+    : [])
+
+  return { actions, dialog, confirm }
+}

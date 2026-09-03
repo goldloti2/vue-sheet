@@ -5,47 +5,15 @@
 
 <script lang="ts" setup>
   import type { __Table__Row } from '@/schema/__table__'
-  import { ref, watch } from 'vue'
-  import { useRoute, useRouter } from 'vue-router'
   import DataForm from '@/components/ui/DataForm.vue'
-  import { useTableRow } from '@/composables/useTableRow'
+  import { useRouteId } from '@/composables/useRouteId'
+  import { useEditForm } from '@/composables/useTableForm'
   import { __table__Schema } from '@/schema/__table__'
-  import { columnValues } from '@/schema/types'
-  import { mutateTable } from '@/services/appScript'
 
-  const route = useRoute('/__table__/[id]/edit')
-  const router = useRouter()
+  const id = useRouteId()
 
-  const { row, loading, error: loadError } = useTableRow<__Table__Row>('__table__', String(route.params.id))
-
-  const form = ref<__Table__Row | null>(null)
-
-  watch(row, newRow => {
-    if (newRow) {
-      form.value = { ...newRow } as __Table__Row
-    }
-  }, { immediate: true })
-
-  const submitting = ref(false)
-  const submitError = ref<string | null>(null)
-
-  async function handleSubmit () {
-    if (!form.value) {
-      return
-    }
-
-    submitting.value = true
-    submitError.value = null
-
-    try {
-      await mutateTable('update', '__table__', { id: form.value.id, ...columnValues(form.value, __table__Schema) })
-      await router.push(`/__table__/${form.value.id}`)
-    } catch (error) {
-      submitError.value = error instanceof Error ? error.message : String(error)
-    } finally {
-      submitting.value = false
-    }
-  }
+  const { form, loading, loadError, submitting, error, submit }
+    = useEditForm<__Table__Row>('__table__', __table__Schema, id)
 </script>
 
 <template>
@@ -66,9 +34,9 @@
       <DataForm v-model="form" :schema="__table__Schema" />
 
       <v-container>
-        <v-alert v-if="submitError" class="mb-4" :text="submitError" type="error" />
+        <v-alert v-if="error" class="mb-4" :text="error" type="error" />
 
-        <v-btn block :loading="submitting" @click="handleSubmit">儲存</v-btn>
+        <v-btn block :loading="submitting" @click="submit">儲存</v-btn>
       </v-container>
     </template>
   </div>

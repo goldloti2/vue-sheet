@@ -4,7 +4,7 @@ import type { RouteLocationRaw } from 'vue-router'
 import { mdiDelete, mdiPencil, mdiPlus } from '@mdi/js'
 import { computed, reactive } from 'vue'
 import { useRouter } from 'vue-router'
-import { mutateTable } from '@/services/appScript'
+import { useTablesStore } from '@/stores/tables'
 
 export interface PageAction {
   key: string
@@ -26,6 +26,7 @@ export function useEditAction (table: TableKey, row: Ref<{ id: string } | null>)
 
 export function useDeleteAction (table: TableKey, row: Ref<{ id: string } | null>) {
   const router = useRouter()
+  const store = useTablesStore()
 
   const dialog = reactive({
     open: false,
@@ -42,9 +43,10 @@ export function useDeleteAction (table: TableKey, row: Ref<{ id: string } | null
     dialog.error = null
 
     try {
-      await mutateTable('delete', table, { id: row.value.id })
-      dialog.open = false
-      await router.push(`/${table}`)
+      await store.remove(table, row.value.id, async () => {
+        dialog.open = false
+        await router.push(`/${table}`)
+      })
     } catch (error) {
       dialog.error = error instanceof Error ? error.message : String(error)
     } finally {
@@ -64,6 +66,8 @@ export function useDeleteAction (table: TableKey, row: Ref<{ id: string } | null
 }
 
 export function useBulkDeleteAction (table: TableKey, selectedIds: Ref<ReadonlySet<string>>, onDeleted: () => void) {
+  const store = useTablesStore()
+
   const dialog = reactive({
     open: false,
     loading: false,
@@ -75,7 +79,7 @@ export function useBulkDeleteAction (table: TableKey, selectedIds: Ref<ReadonlyS
     dialog.error = null
 
     try {
-      await Promise.all([...selectedIds.value].map(id => mutateTable('delete', table, { id })))
+      await store.removeMany(table, selectedIds.value)
       dialog.open = false
       onDeleted()
     } catch (error) {

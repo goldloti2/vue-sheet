@@ -1,27 +1,28 @@
+<!-- 複製到 src/pages/__table__/[id]/edit.vue -->
 <route lang="json5">
-{ meta: { title: 'edit' } }
+{ meta: { title: '編輯範本' } }
 </route>
 
 <script lang="ts" setup>
-  import type { TemplateRow } from '@/schema/template'
+  import type { __Table__Row } from '@/schema/__table__'
   import { ref, watch } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
   import DataForm from '@/components/ui/DataForm.vue'
   import { useTableRow } from '@/composables/useTableRow'
-  import { templateSchema } from '@/schema/template'
+  import { __table__Schema } from '@/schema/__table__'
   import { columnValues } from '@/schema/types'
   import { mutateTable } from '@/services/appScript'
 
-  const route = useRoute('/template/[id]/edit')
+  const route = useRoute('/__table__/[id]/edit')
   const router = useRouter()
 
-  const { row, loading, error: loadError } = useTableRow<TemplateRow>('template', String(route.params.id))
+  const { row, loading, error: loadError } = useTableRow<__Table__Row>('__table__', String(route.params.id))
 
-  const form = ref<TemplateRow | null>(null)
+  const form = ref<__Table__Row | null>(null)
 
   watch(row, newRow => {
     if (newRow) {
-      form.value = { ...newRow } as TemplateRow
+      form.value = { ...newRow } as __Table__Row
     }
   }, { immediate: true })
 
@@ -37,8 +38,8 @@
     submitError.value = null
 
     try {
-      await mutateTable('update', 'template', { id: form.value.id, ...columnValues(form.value, templateSchema) })
-      await router.push(`/template/${form.value.id}`)
+      await mutateTable('update', '__table__', { id: form.value.id, ...columnValues(form.value, __table__Schema) })
+      await router.push(`/__table__/${form.value.id}`)
     } catch (error) {
       submitError.value = error instanceof Error ? error.message : String(error)
     } finally {
@@ -62,7 +63,7 @@
     </v-container>
 
     <template v-else>
-      <DataForm v-model="form" :schema="templateSchema" />
+      <DataForm v-model="form" :schema="__table__Schema" />
 
       <v-container>
         <v-alert v-if="submitError" class="mb-4" :text="submitError" type="error" />

@@ -1,0 +1,29 @@
+# PageFab
+
+右下角浮動按鈕。數量 ≤2 顆固定顯示，≥3 顆自動收合成 speed-dial（展開時有暗屏與文字標籤），不用自己判斷。`actions` 是空陣列時整個元件不顯示，不用另外包 `v-if`。
+
+`PageAction` 的 `to` 走導覽、`onClick` 走函式，兩者擇一。同一種型別也給 `useAppBarActions()` 用，同一份動作定義可以任選要擺右下角還是右上角。
+
+## Usage
+
+```vue
+<script lang="ts" setup>
+  import type { PageAction } from '@/composables/actions/useTableActions'
+  import { mdiPlus } from '@mdi/js'
+  import PageFab from '@/components/ui/PageFab.vue'
+
+  const actions: PageAction[] = [
+    { key: '動作1', label: '標籤1', icon: mdiPlus, to: '/路徑' },
+  ]
+</script>
+
+<template>
+  <PageFab :actions="actions" />
+</template>
+```
+
+## Props
+
+| prop | 型別 | 說明 |
+| --- | --- | --- |
+| `actions` | `PageAction[]` | **必填**，`{ key, label, icon, to?, onClick? }` |

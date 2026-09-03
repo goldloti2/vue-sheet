@@ -76,7 +76,18 @@ function formatDate (date: Date): string {
   return `${year}/${month}/${day}`
 }
 
-// coerceRow 的反向操作：把已轉型別的欄位值照 type 格式化成畫面顯示用的字串
+export function serializeRow (values: Record<string, unknown>, schema: TableSchema): Record<string, string> {
+  const result: Record<string, string> = {}
+
+  for (const column of schema.columns) {
+    if (column.key in values) {
+      result[columnHeader(column)] = formatColumnValue(values, column)
+    }
+  }
+
+  return result
+}
+
 export function formatColumnValue (row: object, column: SchemaColumn): string {
   const value = (row as Record<string, unknown>)[column.key]
 

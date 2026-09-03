@@ -61,9 +61,7 @@ export function useEditForm<Row extends HasId> (
   // 複製一份，不直接改快取裡的資料
   const form = ref<Row | null>(null)
   watch(row, newRow => {
-    if (newRow) {
-      form.value = { ...newRow } as Row
-    }
+    form.value = newRow ? { ...newRow } as Row : null
   }, { immediate: true })
 
   const { submitting, error, run } = useSubmitState()

@@ -108,6 +108,17 @@ export function formatField (row: object, schema: TableSchema, key: string): str
   return column ? formatColumnValue(row, column) : ''
 }
 
+// 依 schema 產生一筆空白 row，給新增表單當初始值；id 留空，由後端產生
+export function emptyRow<Row> (schema: TableSchema): Row {
+  const result: Record<string, unknown> = { id: '' }
+
+  for (const column of schema.columns) {
+    result[column.key] = null
+  }
+
+  return result as Row
+}
+
 // 把 row 攤成 { columnKey: 值 } 的物件，只帶 schema.columns 裡的真實欄位（不含 id）；
 // 送 create/update 給後端的 payload 用這個組
 export function columnValues (row: object, schema: TableSchema): Record<string, unknown> {

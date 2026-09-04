@@ -2,7 +2,7 @@ import type { TableKey } from '@/schema'
 import type { TableSchema } from '@/schema/types'
 import type { MaybeRefOrGetter } from 'vue'
 import { ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { leaveAfterAction } from '@/router'
 import { columnValues, emptyRow } from '@/schema/types'
 import { useTablesStore } from '@/stores/tables'
 import { useTableRow } from './useTableRow'
@@ -32,7 +32,6 @@ function useSubmitState () {
 }
 
 export function useCreateForm<Row extends HasId> (table: TableKey, schema: TableSchema) {
-  const router = useRouter()
   const store = useTablesStore()
 
   const form = ref<Row>(emptyRow<Row>(schema))
@@ -41,7 +40,7 @@ export function useCreateForm<Row extends HasId> (table: TableKey, schema: Table
   async function submit () {
     await run(async () => {
       await store.create<Row>(table, columnValues(form.value, schema))
-      await router.push(`/${table}`)
+      leaveAfterAction(`/${table}`)
     })
   }
 
@@ -53,7 +52,6 @@ export function useEditForm<Row extends HasId> (
   schema: TableSchema,
   id: MaybeRefOrGetter<string>,
 ) {
-  const router = useRouter()
   const store = useTablesStore()
 
   const { row, loading, error: loadError } = useTableRow<Row>(table, id)
@@ -74,7 +72,7 @@ export function useEditForm<Row extends HasId> (
 
     await run(async () => {
       await store.update<Row>(table, current.id, columnValues(current, schema))
-      await router.push(`/${table}/${current.id}`)
+      leaveAfterAction(`/${table}/${current.id}`)
     })
   }
 

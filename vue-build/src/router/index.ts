@@ -5,6 +5,7 @@
  */
 
 // Composables
+import type { RouteLocationRaw } from 'vue-router'
 import { shallowRef } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
 import { routes } from 'vue-router/auto-routes'
@@ -38,5 +39,13 @@ router.beforeEach((to, from) => {
 router.afterEach(() => {
   navigationCount.value++
 })
+
+export function leaveAfterAction (fallback: RouteLocationRaw): void {
+  if (navigationCount.value > 1) {
+    router.back()
+  } else {
+    void router.replace(fallback)
+  }
+}
 
 export default router

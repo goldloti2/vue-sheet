@@ -3,7 +3,7 @@ import type { Ref } from 'vue'
 import type { RouteLocationRaw } from 'vue-router'
 import { mdiDelete, mdiPencil, mdiPlus } from '@mdi/js'
 import { computed, reactive } from 'vue'
-import { useRouter } from 'vue-router'
+import { leaveAfterAction } from '@/router'
 import { useTablesStore } from '@/stores/tables'
 
 export interface PageAction {
@@ -25,7 +25,6 @@ export function useEditAction (table: TableKey, row: Ref<{ id: string } | null>)
 }
 
 export function useDeleteAction (table: TableKey, row: Ref<{ id: string } | null>) {
-  const router = useRouter()
   const store = useTablesStore()
 
   const dialog = reactive({
@@ -43,10 +42,9 @@ export function useDeleteAction (table: TableKey, row: Ref<{ id: string } | null
     dialog.error = null
 
     try {
-      await store.remove(table, row.value.id, async () => {
-        dialog.open = false
-        await router.push(`/${table}`)
-      })
+      await store.remove(table, row.value.id)
+      dialog.open = false
+      leaveAfterAction(`/${table}`)
     } catch (error) {
       dialog.error = error instanceof Error ? error.message : String(error)
     } finally {

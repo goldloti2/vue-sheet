@@ -71,16 +71,9 @@ export const useTablesStore = defineStore('tables', () => {
     return updated
   }
 
-  // beforePatch：後端刪除成功、但快取還沒更新前要先做的事。detail 頁刪除自己這一筆時用它先離開頁面，
-  // 否則 row 會在返回動畫播完前就變 null，畫面先閃一下「找不到這筆資料」。
-  // 不管 beforePatch 成不成功，快取一定要移除——後端那筆已經沒了
-  async function remove (table: TableKey, id: string, beforePatch?: () => Promise<void>): Promise<void> {
+  async function remove (table: TableKey, id: string): Promise<void> {
     await mutateTable('delete', table, { id })
-    try {
-      await beforePatch?.()
-    } finally {
-      patch(table, list => list.filter(row => (row as HasId).id !== id))
-    }
+    patch(table, list => list.filter(row => (row as HasId).id !== id))
   }
 
   async function removeMany (table: TableKey, ids: Iterable<string>): Promise<void> {

@@ -30,8 +30,8 @@
 </script>
 
 <template>
-  <Teleport :disabled="!isActive" to="body">
-    <div v-if="actions.length > 0" class="page-fab" :style="offsetStyle">
+  <Teleport to="body">
+    <div v-if="isActive && actions.length > 0" class="page-fab" :style="offsetStyle">
       <template v-if="actions.length <= 2">
         <v-fab
           v-for="action in actions"

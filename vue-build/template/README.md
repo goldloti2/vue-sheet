@@ -2,6 +2,8 @@
 
 複製 → 改名 → 填空。這個資料夾**不在 `src/` 底下**，不會被 build／eslint／vue-tsc 掃到，所以裡面的檔案不用能編譯，也不會影響正式程式碼。
 
+> 這裡只寫「怎麼用範本」。框架本身的設計與內部運作見 repo 根目錄的 [README.md](../../README.md)。
+
 ## 佔位字串
 
 所有範本統一用這兩個標記當佔位符，複製後整份檔案 find-replace 就好：
@@ -62,84 +64,44 @@
    { title: '範本', icon: mdiLabel, to: '/__table__' }
    ```
 
+### schema.ts 裡要填什麼
+
+| 欄位 | 用途 |
+| --- | --- |
+| `sheetName` | Google Sheet 分頁的實際名稱，也是打 API 時 `table=` 的值 |
+| `idColumn` | 這張表的 ID 欄，填 Sheet 的**實際表頭文字** |
+| `columns[].key` | 程式裡用的英文欄位名 |
+| `columns[].label` | 顯示用的中文標籤 |
+| `columns[].sheetHeader` | Sheet 的實際表頭；跟 `label` 同值時可省略 |
+| `columns[].type` | `text` / `number` / `date` / `select` / `ref` |
+| `columns[].options` | 只有 `type: 'select'` 要填，該欄位的可選值 |
+| `columns[].refTable` | 只有 `type: 'ref'` 要填，指向哪張表（`schemas` 的 key） |
+| `defaultSort` | 列表頁預設排序，多筆依序當 tiebreaker。可省略 |
+| `detailOrder` | 詳細頁欄位順序。可省略，省略就沿用 `columns` 順序 |
+| `formOrder` | 表單頁欄位順序。可省略，跟 `detailOrder` 分開設定 |
+
 ### 跨表關聯
 
-在 schema 欄位標 `{ type: 'ref', refTable: '另一張表' }` 就完成了，**不用**另外註冊關聯——`schema/relations.ts` 會自動掃出關聯圖。標好之後：
-
-- `DataDetail` 自動把該欄位變成連到對方 detail 頁的連結
-- `useRelatedRows('子表', '父表')` 可以用，欄位名自動解析
+在 schema 欄位標 `{ type: 'ref', refTable: '另一張表' }` 就完成了，**不用**另外註冊。標好之後詳細頁的該欄位會自動變成連到對方的連結，也可以用 `useRelatedRows('子表', '父表')` 取得關聯資料。
 
 ---
 
 ## 2. UI 元件
 
-`components/` 底下每個元件一份，內容是「最小可用寫法 + 全部 props」。需要哪個就翻哪個，複製最小寫法貼進頁面再往上加。
+`components/` 底下每個元件一份，內容是「最小可用寫法 + 全部 props」。需要哪個就翻哪個，複製 Usage 區塊貼進頁面再往上加。
 
 | 元件 | 用途 |
 | --- | --- |
 | `DataList` | 卡片式列表的單列（含長按多選） |
 | `GroupedList` | 多層可收合分組 |
-| `DataTable` | 表格式列表／detail 頁內嵌子表格 |
-| `DataDetail` | 整頁 detail 欄位渲染（含 loading/error） |
+| `DataTable` | 表格式列表／詳細頁內嵌子表格 |
+| `DataDetail` | 整頁詳細欄位渲染（含 loading/error） |
 | `DetailField` | 單一欄位顯示 |
 | `DataForm` | 依型別自動選輸入元件的表單 |
 | `ListField` | `DataList` 內部的兩列排版（單獨用得到才碰） |
 | `PageFab` | 右下角浮動按鈕 |
 | `TabBar` | 頁籤篩選 |
 | `AppDialog` | 對話框外殼 |
-| `ConfirmDialog` | 是/否確認框（建立在 `AppDialog` 上） |
+| `ConfirmDialog` | 是/否確認框 |
 
 `AppShell` 是 App 層級的外殼，`App.vue` 用一次就好，不會在頁面裡重複使用，所以沒有範本。
-
----
-
-## 3. Composables 速查
-
-頁面會用到的資料存取與狀態，都在 `src/composables/`：
-
-```ts
-// 路由
-useRouteId()                                    // [id] 頁面取 id 用這個，不要自己讀 route.params.id
-
-// 讀取
-useTableList<Row>(table)                        // 整表（共用快取），{ data, loading, error, refresh }
-useSortedTableList<Row>(table, schema)          // 上者 + schema.defaultSort 排序；列表頁預設用這個
-useTableRow<Row>(table, id)                     // 單筆，{ row, loading, error, refresh }
-useRelatedRows<Row>(childTable, parentTable)    // 子表整表 + 依外鍵分組，多回傳 relatedTo(parentId)
-
-// 表單（新增/編輯頁直接用這兩個，不用自己接 API）
-useCreateForm<Row>(table, schema)               // { form, submitting, error, submit }
-useEditForm<Row>(table, schema, id)             // { form, loading, loadError, submitting, error, submit }
-
-// 動作
-useNewAction(table)                             // → PageAction
-useEditAction(table, row)                       // → ComputedRef<PageAction[]>
-useDeleteAction(table, row)                     // → { actions, dialog, confirm }
-useBulkDeleteAction(table, selectedIds, onDone) // → { actions, dialog, confirm }
-useAppBarActions(() => PageAction[])            // 把動作註冊到 App Bar 右上角
-
-// 狀態
-useMultiSelect()                                // { active, clear, count, enter, isSelected, selectedIds, toggle }
-```
-
-同一張表在不同元件呼叫 `useTableList`／`useSortedTableList` 不會重複打 API——資料在 `stores/tables.ts` 共用一份。
-
-`[id]` 頁面**一律用 `useRouteId()` 取 id**，不要寫 `String(route.params.id)`。這類頁面會被 KeepAlive 快取重用：直接讀會有兩種錯法——在 `setup` 裡讀一次會卡在第一次進入的 id（於是刪到別筆資料），寫成 getter 又會在離開頁面時跟著變 `undefined`（返回動畫期間閃「找不到這筆資料」）。`useRouteId()` 兩種都避開了。
-
-## 4. 寫入的規矩
-
-**不要在頁面或元件裡直接呼叫 `services/appScript.ts` 的 `mutateTable`。** 寫入一律走 `stores/tables.ts` 的四個 action：
-
-```ts
-store.create(table, values)        // → 回傳新建的那筆，並 push 進快取
-store.update(table, id, values)    // → 回傳更新後那筆，並替換快取裡的那筆
-store.remove(table, id)            // → 從快取移除
-store.remove(table, id, beforePatch) // → 更新快取前先做別的事（見下）
-store.removeMany(table, ids)       // → 逐筆刪，全部成功才一起從快取移除
-```
-
-順序固定是「先送後端 → 成功了才改快取」，失敗就讓錯誤往上拋、快取維持原狀。因為 store 會自己把快取補好，呼叫端**不需要**再手動 `refresh()`。
-
-`remove` 的第三個參數 `beforePatch` 是給「頁面正在顯示這一筆」的情況用的：快取一被更新，這一頁的 `row` 就變 null、畫面立刻閃成「找不到這筆資料」，而返回動畫還要再跑 0.3 秒。把導覽放進 `beforePatch`，就會先離開頁面才更新快取。`useDeleteAction` 已經這樣接好了。
-
-一般頁面用不到這四個 action——新增/編輯走 `useCreateForm`／`useEditForm`，刪除走 `useDeleteAction`／`useBulkDeleteAction`，它們內部已經接好了。

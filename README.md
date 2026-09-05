@@ -99,7 +99,7 @@ src/
     DetailField.vue           單一欄位顯示
     DataForm.vue              表單版的 DataDetail，依 column.type 自動選輸入元件
     PageFab.vue               右下角浮動按鈕
-    TabBar.vue                頁籤篩選
+    TabView.vue               頁籤 + 內容區，切換時依頁籤順序左右滑動
     AppDialog.vue             對話框外殼
     ConfirmDialog.vue         是/否確認框，建立在 AppDialog 上
   composables/

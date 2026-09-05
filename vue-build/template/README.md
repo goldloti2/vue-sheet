@@ -100,7 +100,7 @@
 | `DataForm` | 依型別自動選輸入元件的表單 |
 | `ListField` | `DataList` 內部的兩列排版（單獨用得到才碰） |
 | `PageFab` | 右下角浮動按鈕 |
-| `TabBar` | 頁籤篩選 |
+| `TabView` | 頁籤 + 內容區（切換時依頁籤順序左右滑動） |
 | `AppDialog` | 對話框外殼 |
 | `ConfirmDialog` | 是/否確認框 |
 

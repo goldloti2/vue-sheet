@@ -39,7 +39,7 @@
 - 列表：`DataList`（卡片式單列，含長按多選）、`ListField`、`GroupedList`（多層可收合分組）、`DataTable`（表格式，也用於 detail 頁內嵌子表格）
 - 詳細：`DataDetail`（自帶 loading/error/找不到資料）、`DetailField`
 - 表單：`DataForm`（依 `column.type` 自動選輸入元件）
-- 其他：`PageFab`、`TabBar`、`AppDialog`、`ConfirmDialog`
+- 其他：`PageFab`、`TabView`、`AppDialog`、`ConfirmDialog`
 
 ### 動作系統
 - `PageAction` 型別，FAB 與 App Bar 共用同一種描述
@@ -124,8 +124,11 @@ pending: Map<TableKey, Map<id, { kind: 'create' | 'update' | 'delete', values: P
 - `ref` 欄位的關聯選擇器：`DataForm` 目前把 `ref` 當純文字輸入，應該換成從對方表撈資料的下拉選單
 - 圖片欄位與上傳（存 Google Drive）
 - 總覽頁範本（`DataDashboardTemplate`）：保留了位置但沒有具體需求
-- 分頁（`TabBar`）切換的左右動畫
-- 同一頁換參數時的左右滑動（如detail頁面切換）：依資料在列表中的順序決定方向，會搭配對應的滑動操作。與轉場方向那套規則分開處理，還沒討論
+- `TabView` 放多個獨立面板（例如兩張表的列表當成一組頁籤）目前只有內容層可用，動作層會壞掉。根源是兩個面板一旦都被看過就同時掛著（`v-window` 用 `v-show` 切換），而 FAB 與 App Bar 動作都假設同時只有一個頁面活著：
+  - `useAppBarActions` 是單一 setter，後掛載的會蓋掉前面的，切頁籤也不會重新註冊
+  - `PageFab` 靠 `onActivated`/`onDeactivated` 決定要不要 teleport，那是 `<KeepAlive>` 的 hook，`v-show` 切換不會觸發，於是兩顆 FAB 一起掛在 body 上
+  - 方向是讓面板知道自己是不是當前頁籤（面板收一個 `active` prop，`PageFab` 也加一個跟現有 KeepAlive 狀態做 AND、預設 `true`），但實際要傳到哪一層等真的要寫這種頁面時再定。修好之後 `template/` 要補上這種頁面的寫法
+- 同一頁換參數時的左右滑動（如detail頁面切換）：依資料在列表中的順序決定方向，會搭配對應的滑動操作。與轉場方向那套規則分開處理，還沒討論。可能可以用 Vuetify 的 `v-window`（有 `touch` prop 支援左右滑動手勢），之後再細看
 
 ### 多選與批次
 - 批次快速編輯：把選取的多筆的指定欄位改成同一個值。`bulkUpdate` 目前只有假後端與 `mutateTable` 支援，store 沒有對應 action，也沒有 UI 入口

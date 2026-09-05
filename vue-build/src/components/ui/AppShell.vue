@@ -95,6 +95,7 @@
     <v-btn
       v-for="item in navItems"
       :key="item.to"
+      replace
       :to="item.to"
       :value="item.to"
     >

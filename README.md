@@ -278,4 +278,5 @@ hooks: {
 - 右下角 FAB：動作 ≤2 顆固定顯示，≥3 顆收合成 speed-dial
 - App Bar 右側動作按鈕：頁面用 `useAppBarActions()` 註冊，≤2 顆直接顯示，≥3 顆收成「⋮」下拉。跟 FAB 不同，這裡走 **provide/inject** 而非 Teleport——app-bar 在轉場動畫的 `.page-transition-viewport` 之外，不會被 `transform` 影響，不需要真的搬 DOM
 - FAB 與 App Bar 動作共用同一種 `PageAction` 型別 `{ key, label, icon, to?, onClick? }`。新增/編輯/刪除是每張表都有的通用動作，寫成共用 builder；每張表的 `use表名Actions.ts` 呼叫這些 builder 組出自己的動作集合，該表獨有的動作也加在那裡。頁面自己決定用哪幾個、放 FAB 還是 App Bar
-- 頁面切換有前進/後退轉場動畫，方向依路徑深度自動判斷
+- 頁面切換有前進/後退轉場動畫。方向由 `router/index.ts` 的 `afterEach` 分三層判定，先命中先算：**(1)** 兩端都是導覽項目 → 依導覽列排列順序（右邊的算前進）；**(2)** 只有目的地是導覽項目 → 一律後退，因為從內頁回到頂層就是往外；**(3)** 其他 → 看 `history.state.position` 是往前還是往後，也就是點連結/action 算前進、返回鍵算後退
+- 底部導覽列的按鈕用 `replace`，切分頁時覆蓋掉目前那筆歷史。內頁不會堆進歷史，連續切換也不會讓歷史一直變長；代價是站在導覽項目頁按瀏覽器返回不會回到上一個分頁

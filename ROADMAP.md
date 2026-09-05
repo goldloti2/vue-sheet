@@ -12,7 +12,8 @@
 - Vue 3 + TypeScript + Vuetify，unplugin-vue-router 檔案式路由，Pinia
 - `AppShell`：頂部 App Bar（標題來自 `route.meta.title`）+ 底部導覽列 + 側邊欄空殼
 - App Bar 左側圖示依路由自動切換漢堡選單／返回箭頭
-- 頁面前進/後退轉場動畫，方向依路徑深度判斷
+- 頁面前進/後退轉場動畫，方向依「導覽列順序 → 回到頂層 → 瀏覽器歷史前後」三層判定（見 README 八）
+- 底部導覽列切換分頁用 `replace`，內頁不會堆進歷史
 - 列表頁 `<KeepAlive>` 保留展開與捲動狀態
 
 ### Schema 型別系統
@@ -124,7 +125,7 @@ pending: Map<TableKey, Map<id, { kind: 'create' | 'update' | 'delete', values: P
 - 圖片欄位與上傳（存 Google Drive）
 - 總覽頁範本（`DataDashboardTemplate`）：保留了位置但沒有具體需求
 - 分頁（`TabBar`）切換的左右動畫
-- 底部導覽列切換頁面的左右動畫
+- 同一頁換參數時的左右滑動（如detail頁面切換）：依資料在列表中的順序決定方向，會搭配對應的滑動操作。與轉場方向那套規則分開處理，還沒討論
 
 ### 多選與批次
 - 批次快速編輯：把選取的多筆的指定欄位改成同一個值。`bulkUpdate` 目前只有假後端與 `mutateTable` 支援，store 沒有對應 action，也沒有 UI 入口

@@ -227,3 +227,8 @@ export function groupRows<Row> (rows: readonly Row[], levels: readonly GroupLeve
   }
   return buildGroups(sorted, levels)
 }
+
+// 把巢狀分組攤回一維，順序就是畫面上由上往下的順序（給 useListOrder 用）
+export function flattenGroups<Row> (groups: readonly RowGroup<Row>[]): Row[] {
+  return groups.flatMap(group => 'rows' in group ? group.rows : flattenGroups(group.subgroups))
+}

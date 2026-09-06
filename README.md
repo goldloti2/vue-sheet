@@ -99,6 +99,7 @@ src/
     DetailField.vue           單一欄位顯示
     DataForm.vue              表單版的 DataDetail，依 column.type 自動選輸入元件
     PageFab.vue               右下角浮動按鈕
+    RecordNav.vue             detail 頁左右兩側的上/下一筆箭頭
     TabView.vue               頁籤 + 內容區，切換時依頁籤順序左右滑動
     AppDialog.vue             對話框外殼
     ConfirmDialog.vue         是/否確認框，建立在 AppDialog 上
@@ -109,6 +110,7 @@ src/
     useRelatedRows.ts         子表整表 + 依關聯圖的外鍵分組
     useTableForm.ts           useCreateForm / useEditForm，新增與編輯的共用邏輯
     useRouteId.ts             [id] 頁面取路由參數（見 4.3）
+    useListOrder.ts           列表頁發布顯示順序、detail 頁取上/下一筆
     useAppBarActions.ts       把動作註冊到 AppShell 的 app-bar（provide/inject）
     useMultiSelect.ts         多選狀態
     useLongPress.ts           長按偵測
@@ -278,5 +280,6 @@ hooks: {
 - 右下角 FAB：動作 ≤2 顆固定顯示，≥3 顆收合成 speed-dial
 - App Bar 右側動作按鈕：頁面用 `useAppBarActions()` 註冊，≤2 顆直接顯示，≥3 顆收成「⋮」下拉。跟 FAB 不同，這裡走 **provide/inject** 而非 Teleport——app-bar 在轉場動畫的 `.page-transition-viewport` 之外，不會被 `transform` 影響，不需要真的搬 DOM
 - FAB 與 App Bar 動作共用同一種 `PageAction` 型別 `{ key, label, icon, to?, onClick? }`。新增/編輯/刪除是每張表都有的通用動作，寫成共用 builder；每張表的 `use表名Actions.ts` 呼叫這些 builder 組出自己的動作集合，該表獨有的動作也加在那裡。頁面自己決定用哪幾個、放 FAB 還是 App Bar
-- 頁面切換有前進/後退轉場動畫。方向由 `router/index.ts` 的 `afterEach` 分三層判定，先命中先算：**(1)** 兩端都是導覽項目 → 依導覽列排列順序（右邊的算前進）；**(2)** 只有目的地是導覽項目 → 一律後退，因為從內頁回到頂層就是往外；**(3)** 其他 → 看 `history.state.position` 是往前還是往後，也就是點連結/action 算前進、返回鍵算後退
+- 頁面切換有前進/後退轉場動畫。方向由 `router/index.ts` 的 `afterEach` 分四層判定，先命中先算：**(1)** 兩端都是導覽項目 → 依導覽列排列順序（右邊的算前進）；**(2)** 只有目的地是導覽項目 → 一律後退，因為從內頁回到頂層就是往外；**(3)** 同一個路由換 id、而且兩筆都在列表發布的順序裡 → 依它們在列表中的先後；**(4)** 其他 → 看 `history.state.position` 是往前還是往後，也就是點連結/action 算前進、返回鍵算後退
+- detail 頁的上/下一筆（`RecordNav` 的箭頭與 `v-touch` 手勢）走 `useSiblingNav`，順序來自列表頁用 `useListOrder` 發布的**畫面實際順序**（含篩選、頁籤、分組），頭尾不輪轉，切換用 `replace` 所以不會把每一筆都堆進歷史。第 (3) 層規則就是為它存在的——`replace` 不會改變 `history.state.position`，只靠第 (4) 層會一律判成前進
 - 底部導覽列的按鈕用 `replace`，切分頁時覆蓋掉目前那筆歷史。內頁不會堆進歷史，連續切換也不會讓歷史一直變長；代價是站在導覽項目頁按瀏覽器返回不會回到上一個分頁

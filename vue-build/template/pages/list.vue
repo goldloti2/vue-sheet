@@ -5,9 +5,11 @@
 
 <script lang="ts" setup>
   import type { __Table__Row } from '@/schema/__table__'
+  import { computed } from 'vue'
   import DataList from '@/components/ui/DataList.vue'
   import PageFab from '@/components/ui/PageFab.vue'
   import { use__Table__Actions } from '@/composables/actions/use__Table__Actions'
+  import { useListOrder } from '@/composables/useListOrder'
   import { useSortedTableList } from '@/composables/useSortedTableList'
   import { __table__Schema } from '@/schema/__table__'
   import { formatField } from '@/schema/types'
@@ -16,6 +18,8 @@
   const fabActions = [newAction]
 
   const { data, loading, error } = useSortedTableList<__Table__Row>('__table__', __table__Schema)
+
+  useListOrder('__table__', computed(() => data.value.map(row => row.id)))
 </script>
 
 <template>

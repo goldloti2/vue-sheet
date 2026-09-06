@@ -12,7 +12,7 @@
 - Vue 3 + TypeScript + Vuetify，unplugin-vue-router 檔案式路由，Pinia
 - `AppShell`：頂部 App Bar（標題來自 `route.meta.title`）+ 底部導覽列 + 側邊欄空殼
 - App Bar 左側圖示依路由自動切換漢堡選單／返回箭頭
-- 頁面前進/後退轉場動畫，方向依「導覽列順序 → 回到頂層 → 瀏覽器歷史前後」三層判定（見 README 八）
+- 頁面前進/後退轉場動畫，方向依「導覽列順序 → 回到頂層 → 同路由換 id 依列表順序 → 瀏覽器歷史前後」四層判定（見 README 八）
 - 底部導覽列切換分頁用 `replace`，內頁不會堆進歷史
 - 列表頁 `<KeepAlive>` 保留展開與捲動狀態
 
@@ -21,7 +21,7 @@
 - `coerceRow`（後端字串 → 前端型別）與 `serializeRow`（反向）
 - `formatColumnValue` / `formatField` 顯示格式化
 - `columnValues`（組送出用 payload）、`emptyRow`（新增表單起始值）
-- `sortRows`（依 `defaultSort`）、`sortByKey`、`groupRows`（多層分組）
+- `sortRows`（依 `defaultSort`）、`sortByKey`、`groupRows`（多層分組）、`flattenGroups`（把分組攤回畫面順序）
 - `detailOrder` / `formOrder` 分別控制詳細頁與表單頁的欄位順序
 
 ### 跨表關聯
@@ -39,7 +39,7 @@
 - 列表：`DataList`（卡片式單列，含長按多選）、`ListField`、`GroupedList`（多層可收合分組）、`DataTable`（表格式，也用於 detail 頁內嵌子表格）
 - 詳細：`DataDetail`（自帶 loading/error/找不到資料）、`DetailField`
 - 表單：`DataForm`（依 `column.type` 自動選輸入元件）
-- 其他：`PageFab`、`TabView`、`AppDialog`、`ConfirmDialog`
+- 其他：`PageFab`、`TabView`、`RecordNav`、`AppDialog`、`ConfirmDialog`
 
 ### 動作系統
 - `PageAction` 型別，FAB 與 App Bar 共用同一種描述
@@ -55,6 +55,7 @@
 ### 路由
 - `useRouteId()` 解決 KeepAlive 下 `[id]` 頁面拿到過期或 `undefined` 參數的問題
 - `leaveAfterAction()`：完成動作後用瀏覽器返回離開，不把已完成的表單頁留在歷史裡
+- `useListOrder` / `useSiblingNav`：列表頁發布畫面上的實際順序，detail 頁據此翻上/下一筆（箭頭 + 手勢），切換用 `replace`
 
 ### 假後端
 - `services/mock/`：記憶體資料表 + 可運作的 create/update/delete/bulkUpdate，跟真 Sheet 一樣只存原始字串
@@ -128,7 +129,6 @@ pending: Map<TableKey, Map<id, { kind: 'create' | 'update' | 'delete', values: P
   - `useAppBarActions` 是單一 setter，後掛載的會蓋掉前面的，切頁籤也不會重新註冊
   - `PageFab` 靠 `onActivated`/`onDeactivated` 決定要不要 teleport，那是 `<KeepAlive>` 的 hook，`v-show` 切換不會觸發，於是兩顆 FAB 一起掛在 body 上
   - 方向是讓面板知道自己是不是當前頁籤（面板收一個 `active` prop，`PageFab` 也加一個跟現有 KeepAlive 狀態做 AND、預設 `true`），但實際要傳到哪一層等真的要寫這種頁面時再定。修好之後 `template/` 要補上這種頁面的寫法
-- 同一頁換參數時的左右滑動（如detail頁面切換）：依資料在列表中的順序決定方向，會搭配對應的滑動操作。與轉場方向那套規則分開處理，還沒討論。可能可以用 Vuetify 的 `v-window`（有 `touch` prop 支援左右滑動手勢），之後再細看
 
 ### 多選與批次
 - 批次快速編輯：把選取的多筆的指定欄位改成同一個值。`bulkUpdate` 目前只有假後端與 `mutateTable` 支援，store 沒有對應 action，也沒有 UI 入口

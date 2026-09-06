@@ -172,10 +172,16 @@ store.removeMany(table, ids)     // 逐筆刪，全部成功才一起從快取�
 
 **key 一定要帶完整網址**，否則同一個路由換 id（`/表名/A` → `/表名/B`）對 Vue 而言是同一個元件、同一個 vnode，會就地更新而不觸發 `<transition>`，翻上/下一筆就完全沒有動畫。代價是 KeepAlive 從「每個元件一份」變成「每個網址一份」，所以要配 `max` 收斂；連續翻超過 50 筆不回列表的話，列表頁會被擠掉、展開與捲動狀態就沒了。
 
-元件實例會跨路由重複使用，這帶來兩個必須注意的點：
+**離開中的頁面是全速運轉的。** KeepAlive 的 `deactivate` 只搬 DOM，不會暫停元件的 effect；而 `onDeactivated` 是 post-render，比 pre-flush 的 `watch` 還晚。所以在整段離場動畫期間，舊頁面仍然會對外部變化重新計算、重新渲染——而外面的世界已經換頁了。這是「返回時閃一下錯誤內容」這一整類問題的唯一根源。
 
-- **`[id]` 頁面取 id 一律用 `useRouteId()`**，不要自己讀 `route.params.id`。在 `setup` 裡讀一次會卡在第一次進入的 id（於是刪到別筆資料）；寫成完全響應式的 getter 又會在離開頁面時跟著變 `undefined`（返回動畫期間閃「找不到這筆資料」）。`useRouteId()` 跟著路由更新，但只在參數真的存在時更新。
-- **列表載入中不要用 `v-if` 把列表整個換掉**。`v-if="loading"` / `v-else` 會在每次背景重新整理時卸載重建，`GroupedList` 的展開狀態就沒了。改用 `v-progress-linear v-if="loading"` 搭配獨立的 `v-if="!error"`，讓列表持續掛著。
+只有兩種東西會流進離開中的頁面，各自的處理方式不同：
+
+- **路由參數 → 讀一次就固定。** key 帶了完整網址，所以一個實例終其一生只對應一個 URL，路由參數對它而言是常數。`[id]` 頁面一律用 `useRouteId()`，它就是「setup 讀一次」，**不要**自己去 `watch` `route.params.id`：跟著路由走的話，離開中的頁面會拿到目的地的 id——目的地沒有 id 就變 `undefined` 閃「找不到這筆資料」，是別張表的 id 就查不到、同樣閃，是同一張表的另一個 id（上/下一筆）就直接渲染成新那筆，讓離場動畫看起來像內容自我複製。這條規則依賴上面的 `:key`，拿掉的話 `useRouteId()` 會在開發模式印出警告。
+- **共用快取 → 讓它變。** 資料真的被刪掉時，離開中的頁面顯示「找不到這筆資料」是**正確**的，沒有為它加凍結機制（見 ROADMAP 的權宜作法）。`useEditForm` 在 `row` 變 null 時清空表單也是同一個道理。
+
+掛在頁面之外的浮動 UI（`PageFab`、`RecordNav` 用 Teleport 送到 `body`）不受上面兩條管，要自己用 `onActivated`/`onDeactivated` 決定顯示與否，否則離開的頁面會把按鈕留在畫面上。
+
+還有一點跟資料無關但同屬 KeepAlive：**列表載入中不要用 `v-if` 把列表整個換掉**。`v-if="loading"` / `v-else` 會在每次背景重新整理時卸載重建，`GroupedList` 的展開狀態就沒了。改用 `v-progress-linear v-if="loading"` 搭配獨立的 `v-if="!error"`，讓列表持續掛著。
 
 ### 4.4 完成動作後的導覽
 

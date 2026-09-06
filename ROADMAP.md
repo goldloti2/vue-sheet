@@ -53,7 +53,7 @@
 - 批次刪除搭配 `ConfirmDialog`
 
 ### 路由
-- `useRouteId()` 解決 KeepAlive 下 `[id]` 頁面拿到過期或 `undefined` 參數的問題
+- `useRouteId()`：路由參數讀一次就固定（靠 `route.fullPath` 當 key 成立），離場動畫期間不會被目的地的 id 汙染。拿掉 key 時開發模式會警告
 - `leaveAfterAction()`：完成動作後用瀏覽器返回離開，不把已完成的表單頁留在歷史裡
 - `useListOrder` / `useSiblingNav`：列表頁發布畫面上的實際順序，detail 頁據此翻上/下一筆（箭頭 + 手勢），切換用 `replace`
 

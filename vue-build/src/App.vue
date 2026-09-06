@@ -34,7 +34,7 @@
 .page-forward-leave-active,
 .page-back-enter-active,
 .page-back-leave-active {
-  transition: transform 0.3s ease;
+  transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.5, 1);
 }
 
 .page-forward-leave-active,

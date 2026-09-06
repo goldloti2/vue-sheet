@@ -14,7 +14,7 @@
 - App Bar 左側圖示依路由自動切換漢堡選單／返回箭頭
 - 頁面前進/後退轉場動畫，方向依「導覽列順序 → 回到頂層 → 同路由換 id 依列表順序 → 瀏覽器歷史前後」四層判定（見 README 八）
 - 底部導覽列切換分頁用 `replace`，內頁不會堆進歷史
-- 列表頁 `<KeepAlive>` 保留展開與捲動狀態
+- `<KeepAlive :max="50">` 以 `route.fullPath` 為 key，保留列表的展開與捲動狀態；同時讓「同路由換 id」能觸發轉場動畫
 
 ### Schema 型別系統
 - `SchemaColumn` / `TableSchema` 型別，`type` 支援 `text`／`number`／`date`／`ref`／`select`

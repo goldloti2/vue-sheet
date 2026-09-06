@@ -1,7 +1,10 @@
 <script lang="ts" setup>
+  import { useRoute } from 'vue-router'
   import AppShell from '@/components/ui/AppShell.vue'
   import { navItems } from '@/config/navigation'
   import { transitionDir } from '@/router'
+
+  const route = useRoute()
 </script>
 
 <template>
@@ -10,8 +13,8 @@
       <div class="page-transition-viewport">
         <router-view v-slot="{ Component }">
           <transition :name="transitionDir">
-            <keep-alive>
-              <component :is="Component" />
+            <keep-alive :max="50">
+              <component :is="Component" :key="route.fullPath" />
             </keep-alive>
           </transition>
         </router-view>

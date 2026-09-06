@@ -168,7 +168,11 @@ store.removeMany(table, ids)     // 逐筆刪，全部成功才一起從快取�
 
 ### 4.3 KeepAlive 與路由參數
 
-列表頁與 detail 頁都被 `<KeepAlive>` 快取，元件實例會跨路由重複使用，這帶來兩個必須注意的點：
+列表頁與 detail 頁都被 `<KeepAlive :max="50">` 快取，key 是 `route.fullPath`。
+
+**key 一定要帶完整網址**，否則同一個路由換 id（`/表名/A` → `/表名/B`）對 Vue 而言是同一個元件、同一個 vnode，會就地更新而不觸發 `<transition>`，翻上/下一筆就完全沒有動畫。代價是 KeepAlive 從「每個元件一份」變成「每個網址一份」，所以要配 `max` 收斂；連續翻超過 50 筆不回列表的話，列表頁會被擠掉、展開與捲動狀態就沒了。
+
+元件實例會跨路由重複使用，這帶來兩個必須注意的點：
 
 - **`[id]` 頁面取 id 一律用 `useRouteId()`**，不要自己讀 `route.params.id`。在 `setup` 裡讀一次會卡在第一次進入的 id（於是刪到別筆資料）；寫成完全響應式的 getter 又會在離開頁面時跟著變 `undefined`（返回動畫期間閃「找不到這筆資料」）。`useRouteId()` 跟著路由更新，但只在參數真的存在時更新。
 - **列表載入中不要用 `v-if` 把列表整個換掉**。`v-if="loading"` / `v-else` 會在每次背景重新整理時卸載重建，`GroupedList` 的展開狀態就沒了。改用 `v-progress-linear v-if="loading"` 搭配獨立的 `v-if="!error"`，讓列表持續掛著。

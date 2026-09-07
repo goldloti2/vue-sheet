@@ -29,4 +29,4 @@
 
 | prop | 型別 | 說明 |
 | --- | --- | --- |
-| `actions` | `PageAction[]` | **必填**，`{ key, label, icon, onClick }` |
+| `actions` | `PageAction[]` | **必填**，`{ key, label, icon, onClick, confirm? }`。有 `confirm: { title, text }` 就會先跳確認框，對話框由 `AppShell` 渲染，這裡不用管 |

@@ -2,6 +2,8 @@
 
 是/否確認框，建立在 `AppDialog` 上。自己帶取消/確定按鈕、loading 狀態與錯誤訊息區。
 
+> **動作的確認框不用自己擺**——`PageAction` 宣告 `confirm: { title, text }` 就好，`AppShell` 會統一渲染一個。這個元件只在需要自訂的確認流程時直接用。
+
 ## Usage
 
 ```vue

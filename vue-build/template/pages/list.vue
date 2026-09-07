@@ -14,8 +14,11 @@
   import { __table__Schema } from '@/schema/__table__'
   import { formatField } from '@/schema/types'
 
-  const { new: newAction } = use__Table__Actions()
-  const fabActions = [newAction]
+  // 有多選的話補上 selectedIds 與 onDeleted，並把 bulkDelete 註冊到 app-bar：
+  //   const { new: newActions, bulkDelete } = use__Table__Actions({ selectedIds, onDeleted: clearSelection })
+  //   useAppBarActions(() => bulkDelete.value)
+  // defaults 也可省略；要讓新增表單依當下頁面狀態預填時傳 getter
+  const { new: newActions } = use__Table__Actions()
 
   const { data, loading, error } = useSortedTableList<__Table__Row>('__table__', __table__Schema)
 
@@ -41,6 +44,6 @@
       </template>
     </v-container>
 
-    <PageFab :actions="fabActions" />
+    <PageFab :actions="newActions" />
   </div>
 </template>

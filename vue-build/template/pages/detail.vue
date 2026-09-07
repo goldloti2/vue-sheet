@@ -6,7 +6,6 @@
 <script lang="ts" setup>
   import type { __Table__Row } from '@/schema/__table__'
   import { Touch as vTouch } from 'vuetify/directives'
-  import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
   import DataDetail from '@/components/ui/DataDetail.vue'
   import PageFab from '@/components/ui/PageFab.vue'
   import RecordNav from '@/components/ui/RecordNav.vue'
@@ -21,8 +20,8 @@
   const { swipe } = useSiblingNav('__table__', id)
   const { row, loading, error } = useTableRow<__Table__Row>('__table__', id)
 
-  const { delete: deleteAction, edit: fabActions } = use__Table__Actions(row)
-  useAppBarActions(() => deleteAction?.actions.value ?? [])
+  const { delete: deleteActions, edit: editActions } = use__Table__Actions({ row })
+  useAppBarActions(() => deleteActions.value)
 </script>
 
 <template>
@@ -36,16 +35,6 @@
 
     <RecordNav :id="id" table="__table__" />
 
-    <PageFab :actions="fabActions" />
-
-    <ConfirmDialog
-      v-if="deleteAction"
-      v-model="deleteAction.dialog.open"
-      :error="deleteAction.dialog.error"
-      :loading="deleteAction.dialog.loading"
-      text="確定要刪除嗎？"
-      title="刪除確認"
-      @confirm="deleteAction.confirm"
-    />
+    <PageFab :actions="editActions" />
   </div>
 </template>

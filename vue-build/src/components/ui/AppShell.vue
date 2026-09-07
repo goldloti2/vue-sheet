@@ -3,6 +3,8 @@
   import { mdiArrowLeft, mdiDotsVertical } from '@mdi/js'
   import { computed, provide, shallowRef } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
+  import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
+  import { provideActionRunner } from '@/composables/useActionRunner'
   import { appBarActionsKey } from '@/composables/useAppBarActions'
   import { navigationCount } from '@/router'
 
@@ -31,9 +33,8 @@
     appBarActions.value = actions
   })
 
-  function handleActionClick (action: PageAction) {
-    action.onClick()
-  }
+  // 動作的執行與確認框都在這裡，頁面只負責註冊動作
+  const { dialog: actionDialog, confirm: confirmAction, run: runAction } = provideActionRunner()
 
   // 導覽列的目的地不用返回按鈕；其他方式進來的頁面（例如點列表項目進 detail）都算
   const showBack = computed(() => !props.navItems.some(item => item.to === route.path))
@@ -61,7 +62,7 @@
           :key="action.key"
           :aria-label="action.label"
           :icon="action.icon"
-          @click="handleActionClick(action)"
+          @click="runAction(action)"
         />
       </template>
 
@@ -76,12 +77,21 @@
             :key="action.key"
             :prepend-icon="action.icon"
             :title="action.label"
-            @click="handleActionClick(action)"
+            @click="runAction(action)"
           />
         </v-list>
       </v-menu>
     </template>
   </v-app-bar>
+
+  <ConfirmDialog
+    v-model="actionDialog.open"
+    :error="actionDialog.error"
+    :loading="actionDialog.loading"
+    :text="actionDialog.text"
+    :title="actionDialog.title"
+    @confirm="confirmAction"
+  />
 
   <v-navigation-drawer v-model="drawer" />
 

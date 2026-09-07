@@ -3,6 +3,7 @@
   import { mdiClose, mdiDotsVertical } from '@mdi/js'
   import { computed, onActivated, onDeactivated, shallowRef } from 'vue'
   import { useLayout } from 'vuetify'
+  import { useRunAction } from '@/composables/useActionRunner'
 
   defineProps<{
     actions: PageAction[]
@@ -23,8 +24,10 @@
     isActive.value = false
   })
 
+  const runAction = useRunAction()
+
   function handleActionClick (action: PageAction) {
-    action.onClick()
+    runAction(action)
     open.value = false
   }
 </script>

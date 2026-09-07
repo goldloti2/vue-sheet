@@ -42,16 +42,18 @@
 - 其他：`PageFab`、`TabView`、`RecordNav`、`AppDialog`、`ConfirmDialog`
 
 ### 動作系統
-- `PageAction` 型別，FAB 與 App Bar 共用同一種描述
-- 通用 builder：`useNewAction` / `useEditAction` / `useDeleteAction` / `useBulkDeleteAction`
+- `PageAction` 型別（`{ key, label, icon, onClick, confirm? }`），FAB 與 App Bar 共用同一種描述
+- 通用 builder：`useNewAction` / `useEditAction` / `useDeleteAction` / `useBulkDeleteAction`，一律回傳 `ComputedRef<PageAction[]>`
+- 需要確認的動作宣告 `confirm` 就好，對話框由 `AppShell` 統一渲染（`useActionRunner`），頁面不用擺 `ConfirmDialog`
+- 每張表的動作（含批次刪除）一律從 `use表名Actions(options)` 取，用不到的是空陣列
 - `useAppBarActions()` 用 provide/inject 把動作註冊到 App Bar，數量多自動收成下拉選單
 - `PageFab` 依數量自動在固定顯示與 speed-dial 之間切換
 
 ### 表單與多選
 - `useCreateForm` / `useEditForm` 收掉新增與編輯的重複邏輯（起始值、載入、送出、導覽、錯誤狀態）
-- 新增表單的預設值三層：schema 的 `default` → `useNewAction` 經 `history.state` 帶來的 → `useCreateForm` 的參數（機制完成，package/item 目前都沒設值）
+- 新增表單的預設值三層：schema 的 `default` → `useNewAction` 經 `history.state` 帶來的 → `useCreateForm` 的參數
 - `useMultiSelect` + `useLongPress`：長按進入多選，選取狀態由「有沒有選取任何一筆」推導
-- 批次刪除搭配 `ConfirmDialog`
+- 批次刪除走動作的 `confirm`
 
 ### 路由
 - `useRouteId()`：路由參數讀一次就固定（靠 `route.fullPath` 當 key 成立），離場動畫期間不會被目的地的 id 汙染。拿掉 key 時開發模式會警告

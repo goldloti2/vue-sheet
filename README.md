@@ -112,6 +112,7 @@ src/
     useRouteId.ts             [id] 頁面取路由參數（見 4.3）
     useListOrder.ts           列表頁發布顯示順序、detail 頁取上/下一筆
     useAppBarActions.ts       把動作註冊到 AppShell 的 app-bar（provide/inject）
+    useActionRunner.ts        動作的執行與確認框，由 AppShell 統一處理
     useMultiSelect.ts         多選狀態
     useLongPress.ts           長按偵測
     actions/
@@ -178,6 +179,8 @@ store.removeMany(table, ids)     // 逐筆刪，全部成功才一起從快取�
 
 - **路由參數 → 讀一次就固定。** key 帶了完整網址，所以一個實例終其一生只對應一個 URL，路由參數對它而言是常數。`[id]` 頁面一律用 `useRouteId()`，它就是「setup 讀一次」，**不要**自己去 `watch` `route.params.id`：跟著路由走的話，離開中的頁面會拿到目的地的 id——目的地沒有 id 就變 `undefined` 閃「找不到這筆資料」，是別張表的 id 就查不到、同樣閃，是同一張表的另一個 id（上/下一筆）就直接渲染成新那筆，讓離場動畫看起來像內容自我複製。這條規則依賴上面的 `:key`，拿掉的話 `useRouteId()` 會在開發模式印出警告。
 - **共用快取 → 讓它變。** 資料真的被刪掉時，離開中的頁面顯示「找不到這筆資料」是**正確**的，沒有為它加凍結機制（見 ROADMAP 的權宜作法）。`useEditForm` 在 `row` 變 null 時清空表單也是同一個道理。
+
+**網址固定的頁面（例如 `/表名/new`）會被一直重用。** key 是 `route.fullPath`，而新增頁不管從哪裡進去網址都一樣，所以 KeepAlive 只會有一份實例、`setup` 只跑一次。任何「每次進場都該重算」的東西要放進 `onActivated`——`useCreateForm` 就是在那裡重建表單初始值，否則表單會停在上一次的內容，導覽帶來的預設值也只讀得到第一次那份。
 
 掛在頁面之外的浮動 UI（`PageFab`、`RecordNav` 用 Teleport 送到 `body`）不受上面兩條管，要自己用 `onActivated`/`onDeactivated` 決定顯示與否，否則離開的頁面會把按鈕留在畫面上。
 
@@ -299,7 +302,10 @@ hooks: {
 - 長按列表項目進入多選模式，選取狀態一有內容就自動進入、清空就自動離開，不另外存 boolean
 - 右下角 FAB：動作 ≤2 顆固定顯示，≥3 顆收合成 speed-dial
 - App Bar 右側動作按鈕：頁面用 `useAppBarActions()` 註冊，≤2 顆直接顯示，≥3 顆收成「⋮」下拉。跟 FAB 不同，這裡走 **provide/inject** 而非 Teleport——app-bar 在轉場動畫的 `.page-transition-viewport` 之外，不會被 `transform` 影響，不需要真的搬 DOM
-- FAB 與 App Bar 動作共用同一種 `PageAction` 型別 `{ key, label, icon, onClick }`。新增/編輯/刪除是每張表都有的通用動作，寫成共用 builder；每張表的 `use表名Actions.ts` 呼叫這些 builder 組出自己的動作集合，該表獨有的動作也加在那裡。頁面自己決定用哪幾個、放 FAB 還是 App Bar
+- FAB 與 App Bar 動作共用同一種 `PageAction` 型別 `{ key, label, icon, onClick, confirm? }`。頁面自己決定用哪幾個、放 FAB 還是 App Bar
+- **需要確認的動作只要宣告 `confirm: { title, text }`**，不用自己擺 `ConfirmDialog`。`AppShell` 用跟 `useAppBarActions` 同一套 provide/inject 提供 `runAction`，按鈕點下去交給它：沒有 `confirm` 就直接執行，有的話先開對話框、按確定才跑，而 `onClick` 回傳的 Promise 由對話框接住 loading 與錯誤。整個 App 只有一個確認框實例
+- **所有 builder 都回傳 `ComputedRef<PageAction[]>`**（`PageActions`），沒有單數複數之分，呼叫端可以直接串接；沒有可用動作時就是空陣列，不需要 `undefined` 或 null 檢查
+- 每張表的動作**一律從 `use表名Actions(options)` 取**，包含批次刪除。options 全是可選的，呼叫端只給自己有的東西（列表頁給 `selectedIds`/`onDeleted`，detail 頁給 `row`），用不到的動作就是空陣列——因為形狀統一，這裡不需要 `undefined` 或分支。每個呼叫端專屬的設定（例如新增表單的預設值）也放在這個 options 裡
 - 頁面切換有前進/後退轉場動畫。方向由 `router/index.ts` 的 `afterEach` 分四層判定，先命中先算：**(1)** 兩端都是導覽項目 → 依導覽列排列順序（右邊的算前進）；**(2)** 只有目的地是導覽項目 → 一律後退，因為從內頁回到頂層就是往外；**(3)** 同一個路由換 id、而且兩筆都在列表發布的順序裡 → 依它們在列表中的先後；**(4)** 其他 → 看 `history.state.position` 是往前還是往後，也就是點連結/action 算前進、返回鍵算後退
 - detail 頁的上/下一筆（`RecordNav` 的箭頭與 `v-touch` 手勢）走 `useSiblingNav`，順序來自列表頁用 `useListOrder` 發布的**畫面實際順序**（含篩選、頁籤、分組），頭尾不輪轉，切換用 `replace` 所以不會把每一筆都堆進歷史。第 (3) 層規則就是為它存在的——`replace` 不會改變 `history.state.position`，只靠第 (4) 層會一律判成前進
 - 底部導覽列的按鈕用 `replace`，切分頁時覆蓋掉目前那筆歷史。內頁不會堆進歷史，連續切換也不會讓歷史一直變長；代價是站在導覽項目頁按瀏覽器返回不會回到上一個分頁

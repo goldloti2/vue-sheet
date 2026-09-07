@@ -1,7 +1,7 @@
 import type { TableKey } from '@/schema'
 import type { TableSchema } from '@/schema/types'
 import type { MaybeRefOrGetter } from 'vue'
-import { ref, watch } from 'vue'
+import { onActivated, ref, watch } from 'vue'
 import { leaveAfterAction, navigationDefaults } from '@/router'
 import { columnValues, emptyRow } from '@/schema/types'
 import { useTablesStore } from '@/stores/tables'
@@ -44,12 +44,21 @@ export function useCreateForm<Row extends HasId> (
 ) {
   const store = useTablesStore()
 
-  const form = ref<Row>({
-    ...emptyRow<Row>(schema),
-    ...navigationDefaults<Row>(),
-    ...defaults,
-  } as Row)
+  function initialForm (): Row {
+    return {
+      ...emptyRow<Row>(schema),
+      ...navigationDefaults<Row>(),
+      ...defaults,
+    } as Row
+  }
+
+  const form = ref<Row>(initialForm())
   const { submitting, error, run } = useSubmitState()
+
+  onActivated(() => {
+    form.value = initialForm()
+    error.value = null
+  })
 
   async function submit () {
     await run(async () => {

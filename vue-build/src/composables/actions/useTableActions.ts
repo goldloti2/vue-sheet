@@ -1,27 +1,51 @@
 import type { TableKey } from '@/schema'
-import type { Ref } from 'vue'
-import type { RouteLocationRaw } from 'vue-router'
+import type { MaybeRefOrGetter, Ref } from 'vue'
 import { mdiDelete, mdiPencil, mdiPlus } from '@mdi/js'
-import { computed, reactive } from 'vue'
-import { leaveAfterAction } from '@/router'
+import { computed, reactive, toValue } from 'vue'
+import router, { leaveAfterAction, pushWithDefaults } from '@/router'
 import { useTablesStore } from '@/stores/tables'
 
 export interface PageAction {
   key: string
   label: string
   icon: string
-  to?: RouteLocationRaw
-  onClick?: () => void
+  onClick: () => void
 }
 
-export function useNewAction (table: TableKey): PageAction {
-  return { key: 'new', label: '新增', icon: mdiPlus, to: `/${table}/new` }
+export function useNewAction (
+  table: TableKey,
+  defaults?: MaybeRefOrGetter<Record<string, unknown>>,
+): PageAction {
+  const path = `/${table}/new`
+
+  return {
+    key: 'new',
+    label: '新增',
+    icon: mdiPlus,
+    onClick: () => {
+      if (defaults === undefined) {
+        void router.push(path)
+      } else {
+        pushWithDefaults(path, toValue(defaults))
+      }
+    },
+  }
 }
 
 export function useEditAction (table: TableKey, row: Ref<{ id: string } | null>) {
-  return computed<PageAction[]>(() => row.value
-    ? [{ key: 'edit', label: '編輯', icon: mdiPencil, to: `/${table}/${row.value.id}/edit` }]
-    : [])
+  return computed<PageAction[]>(() => {
+    const current = row.value
+    if (!current) {
+      return []
+    }
+
+    return [{
+      key: 'edit',
+      label: '編輯',
+      icon: mdiPencil,
+      onClick: () => void router.push(`/${table}/${current.id}/edit`),
+    }]
+  })
 }
 
 export function useDeleteAction (table: TableKey, row: Ref<{ id: string } | null>) {

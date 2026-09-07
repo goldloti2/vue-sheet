@@ -32,7 +32,7 @@
   })
 
   function handleActionClick (action: PageAction) {
-    action.onClick?.()
+    action.onClick()
   }
 
   // 導覽列的目的地不用返回按鈕；其他方式進來的頁面（例如點列表項目進 detail）都算
@@ -61,7 +61,6 @@
           :key="action.key"
           :aria-label="action.label"
           :icon="action.icon"
-          :to="action.to"
           @click="handleActionClick(action)"
         />
       </template>
@@ -77,7 +76,6 @@
             :key="action.key"
             :prepend-icon="action.icon"
             :title="action.label"
-            :to="action.to"
             @click="handleActionClick(action)"
           />
         </v-list>

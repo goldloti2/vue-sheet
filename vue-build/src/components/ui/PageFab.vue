@@ -24,7 +24,7 @@
   })
 
   function handleActionClick (action: PageAction) {
-    action.onClick?.()
+    action.onClick()
     open.value = false
   }
 </script>
@@ -41,7 +41,6 @@
           :icon="action.icon"
           rounded
           size="default"
-          :to="action.to"
           @click="handleActionClick(action)"
         />
       </template>
@@ -74,7 +73,6 @@
               :icon="action.icon"
               rounded
               size="small"
-              :to="action.to"
               @click="handleActionClick(action)"
             />
           </div>

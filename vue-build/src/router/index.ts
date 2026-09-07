@@ -5,7 +5,7 @@
  */
 
 // Composables
-import type { RouteLocationNormalized, RouteLocationRaw } from 'vue-router'
+import type { HistoryState, RouteLocationNormalized, RouteLocationRaw } from 'vue-router'
 import { shallowRef } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
 import { routes } from 'vue-router/auto-routes'
@@ -79,6 +79,16 @@ router.afterEach((to, from) => {
 
   navigationCount.value++
 })
+
+// 新增動作可以帶預設值給目的地的表單。放 history.state 而不是網址
+export function pushWithDefaults (path: string, defaults: Record<string, unknown>): void {
+  void router.push({ path, state: { defaults } as HistoryState })
+}
+
+export function navigationDefaults<Row> (): Partial<Row> {
+  const { defaults } = router.options.history.state
+  return (defaults ?? {}) as Partial<Row>
+}
 
 export function leaveAfterAction (fallback: RouteLocationRaw): void {
   if (navigationCount.value > 1) {

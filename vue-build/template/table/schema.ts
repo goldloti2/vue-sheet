@@ -21,6 +21,10 @@ export const __table__Schema: TableSchema = {
     // 其他可用型別：
     // { key: 'status', label: '狀態', type: 'select', options: ['選項A', '選項B'] },
     // { key: 'parent', label: 'Parent', type: 'ref', refTable: 'parent' },
+
+    // 新增表單的初始值用 default，可省略。值或函式都可以，函式是打開表單那一刻才求值：
+    // { key: 'status', label: '狀態', type: 'select', options: [...], default: '選項A' },
+    // { key: 'date', label: '日期', type: 'date', default: () => new Date() },
   ],
 
   // 以下三個都可省略

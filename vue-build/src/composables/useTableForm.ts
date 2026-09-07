@@ -2,7 +2,7 @@ import type { TableKey } from '@/schema'
 import type { TableSchema } from '@/schema/types'
 import type { MaybeRefOrGetter } from 'vue'
 import { ref, watch } from 'vue'
-import { leaveAfterAction } from '@/router'
+import { leaveAfterAction, navigationDefaults } from '@/router'
 import { columnValues, emptyRow } from '@/schema/types'
 import { useTablesStore } from '@/stores/tables'
 import { useTableRow } from './useTableRow'
@@ -31,10 +31,24 @@ function useSubmitState () {
   return { submitting, error, run }
 }
 
-export function useCreateForm<Row extends HasId> (table: TableKey, schema: TableSchema) {
+/**
+ * 初始值由三層疊出來，優先度由上而下：
+ *   1. `defaults` 參數（頁面自己算得出來的，例如巢狀路由的父層 id）
+ *   2. 導覽帶來的 `history.state.defaults`（從哪裡按新增決定，見 useNewAction）
+ *   3. schema 的 `default`（跟來源無關的固定預設值）
+ */
+export function useCreateForm<Row extends HasId> (
+  table: TableKey,
+  schema: TableSchema,
+  defaults?: Partial<Row>,
+) {
   const store = useTablesStore()
 
-  const form = ref<Row>(emptyRow<Row>(schema))
+  const form = ref<Row>({
+    ...emptyRow<Row>(schema),
+    ...navigationDefaults<Row>(),
+    ...defaults,
+  } as Row)
   const { submitting, error, run } = useSubmitState()
 
   async function submit () {

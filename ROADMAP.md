@@ -20,7 +20,7 @@
 - `SchemaColumn` / `TableSchema` 型別，`type` 支援 `text`／`number`／`date`／`ref`／`select`
 - `coerceRow`（後端字串 → 前端型別）與 `serializeRow`（反向）
 - `formatColumnValue` / `formatField` 顯示格式化
-- `columnValues`（組送出用 payload）、`emptyRow`（新增表單起始值）
+- `columnValues`（組送出用 payload）、`emptyRow`（新增表單起始值，套用欄位的 `default`）
 - `sortRows`（依 `defaultSort`）、`sortByKey`、`groupRows`（多層分組）、`flattenGroups`（把分組攤回畫面順序）
 - `detailOrder` / `formOrder` 分別控制詳細頁與表單頁的欄位順序
 
@@ -49,6 +49,7 @@
 
 ### 表單與多選
 - `useCreateForm` / `useEditForm` 收掉新增與編輯的重複邏輯（起始值、載入、送出、導覽、錯誤狀態）
+- 新增表單的預設值三層：schema 的 `default` → `useNewAction` 經 `history.state` 帶來的 → `useCreateForm` 的參數（機制完成，package/item 目前都沒設值）
 - `useMultiSelect` + `useLongPress`：長按進入多選，選取狀態由「有沒有選取任何一筆」推導
 - 批次刪除搭配 `ConfirmDialog`
 
@@ -136,9 +137,10 @@ pending: Map<TableKey, Map<id, { kind: 'create' | 'update' | 'delete', values: P
 - 全選（考慮中）
 
 ### 動作與表單
-- 新增時自動填入預設值
-- 連續 action：做完不返回上一頁，直接接著下一個 action
-- 指定某個 action 結束後要回哪一頁（可能跟連續 action 一起設計）
+「完成後去哪」是同一個機制的三種用法，預設（不指定）＝回上一頁，也就是現在的 `leaveAfterAction`：
+- **指定某個 action 結束後回哪一頁**——例如新增完直接進那筆的 detail，而不是回列表。用 `replace` 不能用 `push`，否則已完成的表單會留在歷史裡
+- **連續 action**——做完接著下一個表單。等於上一條的目的地剛好是一個表單，再加上把上一步的結果當預設值帶過去（預設值的機制已經做好了，見上面「表單與多選」）
+- 每一步都是獨立送出的，所以中途取消會留下半成品。要真正的原子性得等累積寫入
 
 ### PWA 與離線
 - manifest.json、Service Worker 都還沒建立（`vite-plugin-pwa` 未安裝）

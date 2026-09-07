@@ -200,6 +200,16 @@ store.removeMany(table, ids)     // 逐筆刪，全部成功才一起從快取�
 
 `schema/index.ts` 另外帶「代稱 → 實際 Sheet 分頁名稱」的對照：程式碼裡好打的英文代稱（例如 `'order'`）不等於 Sheet 分頁的實際名稱（可能是中文）。打 API 時用的是 schema 裡的 `sheetName`，兩者故意分開——換代稱不影響 API，換分頁名稱也不用到處改字串。
 
+**新增表單的初始值**分三層疊出來，後面的蓋前面的：schema 欄位的 `default`（跟來源無關的固定值）→ 導覽帶來的 `history.state.defaults`（從哪裡按新增決定）→ `useCreateForm` 的第三個參數（頁面自己算得出來的）。`default` 可以是值也可以是函式，函式在打開表單那一刻才求值（例如 `() => new Date()`）。
+
+第二層是給「同一個新增頁、不同來源要不同預設值」用的：`useNewAction(table, defaults)` 的 `defaults` 收 getter，點下去的當下才求值。
+
+**`PageAction` 因此只有 `onClick`，沒有宣告式的 `to`。** 原因是求值時機——action 物件在頁面 setup 時就建好，寫進 `to` 的值那時定型，切了頁籤再按新增會帶到舊的狀態。（`to` 本身其實可以帶 `state`，`RouterLink` 會把整個 `to` 丟給 `router.push`，問題只在求值時機。）統一成一種也免得兩個都設時變成「導覽 + 執行 onClick」兩件事一起發生。代價是動作按鈕渲染成 `<button>` 而非 `<a>`，失去中鍵開新分頁與連結的無障礙語意；這個 App 的動作都在 FAB 與 App Bar 上，用不太到。
+
+選 `history.state` 而不是 query param 是為了不讓值出現在網址上；它比全域變數好的地方是**值綁在那一筆歷史紀錄上**，不會殘留下來汙染之後不相關的表單。
+
+> 注意：函式型的 `default` 只存在於前端。README 4.5 的前提是前後端各自維護一份 schema，靜態預設值兩邊可以對照著寫，函式沒辦法——這跟「合法性驗證只在前端做」是同一條線，預設值屬於使用者輸入前的建議，是前端的職責。
+
 `SchemaColumn.type` 有 `text`／`number`／`date`／`ref`／`select`。用 discriminated union 寫，讓「標了 `type: 'ref'` 卻忘記填 `refTable`」在編譯期就報錯。`refTable` 目前只存代稱字串，沒有型別檢查它是否真的存在於 `schemas`——這是為了避免 `schema/types.ts` 反過來 import `schema/index.ts` 造成循環依賴，先接受這個小缺口。
 
 ### 4.6 頁面範本的四種型態
@@ -289,7 +299,7 @@ hooks: {
 - 長按列表項目進入多選模式，選取狀態一有內容就自動進入、清空就自動離開，不另外存 boolean
 - 右下角 FAB：動作 ≤2 顆固定顯示，≥3 顆收合成 speed-dial
 - App Bar 右側動作按鈕：頁面用 `useAppBarActions()` 註冊，≤2 顆直接顯示，≥3 顆收成「⋮」下拉。跟 FAB 不同，這裡走 **provide/inject** 而非 Teleport——app-bar 在轉場動畫的 `.page-transition-viewport` 之外，不會被 `transform` 影響，不需要真的搬 DOM
-- FAB 與 App Bar 動作共用同一種 `PageAction` 型別 `{ key, label, icon, to?, onClick? }`。新增/編輯/刪除是每張表都有的通用動作，寫成共用 builder；每張表的 `use表名Actions.ts` 呼叫這些 builder 組出自己的動作集合，該表獨有的動作也加在那裡。頁面自己決定用哪幾個、放 FAB 還是 App Bar
+- FAB 與 App Bar 動作共用同一種 `PageAction` 型別 `{ key, label, icon, onClick }`。新增/編輯/刪除是每張表都有的通用動作，寫成共用 builder；每張表的 `use表名Actions.ts` 呼叫這些 builder 組出自己的動作集合，該表獨有的動作也加在那裡。頁面自己決定用哪幾個、放 FAB 還是 App Bar
 - 頁面切換有前進/後退轉場動畫。方向由 `router/index.ts` 的 `afterEach` 分四層判定，先命中先算：**(1)** 兩端都是導覽項目 → 依導覽列排列順序（右邊的算前進）；**(2)** 只有目的地是導覽項目 → 一律後退，因為從內頁回到頂層就是往外；**(3)** 同一個路由換 id、而且兩筆都在列表發布的順序裡 → 依它們在列表中的先後；**(4)** 其他 → 看 `history.state.position` 是往前還是往後，也就是點連結/action 算前進、返回鍵算後退
 - detail 頁的上/下一筆（`RecordNav` 的箭頭與 `v-touch` 手勢）走 `useSiblingNav`，順序來自列表頁用 `useListOrder` 發布的**畫面實際順序**（含篩選、頁籤、分組），頭尾不輪轉，切換用 `replace` 所以不會把每一筆都堆進歷史。第 (3) 層規則就是為它存在的——`replace` 不會改變 `history.state.position`，只靠第 (4) 層會一律判成前進
 - 底部導覽列的按鈕用 `replace`，切分頁時覆蓋掉目前那筆歷史。內頁不會堆進歷史，連續切換也不會讓歷史一直變長；代價是站在導覽項目頁按瀏覽器返回不會回到上一個分頁

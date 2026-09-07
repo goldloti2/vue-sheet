@@ -1,16 +1,19 @@
+// 新增表單的初始值。給函式的話是打開表單那一刻才求值
+export type ColumnDefault<T> = T | (() => T)
+
 export type SchemaColumn = {
   key: string
   label: string
   // 省略時預設跟 label 同值（見《GoogleSheet後端App-通用架構》文件 6.6 節）
   sheetHeader?: string
 } & (
-  | { type: 'text' }
-  | { type: 'number' }
-  | { type: 'date' }
+  | { type: 'text', default?: ColumnDefault<string | null> }
+  | { type: 'number', default?: ColumnDefault<number | null> }
+  | { type: 'date', default?: ColumnDefault<Date | null> }
   // 外鍵欄位（見文件 4.2 節一對多關聯慣例）；refTable 對應 schema/index.ts 的 schemas 裡的 key
-  | { type: 'ref', refTable: string }
+  | { type: 'ref', refTable: string, default?: ColumnDefault<string | null> }
   // 清單類欄位：只能是 options 裡的其中一個值
-  | { type: 'select', options: string[] }
+  | { type: 'select', options: string[], default?: ColumnDefault<string | null> }
 )
 
 export interface SortSpec {
@@ -108,12 +111,18 @@ export function formatField (row: object, schema: TableSchema, key: string): str
   return column ? formatColumnValue(row, column) : ''
 }
 
-// 依 schema 產生一筆空白 row，給新增表單當初始值；id 留空，由後端產生
+// 沒有 default 的欄位是 null；有的話套上去，函式型的在這裡才求值
+function columnDefault (column: SchemaColumn): unknown {
+  const value = column.default
+  return typeof value === 'function' ? value() : value ?? null
+}
+
+// 依 schema 產生一筆 row 給新增表單當初始值；id 留空，由後端產生
 export function emptyRow<Row> (schema: TableSchema): Row {
   const result: Record<string, unknown> = { id: '' }
 
   for (const column of schema.columns) {
-    result[column.key] = null
+    result[column.key] = columnDefault(column)
   }
 
   return result as Row

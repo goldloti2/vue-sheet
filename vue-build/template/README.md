@@ -76,6 +76,7 @@
 | `columns[].type` | `text` / `number` / `date` / `select` / `ref` |
 | `columns[].options` | 只有 `type: 'select'` 要填，該欄位的可選值 |
 | `columns[].refTable` | 只有 `type: 'ref'` 要填，指向哪張表（`schemas` 的 key） |
+| `columns[].default` | 新增表單的初始值，可省略。值或函式（`() => new Date()`），函式在打開表單時才求值 |
 | `defaultSort` | 列表頁預設排序，多筆依序當 tiebreaker。可省略 |
 | `detailOrder` | 詳細頁欄位順序。可省略，省略就沿用 `columns` 順序 |
 | `formOrder` | 表單頁欄位順序。可省略，跟 `detailOrder` 分開設定 |

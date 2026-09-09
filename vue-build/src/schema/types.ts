@@ -6,9 +6,10 @@ export type SchemaColumn = {
   label: string
   // 省略時預設跟 label 同值（見《GoogleSheet後端App-通用架構》文件 6.6 節）
   sheetHeader?: string
+  required?: boolean
 } & (
   | { type: 'text', default?: ColumnDefault<string | null> }
-  | { type: 'number', default?: ColumnDefault<number | null> }
+  | { type: 'number', default?: ColumnDefault<number | null>, min?: number, max?: number }
   | { type: 'date', default?: ColumnDefault<Date | null> }
   // 外鍵欄位（見文件 4.2 節一對多關聯慣例）；refTable 對應 schema/index.ts 的 schemas 裡的 key
   | { type: 'ref', refTable: string, default?: ColumnDefault<string | null> }

@@ -119,7 +119,10 @@ pending: Map<TableKey, Map<id, { kind: 'create' | 'update' | 'delete', values: P
 表單一律送整列（不做最小差集），所以 `update` 的 `values` 會是整列——payload 大一點，但省掉在 `useEditForm` 裡比對原始值的複雜度。之後真的需要再優化。
 
 ### 資料一致性
-- 前端驗證：目前送出前完全沒有檢查。**做累積寫入的前置條件**——累積模式下錯誤要到按推送才會爆，那時使用者已經離開表單很久了
+- **前端驗證**：form 層已完成（`schema/validation.ts` 的 `validateRow`＋`SchemaColumn` 上的 `required`／`min`／`max`，見 [README 4.5](README.md#45-schema-的角色)）。剩下的：
+  - **store 寫入層還沒接**同一個 `validateRow`。等累積寫入把寫入路徑定下來再做，免得白搬一次
+  - 日期範圍、文字長度、正則格式都還沒有，等真的有需求再加進 `SchemaColumn`
+  - `ref` 欄位不檢查目標是否存在。等關聯選擇器做好（見「UI 功能」），改成用選的就不會填到不存在的
 - 驗證的分工已定案，見 [README 4.5](README.md#45-schema-的角色)：合法性只在前端做，一份 schema 推導出的驗證函式用在 form 層（即時提示）與 store 寫入層（擋程式 bug）兩處；後端只做安全性與結構完整性
 - 樂觀鎖定：`updatedAt` 欄位與衝突提示都還沒做
 

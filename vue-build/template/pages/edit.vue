@@ -12,7 +12,7 @@
 
   const id = useRouteId()
 
-  const { form, loading, loadError, submitting, error, submit }
+  const { form, fieldErrors, loading, loadError, submitting, error, submit }
     = useEditForm<__Table__Row>('__table__', __table__Schema, id)
 </script>
 
@@ -31,7 +31,7 @@
     </v-container>
 
     <template v-else>
-      <DataForm v-model="form" :schema="__table__Schema" />
+      <DataForm v-model="form" :errors="fieldErrors" :schema="__table__Schema" />
 
       <v-container>
         <v-alert v-if="error" class="mb-4" :text="error" type="error" />

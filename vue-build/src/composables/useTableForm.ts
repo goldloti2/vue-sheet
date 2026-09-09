@@ -4,11 +4,43 @@ import type { MaybeRefOrGetter } from 'vue'
 import { onActivated, ref, watch } from 'vue'
 import { leaveAfterAction, navigationDefaults } from '@/router'
 import { columnValues, emptyRow } from '@/schema/types'
+import { validateRow } from '@/schema/validation'
 import { useTablesStore } from '@/stores/tables'
 import { useTableRow } from './useTableRow'
 
 interface HasId {
   id: string
+}
+
+const INVALID_MESSAGE = '請先修正標示的欄位'
+
+function useValidation (schema: TableSchema, row: () => object | null) {
+  const fieldErrors = ref<Record<string, string>>({})
+  const showErrors = ref(false)
+
+  function validate (): boolean {
+    const current = row()
+    fieldErrors.value = current ? validateRow(current, schema) : {}
+    return Object.keys(fieldErrors.value).length === 0
+  }
+
+  watch(row, () => {
+    if (showErrors.value) {
+      validate()
+    }
+  })
+
+  function check (): boolean {
+    showErrors.value = true
+    return validate()
+  }
+
+  function reset () {
+    showErrors.value = false
+    fieldErrors.value = {}
+  }
+
+  return { fieldErrors, check, reset }
 }
 
 function useSubmitState () {
@@ -54,20 +86,27 @@ export function useCreateForm<Row extends HasId> (
 
   const form = ref<Row>(initialForm())
   const { submitting, error, run } = useSubmitState()
+  const { fieldErrors, check, reset: resetErrors } = useValidation(schema, () => form.value)
 
   onActivated(() => {
     form.value = initialForm()
     error.value = null
+    resetErrors()
   })
 
   async function submit () {
+    if (!check()) {
+      error.value = INVALID_MESSAGE
+      return
+    }
+
     await run(async () => {
       await store.create<Row>(table, columnValues(form.value, schema))
       leaveAfterAction(`/${table}`)
     })
   }
 
-  return { form, submitting, error, submit }
+  return { form, fieldErrors, submitting, error, submit }
 }
 
 export function useEditForm<Row extends HasId> (
@@ -86,10 +125,16 @@ export function useEditForm<Row extends HasId> (
   }, { immediate: true })
 
   const { submitting, error, run } = useSubmitState()
+  const { fieldErrors, check } = useValidation(schema, () => form.value)
 
   async function submit () {
     const current = form.value
     if (!current) {
+      return
+    }
+
+    if (!check()) {
+      error.value = INVALID_MESSAGE
       return
     }
 
@@ -99,5 +144,5 @@ export function useEditForm<Row extends HasId> (
     })
   }
 
-  return { form, loading, loadError, submitting, error, submit }
+  return { form, fieldErrors, loading, loadError, submitting, error, submit }
 }

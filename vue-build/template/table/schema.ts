@@ -14,8 +14,8 @@ export const __table__Schema: TableSchema = {
   idColumn: 'TPL-ID',
   columns: [
     // label 就是 Sheet 表頭文字；兩者不同時才另外加 sheetHeader: '實際表頭'
-    { key: 'name', label: '名稱', type: 'text' },
-    { key: 'amount', label: '金額', type: 'number' },
+    { key: 'name', label: '名稱', type: 'text', required: true },
+    { key: 'amount', label: '金額', type: 'number', min: 0 },
     { key: 'date', label: '日期', type: 'date' },
 
     // 其他可用型別：
@@ -25,6 +25,10 @@ export const __table__Schema: TableSchema = {
     // 新增表單的初始值用 default，可省略。值或函式都可以，函式是打開表單那一刻才求值：
     // { key: 'status', label: '狀態', type: 'select', options: [...], default: '選項A' },
     // { key: 'date', label: '日期', type: 'date', default: () => new Date() },
+
+    // 驗證用的約束，都可省略。空著就是「不限制」：
+    //   required: true   空值就擋下送出，所有型別通用
+    //   min / max        只有 number 有，同時當輸入欄的上下限與送出前的檢查
   ],
 
   // 以下三個都可省略

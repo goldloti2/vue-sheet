@@ -4,6 +4,7 @@
 
   const props = defineProps<{
     schema: TableSchema
+    errors?: Record<string, string>
   }>()
 
   // 跟 DataDetail 一樣用 object，實際存取時再轉型（見 schema/types.ts 的 formatColumnValue）
@@ -42,6 +43,14 @@
   function setTextValue (column: SchemaColumn, value: string) {
     setFieldValue(column, value === '' ? null : value)
   }
+
+  function errorFor (column: SchemaColumn): string | string[] {
+    return props.errors?.[column.key] ?? []
+  }
+
+  function numberBound (column: SchemaColumn, bound: 'min' | 'max'): number | undefined {
+    return column.type === 'number' ? column[bound] : undefined
+  }
 </script>
 
 <template>
@@ -49,13 +58,17 @@
     <template v-for="column in orderedColumns" :key="column.key">
       <v-number-input
         v-if="column.type === 'number'"
+        :error-messages="errorFor(column)"
         :label="column.label"
+        :max="numberBound(column, 'max')"
+        :min="numberBound(column, 'min')"
         :model-value="numberValue(column)"
         @update:model-value="(value) => setFieldValue(column, value)"
       />
 
       <v-date-input
         v-else-if="column.type === 'date'"
+        :error-messages="errorFor(column)"
         input-format="yyyy/mm/dd"
         :label="column.label"
         :model-value="dateValue(column)"
@@ -64,6 +77,7 @@
 
       <v-select
         v-else-if="column.type === 'select'"
+        :error-messages="errorFor(column)"
         :items="column.options"
         :label="column.label"
         :model-value="textValue(column)"
@@ -73,6 +87,7 @@
       <!-- text、ref 都先用純輸入欄；ref 之後再考慮換成關聯資料的選擇器 -->
       <v-text-field
         v-else
+        :error-messages="errorFor(column)"
         :label="column.label"
         :model-value="textValue(column)"
         @update:model-value="(value) => setTextValue(column, value)"

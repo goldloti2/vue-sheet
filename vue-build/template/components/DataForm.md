@@ -6,6 +6,8 @@
 
 `v-model` 綁的 row 物件通常不用自己組——新增/編輯頁用 `useCreateForm`／`useEditForm` 拿現成的 `form`，起始值、載入、送出、導覽都處理好了。
 
+驗證也一樣：`errors` 直接接同一個 composable 回傳的 `fieldErrors`，這個元件只負責把訊息畫到對應欄位旁邊，不自己判斷合法性（規則寫在 schema 上，見 `table/schema.ts`）。
+
 ## Usage
 
 ```vue
@@ -13,11 +15,11 @@
   import DataForm from '@/components/ui/DataForm.vue'
   import { useCreateForm } from '@/composables/useTableForm'
 
-  const { form } = useCreateForm('__table__', schema)
+  const { form, fieldErrors } = useCreateForm('__table__', schema)
 </script>
 
 <template>
-  <DataForm v-model="form" :schema="schema" />
+  <DataForm v-model="form" :errors="fieldErrors" :schema="schema" />
 </template>
 ```
 
@@ -27,3 +29,4 @@
 | --- | --- | --- |
 | `v-model` | `object` | **必填**，整個 row 物件（雙向） |
 | `schema` | `TableSchema` | **必填** |
+| `errors` | `Record<string, string>` | `{ 欄位 key: 錯誤訊息 }`，省略就不顯示任何錯誤 |

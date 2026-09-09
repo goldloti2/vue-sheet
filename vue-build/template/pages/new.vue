@@ -10,12 +10,12 @@
   import { __table__Schema } from '@/schema/__table__'
 
   // 起始值依 schema 自動產生（全欄位 null），送出成功後回列表頁
-  const { form, submitting, error, submit } = useCreateForm<__Table__Row>('__table__', __table__Schema)
+  const { form, fieldErrors, submitting, error, submit } = useCreateForm<__Table__Row>('__table__', __table__Schema)
 </script>
 
 <template>
   <div>
-    <DataForm v-model="form" :schema="__table__Schema" />
+    <DataForm v-model="form" :errors="fieldErrors" :schema="__table__Schema" />
 
     <v-container>
       <v-alert v-if="error" class="mb-4" :text="error" type="error" />

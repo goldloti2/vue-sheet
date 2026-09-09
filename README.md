@@ -129,6 +129,7 @@ src/
       tables.ts                 哪張表用哪份 mock CSV（專案自己的內容）
   schema/
     types.ts                  SchemaColumn / TableSchema 型別 + 轉換與排序分組函式
+    validation.ts             依 schema 的約束檢查一整列（唯一的合法性驗證來源）
     relations.ts              掃 schema 的 ref 欄位自動算出的關聯圖
     index.ts                  代稱 → Schema 對照表，匯出 TableKey
   config/navigation.ts        導覽項目設定
@@ -199,7 +200,13 @@ store.removeMany(table, ids)     // 逐筆刪，全部成功才一起從快取�
 
 前後端各自維護一份 Schema，不共用程式碼。欄位改動期間先接受手動同步，之後真的常對不起來再考慮做產生器。
 
-🔲 **驗證的分工**（設計已定，還沒實作）：**合法性驗證只在前端做**——required、數值範圍、`select` 的選項這些，全部從 schema 推導出同一份驗證函式，用在兩個地方：form 層即時逐欄提示（給使用者看），以及 store 的寫入 action 再擋一次（給程式看，因為所有寫入只能走 store，那是唯一的窄口）。後端只做安全性與**結構完整性**檢查：id 不重複、`update`／`delete` 的目標存在、表名與欄位名都在 schema 內。最後一項不能省——打錯的欄位名會直接在 Sheet 上長出一欄新表頭或寫錯格。反正 Sheet 本來就能手動打開來亂改，後端擋合法性也擋不完整，不如把那份責任明確劃給前端。
+🔶 **驗證的分工**：**合法性驗證只在前端做**——required、數值範圍、`select` 的選項這些，全部從 schema 推導出同一份驗證函式（`schema/validation.ts` 的 `validateRow`），用在兩個地方：form 層即時逐欄提示（給使用者看），以及 store 的寫入 action 再擋一次（給程式看，因為所有寫入只能走 store，那是唯一的窄口）。後端只做安全性與**結構完整性**檢查：id 不重複、`update`／`delete` 的目標存在、表名與欄位名都在 schema 內。最後一項不能省——打錯的欄位名會直接在 Sheet 上長出一欄新表頭或寫錯格。反正 Sheet 本來就能手動打開來亂改，後端擋合法性也擋不完整，不如把那份責任明確劃給前端。
+
+> ✅ **form 層已實作。** 約束寫在欄位上（`required`，以及 number 專用的 `min`／`max`），`useTableForm` 在送出前呼叫 `validateRow`，不通過就不送、把 `fieldErrors` 交給 `DataForm` 逐欄顯示。**第一次按送出之前不提示**，免得使用者才剛打開表單就滿江紅；按過一次之後改成即時更新，錯誤在改好的當下就消失。
+>
+> 🔲 **store 寫入層還沒接。** 等累積寫入把寫入路徑定下來再接同一個 `validateRow`（見 ROADMAP）。
+>
+> 型別層面的限制不靠驗證函式，而是靠輸入元件本身：number 用 `v-number-input`（連 `min`／`max` 一起傳下去）、date 用 `v-date-input`、select 用 `v-select` 只能選 `options`。驗證函式擋的是元件擋不住的那些（沒填、超出範圍）。
 
 `schema/index.ts` 另外帶「代稱 → 實際 Sheet 分頁名稱」的對照：程式碼裡好打的英文代稱（例如 `'order'`）不等於 Sheet 分頁的實際名稱（可能是中文）。打 API 時用的是 schema 裡的 `sheetName`，兩者故意分開——換代稱不影響 API，換分頁名稱也不用到處改字串。
 

@@ -1,6 +1,7 @@
 import type { TableKey } from '@/schema'
 import { defineStore } from 'pinia'
 import { reactive } from 'vue'
+import { schemas } from '@/schema'
 import { fetchTable, mutateTable } from '@/services/appScript'
 
 const pendingLoads = new Map<TableKey, Promise<void>>()
@@ -60,7 +61,7 @@ export const useTablesStore = defineStore('tables', () => {
   }
 
   async function create<Row extends HasId> (table: TableKey, values: Record<string, unknown>): Promise<Row> {
-    const created = await mutateTable<Row>('create', table, values)
+    const created = await mutateTable<Row>('create', table, { id: schemas[table].newId(), ...values })
     patch(table, list => [...list, created])
     return created
   }

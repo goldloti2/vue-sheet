@@ -33,6 +33,7 @@
 - `stores/tables.ts`：每張表一份全 App 共用的快取，同一張表不會重複打 API
 - `useTableList` / `useSortedTableList` / `useTableRow` / `useRelatedRows` 都讀同一份
 - 寫入走 store 的 `create` / `update` / `remove` / `removeMany`，成功後就地更新快取，呼叫端不用手動 refresh
+- 新增的 id 由前端發：`newId` 是 schema 上的必填函式，格式由各表決定（`prefixedId('TPL')` 是現成的前綴式）。後端收到已存在的 id 就當作重送、回傳既有那筆
 - 跨表算出來的值靠共用快取的 reactivity 自動重算，不需要跨表失效機制
 
 ### 共用元件庫
@@ -137,7 +138,7 @@ return row                                        // 同步回傳，不 await
 
 連帶影響三件事：
 
-- **id 必須由前端發**——不等後端就要有 id 給後續步驟用。硬前置
+- **id 必須由前端發**——不等後端就要有 id 給後續步驟用。✅ 已完成
 - **多出「快取有、後端還沒有」這個狀態**——這就是 `refresh` 前一定要先 flush 的原因
 - **表單送出不再會有後端錯誤**，錯誤全部移到 flush。所以送出當下唯一的把關就是前端驗證（見「資料一致性」）——那本來就該做，佇列只是讓它更明顯
 

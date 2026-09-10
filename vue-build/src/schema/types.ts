@@ -27,6 +27,8 @@ export interface TableSchema {
   sheetName: string
   // 這張表的 ID 欄（sheetHeader 值）。系統欄位，不放進 columns（見文件 6.5 節）
   idColumn: string
+  // 怎麼發一筆新 id，由各表自己決定。常見的前綴式用 prefixedId('TPL')
+  newId: () => string
   columns: SchemaColumn[]
   // detail 頁的顯示順序（欄位 key 陣列）。省略時沿用 columns 的順序
   detailOrder?: string[]
@@ -118,7 +120,12 @@ function columnDefault (column: SchemaColumn): unknown {
   return typeof value === 'function' ? value() : value ?? null
 }
 
-// 依 schema 產生一筆 row 給新增表單當初始值；id 留空，由後端產生
+// 給 schema 的 newId 用的現成產生器：前綴 + 8 碼十六進位隨機值（TPL-11eef1a8）。
+export function prefixedId (prefix: string): () => string {
+  return () => `${prefix}-${crypto.randomUUID().slice(0, 8)}`
+}
+
+// 依 schema 產生一筆 row 給新增表單當初始值；id 留空，送出時才發
 export function emptyRow<Row> (schema: TableSchema): Row {
   const result: Record<string, unknown> = { id: '' }
 

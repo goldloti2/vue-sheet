@@ -166,6 +166,8 @@ store.removeMany(table, ids)     // 逐筆刪，全部成功才一起從快取�
 
 順序固定是「先送後端 → 成功了才改快取」，失敗就讓錯誤往上拋、快取維持原狀（不做 optimistic update）。因為 store 自己會把快取補好，呼叫端**不需要**手動 refresh。跨表算出來的值（例如父表顯示子表的加總）因為讀的是同一份共用資料，會自動跟著重算，不需要任何跨表失效機制。
 
+**新增的 id 由前端發**（`store.create` 呼叫 `schema.newId()`），不等後端回傳。**怎麼發是每張表自己的事**——`newId` 是 schema 上的必填函式，框架不持有任何 id 格式的政策，只提供現成的 `prefixedId('TPL')`（前綴 + 8 碼十六進位隨機值，例如 `TPL-11eef1a8`）給常見情況用；要日期編號、流水號之類的就自己寫一個 `() => string` 塞進去。這讓重送變成安全的：`create` 的語意是「id 不存在就建、已存在就當作已完成」，所以整批重送不需要記錄哪幾筆成功過。後端仍然要擋重複 id——Sheet 可以手動打開來改，不能假設 id 只從這裡來。之後累積寫入要在送出前就知道 id，這是前置條件。
+
 一般頁面連這四個 action 都用不到——新增/編輯用 `useCreateForm`／`useEditForm`，刪除用 `useDeleteAction`／`useBulkDeleteAction`，內部都接好了。
 
 ### 4.3 KeepAlive 與路由參數

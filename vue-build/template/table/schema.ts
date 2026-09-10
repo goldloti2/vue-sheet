@@ -1,5 +1,6 @@
 // 複製到 src/schema/__table__.ts
 import type { TableSchema } from './types'
+import { prefixedId } from './types'
 
 // 每個 column 一個欄位；id 是系統欄位，不放進 columns
 export interface __Table__Row {
@@ -12,6 +13,9 @@ export interface __Table__Row {
 export const __table__Schema: TableSchema = {
   sheetName: '範本',
   idColumn: 'TPL-ID',
+  // 怎麼發新 id，各表自己決定。prefixedId 是現成的前綴式（TPL-11eef1a8）；
+  // 要別種格式就自己寫一個 () => string 塞進來
+  newId: prefixedId('TPL'),
   columns: [
     // label 就是 Sheet 表頭文字；兩者不同時才另外加 sheetHeader: '實際表頭'
     { key: 'name', label: '名稱', type: 'text', required: true },

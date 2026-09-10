@@ -43,12 +43,6 @@ function rowIndexOf (table: TableKey, id: string): number {
   return index
 }
 
-// 真後端會發 UUID；這裡沿用 idColumn 的前綴讓測試資料好認（例如 TPL-ID → TPL-xxxxxxxx）
-function generateId (table: TableKey): string {
-  const prefix = idColumnOf(table).replace(/-?ID$/i, '') || 'ROW'
-  return `${prefix}-${crypto.randomUUID().slice(0, 8)}`
-}
-
 function requireString (payload: Record<string, unknown>, key: string): string {
   const value = payload[key]
   if (typeof value !== 'string') {
@@ -73,9 +67,15 @@ export function mockMutate (
 
   switch (action) {
     case 'create': {
-      // id 由後端產生，不看呼叫端有沒有帶
-      const { id: _ignored, ...values } = payload
-      const row = { [idColumnOf(table)]: generateId(table), ...serializeRow(values, schema) }
+      // id 由呼叫端帶進來。已經存在就當作這次是重送、不重複建立，直接回傳既有那筆
+      const { id: _id, ...values } = payload
+      const id = requireString(payload, 'id')
+      const existing = rows.find(row => row[idColumnOf(table)] === id)
+      if (existing) {
+        return { ...existing }
+      }
+
+      const row = { [idColumnOf(table)]: id, ...serializeRow(values, schema) }
       rows.push(row)
       return { ...row }
     }

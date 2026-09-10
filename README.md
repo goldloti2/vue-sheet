@@ -164,7 +164,17 @@ store.remove(table, id)          // 從快取移除
 store.removeMany(table, ids)     // 逐筆刪，全部成功才一起從快取移除
 ```
 
-順序固定是「先送後端 → 成功了才改快取」，失敗就讓錯誤往上拋、快取維持原狀（不做 optimistic update）。因為 store 自己會把快取補好，呼叫端**不需要**手動 refresh。跨表算出來的值（例如父表顯示子表的加總）因為讀的是同一份共用資料，會自動跟著重算，不需要任何跨表失效機制。
+寫入分成三步：**改快取 → 進佇列 → 送出**。
+
+- `rows` 是**畫面**的單一真相。已送出的與還沒送出的混在一起，畫面不需要分辨一筆送出去了沒
+- `pending` 是**要送什麼**的單一真相。定位鍵是 (表, id)，`values` 在進佇列的當下就用 `serializeRow` 轉成要送出去的形狀（sheet 表頭當 key、值是字串），`flush` 拿了就送
+- 同一筆的多次操作在**寫入當下**就合併掉，不是留到 flush 才算：`update` + `update` 併成一次、`create` + `update` 併進那個 `create`、`create` + `delete` 整組移除（根本不用送）、`update` + `delete` 只留 `delete`
+
+`refresh` 一定會先 flush——重抓整表會無聲蓋掉還沒送出去的變更；flush 失敗就不重抓，把錯誤記進 `error[table]`。
+
+因為 store 自己會把快取補好，呼叫端**不需要**手動 refresh。跨表算出來的值（例如父表顯示子表的加總）因為讀的是同一份共用資料，會自動跟著重算，不需要任何跨表失效機制。
+
+> 🔶 **目前 flush 是每次寫入後立刻自動觸發**，而且失敗就把快取與佇列一起還原成動之前的樣子，所以對外行為跟舊的「先送後端、成功才改快取」一致。之後會改成使用者按推送鈕才 flush，那時失敗不再還原，而是保持「未推送」狀態讓他重按（見 [ROADMAP](ROADMAP.md) 累積寫入）。
 
 **新增的 id 由前端發**（`store.create` 呼叫 `schema.newId()`），不等後端回傳。**怎麼發是每張表自己的事**——`newId` 是 schema 上的必填函式，框架不持有任何 id 格式的政策，只提供現成的 `prefixedId('TPL')`（前綴 + 8 碼十六進位隨機值，例如 `TPL-11eef1a8`）給常見情況用；要日期編號、流水號之類的就自己寫一個 `() => string` 塞進去。這讓重送變成安全的：`create` 的語意是「id 不存在就建、已存在就當作已完成」，所以整批重送不需要記錄哪幾筆成功過。後端仍然要擋重複 id——Sheet 可以手動打開來改，不能假設 id 只從這裡來。之後累積寫入要在送出前就知道 id，這是前置條件。
 
@@ -260,6 +270,7 @@ hooks: {
 
 - 讀取走 `doGet` + query string，寫入走 `doPost` + JSON body，body 帶 `action` 欄位。這是 Apps Script 只有 doGet/doPost 兩種入口所決定的，不是可選項
 - 支援的 action：`create`、`update`、`delete`、`bulkUpdate`（一次對多筆 id 套用同樣的欄位更新，格式 `{ action, table, ids, data }`，一次執行內完成多筆，避免來回呼叫）
+- payload 裡的欄位值**由前端轉成 sheet 的形狀**（表頭當 key、值是字串）再送出，後端拿到什麼就寫什麼，不自己做型別轉換
 - 保留字：`table`、`id`、`action` 不能拿來當篩選欄位名稱
 - 回應統一包裝成 `{ success: true, data }` 或 `{ success: false, error: { message } }`
 - **重要限制**：Apps Script Web App 無法自由設定 HTTP status code（幾乎都回 200），前端一律看 body 的 `success` 判斷成敗，不看 status

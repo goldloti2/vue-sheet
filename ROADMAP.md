@@ -32,7 +32,8 @@
 ### 資料存取
 - `stores/tables.ts`：每張表一份全 App 共用的快取，同一張表不會重複打 API
 - `useTableList` / `useSortedTableList` / `useTableRow` / `useRelatedRows` 都讀同一份
-- 寫入走 store 的 `create` / `update` / `remove` / `removeMany`，成功後就地更新快取，呼叫端不用手動 refresh
+- 寫入走 store 的 `create` / `update` / `remove` / `removeMany`，快取先行、進佇列、再送出，呼叫端不用手動 refresh
+- 待寫入佇列 `pending`（含合併規則）與 `flush`；`refresh` 一定先 flush
 - 新增的 id 由前端發：`newId` 是 schema 上的必填函式，格式由各表決定（`prefixedId('TPL')` 是現成的前綴式）。後端收到已存在的 id 就當作重送、回傳既有那筆
 - 跨表算出來的值靠共用快取的 reactivity 自動重算，不需要跨表失效機制
 
@@ -100,11 +101,17 @@
 
 > 註：每分鐘 60 次寫入是 Sheets REST API 的配額，用 Apps Script 內建的 `SpreadsheetApp` 並不適用。批次要省的是**每次 Web App 請求的 script 冷啟成本（約 0.5～2 秒）**，不是配額。
 
-### 累積寫入（設計已定，還沒實作）
+### 累積寫入（佇列已完成，推送 UI 還沒做）
 
 改動先累積在前端，由使用者按「推送」才一次寫進 Sheet。
 
 **排在連續動作前面。** 連續動作的原子性整個建立在這個佇列上（見下面「流程存檔點」），而且佇列一旦存在，寫入路徑、錯誤時機、驗證時機都會變——先做完再疊連續動作，才不會做白工。
+
+**目前狀態**：佇列、合併規則、`flush`、`refresh` 前先 flush 都做好了，但 **flush 仍然是每次寫入後自動觸發**，失敗就把快取與佇列一起還原，所以對外行為跟舊的直寫一樣。下一步是把自動觸發拿掉，換成：
+
+- 推送鈕 + 未推送標記 + `beforeunload`
+- flush 失敗不再還原，改成保持未推送狀態讓使用者重按
+- `create` 順勢變成同步的（不再 await 網路）
 
 **已決定**
 - 手動推送鈕 + 醒目的「尚有未推送變更」標記。使用者無視標記就關掉分頁的話不管他，但另外用 `beforeunload` 彈瀏覽器原生的離開確認（同步的，成本近乎為零）

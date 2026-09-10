@@ -7,7 +7,6 @@
 import type { SheetAction } from '../types'
 import type { TableKey } from '@/schema'
 import { schemas } from '@/schema'
-import { serializeRow } from '@/schema/types'
 import { parseCsv } from './csv'
 import { mockCsv } from './tables'
 
@@ -43,6 +42,12 @@ function rowIndexOf (table: TableKey, id: string): number {
   return index
 }
 
+function asStrings (values: Record<string, unknown>): Record<string, string> {
+  return Object.fromEntries(
+    Object.entries(values).map(([key, value]) => [key, String(value ?? '')]),
+  )
+}
+
 function requireString (payload: Record<string, unknown>, key: string): string {
   const value = payload[key]
   if (typeof value !== 'string') {
@@ -63,7 +68,6 @@ export function mockMutate (
   payload: Record<string, unknown>,
 ): Record<string, string> | Record<string, string>[] {
   const rows = tableRows(table)
-  const schema = schemas[table]
 
   switch (action) {
     case 'create': {
@@ -75,7 +79,7 @@ export function mockMutate (
         return { ...existing }
       }
 
-      const row = { [idColumnOf(table)]: id, ...serializeRow(values, schema) }
+      const row = { [idColumnOf(table)]: id, ...asStrings(values) }
       rows.push(row)
       return { ...row }
     }
@@ -84,7 +88,7 @@ export function mockMutate (
       // id 只用來定位，不寫進欄位
       const { id: _id, ...values } = payload
       const index = rowIndexOf(table, requireString(payload, 'id'))
-      rows[index] = { ...rows[index], ...serializeRow(values, schema) }
+      rows[index] = { ...rows[index], ...asStrings(values) }
       return { ...rows[index] }
     }
 
@@ -101,7 +105,7 @@ export function mockMutate (
         throw new TypeError('payload.ids must be an array')
       }
       const data = (payload.data ?? {}) as Record<string, unknown>
-      const patch = serializeRow(data, schema)
+      const patch = asStrings(data)
 
       return ids.map(id => {
         const index = rowIndexOf(table, String(id))

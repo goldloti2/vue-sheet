@@ -50,6 +50,7 @@
 - 需要確認的動作宣告 `confirm` 就好，對話框由 `AppShell` 統一渲染（`useActionRunner`），頁面不用擺 `ConfirmDialog`
 - 每張表的動作（含批次刪除）一律從 `use表名Actions(options)` 取，用不到的是空陣列
 - `useAppBarActions()` 用 provide/inject 把動作註冊到 App Bar，數量多自動收成下拉選單
+- `useBottomActions()` 把動作註冊到螢幕最底端，暫時取代導覽列（表單頁的取消／送出）；兩者共用 `useActionSlot` 的 KeepAlive 防護
 - `PageFab` 依數量自動在固定顯示與 speed-dial 之間切換
 
 ### 表單與多選

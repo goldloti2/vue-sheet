@@ -12,7 +12,8 @@ import { useTablesStore } from '@/stores/tables'
 export interface PageAction {
   key: string
   label: string
-  icon: string
+  // FAB 與 App Bar 靠它顯示；底部動作列只用文字，所以可以省略
+  icon?: string
   onClick: () => void | Promise<void>
   confirm?: { title: string, text: string }
 }

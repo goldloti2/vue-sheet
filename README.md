@@ -111,7 +111,9 @@ src/
     useTableForm.ts           useCreateForm / useEditForm，新增與編輯的共用邏輯
     useRouteId.ts             [id] 頁面取路由參數（見 4.3）
     useListOrder.ts           列表頁發布顯示順序、detail 頁取上/下一筆
-    useAppBarActions.ts       把動作註冊到 AppShell 的 app-bar（provide/inject）
+    useActionSlot.ts          把動作註冊到 AppShell 某一塊的共用機制（含 KeepAlive 防護）
+    useAppBarActions.ts       註冊到 App Bar 右側
+    useBottomActions.ts       註冊到螢幕最底端，暫時取代導覽列（表單頁用）
     useActionRunner.ts        動作的執行與確認框，由 AppShell 統一處理
     useMultiSelect.ts         多選狀態
     useLongPress.ts           長按偵測
@@ -332,7 +334,9 @@ hooks: {
 - 長按列表項目進入多選模式，選取狀態一有內容就自動進入、清空就自動離開，不另外存 boolean
 - 右下角 FAB：動作 ≤2 顆固定顯示，≥3 顆收合成 speed-dial
 - App Bar 右側動作按鈕：頁面用 `useAppBarActions()` 註冊，≤2 顆直接顯示，≥3 顆收成「⋮」下拉。跟 FAB 不同，這裡走 **provide/inject** 而非 Teleport——app-bar 在轉場動畫的 `.page-transition-viewport` 之外，不會被 `transform` 影響，不需要真的搬 DOM
-- FAB 與 App Bar 動作共用同一種 `PageAction` 型別 `{ key, label, icon, onClick, confirm? }`。頁面自己決定用哪幾個、放 FAB 還是 App Bar
+- **表單頁的按鈕放在螢幕最底端**，用 `useBottomActions()` 註冊，暫時取代底部導覽列，離開頁面自動還原。這樣「取消／送出」永遠在拇指構得到的地方，不用把長表單捲到最後才按得到；而表單本來就是「要按到才算完成」的頁面，此時不該讓人分心去切分頁
+- FAB、App Bar、底部動作列共用同一種 `PageAction` 型別 `{ key, label, icon?, onClick, confirm? }`。頁面自己決定用哪幾個、放哪裡。`icon` 是可選的——前兩者靠它顯示，底部動作列只用文字
+- 三塊都走同一個 `registerActions`（`useActionSlot.ts`）。每一塊都是**單一 setter**，所以一定要靠 `isActive` 擋住被 KeepAlive 快取的頁面：它們仍然是全速運轉的（見 4.3），動作一變就會蓋掉當前頁面的
 - **需要確認的動作只要宣告 `confirm: { title, text }`**，不用自己擺 `ConfirmDialog`。`AppShell` 用跟 `useAppBarActions` 同一套 provide/inject 提供 `runAction`，按鈕點下去交給它：沒有 `confirm` 就直接執行，有的話先開對話框、按確定才跑，而 `onClick` 回傳的 Promise 由對話框接住 loading 與錯誤。整個 App 只有一個確認框實例
 - **所有 builder 都回傳 `ComputedRef<PageAction[]>`**（`PageActions`），沒有單數複數之分，呼叫端可以直接串接；沒有可用動作時就是空陣列，不需要 `undefined` 或 null 檢查
 - 每張表的動作**一律從 `use表名Actions(options)` 取**，包含批次刪除。options 全是可選的，呼叫端只給自己有的東西（列表頁給 `selectedIds`/`onDeleted`，detail 頁給 `row`），用不到的動作就是空陣列——因為形狀統一，這裡不需要 `undefined` 或分支。每個呼叫端專屬的設定（例如新增表單的預設值）也放在這個 options 裡

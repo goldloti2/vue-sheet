@@ -6,6 +6,7 @@
   import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
   import { provideActionRunner } from '@/composables/useActionRunner'
   import { appBarActionsKey } from '@/composables/useAppBarActions'
+  import { bottomActionsKey } from '@/composables/useBottomActions'
   import { notice, notify } from '@/composables/useNotify'
   import { navigationCount } from '@/router'
   import { useTablesStore } from '@/stores/tables'
@@ -33,6 +34,12 @@
   const appBarActions = shallowRef<PageAction[]>([])
   provide(appBarActionsKey, actions => {
     appBarActions.value = actions
+  })
+
+  // 註冊了底部動作就暫時取代導覽列（表單頁用），離開頁面自動還原
+  const bottomActions = shallowRef<PageAction[]>([])
+  provide(bottomActionsKey, actions => {
+    bottomActions.value = actions
   })
 
   // 動作的執行與確認框都在這裡，頁面只負責註冊動作
@@ -143,7 +150,17 @@
     <slot />
   </v-main>
 
-  <v-bottom-navigation :model-value="route.path">
+  <v-bottom-navigation v-if="bottomActions.length > 0" grow>
+    <v-btn
+      v-for="action in bottomActions"
+      :key="action.key"
+      @click="runAction(action)"
+    >
+      {{ action.label }}
+    </v-btn>
+  </v-bottom-navigation>
+
+  <v-bottom-navigation v-else :model-value="route.path">
     <v-btn
       v-for="item in navItems"
       :key="item.to"

@@ -106,7 +106,17 @@
 | `AppDialog` | 對話框外殼 |
 | `ConfirmDialog` | 是/否確認框 |
 
-`AppShell` 是 App 層級的外殼，`App.vue` 用一次就好，不會在頁面裡重複使用，所以沒有範本。它自帶推送鈕、確認框與 snackbar，頁面不用擺這些。
+`AppShell` 是 App 層級的外殼，`App.vue` 用一次就好，不會在頁面裡重複使用，所以沒有範本。它自帶同步鈕、確認框與 snackbar，頁面不用擺這些。
+
+頁面的動作也不自己畫按鈕，註冊給 `AppShell` 就好，三個位置各一個 composable：
+
+| | 用途 |
+| --- | --- |
+| `PageFab`（元件） | 右下角浮動按鈕，主要動作 |
+| `useAppBarActions()` | App Bar 右側，次要動作；超過兩個自動收成 ⋮ |
+| `useBottomActions()` | 螢幕最底端，**暫時取代導覽列**；表單的取消／送出用這個，離開頁面自動還原 |
+
+表單頁不用自己組那兩顆按鈕——`useCreateForm`／`useEditForm` 回傳現成的 `actions`（含「有改動才跳確認」的取消），照 `pages/new.vue`、`pages/edit.vue` 的寫法接上去就好。
 
 要跳一則短訊息（成功、失敗、已刪除之類的）就直接叫 `notify()`，不需要在頁面上放任何元件：
 

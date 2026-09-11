@@ -1,34 +1,11 @@
 import type { PageAction } from '@/composables/actions/useTableActions'
+import type { ActionSlotSetter } from '@/composables/useActionSlot'
 import type { InjectionKey } from 'vue'
-import { inject, onActivated, onDeactivated, onUnmounted, watch } from 'vue'
+import { registerActions } from '@/composables/useActionSlot'
 
-export const appBarActionsKey: InjectionKey<(actions: PageAction[]) => void> = Symbol('appBarActions')
+export const appBarActionsKey: InjectionKey<ActionSlotSetter> = Symbol('appBarActions')
 
-export function useAppBarActions (source: () => PageAction[]) {
-  const setActions = inject(appBarActionsKey)
-  if (!setActions) {
-    return
-  }
-
-  let isActive = true
-
-  watch(source, actions => {
-    if (isActive) {
-      setActions(actions)
-    }
-  }, { immediate: true })
-
-  onActivated(() => {
-    isActive = true
-    setActions(source())
-  })
-
-  onDeactivated(() => {
-    isActive = false
-    setActions([])
-  })
-
-  onUnmounted(() => {
-    setActions([])
-  })
+// App Bar 右側的動作。數量多的話 AppShell 會自動收成下拉選單，這裡不用管
+export function useAppBarActions (source: () => PageAction[]): void {
+  registerActions(appBarActionsKey, source)
 }

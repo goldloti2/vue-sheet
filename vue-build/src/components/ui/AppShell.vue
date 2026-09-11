@@ -1,12 +1,14 @@
 <script lang="ts" setup>
   import type { PageAction } from '@/composables/actions/useTableActions'
-  import { mdiArrowLeft, mdiDotsVertical } from '@mdi/js'
-  import { computed, provide, shallowRef } from 'vue'
+  import { mdiArrowLeft, mdiDotsVertical, mdiRefresh } from '@mdi/js'
+  import { computed, onBeforeUnmount, onMounted, provide, shallowRef } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
   import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
   import { provideActionRunner } from '@/composables/useActionRunner'
   import { appBarActionsKey } from '@/composables/useAppBarActions'
+  import { notice, notify } from '@/composables/useNotify'
   import { navigationCount } from '@/router'
+  import { useTablesStore } from '@/stores/tables'
 
   export interface AppNavItem {
     title: string
@@ -38,6 +40,31 @@
 
   // 導覽列的目的地不用返回按鈕；其他方式進來的頁面（例如點列表項目進 detail）都算
   const showBack = computed(() => !props.navItems.some(item => item.to === route.path))
+
+  const store = useTablesStore()
+  const syncing = shallowRef(false)
+
+  // 先推送再重抓。推不出去就不重抓，否則會蓋掉未推送的變更
+  async function sync () {
+    syncing.value = true
+    try {
+      if (!await store.refresh()) {
+        notify(store.flushError ?? '推送失敗，稍後再試', 'error')
+      }
+    } finally {
+      syncing.value = false
+    }
+  }
+
+  // 離開前有未推送的變更時攔一下
+  function warnUnsaved (event: BeforeUnloadEvent) {
+    if (store.hasPending) {
+      event.preventDefault()
+    }
+  }
+
+  onMounted(() => window.addEventListener('beforeunload', warnUnsaved))
+  onBeforeUnmount(() => window.removeEventListener('beforeunload', warnUnsaved))
 
   function handleLeadingIconClick () {
     if (showBack.value) {
@@ -81,6 +108,21 @@
           />
         </v-list>
       </v-menu>
+
+      <v-btn
+        aria-label="同步"
+        :loading="syncing"
+        @click="sync"
+      >
+        <v-badge
+          :color="store.flushError ? 'error' : 'warning'"
+          dot
+          location="bottom end"
+          :model-value="store.hasPending"
+        >
+          <v-icon :icon="mdiRefresh" />
+        </v-badge>
+      </v-btn>
     </template>
   </v-app-bar>
 
@@ -92,6 +134,8 @@
     :title="actionDialog.title"
     @confirm="confirmAction"
   />
+
+  <v-snackbar v-model="notice.open" :color="notice.color">{{ notice.text }}</v-snackbar>
 
   <v-navigation-drawer v-model="drawer" />
 

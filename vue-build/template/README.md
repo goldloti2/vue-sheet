@@ -106,4 +106,13 @@
 | `AppDialog` | 對話框外殼 |
 | `ConfirmDialog` | 是/否確認框 |
 
-`AppShell` 是 App 層級的外殼，`App.vue` 用一次就好，不會在頁面裡重複使用，所以沒有範本。
+`AppShell` 是 App 層級的外殼，`App.vue` 用一次就好，不會在頁面裡重複使用，所以沒有範本。它自帶推送鈕、確認框與 snackbar，頁面不用擺這些。
+
+要跳一則短訊息（成功、失敗、已刪除之類的）就直接叫 `notify()`，不需要在頁面上放任何元件：
+
+```ts
+import { notify } from '@/composables/useNotify'
+
+notify('已推送')
+notify('推送失敗', 'error')   // 第二個參數是 Vuetify 的 color
+```

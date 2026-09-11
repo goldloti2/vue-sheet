@@ -1,6 +1,6 @@
 import type { TableKey } from '@/schema'
 import { defineStore } from 'pinia'
-import { reactive } from 'vue'
+import { computed, reactive, shallowRef } from 'vue'
 import { schemas } from '@/schema'
 import { serializeRow } from '@/schema/types'
 import { fetchTable, mutateTable } from '@/services/appScript'
@@ -23,6 +23,17 @@ export const useTablesStore = defineStore('tables', () => {
   const error = reactive<Partial<Record<TableKey, string | null>>>({})
   // 「要送什麼」的單一真相
   const pending = reactive(new Map<TableKey, Map<string, PendingOp>>())
+  const flushing = shallowRef(false)
+  const flushError = shallowRef<string | null>(null)
+
+  const hasPending = computed(() => {
+    for (const queue of pending.values()) {
+      if (queue.size > 0) {
+        return true
+      }
+    }
+    return false
+  })
 
   async function load (table: TableKey) {
     const existing = pendingLoads.get(table)
@@ -58,16 +69,17 @@ export const useTablesStore = defineStore('tables', () => {
     await load(table)
   }
 
-  // 重抓整表會蓋掉還沒送出去的東西，所以一定要先清空佇列
-  async function refresh (table: TableKey) {
-    try {
-      await flush()
-    } catch (flushError) {
-      error[table] = flushError instanceof Error ? flushError.message : String(flushError)
-      return
+  /**
+   * 推送 + 重抓所有已載入的表。重抓會蓋掉還沒送出去的東西，所以推不出去就不重抓。
+   * 回傳有沒有真的重抓（＝佇列清空了沒）。
+   */
+  async function refresh (): Promise<boolean> {
+    if (!await flush()) {
+      return false
     }
 
-    await load(table)
+    await Promise.all(Object.keys(rows).map(table => load(table as TableKey)))
+    return true
   }
 
   function patch (table: TableKey, update: (list: unknown[]) => unknown[]) {
@@ -118,78 +130,83 @@ export const useTablesStore = defineStore('tables', () => {
       : mutateTable(op.kind, table, { id, ...op.values }))
   }
 
-  async function flush (): Promise<void> {
-    for (const [table, queue] of pending) {
-      for (const [id, op] of queue) {
-        await send(table, id, op)
-        queue.delete(id)
-      }
-    }
-  }
-
   /**
-   * 快取先行：先改畫面、進佇列，再送出去。失敗就把快取與佇列一起還原成動之前的樣子，
-   * 對外行為跟「先送後端、成功才改快取」一致。
+   * 把佇列送出去。送成功一筆就從佇列移掉，所以失敗時已經送出的不會重送，
+   * 剩下的留在佇列裡等使用者再按一次推送。
    *
-   * 這裡的 `await flush()` 是暫時的——之後改成由使用者按推送鈕觸發，那時失敗不再還原，
-   * 而是保持「未推送」狀態讓他重按（見 ROADMAP 累積寫入）。
+   * 不會往外拋，錯誤記在 `flushError`。回傳佇列是不是已經清空。
    */
-  async function commit (table: TableKey, apply: () => void): Promise<void> {
-    const savedRows = rows[table]
-    const savedQueue = new Map(queueFor(table))
+  async function flush (): Promise<boolean> {
+    if (flushing.value) {
+      return !hasPending.value
+    }
 
-    apply()
+    flushing.value = true
+    flushError.value = null
 
     try {
-      await flush()
-    } catch (flushError) {
-      rows[table] = savedRows
-      pending.set(table, savedQueue)
-      throw flushError
+      for (const [table, queue] of pending) {
+        for (const [id, op] of queue) {
+          await send(table, id, op)
+          queue.delete(id)
+        }
+      }
+      return true
+    } catch (error) {
+      flushError.value = error instanceof Error ? error.message : String(error)
+      return false
+    } finally {
+      flushing.value = false
     }
   }
 
-  async function create<Row extends HasId> (table: TableKey, values: Record<string, unknown>): Promise<Row> {
+  function create<Row extends HasId> (table: TableKey, values: Record<string, unknown>): Row {
     const schema = schemas[table]
     const created = { id: schema.newId(), ...values } as Row
 
-    await commit(table, () => {
-      patch(table, list => [...list, created])
-      enqueue(table, created.id, 'create', serializeRow(values, schema))
-    })
+    patch(table, list => [...list, created])
+    enqueue(table, created.id, 'create', serializeRow(values, schema))
 
     return created
   }
 
-  async function update<Row extends HasId> (table: TableKey, id: string, values: Record<string, unknown>): Promise<Row> {
+  function update<Row extends HasId> (table: TableKey, id: string, values: Record<string, unknown>): Row {
     const schema = schemas[table]
     const updated = { id, ...values } as Row
 
-    await commit(table, () => {
-      patch(table, list => list.map(row => (row as Row).id === id ? updated : row))
-      enqueue(table, id, 'update', serializeRow(values, schema))
-    })
+    patch(table, list => list.map(row => (row as Row).id === id ? updated : row))
+    enqueue(table, id, 'update', serializeRow(values, schema))
 
     return updated
   }
 
-  async function remove (table: TableKey, id: string): Promise<void> {
-    await commit(table, () => {
-      patch(table, list => list.filter(row => (row as HasId).id !== id))
-      enqueue(table, id, 'delete', {})
-    })
+  function remove (table: TableKey, id: string): void {
+    patch(table, list => list.filter(row => (row as HasId).id !== id))
+    enqueue(table, id, 'delete', {})
   }
 
-  async function removeMany (table: TableKey, ids: Iterable<string>): Promise<void> {
+  function removeMany (table: TableKey, ids: Iterable<string>): void {
     const targets = new Set(ids)
 
-    await commit(table, () => {
-      patch(table, list => list.filter(row => !targets.has((row as HasId).id)))
-      for (const id of targets) {
-        enqueue(table, id, 'delete', {})
-      }
-    })
+    patch(table, list => list.filter(row => !targets.has((row as HasId).id)))
+    for (const id of targets) {
+      enqueue(table, id, 'delete', {})
+    }
   }
 
-  return { rows, loading, error, ensureLoaded, refresh, flush, create, update, remove, removeMany }
+  return {
+    rows,
+    loading,
+    error,
+    hasPending,
+    flushing,
+    flushError,
+    ensureLoaded,
+    refresh,
+    flush,
+    create,
+    update,
+    remove,
+    removeMany,
+  }
 })

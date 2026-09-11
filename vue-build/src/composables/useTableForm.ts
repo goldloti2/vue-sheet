@@ -188,6 +188,8 @@ export function useEditForm<Row extends HasId> (
     resetErrors()
   })
 
+  const dirty = () => isDirty(form.value, row.value, schema)
+
   async function submit () {
     const current = form.value
     if (!current) {
@@ -196,6 +198,11 @@ export function useEditForm<Row extends HasId> (
 
     if (!check()) {
       error.value = INVALID_MESSAGE
+      return
+    }
+
+    if (!dirty()) {
+      leaveAfterAction(`/${table}/${current.id}`)
       return
     }
 
@@ -209,7 +216,7 @@ export function useEditForm<Row extends HasId> (
     '儲存',
     submit,
     () => leaveAfterAction(`/${table}/${toValue(id)}`),
-    () => isDirty(form.value, row.value, schema),
+    dirty,
   )
 
   return { form, fieldErrors, loading, loadError, submitting, error, submit, actions }

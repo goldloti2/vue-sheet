@@ -125,7 +125,15 @@ export function useEditForm<Row extends HasId> (
   }, { immediate: true })
 
   const { submitting, error, run } = useSubmitState()
-  const { fieldErrors, check } = useValidation(schema, () => form.value)
+  const { fieldErrors, check, reset: resetErrors } = useValidation(schema, () => form.value)
+
+  // 同一個網址共用一個 KeepAlive 實例，所以離開再回來會是同一個 setup。
+  // 不重置的話，上次沒存就離開的輸入會留在表單裡（見 README 4.3）
+  onActivated(() => {
+    form.value = row.value ? { ...row.value } as Row : null
+    error.value = null
+    resetErrors()
+  })
 
   async function submit () {
     const current = form.value

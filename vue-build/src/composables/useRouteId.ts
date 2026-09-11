@@ -1,5 +1,5 @@
 import type { Ref } from 'vue'
-import { shallowRef, watch } from 'vue'
+import { getCurrentInstance, shallowRef } from 'vue'
 import { useRoute } from 'vue-router'
 
 export function useRouteId (): Ref<string> {
@@ -8,27 +8,20 @@ export function useRouteId (): Ref<string> {
   const routeId = shallowRef(Array.isArray(id) ? id[0] ?? '' : id ?? '')
 
   if (import.meta.env.DEV) {
-    warnIfReused(routeId)
+    warnIfUnkeyed(route.fullPath)
   }
 
   return routeId
 }
 
-function warnIfReused (routeId: Ref<string>): void {
-  const route = useRoute()
-  const ownName = route.name
+function warnIfUnkeyed (fullPath: string): void {
+  const key = getCurrentInstance()?.vnode.key
 
-  watch(
-    () => route.name === ownName
-      ? (route.params as Record<string, string | string[] | undefined>).id
-      : undefined,
-    value => {
-      if (typeof value === 'string' && value !== routeId.value) {
-        console.warn(
-          `[useRouteId] 同一個實例被 id "${routeId.value}" → "${value}" 重用了。`
-          + 'useRouteId 假設實例與網址一對一，請確認 App.vue 的 <component :key="route.fullPath"> 還在。',
-        )
-      }
-    },
-  )
+  if (key !== fullPath) {
+    console.warn(
+      `[useRouteId] 這個實例的 key 是 ${String(key)}，不是目前的網址 "${fullPath}"。`
+      + 'useRouteId 假設實例與網址一對一：請確認它是在路由頁面自己的 setup 裡呼叫，'
+      + '而且 App.vue 的 <component :key="route.fullPath"> 還在。',
+    )
+  }
 }

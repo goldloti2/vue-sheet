@@ -219,6 +219,7 @@ snapshot = { 'package:B': { row: 流程碰之前的 B, pending: 流程碰之前�
 - `TabView` 放多個獨立面板（例如兩張表的列表當成一組頁籤）目前只有內容層可用，動作層會壞掉。根源是兩個面板一旦都被看過就同時掛著（`v-window` 用 `v-show` 切換），而 FAB 與 App Bar 動作都假設同時只有一個頁面活著：
   - `useAppBarActions` 是單一 setter，後掛載的會蓋掉前面的，切頁籤也不會重新註冊
   - `PageFab` 靠 `onActivated`/`onDeactivated` 決定要不要 teleport，那是 `<KeepAlive>` 的 hook，`v-show` 切換不會觸發，於是兩顆 FAB 一起掛在 body 上
+  - `useListOrder` 沒有 active 判斷，兩個面板都會把自己的順序發布到同一個 key、互相蓋掉，detail 頁的上/下一筆會跟著錯亂
   - 方向是讓面板知道自己是不是當前頁籤（面板收一個 `active` prop，`PageFab` 也加一個跟現有 KeepAlive 狀態做 AND、預設 `true`），但實際要傳到哪一層等真的要寫這種頁面時再定。修好之後 `template/` 要補上這種頁面的寫法
 
 ### 多選與批次

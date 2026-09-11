@@ -9,7 +9,7 @@ export function useRelatedRows<Row extends { id: string }> (
   parentTable: TableKey,
 ) {
   const { column } = getRelation(childTable, parentTable)
-  const { data, loading, error, refresh } = useSortedTableList<Row>(childTable, schemas[childTable])
+  const { data, loading, error } = useSortedTableList<Row>(childTable, schemas[childTable])
 
   const byParentId = computed(() => {
     const map = new Map<string, Row[]>()
@@ -36,7 +36,6 @@ export function useRelatedRows<Row extends { id: string }> (
     data,
     loading,
     error,
-    refresh,
     relatedTo,
   }
 }

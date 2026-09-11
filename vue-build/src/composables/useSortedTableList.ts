@@ -9,13 +9,12 @@ export function useSortedTableList<Row> (
   table: MaybeRefOrGetter<TableKey>,
   schema: TableSchema,
 ) {
-  const { data, loading, error, refresh } = useTableList<Row>(table)
+  const { data, loading, error } = useTableList<Row>(table)
   const sortedData = computed(() => sortRows(data.value, schema))
 
   return {
     data: sortedData,
     loading,
     error,
-    refresh,
   }
 }

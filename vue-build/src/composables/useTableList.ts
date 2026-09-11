@@ -15,8 +15,5 @@ export function useTableList<Row> (table: MaybeRefOrGetter<TableKey>) {
     data: computed(() => (store.rows[currentTable.value] ?? []) as Row[]),
     loading: computed(() => store.loading[currentTable.value] ?? false),
     error: computed(() => store.error[currentTable.value] ?? null),
-    refresh: () => {
-      void store.refresh(currentTable.value)
-    },
   }
 }

@@ -32,8 +32,10 @@ export const useTablesStore = defineStore('tables', () => {
   const flushing = shallowRef(false)
   const flushError = shallowRef<string | null>(null)
   const activeFlow = shallowRef<FlowSnapshot | null>(null)
+  // 有幾張表單正開著。不為零就不能同步，重抓會把改到一半的沖掉
+  const syncHolds = shallowRef(0)
 
-  const inFlow = computed(() => activeFlow.value !== null)
+  const canSync = computed(() => activeFlow.value === null && syncHolds.value === 0)
 
   const hasPending = computed(() => {
     for (const queue of pending.values()) {
@@ -78,9 +80,21 @@ export const useTablesStore = defineStore('tables', () => {
     await load(table)
   }
 
+  // 表單頁活著的期間持有一個，離開時釋放
+  function holdSync (): () => void {
+    syncHolds.value++
+    let released = false
+    return () => {
+      if (!released) {
+        released = true
+        syncHolds.value--
+      }
+    }
+  }
+
   // 推送 + 重抓所有已載入的表；推不出去就不重抓，否則會蓋掉未推送的變更
   async function refresh (): Promise<boolean> {
-    if (!await flush()) {
+    if (!canSync.value || !await flush()) {
       return false
     }
 
@@ -259,7 +273,8 @@ export const useTablesStore = defineStore('tables', () => {
     hasPending,
     flushing,
     flushError,
-    inFlow,
+    canSync,
+    holdSync,
     ensureLoaded,
     refresh,
     flush,

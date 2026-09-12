@@ -3,6 +3,7 @@ import type { TableKey } from '@/schema'
 import type { TableSchema } from '@/schema/types'
 import type { ComputedRef, MaybeRefOrGetter } from 'vue'
 import { computed, onActivated, ref, toValue, watch } from 'vue'
+import { useSyncHold } from '@/composables/useSyncHold'
 import { leaveAfterAction, navigationDefaults } from '@/router'
 import { columnValues, emptyRow } from '@/schema/types'
 import { validateRow } from '@/schema/validation'
@@ -117,6 +118,7 @@ export function useCreateForm<Row extends HasId> (
   defaults?: Partial<Row>,
 ) {
   const store = useTablesStore()
+  useSyncHold()
 
   function initialForm (): Row {
     return {
@@ -168,6 +170,7 @@ export function useEditForm<Row extends HasId> (
   id: MaybeRefOrGetter<string>,
 ) {
   const store = useTablesStore()
+  useSyncHold()
 
   const { row, loading, error: loadError } = useTableRow<Row>(table, id)
 

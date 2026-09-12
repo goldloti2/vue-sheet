@@ -114,6 +114,7 @@
 - 佇列 `pending`、合併規則、`flush`、`hasPending` / `flushing` / `flushError`
 - 四個寫入 action 變成同步的，只動快取與佇列
 - App Bar 最右側的同步鈕（`refresh()` ＝ 推送 + 重抓所有已載入的表）+ 未推送圓點標記（失敗轉紅）+ `beforeunload` 攔截
+- 表單開著的時候同步鈕停用（`useSyncHold` 持有 `holdSync()`，`canSync` 判斷）
 - flush 失敗保持「未推送」狀態並用 snackbar 報錯，讓使用者重按。因為 id 由前端發，整批重送是安全的——刻意**不做**「記錄哪幾筆成功了」的逐筆補償邏輯
 - **重抓前一定先 flush**，沒清乾淨就不重抓；沒有「只重抓一張表」的 API
 - 跨表寫入順序無所謂。Sheet 沒有外鍵約束，後端也不做合法性驗證，所以父表子表誰先寫都不會壞

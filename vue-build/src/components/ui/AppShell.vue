@@ -118,6 +118,7 @@
 
       <v-btn
         aria-label="同步"
+        :disabled="!store.canSync"
         :loading="syncing"
         @click="sync"
       >

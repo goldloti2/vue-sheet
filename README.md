@@ -118,6 +118,7 @@ src/
     useMultiSelect.ts         多選狀態
     useLongPress.ts           長按偵測
     useNotify.ts              全 App 一則 snackbar 訊息（module-level，任何地方都能叫）
+    useSyncHold.ts            這個頁面活著的期間不准同步（表單 composable 內部用）
     actions/
       useTableActions.ts        PageAction 型別 + 通用動作 builder
                                 （useNewAction/useEditAction/useDeleteAction/useBulkDeleteAction）
@@ -177,9 +178,11 @@ store.removeMany(table, ids)     // 從快取移除多筆
 
 因為 store 自己會把快取補好，呼叫端**不需要**手動 refresh——所以**沒有「只重抓一張表」的 API**，頁面沒有需要自己補資料的時機。要重抓就是整個 App 一起，也就是下面那顆同步鈕。跨表算出來的值（例如父表顯示子表的加總）因為讀的是同一份共用資料，會自動跟著重算，不需要任何跨表失效機制。
 
-**同步鈕**固定放在 App Bar 最右側，做的是 `store.refresh()`＝**先推送再重抓所有已載入的表**（推不出去就不重抓，否則會無聲蓋掉未推送的變更）。因為它同時也是重新整理，所以永遠可按，不會 disabled；`store.hasPending` 為真時才在圖示右下角加一個圓點，未推送是 `warning` 色、上次推送失敗轉 `error` 色。
+**同步鈕**固定放在 App Bar 最右側，做的是 `store.refresh()`＝**先推送再重抓所有已載入的表**（推不出去就不重抓，否則會無聲蓋掉未推送的變更）。因為它同時也是重新整理，所以平常永遠可按；`store.hasPending` 為真時才在圖示右下角加一個圓點，未推送是 `warning` 色、上次推送失敗轉 `error` 色。
 
 它是 App 層級的東西、跟在哪一頁無關，所以**不走 `useAppBarActions`**——那條管道是給頁面註冊動作的，混進去會把頁面動作擠進 ⋮ 選單。同理，有未推送變更時 `beforeunload` 會攔一下關閉／重整，因為佇列只在記憶體裡。
+
+**表單開著的時候同步鈕停用**（`store.canSync`）。`useCreateForm`／`useEditForm` 內部呼叫 `useSyncHold`，頁面活著的期間持有一個 `holdSync()`，離開時釋放——改到一半按同步，重抓會讓編輯頁的 `watch(row)` 把表單沖掉。持有是計數器，同時開幾張都對。
 
 🔲 **流程存檔點**：`store.beginFlow()` 開一個存檔點，之後每張被碰到的表在改動前留一份原值；`rollbackFlow()` 一次還原、`commitFlow()` 丟掉。給連續動作用的——中途取消要整條流程一起取消，但不能動到跟流程無關的待推送變更。**目前還沒有呼叫者**，等連續動作做好才會用上（見 [ROADMAP](ROADMAP.md)）。流程進行中 `flush()` 會被擋下，否則使用者按了同步就會把半成品推進 Sheet，之後想回滾也回滾不了。
 

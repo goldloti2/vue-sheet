@@ -1,6 +1,7 @@
 import type { PageAction } from '@/composables/actions/useTableActions'
 import type { InjectionKey } from 'vue'
 import { inject, provide, reactive } from 'vue'
+import { notify } from '@/composables/useNotify'
 
 // 執行動作的單一入口。要確認的動作在這裡開對話框、跑非同步、接錯誤，
 // 所以頁面不用自己管 ConfirmDialog 和 loading/error
@@ -40,7 +41,10 @@ export function provideActionRunner () {
 
   function run (action: PageAction) {
     if (!action.confirm) {
-      void action.onClick()
+      // 沒有確認框的動作也要有地方接錯誤，不然會變成 unhandled rejection
+      Promise.resolve().then(() => action.onClick()).catch((error: unknown) => {
+        notify(error instanceof Error ? error.message : String(error), 'error')
+      })
       return
     }
 

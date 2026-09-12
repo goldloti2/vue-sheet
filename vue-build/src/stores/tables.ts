@@ -16,6 +16,12 @@ interface PendingOp {
   values: Record<string, string>
 }
 
+// 流程存檔點：每張被碰到的表在改動前留一份原值（快取＋佇列），見 README 4.2
+interface FlowSnapshot {
+  rows: Map<TableKey, unknown[] | undefined>
+  queue: Map<TableKey, Map<string, PendingOp>>
+}
+
 export const useTablesStore = defineStore('tables', () => {
   // 畫面的單一真相。已送出的與還沒送出的混在一起，畫面不需要分辨
   const rows = reactive<Partial<Record<TableKey, unknown[]>>>({})
@@ -25,6 +31,9 @@ export const useTablesStore = defineStore('tables', () => {
   const pending = reactive(new Map<TableKey, Map<string, PendingOp>>())
   const flushing = shallowRef(false)
   const flushError = shallowRef<string | null>(null)
+  const activeFlow = shallowRef<FlowSnapshot | null>(null)
+
+  const inFlow = computed(() => activeFlow.value !== null)
 
   const hasPending = computed(() => {
     for (const queue of pending.values()) {
@@ -69,10 +78,7 @@ export const useTablesStore = defineStore('tables', () => {
     await load(table)
   }
 
-  /**
-   * 推送 + 重抓所有已載入的表。重抓會蓋掉還沒送出去的東西，所以推不出去就不重抓。
-   * 回傳有沒有真的重抓（＝佇列清空了沒）。
-   */
+  // 推送 + 重抓所有已載入的表；推不出去就不重抓，否則會蓋掉未推送的變更
   async function refresh (): Promise<boolean> {
     if (!await flush()) {
       return false
@@ -82,7 +88,24 @@ export const useTablesStore = defineStore('tables', () => {
     return true
   }
 
+  // 流程碰到這張表之前先留一份。同一張表只留第一次，之後的改動都算流程的
+  function remember (table: TableKey) {
+    const flow = activeFlow.value
+    if (!flow) {
+      return
+    }
+
+    if (!flow.rows.has(table)) {
+      flow.rows.set(table, rows[table])
+    }
+    if (!flow.queue.has(table)) {
+      flow.queue.set(table, new Map(queueFor(table)))
+    }
+  }
+
   function patch (table: TableKey, update: (list: unknown[]) => unknown[]) {
+    remember(table)
+
     const current = rows[table]
     if (current) {
       rows[table] = update(current)
@@ -100,12 +123,10 @@ export const useTablesStore = defineStore('tables', () => {
     return created
   }
 
-  /**
-   * 一次寫入疊進佇列。
-   * update + update 併成一次、create + update 併進 create、
-   * create + delete 整組移除、update + delete 只留 delete。
-   */
+  // 同一筆的多次操作在寫入當下就合併，規則見 README 4.2
   function enqueue (table: TableKey, id: string, kind: PendingOp['kind'], values: Record<string, string>) {
+    remember(table)
+
     const queue = queueFor(table)
     const existing = queue.get(id)
 
@@ -130,13 +151,14 @@ export const useTablesStore = defineStore('tables', () => {
       : mutateTable(op.kind, table, { id, ...op.values }))
   }
 
-  /**
-   * 把佇列送出去。送成功一筆就從佇列移掉，所以失敗時已經送出的不會重送，
-   * 剩下的留在佇列裡等使用者再按一次推送。
-   *
-   * 不會往外拋，錯誤記在 `flushError`。回傳佇列是不是已經清空。
-   */
+  // 逐筆送出，成功一筆移掉一筆；失敗不還原、不往外拋，錯誤記在 flushError
   async function flush (): Promise<boolean> {
+    if (activeFlow.value) {
+      // 流程還沒跑完，推出去的會是半成品，而且推出去之後就回滾不了了
+      flushError.value = '流程進行中，無法推送'
+      return false
+    }
+
     if (flushing.value) {
       return !hasPending.value
     }
@@ -158,6 +180,42 @@ export const useTablesStore = defineStore('tables', () => {
     } finally {
       flushing.value = false
     }
+  }
+
+  // 開存檔點。一次只能一個，連接器要在 finally 裡 commit 或 rollback
+  function beginFlow (): void {
+    if (import.meta.env.DEV && activeFlow.value) {
+      console.warn('[tables] 上一個流程還沒結束就又開了一個，舊的存檔點會被丟掉')
+    }
+
+    activeFlow.value = { rows: new Map(), queue: new Map() }
+  }
+
+  // 流程完成：丟掉存檔點，變更留在佇列裡等推送
+  function commitFlow (): void {
+    activeFlow.value = null
+  }
+
+  // 流程取消：快取與佇列都還原成流程開始前的樣子，沒碰過的表一個位元都不動
+  function rollbackFlow (): void {
+    const flow = activeFlow.value
+    if (!flow) {
+      return
+    }
+
+    for (const [table, saved] of flow.rows) {
+      if (saved === undefined) {
+        delete rows[table]
+      } else {
+        rows[table] = saved
+      }
+    }
+
+    for (const [table, saved] of flow.queue) {
+      pending.set(table, saved)
+    }
+
+    activeFlow.value = null
   }
 
   function create<Row extends HasId> (table: TableKey, values: Record<string, unknown>): Row {
@@ -201,9 +259,13 @@ export const useTablesStore = defineStore('tables', () => {
     hasPending,
     flushing,
     flushError,
+    inFlow,
     ensureLoaded,
     refresh,
     flush,
+    beginFlow,
+    commitFlow,
+    rollbackFlow,
     create,
     update,
     remove,

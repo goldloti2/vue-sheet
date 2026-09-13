@@ -78,6 +78,8 @@
 
 ## 未完成
 
+> 前端這邊的建議順序：「問幾個欄位」對話框 → 批次快速編輯 → `ref` 關聯選擇器。前兩個把最早的待辦收乾淨，第三個實際使用最有感；流程的「返回也先確認」接在對話框後面順手做。
+
 ### 後端（完全還沒開始）
 - Apps Script 的 `doGet`/`doPost` 入口與泛用 CRUD 引擎
 - Schema.gs、SheetUtils.gs（header 對應、row array ↔ object；ID 改由前端產生，後端不發）
@@ -109,11 +111,10 @@
 
 改動先累積在前端，由使用者按「推送」才一次寫進 Sheet。設計與實作見 [README 4.2](README.md#42-資料流讀取與寫入)。
 
-**排在連續動作前面。** 連續動作的原子性整個建立在這個佇列上（見下面「流程存檔點」），而且佇列一旦存在，寫入路徑、錯誤時機、驗證時機都會變——先做完再疊連續動作，才不會做白工。
-
 **已完成**
 - 佇列 `pending`、合併規則、`flush`、`hasPending` / `flushing` / `flushError`
 - 四個寫入 action 變成同步的，只動快取與佇列
+- 流程存檔點 `beginFlow` / `commitFlow` / `rollbackFlow`（給連續動作用；流程進行中 `flush` 會被擋下）
 - App Bar 最右側的同步鈕（`refresh()` ＝ 推送 + 重抓所有已載入的表）+ 未推送圓點標記（失敗轉紅）+ `beforeunload` 攔截
 - 表單開著的時候同步鈕停用（`useSyncHold` 持有 `holdSync()`，`canSync` 判斷）
 - flush 失敗保持「未推送」狀態並用 snackbar 報錯，讓使用者重按。因為 id 由前端發，整批重送是安全的——刻意**不做**「記錄哪幾筆成功了」的逐筆補償邏輯
@@ -123,47 +124,6 @@
 **還沒做**
 - 佇列持久化（見下面「持久化：先不做」）
 - 通用 batch 端點。目前 `flush` 是逐筆送 N 次請求，後端整個還沒開始寫，等接真後端時一起做
-
-**佇列形狀**
-```ts
-pending: Map<TableKey, Map<id, { kind: 'create' | 'update' | 'delete', values: Record<string, string> }>>
-```
-快取（`rows`）仍然是**畫面**的單一真相，寫入時照樣就地更新；佇列是**要送什麼**的單一真相。`values` 只累積寫過的欄位，同一筆再改就 shallow merge，不需要跟原始資料做 diff，也不用多留一份快照。上面的合併規則就是這個 map 上的操作，發生在寫入當下而不是 flush 時。
-
-**`values` 在進佇列的當下就序列化**（`serializeRow` 的產物，sheet header 當 key），不存 `Partial<Row>`。理由：那本來就是要送給後端的形狀，flush 拿了就送；而且裡面沒有 `Date` 物件，之後要加持久化時 `JSON.stringify` 直接可用，不必回頭改資料結構。合併規則不受影響，只是 key 從欄位 key 換成 header。
-
-表單一律送整列（不做最小差集），所以 `update` 的 `values` 會是整列——payload 大一點，但省掉在 `useEditForm` 裡比對原始值的複雜度。之後真的需要再優化。
-
-**寫入路徑怎麼變**
-
-現在是**直寫**：`await mutateTable(...)` 成功了才 `patch` 快取（`stores/tables.ts`）。所以今天根本沒有「還沒送出」這個狀態，失敗＝快取不動＝畫面永遠跟後端一致。
-
-改成累積之後順序反過來，而且不等網路：
-
-```ts
-const row = { id: newId(), ...values }
-patch(table, list => [...list, row])              // ① 立刻改快取，畫面馬上有
-enqueue(table, row.id, 'create', values)          // ② 記進佇列
-return row                                        // 同步回傳，不 await
-```
-
-連帶影響三件事：
-
-- **id 必須由前端發**——不等後端就要有 id 給後續步驟用。✅ 已完成
-- **多出「快取有、後端還沒有」這個狀態**——這就是重抓前一定要先 flush 的原因
-- **表單送出不再會有後端錯誤**，錯誤全部移到 flush。所以送出當下唯一的把關就是前端驗證（見「資料一致性」）——那本來就該做，佇列只是讓它更明顯
-
-**三個結構的分工**
-
-| | 存什麼 | 誰讀 |
-| --- | --- | --- |
-| `rows` | 畫面看到的資料。已送出的、沒送出的、流程建的全混在一起，刻意不分——畫面不該關心一筆送出去了沒 | 畫面 |
-| `pending` | 還沒寫到後端的那批，定位鍵是 (表, id) | flush |
-| `activeFlow` | 流程碰過的每張表**在被碰之前**的樣子（`rows` 的陣列＋`pending` 的 Map） | 回滾 |
-
-之後要做「這筆尚未推送」的醒目標記，是去查 `pending` 有沒有這個 key，不是在 `rows` 的資料上加旗標。
-
-> 命名注意：`pending` 是佇列。連續動作裡「等待下一步」的那個回呼是另一個東西，實作時要分開命名（例如 `pendingStep`）。
 
 **持久化：先不做**
 
@@ -176,29 +136,6 @@ return row                                        // 同步回傳，不 await
 - **`values` 進佇列時就序列化**（見上）——沒有 `Date`，可以直接 `JSON.stringify`
 - **流程期間暫停寫入 localStorage**——這條直接消滅了「佇列該活過重整、流程必須死在重整」的衝突。磁碟上的佇列會一直停在流程開始前的樣子，App 中途被殺掉時開機讀到的正好就是回滾後的狀態，不必持久化 snapshot、也不必寫任何開機回滾邏輯。流程正常結束才恢復並寫一次
 
-**流程存檔點**（已完成）
-
-連續動作要的是「中途取消就整個取消，但不能動到跟這個流程無關的待推送變更」。做法是 `beginFlow()` 開一個存檔點，之後**每張被碰到的表**在改動前留下一份原值（快取的陣列 + 佇列的 Map，同一張表只留第一次）：
-
-- `rollbackFlow()` → 照存檔點還原；流程開始前沒載入過的表就整個移除
-- `commitFlow()` → 丟掉存檔點，變更留在佇列裡等推送
-
-**存整張表而不是逐筆**，因為流程進行中沒有別的寫入者：使用者正在填表單，而 `flush` 在流程進行中是被擋掉的（見下）。所以整張還原跟逐筆還原等價，但簡單很多——`patch` 本來就是整個陣列換掉，佇列的 `PendingOp` 也一律建新物件不就地改，所以淺層複製就夠。
-
-例：佇列已有 A、B、C 三項，流程建立了父表列 P、又改了 B 的日期，使用者在第二步放棄 → 還原之後佇列回到 A、B、C（B 是流程碰之前的值，**不是被刪掉**），P 從快取與佇列兩邊消失，而且從頭到尾沒送出過。
-
-**流程進行中 `flush` 會被擋下**（回傳 false、`flushError` 寫「流程進行中，無法推送」）。不擋的話使用者中途按同步就會把半成品推進 Sheet，那之後再取消就回滾不了了——存檔點只動得了記憶體。
-
-**tx 是隱式的**
-
-流程期間的寫入不是連接器做的，是**表單頁**做的——`useCreateForm` 跟連接器隔著一次導覽、是不同的元件，拿不到顯式傳下去的 tx（函式塞不進 `history.state`）。顯式方案只能覆蓋連接器裡自己寫的立即型步驟，變成一半顯式一半隱式，更難懂。
-
-所以 `activeFlow` 是 store 裡的環境狀態，`store.create/update` 自己去看。它的生命週期很短：`router.afterEach` 一律清掉，只有一個地方能設定。
-
-這是蓋在**記憶體佇列**上的 undo log，不是蓋在後端上的補償寫入，所以三個常見的回滾問題都不存在：還原是 Map 操作、不會失敗；沒有中間狀態送到後端；重整時佇列與 snapshot 一起消失，等於什麼都沒寫。
-
-**連續動作的原子性完全依賴這個佇列**，所以順序是先把 store 與佇列整理好，再做連續動作。
-
 ### 資料一致性
 - **前端驗證**：form 層已完成（`schema/validation.ts` 的 `validateRow`＋`SchemaColumn` 上的 `required`／`min`／`max`，見 [README 4.5](README.md#45-schema-的角色)）。剩下的：
   - **store 寫入層還沒接**同一個 `validateRow`。等累積寫入把寫入路徑定下來再做，免得白搬一次
@@ -209,7 +146,14 @@ return row                                        // 同步回傳，不 await
 
 ### UI 功能
 - 搜尋列、篩選、排序的操作介面（目前排序只有 schema 的 `defaultSort`，使用者不能自己改）
-- `ref` 欄位的關聯選擇器：`DataForm` 目前把 `ref` 當純文字輸入，應該換成從對方表撈資料的下拉選單
+- `ref` 欄位的關聯選擇器：`DataForm` 目前把 `ref` 當純文字輸入，要自己打 `TPL-xxxxxxxx`，實際使用最痛的一個。改成跳出式選單，schema 的 ref 欄位多幾個設定：
+  ```ts
+  { type: 'ref', refTable: 'parent', display: ['name', 'date'], allowCreate: true }
+  ```
+  - `display`：清單每列顯示哪幾欄；省略就顯示 id
+  - 搜尋：比對 `display` 那幾欄的顯示文字。跟搜尋列共用「列 → 可搜尋文字」的函式，可以一起做
+  - `allowCreate`：清單最上面一項「＋ 新增…」＝ `runStep('/parent/new')` 拿到新建那筆、回來自動選上。依賴流程機制
+  - 順便解掉「ref 不檢查目標存在」那條驗證缺口：用選的就選不到不存在的
 - 圖片欄位與上傳（存 Google Drive）
 - 總覽頁範本（`DataDashboardTemplate`）：保留了位置但沒有具體需求
 - `TabView` 放多個獨立面板（例如兩張表的列表當成一組頁籤）目前只有內容層可用，動作層會壞掉。根源是兩個面板一旦都被看過就同時掛著（`v-window` 用 `v-show` 切換），而 FAB 與 App Bar 動作都假設同時只有一個頁面活著：
@@ -219,86 +163,47 @@ return row                                        // 同步回傳，不 await
   - 方向是讓面板知道自己是不是當前頁籤（面板收一個 `active` prop，`PageFab` 也加一個跟現有 KeepAlive 狀態做 AND、預設 `true`），但實際要傳到哪一層等真的要寫這種頁面時再定。修好之後 `template/` 要補上這種頁面的寫法
 
 ### 多選與批次
-- 批次快速編輯：把選取的多筆的指定欄位改成同一個值。`bulkUpdate` 目前只有假後端與 `mutateTable` 支援，store 沒有對應 action，也沒有 UI 入口
+- 批次快速編輯：把選取的多筆的指定欄位改成同一個值。就是「問幾個欄位」對話框沒有單筆對象的用法，加一個前置的欄位選擇：
+  - 多選模式 → App Bar 多一顆「編輯」→ 對話框頂端一個欄位選擇器（可複選）→ 底下依選到的欄位長出輸入 → 確定
+  - `store.bulkUpdate(table, ids, values)` 實作成 **N 個 `update` 進佇列**，不另開 op 種類：合併規則直接適用，flush 本來就逐筆送。後端契約的 `bulkUpdate { ids, data }` 留給以後 batch 端點最佳化
+  - 目前 `bulkUpdate` 只有假後端與 `mutateTable` 支援，store 沒有對應 action，也沒有 UI 入口
 - 多選模式不要自動取消，改成右上角出現 X 才關閉
 - 全選（考慮中）
 
-### 連續動作（機制已完成，還沒有實際的流程）
+### 連續動作（機制已完成）
 
-**排在累積寫入後面**，因為原子性靠那個佇列。
+設計與實作見 [README 4.4](README.md#44-完成動作後的導覽)。
 
-一個「連接器」動作用一段 async 程式碼把數個步驟串起來，控制權在每一步之間回到它手上。連接器自己就是一個普通的 `PageAction`（`onClick` 的型別本來就允許 async），照樣交給 `PageFab`。
+**已完成**
+- `useFlow.ts`：`runFlow`（外殼：存檔點 + commit / rollback）、`runStep`（開表單等送出）、`resumeStep`（表單交棒）、`FlowCancelled`、`hasEarlierSteps`
+- `router.afterEach` 中止等待中的步驟（reject）；`useCreateForm`／`useEditForm` 送出成功後先問 `resumeStep`
+- 第一步 `push`、之後 `replace`；第二步之後取消一律先問；流程不能套疊（第二個 `beginFlow` 直接拋錯）
+- 範本 `table/use__Table__Actions.ts` 末尾有寫法示範；專案端的第一條流程見 production 分支的 PROJECT-ROADMAP
 
-歸屬規則：**掛在流程起點那張表的 actions 底下**（例如 `use父表Actions().newWithChild`），即使流程跨表也一樣。呼叫端就是那個頁面，而「頁面只從一個地方取動作」要成立，歸屬規則必須明確，「起點」是唯一不含糊的。等流程多到三四個再拆獨立檔案，那時該表的 actions 變成 re-export。
+**還沒做**
+- **返回／導覽列也先跳確認**（跟底部的取消一樣）：現在是 `afterEach` 事後中止，來不及問。要改成 `router.beforeEach` 守衛，有等待中的步驟就先問、說不就回傳 `false` 擋下導覽。需要一個回傳 promise 的是／否對話框——就是下面「問幾個欄位」對話框的最簡單情況，所以排在它後面
+- **中途放棄後要不要提示使用者**——有了存檔點理論上不需要（什麼都沒完成），但「剛剛那一步白填了」要不要講一聲，等實際用過再決定
+
+**決定不做**
+- **返回＝回到上一步**（而不是整條取消）。代價是三件事加起來等於一個多頁精靈：每步改 `push` 且結束後要清歷史；存檔點要從一格變一疊（每步單獨收回）；上一步的表單要帶著使用者上次填的值重開。等真有三步以上、常態要回頭改的流程再說
+- **編輯表單的預設值通道**：`useEditForm` 不讀 `navigationDefaults()`，所以編輯表單可以當流程的一步，但沒辦法把上一步的結果預先填進去。目前想不到需要的情境
+- **進度指示**（第 1 步／共 2 步）：步驟頂多兩三步，每一步是完整的一頁、App Bar 上有自己的標題
+
+### 「問幾個欄位」對話框（設計已定，還沒實作）
+
+三件事都卡在它上面：批次快速編輯、流程的對話框型步驟、「日期改成今天」那類快速動作。目前 App 裡只有 `ConfirmDialog`（是／否），沒有任何「問一個值」的對話框。
 
 ```ts
-onClick: async () => {
-  const row = await runStep('/parent/new', { status: '已下單' })    // 導覽型
-  const date = await askDate('選擇日期')                            // 對話框型
-  await store.update('parent', row.id, { date })                   // 立即型
-  router.replace(`/parent/${row.id}`)                              // 收尾
-}
+askFields<Row>(schema, keys, options?) → Promise<Partial<Row> | null>
+// keys：要問哪幾個欄位；回傳 null = 取消
 ```
 
-**三種步驟，只有第一種需要額外機制**
-
-| 種類 | 例子 | 需要什麼 |
-| --- | --- | --- |
-| 導覽型 | 開新增／編輯表單 | `history.state` 把預設值送過去 ＋ module 變數把結果送回來 |
-| 對話框型 | 選日期的小視窗 | 一個普通的 promise，按確定時 resolve |
-| 立即型 | 日期改成今天 | 什麼都不用，就是一次 `await store.update` |
-
-> 這也是不採用「把整條鏈序列化成資料」那個方案的原因之一：序列化的鏈表達不了後兩種步驟，也沒辦法在中途做判斷。
-
-**導覽型步驟怎麼運作**
-
-- 資料往前傳走 `history.state`（就是現在的 `defaults`，不用改）；控制權往回傳走一個 module 變數，因為函式塞不進 `history.state`
-- `runStep` ＝ `router.replace(目的地, { state: { defaults } })`，然後註冊一個回呼並回傳 promise。目的地收 `RouteLocationRaw`（跟 `leaveAfterAction` 一致），這樣吃得到 `typed-router.d.ts` 的型別檢查，也不用為了「只支援 `/表/new`」另開 API
-- `useCreateForm` 送出成功後多一個分岔：有等待中的回呼就把建好的 row 交出去，沒有就照舊 `leaveAfterAction`。**`useEditForm` 接同一個掛勾點**，所以中間步驟可以是編輯表單——結構一模一樣，多三行，只支援新增會很怪
-- **通用動作（`useNewAction` 那些）一行都不用改**
-- 第一步 `push`、之後 `replace`：保住起點、做完的表單不留在歷史裡，任何一步按返回都回到鏈的起點
-
-**取消**
-
-- `router.afterEach` 一律中止流程。返回鍵、導覽列、連結、改網址全部算放棄；重整更是自動的（module 變數本來就會死）
-- 唯一不被中止的是「送出成功→流程自己前進」，靠順序保證：`await router.replace(...)` 是在 `afterEach` 跑完之後才 resolve 的
-- 對話框型步驟也要能被中止——掛在 `AppShell` 上的對話框會跨路由存活，不中止的話換頁後它還開著
-- 中止是 **reject 而不是靜默丟掉**，因為連接器要跑回滾（見上面「流程存檔點」）
-
-**「完成後去哪」不是獨立需求**
-
-它就是連接器的最後一行 `router.replace(...)`。所以「新增完直接進那筆的 detail」只是一步的鏈，不需要給 `useNewAction` 加任何參數。
-
-**錯誤**
-
-- 送出失敗（不管第幾步）維持現況：停在當下那張表單、錯誤顯示在它的 alert 上、流程不前進
-- 連接器自己拋錯要另外處理。那時候該步驟往往已經成功了，把錯誤塞進那張表單會讓使用者以為新增失敗而再按一次、建出重複的資料。做法是走 `leaveAfterAction` 把人帶離，錯誤用全域方式顯示
-
-**全域訊息**（已完成）
-
-流程的錯誤用 `notify()` 跳 snackbar（`useNotify` + `AppShell` 的 `<v-snackbar>`）。不能用 `ConfirmDialog` 的 error，那只有確認框開著時才看得到。
-
-**不做進度指示**（第 1 步／共 2 步）。步驟頂多兩三步，每一步是完整的一頁、App Bar 上有自己的標題，使用者知道自己在哪。等真有四步以上再說。
-
-**已完成**（設計與實作見 [README 4.4](README.md#44-完成動作後的導覽)）
-
-- `useFlow.ts`：`runFlow`（外殼：存檔點 + commit / rollback）、`runStep`（開表單等送出）、`resumeStep`（表單交棒）、`FlowCancelled`
-- `router.afterEach` 中止等待中的步驟（reject）
-- `useCreateForm`／`useEditForm` 送出成功後先問 `resumeStep`
-- 第一步 `push`、之後 `replace`，任何一步取消或返回都回到起點
-- 第二步之後取消一律先問（`hasEarlierSteps`），文案說明會連前面的變更一起放棄
-- 流程不能套疊：第二個 `beginFlow` 直接拋錯。從 UI 上套不進去（流程中途只會在表單頁上），會發生只有連接器寫壞的情況
-- 範本：`table/use__Table__Actions.ts` 末尾有寫法示範；專案端的第一條流程見 production 分支的 PROJECT-ROADMAP
-
-**做到一半才發現的幾件事**
-
-- **表單底部的「取消」鈕現在也是流程的中止點**：它走 `leaveAfterAction` → 導覽 → `afterEach` 中止，行為是對的。但它的確認文案是「有尚未儲存的變更，確定要離開嗎？」，在流程中途放棄的其實是**整條流程**（含前面填完的步驟），文案會誤導。要不要依流程狀態換文案，等實際用過再說
-- **編輯表單沒有預設值通道**：`useCreateForm` 會讀 `navigationDefaults()`，`useEditForm` 不會（而且它有 `onActivated` 重置成快取那筆）。所以編輯表單可以當流程的一步，但沒辦法把上一步的結果預先填進去
-- **中途放棄後要不要提示使用者**——有了存檔點理論上不需要（什麼都沒完成），但「剛剛那一步白填了」這件事要不要講一聲，等實際用過再決定
-
-**對話框型步驟還沒有機制**（獨立項目）
-
-上面那張表把「開小視窗問一個值」列成三種步驟之一，但 App 裡只有 `ConfirmDialog`（是/否），**沒有任何「問一個值」的對話框**。要做的話是另一套東西：一個能回傳 promise 的通用輸入對話框，掛在 `AppShell` 上。它也可以脫離連續動作單獨存在——「選日期快速編輯」那類動作就是它。
+- **內容**：`DataForm` 只顯示 `keys` 那幾個欄位——加一個 `only` prop 或傳過濾過 `columns` 的 schema。輸入元件、驗證、錯誤顯示全部沿用
+- **初始值**三層：針對單筆且那欄非空 → 那筆的現值；否則 `options.defaults[key]`（型別同 schema 的 `ColumnDefault`，值或函式）；都沒有 → 空
+- **驗證**只跑被問到的欄位：`validateRow` 要加 `keys` 參數，不然沒問到的必填欄位會被算成錯
+- **位置**：跟 `notify` 同一個模式——module-level 狀態 + `AppShell` 掛一個 `AppDialog`，promise 由對話框的取消／確定 resolve
+- **中止**：`router.afterEach` 把開著的對話框關掉並 resolve `null`（掛在 `AppShell` 上的對話框會跨路由存活，不關的話換頁後它還開著）
+- **一次問幾個**：單一對話框放全部。連續動作是給「一步的結果決定下一步」用的，欄位之間沒有相依，拆開只是多按確定
 
 ### PWA 與離線
 - manifest.json、Service Worker 都還沒建立（`vite-plugin-pwa` 未安裝）

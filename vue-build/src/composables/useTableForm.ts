@@ -2,7 +2,9 @@ import type { PageAction } from '@/composables/actions/useTableActions'
 import type { TableKey } from '@/schema'
 import type { TableSchema } from '@/schema/types'
 import type { ComputedRef, MaybeRefOrGetter } from 'vue'
+import type { RouteLocationRaw } from 'vue-router'
 import { computed, onActivated, ref, toValue, watch } from 'vue'
+import { hasEarlierSteps, resumeStep } from '@/composables/useFlow'
 import { useSyncHold } from '@/composables/useSyncHold'
 import { leaveAfterAction, navigationDefaults } from '@/router'
 import { columnValues, emptyRow } from '@/schema/types'
@@ -35,7 +37,25 @@ function isDirty (form: object | null, pristine: object | null, schema: TableSch
   ))
 }
 
-// 底部動作列用的取消／送出。只有真的改過東西時取消才帶 `confirm`。
+// 表單完成了：在流程裡就把結果交給連接器，不然照舊離開
+function finish (row: object, fallback: RouteLocationRaw): void {
+  if (!resumeStep(row)) {
+    leaveAfterAction(fallback)
+  }
+}
+
+// 取消要不要先問：這張表單改過、或前面的步驟已經寫了東西（取消等於整條收回）
+function cancelConfirm (dirty: boolean): PageAction['confirm'] | undefined {
+  if (hasEarlierSteps.value) {
+    return { title: '放棄變更', text: '是否放棄未儲存的變更（包含之前的變更）？' }
+  }
+  if (dirty) {
+    return { title: '放棄變更', text: '有尚未儲存的變更，確定要離開嗎？' }
+  }
+  return undefined
+}
+
+// 底部動作列用的取消／送出
 function formActions (
   submitLabel: string,
   submit: () => Promise<void>,
@@ -47,7 +67,7 @@ function formActions (
       key: 'cancel',
       label: '取消',
       onClick: leave,
-      ...(dirty() && { confirm: { title: '放棄變更', text: '有尚未儲存的變更，確定要離開嗎？' } }),
+      confirm: cancelConfirm(dirty()),
     },
     {
       key: 'submit',
@@ -106,12 +126,7 @@ function useSubmitState () {
   return { submitting, error, run }
 }
 
-/**
- * 初始值由三層疊出來，優先度由上而下：
- *   1. `defaults` 參數（頁面自己算得出來的，例如巢狀路由的父層 id）
- *   2. 導覽帶來的 `history.state.defaults`（從哪裡按新增決定，見 useNewAction）
- *   3. schema 的 `default`（跟來源無關的固定預設值）
- */
+// 初始值三層疊出來：defaults 參數 > 導覽帶來的 > schema 的 default（見 README 4.5）
 export function useCreateForm<Row extends HasId> (
   table: TableKey,
   schema: TableSchema,
@@ -149,8 +164,7 @@ export function useCreateForm<Row extends HasId> (
     }
 
     await run(async () => {
-      await store.create<Row>(table, columnValues(form.value, schema))
-      leaveAfterAction(`/${table}`)
+      finish(store.create<Row>(table, columnValues(form.value, schema)), `/${table}`)
     })
   }
 
@@ -183,8 +197,7 @@ export function useEditForm<Row extends HasId> (
   const { submitting, error, run } = useSubmitState()
   const { fieldErrors, check, reset: resetErrors } = useValidation(schema, () => form.value)
 
-  // 同一個網址共用一個 KeepAlive 實例，所以離開再回來會是同一個 setup。
-  // 不重置的話，上次沒存就離開的輸入會留在表單裡（見 README 4.3）
+  // 同一個網址共用一個 KeepAlive 實例，回來要重置（見 README 4.3）
   onActivated(() => {
     form.value = row.value ? { ...row.value } as Row : null
     error.value = null
@@ -204,14 +217,15 @@ export function useEditForm<Row extends HasId> (
       return
     }
 
+    const fallback = `/${table}/${current.id}`
+
     if (!dirty()) {
-      leaveAfterAction(`/${table}/${current.id}`)
+      finish(current, fallback)
       return
     }
 
     await run(async () => {
-      await store.update<Row>(table, current.id, columnValues(current, schema))
-      leaveAfterAction(`/${table}/${current.id}`)
+      finish(store.update<Row>(table, current.id, columnValues(current, schema)), fallback)
     })
   }
 

@@ -196,10 +196,10 @@ export const useTablesStore = defineStore('tables', () => {
     }
   }
 
-  // 開存檔點。一次只能一個，連接器要在 finally 裡 commit 或 rollback
+  // 開存檔點。一次只能一個：套疊會蓋掉外層的存檔點，所以直接拒絕（見 README 4.4）
   function beginFlow (): void {
-    if (import.meta.env.DEV && activeFlow.value) {
-      console.warn('[tables] 上一個流程還沒結束就又開了一個，舊的存檔點會被丟掉')
+    if (activeFlow.value) {
+      throw new Error('上一個流程還沒結束')
     }
 
     activeFlow.value = { rows: new Map(), queue: new Map() }

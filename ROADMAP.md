@@ -35,7 +35,8 @@
 - 寫入走 store 的 `create` / `update` / `remove` / `removeMany`：改快取並進佇列，呼叫端不用手動 refresh
 - 待寫入佇列 `pending`（含合併規則）與手動推送；四個寫入 action 是同步的，只動快取與佇列
 - `useNotify`：全 App 一則 snackbar 訊息，由 `AppShell` 渲染
-- 流程存檔點 `beginFlow` / `commitFlow` / `rollbackFlow`：把一段流程的快取與佇列改動一次還原（給連續動作用，目前還沒有呼叫者）
+- 流程存檔點 `beginFlow` / `commitFlow` / `rollbackFlow`：把一段流程的快取與佇列改動一次還原；套疊直接拋錯
+- `useFlow`：連續動作的外殼與導覽型步驟（`runFlow` / `runStep` / `resumeStep`），任何導覽都算放棄並回滾
 - 新增的 id 由前端發：`newId` 是 schema 上的必填函式，格式由各表決定（`prefixedId('TPL')` 是現成的前綴式）。後端收到已存在的 id 就當作重送、回傳既有那筆
 - 跨表算出來的值靠共用快取的 reactivity 自動重算，不需要跨表失效機制
 
@@ -222,7 +223,7 @@ return row                                        // 同步回傳，不 await
 - 多選模式不要自動取消，改成右上角出現 X 才關閉
 - 全選（考慮中）
 
-### 連續動作（存檔點已完成，連接器還沒做）
+### 連續動作（機制已完成，還沒有實際的流程）
 
 **排在累積寫入後面**，因為原子性靠那個佇列。
 
@@ -255,7 +256,7 @@ onClick: async () => {
 - `runStep` ＝ `router.replace(目的地, { state: { defaults } })`，然後註冊一個回呼並回傳 promise。目的地收 `RouteLocationRaw`（跟 `leaveAfterAction` 一致），這樣吃得到 `typed-router.d.ts` 的型別檢查，也不用為了「只支援 `/表/new`」另開 API
 - `useCreateForm` 送出成功後多一個分岔：有等待中的回呼就把建好的 row 交出去，沒有就照舊 `leaveAfterAction`。**`useEditForm` 接同一個掛勾點**，所以中間步驟可以是編輯表單——結構一模一樣，多三行，只支援新增會很怪
 - **通用動作（`useNewAction` 那些）一行都不用改**
-- 每步都用 `replace`，做完的表單不留在歷史裡，任何一步按返回都回到鏈的起點
+- 第一步 `push`、之後 `replace`：保住起點、做完的表單不留在歷史裡，任何一步按返回都回到鏈的起點
 
 **取消**
 
@@ -279,12 +280,15 @@ onClick: async () => {
 
 **不做進度指示**（第 1 步／共 2 步）。步驟頂多兩三步，每一步是完整的一頁、App Bar 上有自己的標題，使用者知道自己在哪。等真有四步以上再說。
 
-**還沒做的**
+**已完成**（設計與實作見 [README 4.4](README.md#44-完成動作後的導覽)）
 
-1. **`runStep` 機制** —— module 變數存「等待中的下一步」、`router.afterEach` 中止（reject 而不是靜默丟掉）、`useCreateForm`／`useEditForm` 送出成功後把建好的 row 交出去
-2. **流程外殼** —— `beginFlow()` → 跑 body → 成功 `commitFlow()`、中止或拋錯 `rollbackFlow()`。連接器的 `onClick` 包這一層
-3. 同步鈕在流程進行中顯示成停用（store 已經擋住了，這裡只是讓按鈕看起來是對的）
-4. 文件與範本
+- `useFlow.ts`：`runFlow`（外殼：存檔點 + commit / rollback）、`runStep`（開表單等送出）、`resumeStep`（表單交棒）、`FlowCancelled`
+- `router.afterEach` 中止等待中的步驟（reject）
+- `useCreateForm`／`useEditForm` 送出成功後先問 `resumeStep`
+- 第一步 `push`、之後 `replace`，任何一步取消或返回都回到起點
+- 第二步之後取消一律先問（`hasEarlierSteps`），文案說明會連前面的變更一起放棄
+- 流程不能套疊：第二個 `beginFlow` 直接拋錯。從 UI 上套不進去（流程中途只會在表單頁上），會發生只有連接器寫壞的情況
+- 範本：`table/use__Table__Actions.ts` 末尾有寫法示範；專案端的第一條流程見 production 分支的 PROJECT-ROADMAP
 
 **做到一半才發現的幾件事**
 

@@ -118,6 +118,8 @@
 
 表單頁不用自己組那兩顆按鈕——`useCreateForm`／`useEditForm` 回傳現成的 `actions`（含「有改動才跳確認」的取消），照 `pages/new.vue`、`pages/edit.vue` 的寫法接上去就好。
 
+好幾個步驟要一氣呵成（新增完直接進 detail、接著再新增另一張表）的話，用 `runFlow` + `runStep` 串起來，寫法見 `table/use__Table__Actions.ts` 末尾的註解，設計說明見 README 4.4。
+
 要跳一則短訊息（成功、失敗、已刪除之類的）就直接叫 `notify()`，不需要在頁面上放任何元件：
 
 ```ts

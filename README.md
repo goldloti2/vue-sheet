@@ -119,6 +119,7 @@ src/
     useLongPress.ts           長按偵測
     useNotify.ts              全 App 一則 snackbar 訊息（module-level，任何地方都能叫）
     useSyncHold.ts            這個頁面活著的期間不准同步（表單 composable 內部用）
+    useFlow.ts                連續動作：runFlow / runStep / resumeStep（見 4.4）
     actions/
       useTableActions.ts        PageAction 型別 + 通用動作 builder
                                 （useNewAction/useEditAction/useDeleteAction/useBulkDeleteAction）
@@ -184,7 +185,7 @@ store.removeMany(table, ids)     // 從快取移除多筆
 
 **表單開著的時候同步鈕停用**（`store.canSync`）。`useCreateForm`／`useEditForm` 內部呼叫 `useSyncHold`，頁面活著的期間持有一個 `holdSync()`，離開時釋放——改到一半按同步，重抓會讓編輯頁的 `watch(row)` 把表單沖掉。持有是計數器，同時開幾張都對。
 
-🔲 **流程存檔點**：`store.beginFlow()` 開一個存檔點，之後每張被碰到的表在改動前留一份原值；`rollbackFlow()` 一次還原、`commitFlow()` 丟掉。給連續動作用的——中途取消要整條流程一起取消，但不能動到跟流程無關的待推送變更。**目前還沒有呼叫者**，等連續動作做好才會用上（見 [ROADMAP](ROADMAP.md)）。流程進行中 `flush()` 會被擋下，否則使用者按了同步就會把半成品推進 Sheet，之後想回滾也回滾不了。
+**流程存檔點**：`store.beginFlow()` 開一個存檔點，之後每張被碰到的表在改動前留一份原值；`rollbackFlow()` 一次還原、`commitFlow()` 丟掉。給連續動作用的（見 4.4）——中途取消要整條流程一起取消，但不能動到跟流程無關的待推送變更。流程進行中 `flush()` 會被擋下，否則使用者按了同步就會把半成品推進 Sheet，之後想回滾也回滾不了。
 
 > 🔲 **佇列不持久化**，重整／當機／分頁被系統殺掉就會丟掉未推送的變更（`beforeunload` 只擋得住主動關分頁）。可接受，之後要做的話見 [ROADMAP](ROADMAP.md)。
 
@@ -219,6 +220,26 @@ store.removeMany(table, ids)     // 從快取移除多筆
 ### 4.4 完成動作後的導覽
 
 新增/編輯/刪除完成後要離開頁面，用 `@/router` 的 `leaveAfterAction(fallback)`，**不要用 `router.push`**。`push` 會把已經完成任務的表單頁留在歷史裡，按上一頁又回到它（編輯頁是舊表單，刪除後的 detail 更是已經不存在的資料）。`leaveAfterAction` 走瀏覽器返回，沒有 App 內上一頁（例如直接貼網址進來）時才 `replace` 到 fallback。
+
+**連續動作（流程）**：好幾個步驟要一氣呵成時——新增父表那筆後直接進它的 detail、或接著新增子表那筆——用 `@/composables/useFlow` 把它們串成一段 async 程式碼，包在 `runFlow` 裡：
+
+```ts
+onClick: () => runFlow(async () => {
+  const row = await runStep<ParentRow>('/parent/new', { status: '已下單' })
+  router.replace(`/parent/${row.id}`)
+})
+```
+
+- `runStep(to, defaults?)` 用 `replace` 開一張表單、等它送出成功、拿回建好或改好的那筆。`defaults` 走 `history.state`，跟 `useNewAction` 同一條通道，所以只能放普通值（不能 reactive、不能函式）
+- 表單送出成功後會先問 `resumeStep()`：有步驟在等就交棒、頁面不離開；沒有就照舊 `leaveAfterAction`。這是 `useCreateForm`／`useEditForm` 裡唯一為流程多出的分岔，通用動作一行都沒改
+- 表單底部的「取消」在第二步之後**一律先問**（`useFlow` 的 `hasEarlierSteps`），文案改成「是否放棄未儲存的變更（包含之前的變更）？」——這張表單本身可能一個字都還沒填，但前面的步驟已經寫了東西，取消等於整條收回
+- **任何導覽都算放棄**——返回鍵、導覽列、表單底部的取消、改網址。`router.afterEach` 會 reject 等待中的步驟，`runFlow` 接到 `FlowCancelled` 就 `rollbackFlow()`，整條流程的快取與佇列改動一次還原。`runStep` 自己的導覽不會誤觸：它是等 `replace` 完成（`afterEach` 之後）才登記的
+- 連接器自己拋錯（不是取消）也會 rollback，另外用 snackbar 報錯並 `leaveAfterAction('/')` 把人帶離——那一步的表單多半已經送出了，留在上面會讓人以為失敗而重按
+- 流程進行中 `flush()` 拒絕執行（同步鈕本來就因為表單開著而停用，見 4.2）：半成品一旦推進 Sheet 就回滾不了了
+- 「完成後去哪」就是連接器的最後一行 `router.replace(...)`。**第一步 `push`、之後每一步 `replace`**：push 是為了保住發起流程的那一頁，replace 是讓做完的表單不留在歷史裡。結果是歷史永遠只有「起點 → 目前這一步」兩筆，任何一步按返回或取消都回到起點，流程結束後也能從終點返回起點。（全部 replace 的話起點會被第一步吃掉，取消變成無處可去。）
+- 流程跟其他動作一樣是 `PageAction`，掛在起點那張表的 `use表名Actions` 底下
+
+**流程不能套疊。** 存檔點只有一格，第二個 `beginFlow` 會直接拋錯（外層的存檔點完好，內層那個動作被 runner 接住報錯）。從 UI 上套不進去——流程中途使用者只會在表單頁上，能按的只有那一步自己的取消／送出——會發生只有一種情況：連接器在兩步之間跑去非表單的頁面。所以連接器只有兩條規則：**只用 `runStep` 導覽到表單；結尾一定要有一個離開的導覽。**
 
 ### 4.5 Schema 的角色
 

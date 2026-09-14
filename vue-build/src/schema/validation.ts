@@ -3,7 +3,7 @@ import type { SchemaColumn, TableSchema } from './types'
 // 空值的定義跟 coerceRow 一致：後端的空字串會被轉成 null
 const EMPTY_VALUES = new Set<unknown>([null, undefined, ''])
 
-function isEmpty (value: unknown): boolean {
+export function isEmpty (value: unknown): boolean {
   return EMPTY_VALUES.has(value)
 }
 
@@ -28,11 +28,15 @@ function columnError (value: unknown, column: SchemaColumn): string | null {
   return null
 }
 
-// 回傳 { 欄位 key: 錯誤訊息 }，全部合法就是空物件
-export function validateRow (row: object, schema: TableSchema): Record<string, string> {
+// 回傳 { 欄位 key: 錯誤訊息 }，全部合法就是空物件。給了 keys 就只檢查那幾欄
+export function validateRow (row: object, schema: TableSchema, keys?: readonly string[]): Record<string, string> {
   const errors: Record<string, string> = {}
 
   for (const column of schema.columns) {
+    if (keys && !keys.includes(column.key)) {
+      continue
+    }
+
     const message = columnError((row as Record<string, unknown>)[column.key], column)
     if (message !== null) {
       errors[column.key] = message

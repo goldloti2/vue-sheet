@@ -4,8 +4,10 @@
   import { computed, onBeforeUnmount, onMounted, provide, shallowRef } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
   import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
+  import FieldsDialog from '@/components/ui/FieldsDialog.vue'
   import { provideActionRunner } from '@/composables/useActionRunner'
   import { appBarActionsKey } from '@/composables/useAppBarActions'
+  import { confirmFields, fieldsDialog } from '@/composables/useAskFields'
   import { bottomActionsKey } from '@/composables/useBottomActions'
   import { notice, notify } from '@/composables/useNotify'
   import { navigationCount } from '@/router'
@@ -141,6 +143,17 @@
     :text="actionDialog.text"
     :title="actionDialog.title"
     @confirm="confirmAction"
+  />
+
+  <FieldsDialog
+    v-if="fieldsDialog.schema"
+    v-model="fieldsDialog.open"
+    v-model:form="fieldsDialog.form"
+    :errors="fieldsDialog.errors"
+    :keys="fieldsDialog.keys"
+    :schema="fieldsDialog.schema"
+    :title="fieldsDialog.title"
+    @confirm="confirmFields"
   />
 
   <v-snackbar v-model="notice.open" :color="notice.color">{{ notice.text }}</v-snackbar>

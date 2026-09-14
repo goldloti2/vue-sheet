@@ -1,8 +1,11 @@
+import type { AskFieldsOptions } from '@/composables/useAskFields'
 import type { TableKey } from '@/schema'
 import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue'
 import { mdiDelete, mdiPencil, mdiPlus } from '@mdi/js'
 import { computed, toValue } from 'vue'
+import { askFields } from '@/composables/useAskFields'
 import router, { leaveAfterAction, pushWithDefaults } from '@/router'
+import { schemas } from '@/schema'
 import { useTablesStore } from '@/stores/tables'
 
 /**
@@ -81,10 +84,53 @@ export function useDeleteAction (table: TableKey, row: Ref<{ id: string } | null
   })
 }
 
+export interface QuickEditOptions {
+  key?: string
+  label: string
+  icon?: string
+  defaults?: AskFieldsOptions['defaults']
+  onDone?: () => void
+}
+
+// 把選取的幾筆的某幾欄改成同一個值：只選一筆時對話框顯示那筆的現值，否則用 defaults
+export function useQuickEditAction<Row extends { id: string }> (
+  table: TableKey,
+  keys: (keyof Row & string)[],
+  selectedIds: Ref<ReadonlySet<string>>,
+  options: QuickEditOptions,
+): PageActions {
+  const store = useTablesStore()
+
+  return computed(() => {
+    const ids = selectedIds.value
+    if (ids.size === 0) {
+      return []
+    }
+
+    return [{
+      key: options.key ?? `quick-edit-${keys.join('-')}`,
+      label: options.label,
+      icon: options.icon,
+      onClick: async () => {
+        const rows = (store.rows[table] as Row[] | undefined)?.filter(row => ids.has(row.id)) ?? []
+        const values = await askFields<Row>(schemas[table], keys, { rows, defaults: options.defaults })
+        if (!values) {
+          return
+        }
+
+        for (const id of ids) {
+          store.update(table, id, values)
+        }
+        options.onDone?.()
+      },
+    }]
+  })
+}
+
 export function useBulkDeleteAction (
   table: TableKey,
   selectedIds: Ref<ReadonlySet<string>>,
-  onDeleted: () => void,
+  onDone: () => void,
 ): PageActions {
   const store = useTablesStore()
 
@@ -101,7 +147,7 @@ export function useBulkDeleteAction (
       confirm: { title: '刪除確認', text: `確定要刪除選取的 ${ids.size} 個項目嗎?` },
       onClick: async () => {
         await store.removeMany(table, ids)
-        onDeleted()
+        onDone()
       },
     }]
   })

@@ -244,9 +244,15 @@ export const useTablesStore = defineStore('tables', () => {
 
   function update<Row extends HasId> (table: TableKey, id: string, values: Record<string, unknown>): Row {
     const schema = schemas[table]
-    const updated = { id, ...values } as Row
+    let updated = { id, ...values } as Row
 
-    patch(table, list => list.map(row => (row as Row).id === id ? updated : row))
+    patch(table, list => list.map(row => {
+      if ((row as Row).id !== id) {
+        return row
+      }
+      updated = { ...(row as Row), ...values, id } as Row
+      return updated
+    }))
     enqueue(table, id, 'update', serializeRow(values, schema))
 
     return updated

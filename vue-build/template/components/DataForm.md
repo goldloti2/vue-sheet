@@ -30,3 +30,4 @@
 | `v-model` | `object` | **必填**，整個 row 物件（雙向） |
 | `schema` | `TableSchema` | **必填** |
 | `errors` | `Record<string, string>` | `{ 欄位 key: 錯誤訊息 }`，省略就不顯示任何錯誤 |
+| `only` | `string[]` | 只顯示這幾個欄位（順序仍照 `formOrder`）；`FieldsDialog` 用這個，整頁表單不需要 |

@@ -5,19 +5,21 @@
   const props = defineProps<{
     schema: TableSchema
     errors?: Record<string, string>
+    // 只顯示這幾個欄位（順序仍照 formOrder）；省略就是全部
+    only?: readonly string[]
   }>()
 
   // 跟 DataDetail 一樣用 object，實際存取時再轉型（見 schema/types.ts 的 formatColumnValue）
   const model = defineModel<object>({ required: true })
 
   const orderedColumns = computed<SchemaColumn[]>(() => {
-    if (!props.schema.formOrder) {
-      return props.schema.columns
-    }
+    const columns = props.schema.formOrder
+      ? props.schema.formOrder
+        .map(key => props.schema.columns.find(column => column.key === key))
+        .filter((column): column is SchemaColumn => column !== undefined)
+      : props.schema.columns
 
-    return props.schema.formOrder
-      .map(key => props.schema.columns.find(column => column.key === key))
-      .filter((column): column is SchemaColumn => column !== undefined)
+    return props.only ? columns.filter(column => props.only?.includes(column.key)) : columns
   })
 
   function fieldValue (column: SchemaColumn): string | number | Date | null {

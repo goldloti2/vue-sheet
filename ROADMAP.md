@@ -78,7 +78,7 @@
 
 ## 未完成
 
-> 前端這邊的建議順序：「問幾個欄位」對話框 → 批次快速編輯 → `ref` 關聯選擇器。前兩個把最早的待辦收乾淨，第三個實際使用最有感；流程的「返回也先確認」接在對話框後面順手做。
+> 前端這邊的建議順序：流程的「返回也先確認」→ 批次快速編輯 → `ref` 關聯選擇器。前兩個把最早的待辦收乾淨，第三個實際使用最有感。
 
 ### 後端（完全還沒開始）
 - Apps Script 的 `doGet`/`doPost` 入口與泛用 CRUD 引擎
@@ -163,10 +163,9 @@
   - 方向是讓面板知道自己是不是當前頁籤（面板收一個 `active` prop，`PageFab` 也加一個跟現有 KeepAlive 狀態做 AND、預設 `true`），但實際要傳到哪一層等真的要寫這種頁面時再定。修好之後 `template/` 要補上這種頁面的寫法
 
 ### 多選與批次
-- 批次快速編輯：把選取的多筆的指定欄位改成同一個值。就是「問幾個欄位」對話框沒有單筆對象的用法，加一個前置的欄位選擇：
+- 批次快速編輯：把選取的多筆的指定欄位改成同一個值。**欄位固定的版本已完成**（`useQuickEditAction`，README 4.4），還差讓使用者自己挑欄位的版本：
   - 多選模式 → App Bar 多一顆「編輯」→ 對話框頂端一個欄位選擇器（可複選）→ 底下依選到的欄位長出輸入 → 確定
-  - `store.bulkUpdate(table, ids, values)` 實作成 **N 個 `update` 進佇列**，不另開 op 種類：合併規則直接適用，flush 本來就逐筆送。後端契約的 `bulkUpdate { ids, data }` 留給以後 batch 端點最佳化
-  - 目前 `bulkUpdate` 只有假後端與 `mutateTable` 支援，store 沒有對應 action，也沒有 UI 入口
+  - 寫入沿用 N 個 `update` 進佇列，不另開 op 種類。後端契約的 `bulkUpdate { ids, data }` 留給以後 batch 端點最佳化；目前它只有假後端與 `mutateTable` 支援
 - 多選模式不要自動取消，改成右上角出現 X 才關閉
 - 全選（考慮中）
 
@@ -181,7 +180,7 @@
 - 範本 `table/use__Table__Actions.ts` 末尾有寫法示範；專案端的第一條流程見 production 分支的 PROJECT-ROADMAP
 
 **還沒做**
-- **返回／導覽列也先跳確認**（跟底部的取消一樣）：現在是 `afterEach` 事後中止，來不及問。要改成 `router.beforeEach` 守衛，有等待中的步驟就先問、說不就回傳 `false` 擋下導覽。需要一個回傳 promise 的是／否對話框——就是下面「問幾個欄位」對話框的最簡單情況，所以排在它後面
+- **返回／導覽列也先跳確認**（跟底部的取消一樣）：現在是 `afterEach` 事後中止，來不及問。要改成 `router.beforeEach` 守衛，有等待中的步驟就先問、說不就回傳 `false` 擋下導覽。需要一個回傳 promise 的是／否對話框——照 `askFields` 的模式做一個 `confirm()`，或把 `ConfirmDialog` 那個實例也接上 promise
 - **中途放棄後要不要提示使用者**——有了存檔點理論上不需要（什麼都沒完成），但「剛剛那一步白填了」要不要講一聲，等實際用過再決定
 
 **決定不做**
@@ -189,21 +188,9 @@
 - **編輯表單的預設值通道**：`useEditForm` 不讀 `navigationDefaults()`，所以編輯表單可以當流程的一步，但沒辦法把上一步的結果預先填進去。目前想不到需要的情境
 - **進度指示**（第 1 步／共 2 步）：步驟頂多兩三步，每一步是完整的一頁、App Bar 上有自己的標題
 
-### 「問幾個欄位」對話框（設計已定，還沒實作）
+### 「問幾個欄位」對話框（已完成）
 
-三件事都卡在它上面：批次快速編輯、流程的對話框型步驟、「日期改成今天」那類快速動作。目前 App 裡只有 `ConfirmDialog`（是／否），沒有任何「問一個值」的對話框。
-
-```ts
-askFields<Row>(schema, keys, options?) → Promise<Partial<Row> | null>
-// keys：要問哪幾個欄位；回傳 null = 取消
-```
-
-- **內容**：`DataForm` 只顯示 `keys` 那幾個欄位——加一個 `only` prop 或傳過濾過 `columns` 的 schema。輸入元件、驗證、錯誤顯示全部沿用
-- **初始值**三層：針對單筆且那欄非空 → 那筆的現值；否則 `options.defaults[key]`（型別同 schema 的 `ColumnDefault`，值或函式）；都沒有 → 空
-- **驗證**只跑被問到的欄位：`validateRow` 要加 `keys` 參數，不然沒問到的必填欄位會被算成錯
-- **位置**：跟 `notify` 同一個模式——module-level 狀態 + `AppShell` 掛一個 `AppDialog`，promise 由對話框的取消／確定 resolve
-- **中止**：`router.afterEach` 把開著的對話框關掉並 resolve `null`（掛在 `AppShell` 上的對話框會跨路由存活，不關的話換頁後它還開著）
-- **一次問幾個**：單一對話框放全部。連續動作是給「一步的結果決定下一步」用的，欄位之間沒有相依，拆開只是多按確定
+`askFields()` 見 [README 4.4](README.md#44-完成動作後的導覽)；批次快速編輯與流程的「返回也先確認」都建在它上面。專案端還沒有任何動作用到它，第一個會是批次快速編輯。
 
 ### PWA 與離線
 - manifest.json、Service Worker 都還沒建立（`vite-plugin-pwa` 未安裝）

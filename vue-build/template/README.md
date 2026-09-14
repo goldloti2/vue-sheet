@@ -105,8 +105,9 @@
 | `TabView` | 頁籤 + 內容區（切換時依頁籤順序左右滑動） |
 | `AppDialog` | 對話框外殼 |
 | `ConfirmDialog` | 是/否確認框 |
+| `FieldsDialog` | 「問幾個欄位」對話框（通常透過 `askFields()` 用，不直接擺） |
 
-`AppShell` 是 App 層級的外殼，`App.vue` 用一次就好，不會在頁面裡重複使用，所以沒有範本。它自帶同步鈕、確認框與 snackbar，頁面不用擺這些。
+`AppShell` 是 App 層級的外殼，`App.vue` 用一次就好，不會在頁面裡重複使用，所以沒有範本。它自帶同步鈕、確認框、問欄位對話框與 snackbar，頁面不用擺這些。
 
 頁面的動作也不自己畫按鈕，註冊給 `AppShell` 就好，三個位置各一個 composable：
 
@@ -119,6 +120,34 @@
 表單頁不用自己組那兩顆按鈕——`useCreateForm`／`useEditForm` 回傳現成的 `actions`（含「有改動才跳確認」的取消），照 `pages/new.vue`、`pages/edit.vue` 的寫法接上去就好。
 
 好幾個步驟要一氣呵成（新增完直接進 detail、接著再新增另一張表）的話，用 `runFlow` + `runStep` 串起來，寫法見 `table/use__Table__Actions.ts` 末尾的註解，設計說明見 README 4.4。
+
+只想改一兩個欄位、不值得開整頁表單的動作（改狀態、補日期），用 `useQuickEditAction`：多選模式下出現，開一個小對話框問那幾欄，確定後選取的每一筆都改成同一個值。只選一筆時對話框顯示那筆的現值，否則用 `defaults`：
+
+```ts
+setStatus: selectedIds
+  ? useQuickEditAction<__Table__Row>(TABLE, ['status'], selectedIds, {
+      label: '改狀態',
+      icon: mdiTag,
+      defaults: { status: '選項A' },   // 值或函式都行，可省略
+      onDone,                          // 跟 bulkDelete 共用的那個 option
+    })
+  : none,
+```
+
+它底下就是 `askFields()`——要自己組的話（例如當流程的一步）直接叫，取消回 `null`：
+
+```ts
+import { askFields } from '@/composables/useAskFields'
+
+const values = await askFields<__Table__Row>(schema, ['status'], { rows: [current] })
+if (values) {
+  store.update(TABLE, current.id, values)
+}
+```
+
+- 第三個參數可選：`title`（省略就用欄位 label 串起來）、`rows`（要改的那幾筆，剛好一筆時拿現值當初始值）、`defaults`（沒有現值時的初始值，值或函式都行）
+- 只驗證問到的欄位；輸入元件與錯誤顯示跟整頁表單一樣
+- 換頁會把它關掉並回 `null`，所以在流程裡當一步用也安全
 
 要跳一則短訊息（成功、失敗、已刪除之類的）就直接叫 `notify()`，不需要在頁面上放任何元件：
 

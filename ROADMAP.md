@@ -44,12 +44,13 @@
 - 列表：`DataList`（卡片式單列，含長按多選）、`ListField`、`GroupedList`（多層可收合分組）、`DataTable`（表格式，也用於 detail 頁內嵌子表格）
 - 詳細：`DataDetail`（自帶 loading/error/找不到資料）、`DetailField`
 - 表單：`DataForm`（依 `column.type` 自動選輸入元件）
-- 其他：`PageFab`、`TabView`、`RecordNav`、`AppDialog`、`ConfirmDialog`
+- 其他：`PageFab`、`TabView`、`RecordNav`、`AppDialog`、`ConfirmDialog`、`FieldsDialog`（只顯示幾欄的 `DataForm`）
 
 ### 動作系統
-- `PageAction` 型別（`{ key, label, icon, onClick, confirm? }`），FAB 與 App Bar 共用同一種描述
-- 通用 builder：`useNewAction` / `useEditAction` / `useDeleteAction` / `useBulkDeleteAction`，一律回傳 `ComputedRef<PageAction[]>`
+- `PageAction` 型別（`{ key, label, icon?, onClick, confirm? }`），FAB、App Bar、底部動作列共用同一種描述
+- 通用 builder：`useNewAction` / `useEditAction` / `useDeleteAction` / `useBulkDeleteAction` / `useQuickEditAction`，一律回傳 `ComputedRef<PageAction[]>`
 - 需要確認的動作宣告 `confirm` 就好，對話框由 `AppShell` 統一渲染（`useActionRunner`），頁面不用擺 `ConfirmDialog`
+- `askFields()`：問幾個欄位的對話框，promise 回傳值或 `null`；`useQuickEditAction` 用它把選取的多筆改成同一個值（欄位由設計者定，只選一筆時顯示現值）
 - 每張表的動作（含批次刪除）一律從 `use表名Actions(options)` 取，用不到的是空陣列
 - `useAppBarActions()` 用 provide/inject 把動作註冊到 App Bar，數量多自動收成下拉選單
 - `useBottomActions()` 把動作註冊到螢幕最底端，暫時取代導覽列（表單頁的取消／送出）；兩者共用 `useActionSlot` 的 KeepAlive 防護
@@ -78,7 +79,7 @@
 
 ## 未完成
 
-> 前端這邊的建議順序：流程的「返回也先確認」→ 批次快速編輯 → `ref` 關聯選擇器。前兩個把最早的待辦收乾淨，第三個實際使用最有感。
+> 前端這邊的建議順序：流程的「返回也先確認」→ `ref` 關聯選擇器。前者收掉流程最後一個缺口，後者實際使用最有感。
 
 ### 後端（完全還沒開始）
 - Apps Script 的 `doGet`/`doPost` 入口與泛用 CRUD 引擎
@@ -142,6 +143,10 @@
   - 日期範圍、文字長度、正則格式都還沒有，等真的有需求再加進 `SchemaColumn`
   - `ref` 欄位不檢查目標是否存在。等關聯選擇器做好（見「UI 功能」），改成用選的就不會填到不存在的
 - 驗證的分工已定案，見 [README 4.5](README.md#45-schema-的角色)：合法性只在前端做，一份 schema 推導出的驗證函式用在 form 層（即時提示）與 store 寫入層（擋程式 bug）兩處；後端只做安全性與結構完整性
+- **關聯連帶刪除**（可選，設計者在 schema 上開）：父表的條目被刪時，`ref` 指向它的子表條目也一起刪，不留孤兒
+  - 開關放在 `ref` 欄位上：`{ type: 'ref', refTable: '父表', onDelete: 'cascade' }`，不標就維持現狀（子條目留著、ref 指向不存在的 id）
+  - 實作點在 `store.remove`／`removeMany`：刪完父表後順著 `relations.ts` 的關聯圖找到標了 cascade 的子表，把 ref 落在被刪 id 裡的子條目也 `removeMany`，多層關聯遞迴。走原本的 `patch`＋`enqueue`，所以佇列合併、流程存檔點與回滾都自動涵蓋，後端不用知道這件事
+  - 範圍只到「刪除當下」。Sheet 手動改出來的孤兒（載入時掃一遍）是另一件事，先不做
 - 樂觀鎖定：`updatedAt` 欄位與衝突提示都還沒做
 
 ### UI 功能
@@ -163,9 +168,6 @@
   - 方向是讓面板知道自己是不是當前頁籤（面板收一個 `active` prop，`PageFab` 也加一個跟現有 KeepAlive 狀態做 AND、預設 `true`），但實際要傳到哪一層等真的要寫這種頁面時再定。修好之後 `template/` 要補上這種頁面的寫法
 
 ### 多選與批次
-- 批次快速編輯：把選取的多筆的指定欄位改成同一個值。**欄位固定的版本已完成**（`useQuickEditAction`，README 4.4），還差讓使用者自己挑欄位的版本：
-  - 多選模式 → App Bar 多一顆「編輯」→ 對話框頂端一個欄位選擇器（可複選）→ 底下依選到的欄位長出輸入 → 確定
-  - 寫入沿用 N 個 `update` 進佇列，不另開 op 種類。後端契約的 `bulkUpdate { ids, data }` 留給以後 batch 端點最佳化；目前它只有假後端與 `mutateTable` 支援
 - 多選模式不要自動取消，改成右上角出現 X 才關閉
 - 全選（考慮中）
 
@@ -180,17 +182,13 @@
 - 範本 `table/use__Table__Actions.ts` 末尾有寫法示範；專案端的第一條流程見 production 分支的 PROJECT-ROADMAP
 
 **還沒做**
-- **返回／導覽列也先跳確認**（跟底部的取消一樣）：現在是 `afterEach` 事後中止，來不及問。要改成 `router.beforeEach` 守衛，有等待中的步驟就先問、說不就回傳 `false` 擋下導覽。需要一個回傳 promise 的是／否對話框——照 `askFields` 的模式做一個 `confirm()`，或把 `ConfirmDialog` 那個實例也接上 promise
+- **返回／導覽列也先跳確認**：現在只有底部的「取消」鈕會問（它是 `PageAction` 的 `confirm`）；瀏覽器返回、導覽列、改網址都是 `afterEach` 事後中止，來不及問，改到一半的表單就這樣丟了。要改成 `router.beforeEach` 守衛，表單有改動或有等待中的步驟就先問、說不就回傳 `false` 擋下導覽。需要一個回傳 promise 的是／否對話框——照 `askFields` 的模式做一個 `confirm()`，或把 `ConfirmDialog` 那個實例也接上 promise
 - **中途放棄後要不要提示使用者**——有了存檔點理論上不需要（什麼都沒完成），但「剛剛那一步白填了」要不要講一聲，等實際用過再決定
 
 **決定不做**
 - **返回＝回到上一步**（而不是整條取消）。代價是三件事加起來等於一個多頁精靈：每步改 `push` 且結束後要清歷史；存檔點要從一格變一疊（每步單獨收回）；上一步的表單要帶著使用者上次填的值重開。等真有三步以上、常態要回頭改的流程再說
 - **編輯表單的預設值通道**：`useEditForm` 不讀 `navigationDefaults()`，所以編輯表單可以當流程的一步，但沒辦法把上一步的結果預先填進去。目前想不到需要的情境
 - **進度指示**（第 1 步／共 2 步）：步驟頂多兩三步，每一步是完整的一頁、App Bar 上有自己的標題
-
-### 「問幾個欄位」對話框（已完成）
-
-`askFields()` 見 [README 4.4](README.md#44-完成動作後的導覽)；批次快速編輯與流程的「返回也先確認」都建在它上面。專案端還沒有任何動作用到它，第一個會是批次快速編輯。
 
 ### PWA 與離線
 - manifest.json、Service Worker 都還沒建立（`vite-plugin-pwa` 未安裝）

@@ -22,6 +22,20 @@ export interface SortSpec {
   direction: 'asc' | 'desc'
 }
 
+// 虛擬欄位算值時能拿到的東西：related('子表') 是指向這一列的子表資料，只有 needs 宣告過的表拿得到
+export interface VirtualColumnContext {
+  related: <Child>(childTable: string) => Child[]
+}
+
+// 不存在 Sheet 上、讀的時候才算出來的欄位。來源可以是這一列自己，也可以是子表；用 useRowFields 取值
+export interface VirtualColumn {
+  key: string
+  label: string
+  // value 會透過 related() 讀哪些子表；沒宣告就不載
+  needs?: string[]
+  value: (row: object, context: VirtualColumnContext) => string
+}
+
 export interface TableSchema {
   // 對應 Google Sheet 分頁的實際名稱，也是打 API 時 table= 的值
   sheetName: string
@@ -30,6 +44,8 @@ export interface TableSchema {
   // 怎麼發一筆新 id，由各表自己決定。常見的前綴式用 prefixedId('TPL')
   newId: () => string
   columns: SchemaColumn[]
+  // 算出來的欄位，不進 coerceRow / serializeRow / 表單；取值走 useRowFields
+  virtualColumns?: VirtualColumn[]
   // detail 頁的顯示順序（欄位 key 陣列）。省略時沿用 columns 的順序
   detailOrder?: string[]
   // 表單頁的欄位順序（欄位 key 陣列）。省略時沿用 columns 的順序；

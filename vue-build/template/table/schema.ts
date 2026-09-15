@@ -35,7 +35,13 @@ export const __table__Schema: TableSchema = {
     //   min / max        只有 number 有，同時當輸入欄的上下限與送出前的檢查
   ],
 
-  // 以下三個都可省略
+  // 以下都可省略
+  // 虛擬欄位：不在 Sheet 上、讀的時候才算出來的欄位。頁面用 useRowFields(table).field(row, key) 取值
+  // （真實欄位也能用同一個函式取）。要看子表就用 needs 宣告，related('子表') 才拿得到指向這一列的資料
+  // virtualColumns: [
+  //   { key: 'total', label: '總額', value: row => String((row.amount ?? 0) * 2) },
+  //   { key: 'title', label: '名稱', needs: ['child'], value: (_row, { related }) => related<ChildRow>('child')[0]?.name ?? '(空)' },
+  // ],
   // 列表頁預設排序，多筆依序當 tiebreaker
   defaultSort: [
     { key: 'date', direction: 'asc' },

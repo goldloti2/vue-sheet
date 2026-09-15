@@ -2,7 +2,7 @@
 
 是/否確認框，建立在 `AppDialog` 上。自己帶取消/確定按鈕、loading 狀態與錯誤訊息區。
 
-> **動作的確認框不用自己擺**——`PageAction` 宣告 `confirm: { title, text }` 就好，`AppShell` 會統一渲染一個。這個元件只在需要自訂的確認流程時直接用。
+> **通常不直接用**——動作宣告 `confirm: { title, text }`，或程式裡叫 `confirm(title, text)` 拿 `Promise<boolean>`（見 `README.md`），`AppShell` 掛的那個實例會處理。這個元件只在需要自己管狀態（例如框內要顯示 loading／錯誤）時直接擺。
 
 ## Usage
 

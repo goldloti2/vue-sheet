@@ -117,7 +117,7 @@
 | `useAppBarActions()` | App Bar 右側，次要動作；超過兩個自動收成 ⋮ |
 | `useBottomActions()` | 螢幕最底端，**暫時取代導覽列**；表單的取消／送出用這個，離開頁面自動還原 |
 
-表單頁不用自己組那兩顆按鈕——`useCreateForm`／`useEditForm` 回傳現成的 `actions`（含「有改動才跳確認」的取消），照 `pages/new.vue`、`pages/edit.vue` 的寫法接上去就好。
+表單頁不用自己組那兩顆按鈕——`useCreateForm`／`useEditForm` 回傳現成的 `actions`，照 `pages/new.vue`、`pages/edit.vue` 的寫法接上去就好。「有改動要不要放棄」的確認也不用管：兩個 composable 會登記到 `useLeaveGuard`，不管是按取消、返回鍵還是切導覽列都會先問。
 
 好幾個步驟要一氣呵成（新增完直接進 detail、接著再新增另一張表）的話，用 `runFlow` + `runStep` 串起來，寫法見 `table/use__Table__Actions.ts` 末尾的註解，設計說明見 README 4.4。
 
@@ -134,7 +134,9 @@ setStatus: selectedIds
   : none,
 ```
 
-它底下就是 `askFields()`——要自己組的話（例如當流程的一步）直接叫，取消回 `null`：
+只是要問是／否的話用 `confirm(title, text)`（`@/composables/useConfirm`），回 `Promise<boolean>`；動作上宣告 `confirm: { title, text }` 就是它的語法糖。
+
+`useQuickEditAction` 底下就是 `askFields()`——要自己組的話（例如當流程的一步）直接叫，取消回 `null`：
 
 ```ts
 import { askFields } from '@/composables/useAskFields'

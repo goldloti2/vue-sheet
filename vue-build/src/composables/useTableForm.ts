@@ -4,7 +4,8 @@ import type { TableSchema } from '@/schema/types'
 import type { ComputedRef, MaybeRefOrGetter } from 'vue'
 import type { RouteLocationRaw } from 'vue-router'
 import { computed, onActivated, ref, toValue, watch } from 'vue'
-import { hasEarlierSteps, resumeStep } from '@/composables/useFlow'
+import { resumeStep } from '@/composables/useFlow'
+import { useLeaveGuard } from '@/composables/useLeaveGuard'
 import { useSyncHold } from '@/composables/useSyncHold'
 import { leaveAfterAction, navigationDefaults } from '@/router'
 import { columnValues, emptyRow } from '@/schema/types'
@@ -44,30 +45,17 @@ function finish (row: object, fallback: RouteLocationRaw): void {
   }
 }
 
-// 取消要不要先問：這張表單改過、或前面的步驟已經寫了東西（取消等於整條收回）
-function cancelConfirm (dirty: boolean): PageAction['confirm'] | undefined {
-  if (hasEarlierSteps.value) {
-    return { title: '放棄變更', text: '是否放棄未儲存的變更（包含之前的變更）？' }
-  }
-  if (dirty) {
-    return { title: '放棄變更', text: '有尚未儲存的變更，確定要離開嗎？' }
-  }
-  return undefined
-}
-
-// 底部動作列用的取消／送出
+// 底部動作列用的取消／送出。取消不自己問，離開頁面的確認統一由 useLeaveGuard 處理
 function formActions (
   submitLabel: string,
   submit: () => Promise<void>,
   leave: () => void,
-  dirty: () => boolean,
 ): ComputedRef<PageAction[]> {
   return computed(() => [
     {
       key: 'cancel',
       label: '取消',
       onClick: leave,
-      confirm: cancelConfirm(dirty()),
     },
     {
       key: 'submit',
@@ -145,14 +133,18 @@ export function useCreateForm<Row extends HasId> (
 
   const form = ref<Row>(initialForm())
   const pristine = ref<Row>({ ...form.value } as Row)
+  // 送出成功後離開不算放棄
+  const settled = ref(false)
 
   const { submitting, error, run } = useSubmitState()
   const { fieldErrors, check, reset: resetErrors } = useValidation(schema, () => form.value)
+  useLeaveGuard(() => !settled.value && isDirty(form.value, pristine.value, schema))
 
   onActivated(() => {
     const initial = initialForm()
     form.value = initial
     pristine.value = { ...initial } as Row
+    settled.value = false
     error.value = null
     resetErrors()
   })
@@ -164,16 +156,13 @@ export function useCreateForm<Row extends HasId> (
     }
 
     await run(async () => {
-      finish(store.create<Row>(table, columnValues(form.value, schema)), `/${table}`)
+      const created = store.create<Row>(table, columnValues(form.value, schema))
+      settled.value = true
+      finish(created, `/${table}`)
     })
   }
 
-  const actions = formActions(
-    '新增',
-    submit,
-    () => leaveAfterAction(`/${table}`),
-    () => isDirty(form.value, pristine.value, schema),
-  )
+  const actions = formActions('新增', submit, () => leaveAfterAction(`/${table}`))
 
   return { form, fieldErrors, submitting, error, submit, actions }
 }
@@ -204,7 +193,9 @@ export function useEditForm<Row extends HasId> (
     resetErrors()
   })
 
+  // 寫進快取後 row 就等於 form，離開時自然不算髒
   const dirty = () => isDirty(form.value, row.value, schema)
+  useLeaveGuard(dirty)
 
   async function submit () {
     const current = form.value
@@ -229,12 +220,7 @@ export function useEditForm<Row extends HasId> (
     })
   }
 
-  const actions = formActions(
-    '儲存',
-    submit,
-    () => leaveAfterAction(`/${table}/${toValue(id)}`),
-    dirty,
-  )
+  const actions = formActions('儲存', submit, () => leaveAfterAction(`/${table}/${toValue(id)}`))
 
   return { form, fieldErrors, loading, loadError, submitting, error, submit, actions }
 }

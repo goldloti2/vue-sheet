@@ -115,7 +115,9 @@ src/
     useActionSlot.ts          把動作註冊到 AppShell 某一塊的共用機制（含 KeepAlive 防護）
     useAppBarActions.ts       註冊到 App Bar 右側
     useBottomActions.ts       註冊到螢幕最底端，暫時取代導覽列（表單頁用）
-    useActionRunner.ts        動作的執行與確認框，由 AppShell 統一處理
+    useActionRunner.ts        動作的執行（confirm 先問、錯誤進 snackbar），由 AppShell 提供
+    useConfirm.ts             confirm()：是／否對話框，回傳 promise
+    useLeaveGuard.ts          表單登記 dirty getter；router.beforeEach 離開前先問（見 4.4）
     useMultiSelect.ts         多選狀態
     useLongPress.ts           長按偵測
     useNotify.ts              全 App 一則 snackbar 訊息（module-level，任何地方都能叫）
@@ -251,8 +253,8 @@ onClick: () => runFlow(async () => {
 
 - `runStep(to, defaults?)` 用 `replace` 開一張表單、等它送出成功、拿回建好或改好的那筆。`defaults` 走 `history.state`，跟 `useNewAction` 同一條通道，所以只能放普通值（不能 reactive、不能函式）
 - 表單送出成功後會先問 `resumeStep()`：有步驟在等就交棒、頁面不離開；沒有就照舊 `leaveAfterAction`。這是 `useCreateForm`／`useEditForm` 裡唯一為流程多出的分岔，通用動作一行都沒改
-- 表單底部的「取消」在第二步之後**一律先問**（`useFlow` 的 `hasEarlierSteps`），文案改成「是否放棄未儲存的變更（包含之前的變更）？」——這張表單本身可能一個字都還沒填，但前面的步驟已經寫了東西，取消等於整條收回
-- **任何導覽都算放棄**——返回鍵、導覽列、表單底部的取消、改網址。`router.afterEach` 會 reject 等待中的步驟，`runFlow` 接到 `FlowCancelled` 就 `rollbackFlow()`，整條流程的快取與佇列改動一次還原。`runStep` 自己的導覽不會誤觸：它是等 `replace` 完成（`afterEach` 之後）才登記的
+- **離開前先問**由 `useLeaveGuard` 的 `router.beforeEach` 統一處理——返回鍵、導覽列、改網址、表單底部的取消全走同一條，取消鈕自己不問（否則會問兩次）。要不要問看兩件事：流程第二步之後**一律問**（`useFlow` 的 `hasEarlierSteps`），文案是「是否放棄未儲存的變更（包含之前的變更）？」——這張表單本身可能一個字都還沒填，但前面的步驟已經寫了東西，離開等於整條收回；不在流程裡就看表單有沒有改動（`useCreateForm`／`useEditForm` 登記的 `dirty` getter）。說不就回傳 `false` 擋下導覽，頁面原地不動；瀏覽器返回鍵被擋下時 vue-router 會自己把歷史位置撥回來
+- **任何導覽都算放棄**——守衛放行之後，`router.afterEach` 會 reject 等待中的步驟，`runFlow` 接到 `FlowCancelled` 就 `rollbackFlow()`，整條流程的快取與佇列改動一次還原。`runStep` 自己的導覽不會誤觸：它是等 `replace` 完成（`afterEach` 之後）才登記的；送出成功後的離開也不會被問——`resumeStep` 已經清掉等待中的步驟，表單自己也標成已送出
 - 連接器自己拋錯（不是取消）也會 rollback，另外用 snackbar 報錯並 `leaveAfterAction('/')` 把人帶離——那一步的表單多半已經送出了，留在上面會讓人以為失敗而重按
 - 流程進行中 `flush()` 拒絕執行（同步鈕本來就因為表單開著而停用，見 4.2）：半成品一旦推進 Sheet 就回滾不了了
 - 「完成後去哪」就是連接器的最後一行 `router.replace(...)`。**第一步 `push`、之後每一步 `replace`**：push 是為了保住發起流程的那一頁，replace 是讓做完的表單不留在歷史裡。結果是歷史永遠只有「起點 → 目前這一步」兩筆，任何一步按返回或取消都回到起點，流程結束後也能從終點返回起點。（全部 replace 的話起點會被第一步吃掉，取消變成無處可去。）
@@ -273,7 +275,7 @@ onClick: () => runFlow(async () => {
 - 內容就是 `DataForm` 加 `only` prop 只顯示 `keys` 那幾欄：輸入元件、驗證、錯誤顯示全部沿用，不另做一套。驗證只跑被問到的欄位（`validateRow` 的 `keys` 參數），不然沒問到的必填欄位會被算成錯
 - 初始值三層：`options.rows` 剛好一筆且那欄非空 → 現值；否則 `options.defaults[key]`（值或函式，同 schema 的 `ColumnDefault`）；都沒有 → 空。**不套 schema 的 `default`**——那是新增表單的初始值，改現有資料時不該冒出來。多筆時不顯示現值：那是「填一次、全部改成同一個值」的用法，各筆本來就不一樣
 - 通用的用法包成 `useQuickEditAction(table, keys, selectedIds, { label, icon, defaults, onDone })`：多選模式下出現，選取的 id 查快取拿 rows 交給 `askFields`，確定後對每個 id 各跑一次 `store.update`（不另開 op 種類，佇列的合併規則直接適用）
-- 跟 `notify` 同一個模式：module-level 狀態 + `AppShell` 掛一個 `FieldsDialog`，promise 由確定／取消 resolve，整個 App 只有一個實例。再叫一次會先把上一個當作取消
+- 跟 `notify` 同一個模式：module-level 狀態 + `AppShell` 掛一個 `FieldsDialog`，promise 由確定／取消 resolve，整個 App 只有一個實例。再叫一次會先把上一個當作取消。是／否的 `confirm(title, text): Promise<boolean>`（`useConfirm.ts`）是同一個模式的最簡版本，動作的 `confirm` 宣告與離開守衛都用它
 - `router.afterEach` 把開著的對話框關掉並 resolve `null`——掛在 `AppShell` 上的對話框會跨路由存活，不關的話換頁後它還開著
 - 一次問幾個欄位就放在同一個對話框。連續動作是給「一步的結果決定下一步」用的，欄位之間沒有相依，拆開只是多按幾次確定
 
@@ -401,7 +403,7 @@ hooks: {
 - **表單頁的按鈕放在螢幕最底端**，用 `useBottomActions()` 註冊，暫時取代底部導覽列，離開頁面自動還原。這樣「取消／送出」永遠在拇指構得到的地方，不用把長表單捲到最後才按得到；而表單本來就是「要按到才算完成」的頁面，此時不該讓人分心去切分頁
 - FAB、App Bar、底部動作列共用同一種 `PageAction` 型別 `{ key, label, icon?, onClick, confirm? }`。頁面自己決定用哪幾個、放哪裡。`icon` 是可選的——前兩者靠它顯示，底部動作列只用文字
 - 三塊都走同一個 `registerActions`（`useActionSlot.ts`）。每一塊都是**單一 setter**，所以一定要靠 `isActive` 擋住被 KeepAlive 快取的頁面：它們仍然是全速運轉的（見 4.3），動作一變就會蓋掉當前頁面的
-- **需要確認的動作只要宣告 `confirm: { title, text }`**，不用自己擺 `ConfirmDialog`。`AppShell` 用跟 `useAppBarActions` 同一套 provide/inject 提供 `runAction`，按鈕點下去交給它：沒有 `confirm` 就直接執行，有的話先開對話框、按確定才跑，而 `onClick` 回傳的 Promise 由對話框接住 loading 與錯誤。整個 App 只有一個確認框實例
+- **需要確認的動作只要宣告 `confirm: { title, text }`**，不用自己擺 `ConfirmDialog`。`AppShell` 用跟 `useAppBarActions` 同一套 provide/inject 提供 `runAction`，按鈕點下去交給它：有 `confirm` 就先 `await confirm()`（`useConfirm.ts`），說好才跑 `onClick`；`onClick` 拋錯一律進 snackbar。整個 App 只有一個確認框實例。宣告式的 `confirm` 只是語法糖——它對每個動作都一樣、動作本體不需要知道；`askFields` 沒有同樣的糖，因為它的結果是動作要拿去用的
 - **所有 builder 都回傳 `ComputedRef<PageAction[]>`**（`PageActions`），沒有單數複數之分，呼叫端可以直接串接；沒有可用動作時就是空陣列，不需要 `undefined` 或 null 檢查
 - 每張表的動作**一律從 `use表名Actions(options)` 取**，包含批次刪除。options 全是可選的，呼叫端只給自己有的東西（列表頁給 `selectedIds`/`onDone`，detail 頁給 `row`），用不到的動作就是空陣列——因為形狀統一，這裡不需要 `undefined` 或分支。每個呼叫端專屬的設定（例如新增表單的預設值）也放在這個 options 裡
 - 頁面切換有前進/後退轉場動畫。方向由 `router/index.ts` 的 `afterEach` 分四層判定，先命中先算：**(1)** 兩端都是導覽項目 → 依導覽列排列順序（右邊的算前進）；**(2)** 只有目的地是導覽項目 → 一律後退，因為從內頁回到頂層就是往外；**(3)** 同一個路由換 id、而且兩筆都在列表發布的順序裡 → 依它們在列表中的先後；**(4)** 其他 → 看 `history.state.position` 是往前還是往後，也就是點連結/action 算前進、返回鍵算後退

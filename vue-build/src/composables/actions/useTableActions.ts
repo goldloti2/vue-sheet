@@ -8,10 +8,7 @@ import router, { leaveAfterAction, pushWithDefaults } from '@/router'
 import { schemas } from '@/schema'
 import { useTablesStore } from '@/stores/tables'
 
-/**
- * 有 `confirm` 就先跳確認框才執行。對話框由 `AppShell` 統一渲染，`onClick` 回傳的 Promise
- * 由它接住 loading 與錯誤。
- */
+// 有 confirm 就先問再跑 onClick；執行與報錯都在 useActionRunner，頁面只負責宣告
 export interface PageAction {
   key: string
   label: string

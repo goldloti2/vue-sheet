@@ -35,8 +35,6 @@
 - 寫入走 store 的 `create` / `update` / `remove` / `removeMany`：改快取並進佇列，呼叫端不用手動 refresh
 - 待寫入佇列 `pending`（含合併規則）與手動推送；四個寫入 action 是同步的，只動快取與佇列
 - `useNotify`：全 App 一則 snackbar 訊息，由 `AppShell` 渲染
-- 流程存檔點 `beginFlow` / `commitFlow` / `rollbackFlow`：把一段流程的快取與佇列改動一次還原；套疊直接拋錯
-- `useFlow`：連續動作的外殼與導覽型步驟（`runFlow` / `runStep` / `resumeStep`），任何導覽都算放棄並回滾
 - 新增的 id 由前端發：`newId` 是 schema 上的必填函式，格式由各表決定（`prefixedId('TPL')` 是現成的前綴式）。後端收到已存在的 id 就當作重送、回傳既有那筆
 - 跨表算出來的值靠共用快取的 reactivity 自動重算，不需要跨表失效機制
 
@@ -49,8 +47,8 @@
 ### 動作系統
 - `PageAction` 型別（`{ key, label, icon?, onClick, confirm? }`），FAB、App Bar、底部動作列共用同一種描述
 - 通用 builder：`useNewAction` / `useEditAction` / `useDeleteAction` / `useBulkDeleteAction` / `useQuickEditAction`，一律回傳 `ComputedRef<PageAction[]>`
-- 需要確認的動作宣告 `confirm` 就好，對話框由 `AppShell` 統一渲染（`useActionRunner`），頁面不用擺 `ConfirmDialog`
-- `askFields()`：問幾個欄位的對話框，promise 回傳值或 `null`；`useQuickEditAction` 用它把選取的多筆改成同一個值（欄位由設計者定，只選一筆時顯示現值）
+- 需要確認的動作宣告 `confirm` 就好，`useActionRunner` 先 `await confirm()` 再跑，錯誤進 snackbar；頁面不用擺 `ConfirmDialog`
+- `confirm()` / `askFields()`：是／否與問幾個欄位的對話框，都是 module-level 狀態 + `AppShell` 掛一個實例 + promise；`useQuickEditAction` 用後者把選取的多筆改成同一個值（欄位由設計者定，只選一筆時顯示現值）
 - 每張表的動作（含批次刪除）一律從 `use表名Actions(options)` 取，用不到的是空陣列
 - `useAppBarActions()` 用 provide/inject 把動作註冊到 App Bar，數量多自動收成下拉選單
 - `useBottomActions()` 把動作註冊到螢幕最底端，暫時取代導覽列（表單頁的取消／送出）；兩者共用 `useActionSlot` 的 KeepAlive 防護
@@ -61,6 +59,19 @@
 - 新增表單的預設值三層：schema 的 `default` → `useNewAction` 經 `history.state` 帶來的 → `useCreateForm` 的參數
 - `useMultiSelect` + `useLongPress`：長按進入多選，選取狀態由「有沒有選取任何一筆」推導
 - 批次刪除走動作的 `confirm`
+
+### 連續動作
+設計與實作見 [README 4.4](README.md#44-完成動作後的導覽)。
+- 流程存檔點 `beginFlow` / `commitFlow` / `rollbackFlow`：把一段流程的快取與佇列改動一次還原；套疊直接拋錯，流程進行中 `flush` 會被擋下
+- `useFlow.ts`：`runFlow`（外殼：存檔點 + commit / rollback）、`runStep`（開表單等送出）、`resumeStep`（表單交棒）、`FlowCancelled`、`hasEarlierSteps`
+- `router.afterEach` 中止等待中的步驟（reject）並回滾；`useCreateForm`／`useEditForm` 送出成功後先問 `resumeStep`
+- 第一步 `push`、之後 `replace`
+- 離開前先問：`useLeaveGuard` 的 `router.beforeEach`，返回鍵／導覽列／改網址／底部取消全走同一條；第二步之後一律問，否則看表單有沒有改動
+- 範本 `table/use__Table__Actions.ts` 末尾有寫法示範；專案端的第一條流程見 production 分支的 PROJECT-ROADMAP
+- 決定不做：
+  - **返回＝回到上一步**（而不是整條取消）。代價是三件事加起來等於一個多頁精靈：每步改 `push` 且結束後要清歷史；存檔點要從一格變一疊（每步單獨收回）；上一步的表單要帶著使用者上次填的值重開。等真有三步以上、常態要回頭改的流程再說
+  - **編輯表單的預設值通道**：`useEditForm` 不讀 `navigationDefaults()`，所以編輯表單可以當流程的一步，但沒辦法把上一步的結果預先填進去。目前想不到需要的情境
+  - **進度指示**（第 1 步／共 2 步）：步驟頂多兩三步，每一步是完整的一頁、App Bar 上有自己的標題
 
 ### 路由
 - `useRouteId()`：路由參數讀一次就固定（靠 `route.fullPath` 當 key 成立），離場動畫期間不會被目的地的 id 汙染。拿掉 key 時開發模式會警告
@@ -79,7 +90,7 @@
 
 ## 未完成
 
-> 前端這邊的建議順序：流程的「返回也先確認」→ `ref` 關聯選擇器。前者收掉流程最後一個缺口，後者實際使用最有感。
+> 前端這邊的建議順序：`ref` 關聯選擇器優先，實際使用最有感。
 
 ### 後端（完全還沒開始）
 - Apps Script 的 `doGet`/`doPost` 入口與泛用 CRUD 引擎
@@ -170,25 +181,6 @@
 ### 多選與批次
 - 多選模式不要自動取消，改成右上角出現 X 才關閉
 - 全選（考慮中）
-
-### 連續動作（機制已完成）
-
-設計與實作見 [README 4.4](README.md#44-完成動作後的導覽)。
-
-**已完成**
-- `useFlow.ts`：`runFlow`（外殼：存檔點 + commit / rollback）、`runStep`（開表單等送出）、`resumeStep`（表單交棒）、`FlowCancelled`、`hasEarlierSteps`
-- `router.afterEach` 中止等待中的步驟（reject）；`useCreateForm`／`useEditForm` 送出成功後先問 `resumeStep`
-- 第一步 `push`、之後 `replace`；第二步之後取消一律先問；流程不能套疊（第二個 `beginFlow` 直接拋錯）
-- 範本 `table/use__Table__Actions.ts` 末尾有寫法示範；專案端的第一條流程見 production 分支的 PROJECT-ROADMAP
-
-**還沒做**
-- **返回／導覽列也先跳確認**：現在只有底部的「取消」鈕會問（它是 `PageAction` 的 `confirm`）；瀏覽器返回、導覽列、改網址都是 `afterEach` 事後中止，來不及問，改到一半的表單就這樣丟了。要改成 `router.beforeEach` 守衛，表單有改動或有等待中的步驟就先問、說不就回傳 `false` 擋下導覽。需要一個回傳 promise 的是／否對話框——照 `askFields` 的模式做一個 `confirm()`，或把 `ConfirmDialog` 那個實例也接上 promise
-- **中途放棄後要不要提示使用者**——有了存檔點理論上不需要（什麼都沒完成），但「剛剛那一步白填了」要不要講一聲，等實際用過再決定
-
-**決定不做**
-- **返回＝回到上一步**（而不是整條取消）。代價是三件事加起來等於一個多頁精靈：每步改 `push` 且結束後要清歷史；存檔點要從一格變一疊（每步單獨收回）；上一步的表單要帶著使用者上次填的值重開。等真有三步以上、常態要回頭改的流程再說
-- **編輯表單的預設值通道**：`useEditForm` 不讀 `navigationDefaults()`，所以編輯表單可以當流程的一步，但沒辦法把上一步的結果預先填進去。目前想不到需要的情境
-- **進度指示**（第 1 步／共 2 步）：步驟頂多兩三步，每一步是完整的一頁、App Bar 上有自己的標題
 
 ### PWA 與離線
 - manifest.json、Service Worker 都還沒建立（`vite-plugin-pwa` 未安裝）

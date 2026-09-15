@@ -9,6 +9,7 @@
   import { appBarActionsKey } from '@/composables/useAppBarActions'
   import { confirmFields, fieldsDialog } from '@/composables/useAskFields'
   import { bottomActionsKey } from '@/composables/useBottomActions'
+  import { acceptConfirm, confirmDialog } from '@/composables/useConfirm'
   import { notice, notify } from '@/composables/useNotify'
   import { navigationCount } from '@/router'
   import { useTablesStore } from '@/stores/tables'
@@ -45,7 +46,7 @@
   })
 
   // 動作的執行與確認框都在這裡，頁面只負責註冊動作
-  const { dialog: actionDialog, confirm: confirmAction, run: runAction } = provideActionRunner()
+  const runAction = provideActionRunner()
 
   // 導覽列的目的地不用返回按鈕；其他方式進來的頁面（例如點列表項目進 detail）都算
   const showBack = computed(() => !props.navItems.some(item => item.to === route.path))
@@ -137,12 +138,10 @@
   </v-app-bar>
 
   <ConfirmDialog
-    v-model="actionDialog.open"
-    :error="actionDialog.error"
-    :loading="actionDialog.loading"
-    :text="actionDialog.text"
-    :title="actionDialog.title"
-    @confirm="confirmAction"
+    v-model="confirmDialog.open"
+    :text="confirmDialog.text"
+    :title="confirmDialog.title"
+    @confirm="acceptConfirm"
   />
 
   <FieldsDialog

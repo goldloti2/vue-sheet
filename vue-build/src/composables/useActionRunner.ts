@@ -1,10 +1,10 @@
 import type { PageAction } from '@/composables/actions/useTableActions'
 import type { InjectionKey } from 'vue'
-import { inject, provide, reactive } from 'vue'
+import { inject, provide } from 'vue'
+import { confirm } from '@/composables/useConfirm'
 import { notify } from '@/composables/useNotify'
 
-// 執行動作的單一入口。要確認的動作在這裡開對話框、跑非同步、接錯誤，
-// 所以頁面不用自己管 ConfirmDialog 和 loading/error
+// 執行動作的單一入口：有 confirm 先問，錯誤統一用 snackbar 報，頁面不用自己管
 export const runActionKey: InjectionKey<(action: PageAction) => void> = Symbol('runAction')
 
 // 給渲染動作按鈕的元件用（PageFab、AppShell）。不在 AppShell 底下就退回直接執行
@@ -20,61 +20,21 @@ export function useRunAction (): (action: PageAction) => void {
   }
 }
 
-export interface ActionDialogState {
-  open: boolean
-  title: string
-  text: string
-  loading: boolean
-  error: string | null
+async function runAction (action: PageAction): Promise<void> {
+  if (action.confirm && !await confirm(action.confirm.title, action.confirm.text)) {
+    return
+  }
+  await action.onClick()
 }
 
-export function provideActionRunner () {
-  const dialog = reactive<ActionDialogState>({
-    open: false,
-    title: '',
-    text: '',
-    loading: false,
-    error: null,
-  })
-
-  let pending: PageAction | null = null
-
+export function provideActionRunner (): (action: PageAction) => void {
   function run (action: PageAction) {
-    if (!action.confirm) {
-      // 沒有確認框的動作也要有地方接錯誤，不然會變成 unhandled rejection
-      Promise.resolve().then(() => action.onClick()).catch((error: unknown) => {
-        notify(error instanceof Error ? error.message : String(error), 'error')
-      })
-      return
-    }
-
-    pending = action
-    dialog.title = action.confirm.title
-    dialog.text = action.confirm.text
-    dialog.error = null
-    dialog.loading = false
-    dialog.open = true
+    // 沒接住的話會變成 unhandled rejection
+    runAction(action).catch((error: unknown) => {
+      notify(error instanceof Error ? error.message : String(error), 'error')
+    })
   }
 
   provide(runActionKey, run)
-
-  async function confirm () {
-    if (!pending) {
-      return
-    }
-
-    dialog.loading = true
-    dialog.error = null
-
-    try {
-      await pending.onClick()
-      dialog.open = false
-    } catch (error) {
-      dialog.error = error instanceof Error ? error.message : String(error)
-    } finally {
-      dialog.loading = false
-    }
-  }
-
-  return { dialog, confirm, run }
+  return run
 }

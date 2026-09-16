@@ -1,39 +1,58 @@
 // 新增表單的初始值。給函式的話是打開表單那一刻才求值
 export type ColumnDefault<T> = T | (() => T)
 
-export type SchemaColumn = {
+// 每種欄位型別只在這裡定義一次：值的型別 + 這種型別專屬的設定。真實與虛擬欄位都從這張表推導
+interface ColumnTypes {
+  text: { value: string | null }
+  number: { value: number | null, extra: { min?: number, max?: number } }
+  date: { value: Date | null }
+  // 外鍵欄位（見文件 4.2 節一對多關聯慣例）；refTable 對應 schema/index.ts 的 schemas 裡的 key
+  ref: { value: string | null, extra: { refTable: string } }
+  // 清單類欄位：只能是 options 裡的其中一個值
+  select: { value: string | null, extra: { options: string[] } }
+}
+
+export type ColumnType = keyof ColumnTypes
+export type ColumnValue<T extends ColumnType> = ColumnTypes[T]['value']
+type ColumnExtra<T extends ColumnType> = ColumnTypes[T] extends { extra: infer Extra } ? Extra : object
+
+// 一個欄位最基本的資訊：key、label、型別、型別專屬設定。真實與虛擬欄位都疊在這上面
+export type ColumnBase<T extends ColumnType = ColumnType> = {
   key: string
   label: string
-  // 省略時預設跟 label 同值（見《GoogleSheet後端App-通用架構》文件 6.6 節）
-  sheetHeader?: string
-  required?: boolean
-} & (
-  | { type: 'text', default?: ColumnDefault<string | null> }
-  | { type: 'number', default?: ColumnDefault<number | null>, min?: number, max?: number }
-  | { type: 'date', default?: ColumnDefault<Date | null> }
-  // 外鍵欄位（見文件 4.2 節一對多關聯慣例）；refTable 對應 schema/index.ts 的 schemas 裡的 key
-  | { type: 'ref', refTable: string, default?: ColumnDefault<string | null> }
-  // 清單類欄位：只能是 options 裡的其中一個值
-  | { type: 'select', options: string[], default?: ColumnDefault<string | null> }
-)
+  type: T
+} & ColumnExtra<T>
 
-export interface SortSpec {
-  key: string
-  direction: 'asc' | 'desc'
-}
+// 真實欄位：Sheet 上有的，多了表頭對應與表單設定
+export type SchemaColumn = {
+  [T in ColumnType]: ColumnBase<T> & {
+    // 省略時預設跟 label 同值（見《GoogleSheet後端App-通用架構》文件 6.6 節）
+    sheetHeader?: string
+    required?: boolean
+    default?: ColumnDefault<ColumnValue<T>>
+  }
+}[ColumnType]
 
 // 虛擬欄位算值時能拿到的東西：related('子表') 是指向這一列的子表資料，只有 needs 宣告過的表拿得到
 export interface VirtualColumnContext {
   related: <Child>(childTable: string) => Child[]
 }
 
-// 不存在 Sheet 上、讀的時候才算出來的欄位。來源可以是這一列自己，也可以是子表；用 useRowFields 取值
-export interface VirtualColumn {
+// 虛擬欄位：不在 Sheet 上、讀的時候才算。store 會把它掛成 row 上的 getter，讀起來跟真實欄位一樣（見 README 4.5）
+export type VirtualColumn = {
+  [T in ColumnType]: ColumnBase<T> & {
+    // value 會透過 related() 讀哪些子表；沒宣告就不載
+    needs?: string[]
+    value: (row: object, context: VirtualColumnContext) => ColumnValue<T>
+  }
+}[ColumnType]
+
+// 顯示用：兩種欄位一起看的時候
+export type AnyColumn = SchemaColumn | VirtualColumn
+
+export interface SortSpec {
   key: string
-  label: string
-  // value 會透過 related() 讀哪些子表；沒宣告就不載
-  needs?: string[]
-  value: (row: object, context: VirtualColumnContext) => string
+  direction: 'asc' | 'desc'
 }
 
 export interface TableSchema {
@@ -44,7 +63,7 @@ export interface TableSchema {
   // 怎麼發一筆新 id，由各表自己決定。常見的前綴式用 prefixedId('TPL')
   newId: () => string
   columns: SchemaColumn[]
-  // 算出來的欄位，不進 coerceRow / serializeRow / 表單；取值走 useRowFields
+  // 算出來的欄位，不進 coerceRow / serializeRow / 表單；顯示、排序、分組都跟真實欄位一樣用
   virtualColumns?: VirtualColumn[]
   // detail 頁的顯示順序（欄位 key 陣列）。省略時沿用 columns 的順序
   detailOrder?: string[]
@@ -58,7 +77,7 @@ function columnHeader (column: SchemaColumn): string {
   return column.sheetHeader ?? column.label
 }
 
-function coerceValue (raw: string, type: SchemaColumn['type']): string | number | Date | null {
+function coerceValue (raw: string, type: ColumnType): string | number | Date | null {
   if (raw === '') {
     return null
   }
@@ -110,7 +129,8 @@ export function serializeRow (values: Record<string, unknown>, schema: TableSche
   return result
 }
 
-export function formatColumnValue (row: object, column: SchemaColumn): string {
+// 真實與虛擬欄位都能用：虛擬欄位的值是 store 掛在 row 上的 getter
+export function formatColumnValue (row: object, column: AnyColumn): string {
   const value = (row as Record<string, unknown>)[column.key]
 
   if (value === null || value === undefined) {
@@ -124,9 +144,18 @@ export function formatColumnValue (row: object, column: SchemaColumn): string {
   return String(value)
 }
 
+// 真實欄位在前、虛擬欄位在後
+export function allColumns (schema: TableSchema): AnyColumn[] {
+  return [...schema.columns, ...(schema.virtualColumns ?? [])]
+}
+
+export function findColumn (schema: TableSchema, key: string): AnyColumn | undefined {
+  return allColumns(schema).find(column => column.key === key)
+}
+
 // 只知道欄位 key、還沒有 column 物件時用這個（例如列表頁只想挑幾個欄位顯示）
 export function formatField (row: object, schema: TableSchema, key: string): string {
-  const column = schema.columns.find(candidate => candidate.key === key)
+  const column = findColumn(schema, key)
   return column ? formatColumnValue(row, column) : ''
 }
 

@@ -23,7 +23,7 @@
 - `columnValues`（組送出用 payload）、`emptyRow`（新增表單起始值，套用欄位的 `default`）
 - `sortRows`（依 `defaultSort`）、`sortByKey`、`groupRows`（多層分組）、`flattenGroups`（把分組攤回畫面順序）
 - `detailOrder` / `formOrder` 分別控制詳細頁與表單頁的欄位順序
-- `virtualColumns`：不在 Sheet 上、讀的時候才算的欄位，來源可以是自己這列或 `needs` 宣告的子表（`related()`）；`useRowFields(table).field(row, key)` 統一取真實與虛擬欄位的顯示文字
+- `virtualColumns`：不在 Sheet 上、讀的時候才算的欄位，來源可以是自己這列或 `needs` 宣告的子表（`related()`）。store 掛成 row 上的 getter，顯示、排序、分組都跟真實欄位一樣；兩種欄位共用 `ColumnTypes`／`ColumnBase` 型別骨架
 
 ### 跨表關聯
 - `schema/relations.ts` 掃 schema 的 `ref` 欄位自動產生關聯圖，新增關聯只要標 `type: 'ref'`

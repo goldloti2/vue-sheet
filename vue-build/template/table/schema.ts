@@ -36,11 +36,12 @@ export const __table__Schema: TableSchema = {
   ],
 
   // 以下都可省略
-  // 虛擬欄位：不在 Sheet 上、讀的時候才算出來的欄位。頁面用 useRowFields(table).field(row, key) 取值
-  // （真實欄位也能用同一個函式取）。要看子表就用 needs 宣告，related('子表') 才拿得到指向這一列的資料
+  // 虛擬欄位：不在 Sheet 上、讀的時候才算出來的欄位，store 會掛成 row 上的 getter，用法跟真實欄位一樣
+  // （row.total 直接讀、可排序分組、DataDetail/DataTable 自動顯示）。type 決定 value 的回傳型別；
+  // 要看子表就用 needs 宣告，related('子表') 才拿得到指向這一列的資料。記得在 __Table__Row 補 readonly 欄位
   // virtualColumns: [
-  //   { key: 'total', label: '總額', value: row => String((row.amount ?? 0) * 2) },
-  //   { key: 'title', label: '名稱', needs: ['child'], value: (_row, { related }) => related<ChildRow>('child')[0]?.name ?? '(空)' },
+  //   { key: 'total', label: '總額', type: 'number', value: row => ((row as __Table__Row).amount ?? 0) * 2 },
+  //   { key: 'title', label: '名稱', type: 'text', needs: ['child'], value: (_row, { related }) => related<ChildRow>('child')[0]?.name ?? '(空)' },
   // ],
   // 列表頁預設排序，多筆依序當 tiebreaker
   defaultSort: [

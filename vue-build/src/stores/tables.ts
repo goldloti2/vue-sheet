@@ -2,7 +2,8 @@ import type { TableKey } from '@/schema'
 import { defineStore } from 'pinia'
 import { computed, reactive, shallowRef } from 'vue'
 import { schemas } from '@/schema'
-import { serializeRow } from '@/schema/types'
+import { getRelation } from '@/schema/relations'
+import { serializeRow, sortRows } from '@/schema/types'
 import { fetchTable, mutateTable } from '@/services/appScript'
 
 const pendingLoads = new Map<TableKey, Promise<void>>()
@@ -57,7 +58,7 @@ export const useTablesStore = defineStore('tables', () => {
       loading[table] = true
       error[table] = null
       try {
-        rows[table] = await fetchTable<unknown>(table)
+        rows[table] = (await fetchTable<HasId>(table)).map(row => attachVirtual(table, row))
       } catch (loadError) {
         error[table] = loadError instanceof Error ? loadError.message : String(loadError)
       } finally {
@@ -73,11 +74,33 @@ export const useTablesStore = defineStore('tables', () => {
     }
   }
 
+  // 虛擬欄位 needs 的子表一起載，getter 才有東西讀
   async function ensureLoaded (table: TableKey) {
-    if (table in rows) {
-      return
+    const needed = (schemas[table].virtualColumns ?? []).flatMap(column => column.needs ?? []) as TableKey[]
+    await Promise.all([
+      table in rows ? Promise.resolve() : load(table),
+      ...needed.map(child => ensureLoaded(child)),
+    ])
+  }
+
+  // 指向這一列的子表資料，照子表的 defaultSort 排。子表還沒載就是空的，載進來後讀它的地方會自己重算
+  function relatedRows (parentTable: TableKey, childTable: TableKey, parentId: string): unknown[] {
+    const { column } = getRelation(childTable, parentTable)
+    const matching = (rows[childTable] ?? []).filter(row => (row as Record<string, unknown>)[column] === parentId)
+    return sortRows(matching, schemas[childTable])
+  }
+
+  // 把虛擬欄位掛成 getter：讀起來跟真實欄位一樣，但不可列舉，spread / JSON / Object.keys 都看不到
+  function attachVirtual<Row extends HasId> (table: TableKey, row: Row): Row {
+    for (const column of schemas[table].virtualColumns ?? []) {
+      Object.defineProperty(row, column.key, {
+        configurable: true,
+        get: () => column.value(row, {
+          related: <Child>(childTable: string) => relatedRows(table, childTable as TableKey, row.id) as Child[],
+        }),
+      })
     }
-    await load(table)
+    return row
   }
 
   // 表單頁活著的期間持有一個，離開時釋放
@@ -234,7 +257,7 @@ export const useTablesStore = defineStore('tables', () => {
 
   function create<Row extends HasId> (table: TableKey, values: Record<string, unknown>): Row {
     const schema = schemas[table]
-    const created = { id: schema.newId(), ...values } as Row
+    const created = attachVirtual(table, { id: schema.newId(), ...values } as Row)
 
     patch(table, list => [...list, created])
     enqueue(table, created.id, 'create', serializeRow(values, schema))
@@ -250,7 +273,7 @@ export const useTablesStore = defineStore('tables', () => {
       if ((row as Row).id !== id) {
         return row
       }
-      updated = { ...(row as Row), ...values, id } as Row
+      updated = attachVirtual(table, { ...(row as Row), ...values, id } as Row)
       return updated
     }))
     enqueue(table, id, 'update', serializeRow(values, schema))

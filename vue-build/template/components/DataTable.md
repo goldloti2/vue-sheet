@@ -15,7 +15,7 @@
     :row-to="(row) => `/路徑/${row.id}`"
     :rows="rows"
     :show-header="false"
-    table="__table__"
+    :schema="__table__Schema"
   />
 </template>
 ```
@@ -25,7 +25,7 @@
 | prop | 型別 | 說明 |
 | --- | --- | --- |
 | `rows` | `readonly Row[]` | **必填** |
-| `table` | `TableKey` | **必填**，schema 與虛擬欄位都從它取 |
+| `schema` | `TableSchema` | **必填** |
 | `columns` | `string[]?` | 要顯示的欄位 key；省略＝全部真實欄位加全部虛擬欄位 |
 | `showHeader` | `boolean?` | 預設 `true` |
 | `rowTo` | `((row) => string)?` | 有給才可點擊導覽；不給就是純顯示 |

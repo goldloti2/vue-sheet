@@ -1,10 +1,8 @@
 <script lang="ts" setup>
-  import type { TableKey } from '@/schema'
+  import type { TableSchema } from '@/schema/types'
   import { computed } from 'vue'
   import DetailField from '@/components/ui/DetailField.vue'
-  import { useRowFields } from '@/composables/useRowFields'
-  import { schemas } from '@/schema'
-  import { formatColumnValue } from '@/schema/types'
+  import { allColumns, formatColumnValue } from '@/schema/types'
 
   interface Field {
     key: string
@@ -14,42 +12,31 @@
   }
 
   const props = defineProps<{
-    table: TableKey
+    schema: TableSchema
     row: object | null
     loading: boolean
     error: string | null
   }>()
 
-  const schema = schemas[props.table]
-  const { field: fieldText } = useRowFields(props.table)
-
-  // 真實欄位與虛擬欄位攤平，再照 detailOrder 排
+  // 真實與虛擬欄位一視同仁，照 detailOrder 排；ref 欄位變成連到對方 detail 的連結
   const fields = computed<Field[]>(() => {
     const row = props.row
     if (!row) {
       return []
     }
 
-    const realFields: Field[] = schema.columns.map(column => {
+    const fieldList: Field[] = allColumns(props.schema).map(column => {
       const value = formatColumnValue(row, column)
       const to = column.type === 'ref' && value ? `/${column.refTable}/${value}` : undefined
       return { key: column.key, label: column.label, value, to }
     })
 
-    const virtualFields: Field[] = (schema.virtualColumns ?? []).map(column => ({
-      key: column.key,
-      label: column.label,
-      value: fieldText(row, column.key),
-    }))
-
-    const allFields = [...realFields, ...virtualFields]
-
-    if (!schema.detailOrder) {
-      return allFields
+    if (!props.schema.detailOrder) {
+      return fieldList
     }
 
-    return schema.detailOrder
-      .map(key => allFields.find(candidate => candidate.key === key))
+    return props.schema.detailOrder
+      .map(key => fieldList.find(candidate => candidate.key === key))
       .filter((candidate): candidate is Field => candidate !== undefined)
   })
 </script>

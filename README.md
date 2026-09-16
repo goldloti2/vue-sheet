@@ -109,7 +109,6 @@ src/
     useSortedTableList.ts     上者 + schema.defaultSort 排序；列表頁預設用這個
     useTableRow.ts            單筆讀取
     useRelatedRows.ts         子表整表 + 依關聯圖的外鍵分組
-    useRowFields.ts           field(row, key)：取一列某欄的顯示文字，含虛擬欄位（見 4.5）
     useTableForm.ts           useCreateForm / useEditForm，新增與編輯的共用邏輯
     useRouteId.ts             [id] 頁面取路由參數（見 4.3）
     useListOrder.ts           列表頁發布顯示順序、detail 頁取上/下一筆
@@ -301,7 +300,11 @@ onClick: () => runFlow(async () => {
 
 `schema/index.ts` 另外帶「代稱 → 實際 Sheet 分頁名稱」的對照：程式碼裡好打的英文代稱（例如 `'order'`）不等於 Sheet 分頁的實際名稱（可能是中文）。打 API 時用的是 schema 裡的 `sheetName`，兩者故意分開——換代稱不影響 API，換分頁名稱也不用到處改字串。
 
-**虛擬欄位**（`virtualColumns`）：不存在 Sheet 上、讀的時候才算出來的欄位。來源可以是這一列自己（價格加手續費），也可以是子表（父表用「底下第一筆子資料的名字」當標題、子表金額的加總）。跟 `columns` 分開放，所以 `coerceRow`／`serializeRow`／`columnValues`／表單全部不用知道它——它們只認 `columns`。取值走 `useRowFields(table)` 回傳的 `field(row, key)`，真實欄位與虛擬欄位都能取（前者就是 `formatField`），頁面不用分辨；`DataDetail` 與 `DataTable` 收的是 `table` 而不是 schema，就是為了自己去取虛擬欄位——detail 頁自動顯示、`detailOrder` 可以排它，表格的 `columns` 可以直接指它的 key。要看子表的欄位在 `needs` 列出表名，`value` 就能透過 `related('子表')` 拿指向這一列的子表資料——解析用關聯圖，跟 `useRelatedRows` 同一套，composable 只把 `needs` 裡的表載進共用快取，純看自己這列的欄位什麼都不多載。因為讀的是同一份快取，子表一改，虛擬欄位的值在畫面上當場跟著變——前提是 `field()` 要在 template 或 `computed` 裡呼叫，回傳函式而不是值就是為了這個。
+**虛擬欄位**（`virtualColumns`）：不存在 Sheet 上、讀的時候才算出來的欄位。來源可以是這一列自己（價格加手續費），也可以是子表（父表用「底下第一筆子資料的名字」當標題、子表金額的加總）。跟 `columns` 分開放，所以 `coerceRow`／`serializeRow`／`columnValues`／表單全部不用知道它——它們只認 `columns`，這就是「虛擬欄位除了不能編輯，其他都跟真實欄位一樣」的由來。
+
+它跟真實欄位共用同一套型別骨架：`ColumnTypes` 那張表定義每種 `type` 的值型別與專屬設定（`number` 的 `min`／`max`、`ref` 的 `refTable`……），`ColumnBase<T>` 是一個欄位最基本的資訊（`key`、`label`、`type` 加專屬設定），`SchemaColumn` 在上面疊 Sheet／表單相關的設定，`VirtualColumn` 疊 `value`／`needs`。以後加一種型別只改 `ColumnTypes`、`coerceValue`、`formatColumnValue`、`DataForm` 四處，兩種欄位自動都有。
+
+**值是 store 掛在 row 上的 getter**（`attachVirtual`，在 `load`／`create`／`update` 產生 row 物件時掛）。所以 `row.title` 讀起來跟真實欄位一模一樣，`sortRows`、`groupRows`、`formatColumnValue`、列表頁的 `row.xxx` 全部不用知道它是算的；`defaultSort` 可以指它。getter 裡讀的是 `store.rows`，在 template 或 `computed` 裡讀就會被追蹤，子表一改當場重算。getter 設成不可列舉，`{ ...row }`、`Object.keys`、JSON 都看不到它，寫入端不會誤送。`needs` 列出的子表由 `ensureLoaded(table)` 順便載進來；`related('子表')` 回傳指向這一列的子表資料，照子表的 `defaultSort` 排（跟 `useRelatedRows` 一致），子表還沒載時是空的、載進來後自動重算。Row 的 TS 介面要自己補 `readonly` 欄位，型別系統才知道它存在。
 
 **新增表單的初始值**分三層疊出來，後面的蓋前面的：schema 欄位的 `default`（跟來源無關的固定值）→ 導覽帶來的 `history.state.defaults`（從哪裡按新增決定）→ `useCreateForm` 的第三個參數（頁面自己算得出來的）。`default` 可以是值也可以是函式，函式在打開表單那一刻才求值（例如 `() => new Date()`）。
 

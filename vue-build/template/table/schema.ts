@@ -46,7 +46,7 @@ export const __table__Schema: TableSchema = {
   defaultSort: [
     { key: 'date', direction: 'asc' },
   ],
-  // detail 頁欄位順序；省略＝沿用 columns 順序。畫面上的計算欄位（extraFields）也可以排進來
+  // detail 頁欄位順序；省略＝沿用 columns 順序。虛擬欄位的 key 也可以排進來
   detailOrder: ['name', 'amount', 'date'],
   // 表單頁欄位順序；省略＝沿用 columns 順序
   formOrder: ['name', 'amount', 'date'],

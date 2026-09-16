@@ -1,7 +1,9 @@
 <script generic="Row extends { id: string }" lang="ts" setup>
-  import type { TableSchema } from '@/schema/types'
+  import type { TableKey } from '@/schema'
   import { computed } from 'vue'
   import { useRouter } from 'vue-router'
+  import { useRowFields } from '@/composables/useRowFields'
+  import { schemas } from '@/schema'
   import { formatColumnValue } from '@/schema/types'
 
   interface ResolvedColumn<Row> {
@@ -12,12 +14,10 @@
 
   const props = withDefaults(defineProps<{
     rows: readonly Row[]
-    schema: TableSchema
-    // 要顯示的欄位 key 子集（可以混 schema 真實欄位跟 extraColumns 的 key）；省略＝ schema 全部欄位 + 全部 extraColumns
+    table: TableKey
+    // 要顯示的欄位 key 子集（真實欄位與 virtualColumns 都可以）；省略＝全部真實欄位 + 全部虛擬欄位
     columns?: string[]
     showHeader?: boolean
-    // 不是 schema 真實欄位、每列各自算出來的欄位（例如這一列的小計）
-    extraColumns?: { key: string, label: string, value: (row: Row) => string }[]
     // 有傳的話點一列會導覽過去；不傳就是純顯示，不用猜路由規則
     rowTo?: (row: Row) => string
   }>(), {
@@ -25,21 +25,23 @@
   })
 
   const router = useRouter()
+  const schema = schemas[props.table]
+  const { field } = useRowFields(props.table)
 
   const resolvedColumns = computed<ResolvedColumn<Row>[]>(() => {
-    const realColumns: ResolvedColumn<Row>[] = props.schema.columns.map(column => ({
+    const realColumns: ResolvedColumn<Row>[] = schema.columns.map(column => ({
       key: column.key,
       label: column.label,
       getValue: (row: Row) => formatColumnValue(row, column),
     }))
 
-    const extraColumns: ResolvedColumn<Row>[] = (props.extraColumns ?? []).map(extra => ({
-      key: extra.key,
-      label: extra.label,
-      getValue: extra.value,
+    const virtualColumns: ResolvedColumn<Row>[] = (schema.virtualColumns ?? []).map(column => ({
+      key: column.key,
+      label: column.label,
+      getValue: (row: Row) => field(row, column.key),
     }))
 
-    const allColumns = [...realColumns, ...extraColumns]
+    const allColumns = [...realColumns, ...virtualColumns]
 
     if (!props.columns) {
       return allColumns

@@ -1,10 +1,12 @@
 <script lang="ts" setup>
-  import type { TableSchema } from '@/schema/types'
+  import type { TableKey } from '@/schema'
   import { computed } from 'vue'
   import DetailField from '@/components/ui/DetailField.vue'
+  import { useRowFields } from '@/composables/useRowFields'
+  import { schemas } from '@/schema'
   import { formatColumnValue } from '@/schema/types'
 
-  interface ExtraField {
+  interface Field {
     key: string
     label: string
     value: string
@@ -12,36 +14,43 @@
   }
 
   const props = defineProps<{
-    schema: TableSchema
+    table: TableKey
     row: object | null
     loading: boolean
     error: string | null
-    // 不是 schema 真實欄位、只在這個畫面顯示用的欄位（例如跨表算出來的總額）；
-    // 一樣可以透過 schema.detailOrder 安排跟真實欄位的顯示順序
-    extraFields?: ExtraField[]
   }>()
 
-  const fields = computed<ExtraField[]>(() => {
+  const schema = schemas[props.table]
+  const { field: fieldText } = useRowFields(props.table)
+
+  // 真實欄位與虛擬欄位攤平，再照 detailOrder 排
+  const fields = computed<Field[]>(() => {
     const row = props.row
     if (!row) {
       return []
     }
 
-    const realFields: ExtraField[] = props.schema.columns.map(column => {
+    const realFields: Field[] = schema.columns.map(column => {
       const value = formatColumnValue(row, column)
       const to = column.type === 'ref' && value ? `/${column.refTable}/${value}` : undefined
       return { key: column.key, label: column.label, value, to }
     })
 
-    const allFields = [...realFields, ...(props.extraFields ?? [])]
+    const virtualFields: Field[] = (schema.virtualColumns ?? []).map(column => ({
+      key: column.key,
+      label: column.label,
+      value: fieldText(row, column.key),
+    }))
 
-    if (!props.schema.detailOrder) {
+    const allFields = [...realFields, ...virtualFields]
+
+    if (!schema.detailOrder) {
       return allFields
     }
 
-    return props.schema.detailOrder
-      .map(key => allFields.find(field => field.key === key))
-      .filter((field): field is ExtraField => field !== undefined)
+    return schema.detailOrder
+      .map(key => allFields.find(candidate => candidate.key === key))
+      .filter((candidate): candidate is Field => candidate !== undefined)
   })
 </script>
 

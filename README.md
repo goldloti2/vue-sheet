@@ -301,7 +301,7 @@ onClick: () => runFlow(async () => {
 
 `schema/index.ts` 另外帶「代稱 → 實際 Sheet 分頁名稱」的對照：程式碼裡好打的英文代稱（例如 `'order'`）不等於 Sheet 分頁的實際名稱（可能是中文）。打 API 時用的是 schema 裡的 `sheetName`，兩者故意分開——換代稱不影響 API，換分頁名稱也不用到處改字串。
 
-**虛擬欄位**（`virtualColumns`）：不存在 Sheet 上、讀的時候才算出來的欄位。來源可以是這一列自己（價格加手續費），也可以是子表（父表用「底下第一筆子資料的名字」當標題、子表金額的加總）。跟 `columns` 分開放，所以 `coerceRow`／`serializeRow`／`columnValues`／表單全部不用知道它——它們只認 `columns`。取值走 `useRowFields(table)` 回傳的 `field(row, key)`，真實欄位與虛擬欄位都能取（前者就是 `formatField`），頁面不用分辨。要看子表的欄位在 `needs` 列出表名，`value` 就能透過 `related('子表')` 拿指向這一列的子表資料——解析用關聯圖，跟 `useRelatedRows` 同一套，composable 只把 `needs` 裡的表載進共用快取，純看自己這列的欄位什麼都不多載。因為讀的是同一份快取，子表一改，虛擬欄位的值在畫面上當場跟著變——前提是 `field()` 要在 template 或 `computed` 裡呼叫，回傳函式而不是值就是為了這個。
+**虛擬欄位**（`virtualColumns`）：不存在 Sheet 上、讀的時候才算出來的欄位。來源可以是這一列自己（價格加手續費），也可以是子表（父表用「底下第一筆子資料的名字」當標題、子表金額的加總）。跟 `columns` 分開放，所以 `coerceRow`／`serializeRow`／`columnValues`／表單全部不用知道它——它們只認 `columns`。取值走 `useRowFields(table)` 回傳的 `field(row, key)`，真實欄位與虛擬欄位都能取（前者就是 `formatField`），頁面不用分辨；`DataDetail` 與 `DataTable` 收的是 `table` 而不是 schema，就是為了自己去取虛擬欄位——detail 頁自動顯示、`detailOrder` 可以排它，表格的 `columns` 可以直接指它的 key。要看子表的欄位在 `needs` 列出表名，`value` 就能透過 `related('子表')` 拿指向這一列的子表資料——解析用關聯圖，跟 `useRelatedRows` 同一套，composable 只把 `needs` 裡的表載進共用快取，純看自己這列的欄位什麼都不多載。因為讀的是同一份快取，子表一改，虛擬欄位的值在畫面上當場跟著變——前提是 `field()` 要在 template 或 `computed` 裡呼叫，回傳函式而不是值就是為了這個。
 
 **新增表單的初始值**分三層疊出來，後面的蓋前面的：schema 欄位的 `default`（跟來源無關的固定值）→ 導覽帶來的 `history.state.defaults`（從哪裡按新增決定）→ `useCreateForm` 的第三個參數（頁面自己算得出來的）。`default` 可以是值也可以是函式，函式在打開表單那一刻才求值（例如 `() => new Date()`）。
 
@@ -320,7 +320,7 @@ onClick: () => runFlow(async () => {
 不管套到哪張表都是同一套範本，差別只在開了哪些功能。實際檔案見 `vue-build/template/`。
 
 - **列表**：卡片式（適合瀏覽）或表格式（適合比對、多選）。排序依 `schema.defaultSort`。可選功能：分組、Tabs 篩選、搜尋、多選
-- **詳細**：顯示單筆所有欄位，順序依 `schema.detailOrder`。可選功能：內嵌關聯子表格、計算欄位（`extraFields`）、編輯/刪除入口
+- **詳細**：顯示單筆所有欄位（含 schema 的虛擬欄位），順序依 `schema.detailOrder`。可選功能：內嵌關聯子表格、編輯/刪除入口
 - **表單**：依欄位型別自動選輸入元件，順序依 `schema.formOrder`。新增與編輯共用同一套版面
 - **總覽**：彙整多筆/跨表的聚合數字。目前沒有具體需求，保留位置
 

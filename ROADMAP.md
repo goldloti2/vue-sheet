@@ -40,8 +40,8 @@
 - 跨表算出來的值靠共用快取的 reactivity 自動重算，不需要跨表失效機制
 
 ### 共用元件庫
-- 列表：`DataList`（卡片式單列，含長按多選）、`ListField`、`GroupedList`（多層可收合分組）、`DataTable`（表格式，也用於 detail 頁內嵌子表格）
-- 詳細：`DataDetail`（自帶 loading/error/找不到資料）、`DetailField`
+- 列表：`DataList`（卡片式單列，含長按多選）、`ListField`、`GroupedList`（多層可收合分組）、`DataTable`（表格式，也用於 detail 頁內嵌子表格；`columns` 可指虛擬欄位）
+- 詳細：`DataDetail`（自帶 loading/error/找不到資料，虛擬欄位自動顯示）、`DetailField`
 - 表單：`DataForm`（依 `column.type` 自動選輸入元件）
 - 其他：`PageFab`、`TabView`、`RecordNav`、`AppDialog`、`ConfirmDialog`、`FieldsDialog`（只顯示幾欄的 `DataForm`）
 

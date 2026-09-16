@@ -14,7 +14,6 @@
   import { useSiblingNav } from '@/composables/useListOrder'
   import { useRouteId } from '@/composables/useRouteId'
   import { useTableRow } from '@/composables/useTableRow'
-  import { __table__Schema } from '@/schema/__table__'
 
   const id = useRouteId()
   const { swipe } = useSiblingNav('__table__', id)
@@ -30,7 +29,7 @@
       :error="error"
       :loading="loading"
       :row="row"
-      :schema="__table__Schema"
+      table="__table__"
     />
 
     <RecordNav :id="id" table="__table__" />

@@ -70,6 +70,7 @@
 | --- | --- |
 | `sheetName` | Google Sheet 分頁的實際名稱，也是打 API 時 `table=` 的值 |
 | `idColumn` | 這張表的 ID 欄，填 Sheet 的**實際表頭文字** |
+| `labelColumn` | 用哪一欄稱呼一列（欄位 key，真實或虛擬都行），可省略。`row.$label` 讀得到（`__Table__Row` extends `RowBase` 就有型別）；省略就是 id |
 | `columns[].key` | 程式裡用的英文欄位名 |
 | `columns[].label` | 顯示用的中文標籤 |
 | `columns[].sheetHeader` | Sheet 的實際表頭；跟 `label` 同值時可省略 |

@@ -1,10 +1,9 @@
 // 複製到 src/schema/__table__.ts
-import type { TableSchema } from './types'
+import type { RowBase, TableSchema } from './types'
 import { prefixedId } from './types'
 
-// 每個 column 一個欄位；id 是系統欄位，不放進 columns
-export interface __Table__Row {
-  id: string
+// 每個 column 一個欄位；id 與 $label 來自 RowBase，不放進 columns
+export interface __Table__Row extends RowBase {
   name: string | null
   amount: number | null
   date: Date | null
@@ -13,6 +12,8 @@ export interface __Table__Row {
 export const __table__Schema: TableSchema = {
   sheetName: '範本',
   idColumn: 'TPL-ID',
+  // 用哪一欄稱呼一列（可省略，省略就是 id），row.$label 讀得到
+  labelColumn: 'name',
   // 怎麼發新 id，各表自己決定。prefixedId 是現成的前綴式（TPL-11eef1a8）；
   // 要別種格式就自己寫一個 () => string 塞進來
   newId: prefixedId('TPL'),

@@ -1,6 +1,12 @@
 // 新增表單的初始值。給函式的話是打開表單那一刻才求值
 export type ColumnDefault<T> = T | (() => T)
 
+// 每張表的 Row 介面都 extends 這個：id 是系統欄位，$label 是 store 掛的 getter（見 labelColumn）
+export interface RowBase {
+  id: string
+  readonly $label: string
+}
+
 // 每種欄位型別只在這裡定義一次：值的型別 + 這種型別專屬的設定。真實與虛擬欄位都從這張表推導
 interface ColumnTypes {
   text: { value: string | null }
@@ -60,6 +66,8 @@ export interface TableSchema {
   sheetName: string
   // 這張表的 ID 欄（sheetHeader 值）。系統欄位，不放進 columns（見文件 6.5 節）
   idColumn: string
+  // 用哪一欄稱呼一列（欄位 key，真實或虛擬都行）；省略就是 id。store 據此掛 row.$label
+  labelColumn?: string
   // 怎麼發一筆新 id，由各表自己決定。常見的前綴式用 prefixedId('TPL')
   newId: () => string
   columns: SchemaColumn[]
@@ -157,6 +165,12 @@ export function findColumn (schema: TableSchema, key: string): AnyColumn | undef
 export function formatField (row: object, schema: TableSchema, key: string): string {
   const column = findColumn(schema, key)
   return column ? formatColumnValue(row, column) : ''
+}
+
+// 一列怎麼稱呼：schema 的 labelColumn 那欄的顯示文字，沒設或空的就是 id。store 用它掛 row.$label
+export function rowLabel (row: object, schema: TableSchema): string {
+  const label = schema.labelColumn ? formatField(row, schema, schema.labelColumn) : ''
+  return label || String((row as { id?: unknown }).id ?? '')
 }
 
 // 沒有 default 的欄位是 null；有的話套上去，函式型的在這裡才求值

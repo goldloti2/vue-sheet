@@ -24,6 +24,7 @@
 - `sortRows`（依 `defaultSort`）、`sortByKey`、`groupRows`（多層分組）、`flattenGroups`（把分組攤回畫面順序）
 - `detailOrder` / `formOrder` 分別控制詳細頁與表單頁的欄位順序
 - `virtualColumns`：不在 Sheet 上、讀的時候才算的欄位，來源可以是自己這列或 `needs` 宣告的子表（`related()`）。store 掛成 row 上的 getter，顯示、排序、分組都跟真實欄位一樣；兩種欄位共用 `ColumnTypes`／`ColumnBase` 型別骨架
+- `labelColumn`：一列怎麼稱呼（欄位 key，省略就是 id），store 掛成 `row.$label`
 
 ### 跨表關聯
 - `schema/relations.ts` 掃 schema 的 `ref` 欄位自動產生關聯圖，新增關聯只要標 `type: 'ref'`

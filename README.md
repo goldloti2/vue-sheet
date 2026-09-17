@@ -305,7 +305,7 @@ onClick: () => runFlow(async () => {
 
 它跟真實欄位共用同一套型別骨架：`ColumnTypes` 那張表定義每種 `type` 的值型別與專屬設定（`number` 的 `min`／`max`、`ref` 的 `refTable`……），`ColumnBase<T>` 是一個欄位最基本的資訊（`key`、`label`、`type` 加專屬設定），`SchemaColumn` 在上面疊 Sheet／表單相關的設定，`VirtualColumn` 疊 `value`／`needs`。以後加一種型別只改 `ColumnTypes`、`coerceValue`、`formatColumnValue`、`DataForm` 四處，兩種欄位自動都有。
 
-**值是 store 掛在 row 上的 getter**（`attachVirtual`，在 `load`／`create`／`update` 產生 row 物件時掛）。所以 `row.title` 讀起來跟真實欄位一模一樣，`sortRows`、`groupRows`、`formatColumnValue`、列表頁的 `row.xxx` 全部不用知道它是算的；`defaultSort` 可以指它。getter 裡讀的是 `store.rows`，在 template 或 `computed` 裡讀就會被追蹤，子表一改當場重算。getter 設成不可列舉，`{ ...row }`、`Object.keys`、JSON 都看不到它，寫入端不會誤送。`needs` 列出的子表由 `ensureLoaded(table)` 順便載進來；`related('子表')` 回傳指向這一列的子表資料，照子表的 `defaultSort` 排（跟 `useRelatedRows` 一致），子表還沒載時是空的、載進來後自動重算。Row 的 TS 介面要自己補 `readonly` 欄位，型別系統才知道它存在。
+**值是 store 掛在 row 上的 getter**（`attachGetters`，在 `load`／`create`／`update` 產生 row 物件時掛；同一個函式也掛 `$label`——這一列的名字，`TableSchema.labelColumn` 指定用哪一欄，省略就是 id；Row 介面 extends `RowBase` 就有它的型別）。所以 `row.title` 讀起來跟真實欄位一模一樣，`sortRows`、`groupRows`、`formatColumnValue`、列表頁的 `row.xxx` 全部不用知道它是算的；`defaultSort` 可以指它。getter 裡讀的是 `store.rows`，在 template 或 `computed` 裡讀就會被追蹤，子表一改當場重算。getter 設成不可列舉，`{ ...row }`、`Object.keys`、JSON 都看不到它，寫入端不會誤送。`needs` 列出的子表由 `ensureLoaded(table)` 順便載進來；`related('子表')` 回傳指向這一列的子表資料，照子表的 `defaultSort` 排（跟 `useRelatedRows` 一致），子表還沒載時是空的、載進來後自動重算。Row 的 TS 介面要自己補 `readonly` 欄位，型別系統才知道它存在。
 
 **新增表單的初始值**分三層疊出來，後面的蓋前面的：schema 欄位的 `default`（跟來源無關的固定值）→ 導覽帶來的 `history.state.defaults`（從哪裡按新增決定）→ `useCreateForm` 的第三個參數（頁面自己算得出來的）。`default` 可以是值也可以是函式，函式在打開表單那一刻才求值（例如 `() => new Date()`）。
 

@@ -3,7 +3,7 @@ import { defineStore } from 'pinia'
 import { computed, reactive, shallowRef } from 'vue'
 import { schemas } from '@/schema'
 import { getRelation } from '@/schema/relations'
-import { serializeRow, sortRows } from '@/schema/types'
+import { rowLabel, serializeRow, sortRows } from '@/schema/types'
 import { fetchTable, mutateTable } from '@/services/appScript'
 
 const pendingLoads = new Map<TableKey, Promise<void>>()
@@ -58,7 +58,7 @@ export const useTablesStore = defineStore('tables', () => {
       loading[table] = true
       error[table] = null
       try {
-        rows[table] = (await fetchTable<HasId>(table)).map(row => attachVirtual(table, row))
+        rows[table] = (await fetchTable<HasId>(table)).map(row => attachGetters(table, row))
       } catch (loadError) {
         error[table] = loadError instanceof Error ? loadError.message : String(loadError)
       } finally {
@@ -90,16 +90,23 @@ export const useTablesStore = defineStore('tables', () => {
     return sortRows(matching, schemas[childTable])
   }
 
-  // 把虛擬欄位掛成 getter：讀起來跟真實欄位一樣，但不可列舉，spread / JSON / Object.keys 都看不到
-  function attachVirtual<Row extends HasId> (table: TableKey, row: Row): Row {
-    for (const column of schemas[table].virtualColumns ?? []) {
-      Object.defineProperty(row, column.key, {
-        configurable: true,
-        get: () => column.value(row, {
-          related: <Child>(childTable: string) => relatedRows(table, childTable as TableKey, row.id) as Child[],
-        }),
-      })
+  function defineGetter (row: object, key: string, get: () => unknown): void {
+    Object.defineProperty(row, key, { configurable: true, get })
+  }
+
+  // 掛在 row 上、讀起來跟真實欄位一樣的 getter（不可列舉，spread / JSON / Object.keys 都看不到）：
+  // 虛擬欄位、$label（這一列的名字）
+  function attachGetters<Row extends HasId> (table: TableKey, row: Row): Row {
+    const schema = schemas[table]
+
+    for (const column of schema.virtualColumns ?? []) {
+      defineGetter(row, column.key, () => column.value(row, {
+        related: <Child>(childTable: string) => relatedRows(table, childTable as TableKey, row.id) as Child[],
+      }))
     }
+
+    defineGetter(row, '$label', () => rowLabel(row, schema))
+
     return row
   }
 
@@ -257,7 +264,7 @@ export const useTablesStore = defineStore('tables', () => {
 
   function create<Row extends HasId> (table: TableKey, values: Record<string, unknown>): Row {
     const schema = schemas[table]
-    const created = attachVirtual(table, { id: schema.newId(), ...values } as Row)
+    const created = attachGetters(table, { id: schema.newId(), ...values } as Row)
 
     patch(table, list => [...list, created])
     enqueue(table, created.id, 'create', serializeRow(values, schema))
@@ -273,7 +280,7 @@ export const useTablesStore = defineStore('tables', () => {
       if ((row as Row).id !== id) {
         return row
       }
-      updated = attachVirtual(table, { ...(row as Row), ...values, id } as Row)
+      updated = attachGetters(table, { ...(row as Row), ...values, id } as Row)
       return updated
     }))
     enqueue(table, id, 'update', serializeRow(values, schema))

@@ -46,7 +46,7 @@
 - 其他：`PageFab`、`TabView`、`RecordNav`、`AppDialog`、`ConfirmDialog`、`FieldsDialog`（只顯示幾欄的 `DataForm`）
 
 ### 動作系統
-- `PageAction` 型別（`{ key, label, icon?, onClick, confirm? }`），FAB、App Bar、底部動作列、detail 欄位動作共用同一種描述
+- `PageAction` 型別（`{ key, label, icon, onClick, confirm? }`），FAB、App Bar、底部動作列、detail 欄位動作共用同一種描述；內建 builder 的 label／icon 可用 `ActionLook` 覆寫
 - 通用 builder：`useNewAction` / `useEditAction` / `useDeleteAction` / `useBulkDeleteAction` / `useQuickEditAction`，一律回傳 `ComputedRef<PageAction[]>`
 - 欄位動作（`DataDetail` 的 `fieldActions`，一欄一個、整格可點）：`useGoToRefAction`（ref 前往對方）／`useOpenUrlAction`（開新分頁）／`useSetFieldAction`（立即改成某個值，可帶 confirm）
 - 需要確認的動作宣告 `confirm` 就好，`useActionRunner` 先 `await confirm()` 再跑，錯誤進 snackbar；頁面不用擺 `ConfirmDialog`

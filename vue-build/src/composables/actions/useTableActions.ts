@@ -1,7 +1,7 @@
 import type { AskFieldsOptions } from '@/composables/useAskFields'
 import type { TableKey } from '@/schema'
 import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue'
-import { mdiChevronRightCircle, mdiDelete, mdiOpenInNew, mdiPencil, mdiPlus } from '@mdi/js'
+import { mdiChevronRightCircle, mdiClose, mdiContentSave, mdiDelete, mdiOpenInNew, mdiPencil, mdiPlus } from '@mdi/js'
 import { computed, toValue } from 'vue'
 import { askFields } from '@/composables/useAskFields'
 import router, { leaveAfterAction, pushWithDefaults } from '@/router'
@@ -12,8 +12,7 @@ import { useTablesStore } from '@/stores/tables'
 export interface PageAction {
   key: string
   label: string
-  // FAB 與 App Bar 靠它顯示；底部動作列只用文字，所以可以省略
-  icon?: string
+  icon: string
   onClick: () => void | Promise<void>
   confirm?: { title: string, text: string }
 }
@@ -24,7 +23,24 @@ export type PageActions = ComputedRef<PageAction[]>
 // detail 頁的欄位動作：欄位 key → 動作，每欄只用第一個
 export type FieldActions = Record<string, PageActions>
 
-export interface NewActionOptions {
+// 框架內建動作的預設圖示全在這裡；表單的取消／送出（useTableForm）也從這裡拿
+export const actionIcons = {
+  new: mdiPlus,
+  edit: mdiPencil,
+  delete: mdiDelete,
+  goToRef: mdiChevronRightCircle,
+  openUrl: mdiOpenInNew,
+  cancel: mdiClose,
+  save: mdiContentSave,
+} as const
+
+// 內建 builder 的文字與圖示都有預設，各表要換就在這裡覆寫
+export interface ActionLook {
+  label?: string
+  icon?: string
+}
+
+export interface NewActionOptions extends ActionLook {
   defaults?: MaybeRefOrGetter<Record<string, unknown>>
 }
 
@@ -34,8 +50,8 @@ export function useNewAction (table: TableKey, options: NewActionOptions = {}): 
 
   return computed(() => [{
     key: 'new',
-    label: '新增',
-    icon: mdiPlus,
+    label: options.label ?? '新增',
+    icon: options.icon ?? actionIcons.new,
     onClick: () => {
       if (defaults === undefined) {
         void router.push(path)
@@ -46,7 +62,7 @@ export function useNewAction (table: TableKey, options: NewActionOptions = {}): 
   }])
 }
 
-export function useEditAction (table: TableKey, row: Ref<{ id: string } | null>): PageActions {
+export function useEditAction (table: TableKey, row: Ref<{ id: string } | null>, look: ActionLook = {}): PageActions {
   return computed(() => {
     const current = row.value
     if (!current) {
@@ -55,14 +71,14 @@ export function useEditAction (table: TableKey, row: Ref<{ id: string } | null>)
 
     return [{
       key: 'edit',
-      label: '編輯',
-      icon: mdiPencil,
+      label: look.label ?? '編輯',
+      icon: look.icon ?? actionIcons.edit,
       onClick: () => void router.push(`/${table}/${current.id}/edit`),
     }]
   })
 }
 
-export function useDeleteAction (table: TableKey, row: Ref<{ id: string } | null>): PageActions {
+export function useDeleteAction (table: TableKey, row: Ref<{ id: string } | null>, look: ActionLook = {}): PageActions {
   const store = useTablesStore()
 
   return computed(() => {
@@ -73,8 +89,8 @@ export function useDeleteAction (table: TableKey, row: Ref<{ id: string } | null
 
     return [{
       key: 'delete',
-      label: '刪除',
-      icon: mdiDelete,
+      label: look.label ?? '刪除',
+      icon: look.icon ?? actionIcons.delete,
       confirm: { title: '刪除確認', text: '確定要刪除嗎？' },
       onClick: async () => {
         await store.remove(table, current.id)
@@ -87,7 +103,7 @@ export function useDeleteAction (table: TableKey, row: Ref<{ id: string } | null
 export interface QuickEditOptions {
   key?: string
   label: string
-  icon?: string
+  icon: string
   defaults?: AskFieldsOptions['defaults']
   onDone?: () => void
 }
@@ -130,7 +146,7 @@ export function useQuickEditAction<Row extends { id: string }> (
 // 以下三個是 detail 頁的欄位動作（DataDetail 的 fieldActions），一欄一個
 
 // ref 欄位：前往對方的 detail。用 push，回來時這一頁還在
-export function useGoToRefAction (row: Ref<object | null>, key: string, refTable: TableKey): PageActions {
+export function useGoToRefAction (row: Ref<object | null>, key: string, refTable: TableKey, look: ActionLook = {}): PageActions {
   return computed(() => {
     const id = (row.value as Record<string, unknown> | null)?.[key]
     if (typeof id !== 'string' || id === '') {
@@ -139,15 +155,15 @@ export function useGoToRefAction (row: Ref<object | null>, key: string, refTable
 
     return [{
       key: `go-to-${key}`,
-      label: '前往',
-      icon: mdiChevronRightCircle,
+      label: look.label ?? '前往',
+      icon: look.icon ?? actionIcons.goToRef,
       onClick: () => void router.push(`/${refTable}/${id}`),
     }]
   })
 }
 
 // 文字欄位裡是網址：開新分頁
-export function useOpenUrlAction (row: Ref<object | null>, key: string): PageActions {
+export function useOpenUrlAction (row: Ref<object | null>, key: string, look: ActionLook = {}): PageActions {
   return computed(() => {
     const url = (row.value as Record<string, unknown> | null)?.[key]
     if (typeof url !== 'string' || !/^https?:\/\//.test(url)) {
@@ -156,8 +172,8 @@ export function useOpenUrlAction (row: Ref<object | null>, key: string): PageAct
 
     return [{
       key: `open-${key}`,
-      label: '開啟',
-      icon: mdiOpenInNew,
+      label: look.label ?? '開啟',
+      icon: look.icon ?? actionIcons.openUrl,
       onClick: () => {
         window.open(url, '_blank', 'noopener')
       },
@@ -167,7 +183,7 @@ export function useOpenUrlAction (row: Ref<object | null>, key: string): PageAct
 
 export interface SetFieldOptions {
   label: string
-  icon?: string
+  icon: string
   confirm?: PageAction['confirm']
 }
 
@@ -203,6 +219,7 @@ export function useBulkDeleteAction (
   table: TableKey,
   selectedIds: Ref<ReadonlySet<string>>,
   onDone: () => void,
+  look: ActionLook = {},
 ): PageActions {
   const store = useTablesStore()
 
@@ -214,8 +231,8 @@ export function useBulkDeleteAction (
 
     return [{
       key: 'delete',
-      label: '刪除',
-      icon: mdiDelete,
+      label: look.label ?? '刪除',
+      icon: look.icon ?? actionIcons.delete,
       confirm: { title: '刪除確認', text: `確定要刪除選取的 ${ids.size} 個項目嗎?` },
       onClick: async () => {
         await store.removeMany(table, ids)

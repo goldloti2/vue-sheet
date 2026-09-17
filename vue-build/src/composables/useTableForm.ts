@@ -4,6 +4,7 @@ import type { TableSchema } from '@/schema/types'
 import type { ComputedRef, MaybeRefOrGetter } from 'vue'
 import type { RouteLocationRaw } from 'vue-router'
 import { computed, onActivated, ref, toValue, watch } from 'vue'
+import { actionIcons } from '@/composables/actions/useTableActions'
 import { resumeStep } from '@/composables/useFlow'
 import { useLeaveGuard } from '@/composables/useLeaveGuard'
 import { useSyncHold } from '@/composables/useSyncHold'
@@ -48,6 +49,7 @@ function finish (row: object, fallback: RouteLocationRaw): void {
 // 底部動作列用的取消／送出。取消不自己問，離開頁面的確認統一由 useLeaveGuard 處理
 function formActions (
   submitLabel: string,
+  submitIcon: string,
   submit: () => Promise<void>,
   leave: () => void,
 ): ComputedRef<PageAction[]> {
@@ -55,11 +57,13 @@ function formActions (
     {
       key: 'cancel',
       label: '取消',
+      icon: actionIcons.cancel,
       onClick: leave,
     },
     {
       key: 'submit',
       label: submitLabel,
+      icon: submitIcon,
       onClick: submit,
     },
   ])
@@ -162,7 +166,7 @@ export function useCreateForm<Row extends HasId> (
     })
   }
 
-  const actions = formActions('新增', submit, () => leaveAfterAction(`/${table}`))
+  const actions = formActions('新增', actionIcons.new, submit, () => leaveAfterAction(`/${table}`))
 
   return { form, fieldErrors, submitting, error, submit, actions }
 }
@@ -220,7 +224,7 @@ export function useEditForm<Row extends HasId> (
     })
   }
 
-  const actions = formActions('儲存', submit, () => leaveAfterAction(`/${table}/${toValue(id)}`))
+  const actions = formActions('儲存', actionIcons.save, submit, () => leaveAfterAction(`/${table}/${toValue(id)}`))
 
   return { form, fieldErrors, loading, loadError, submitting, error, submit, actions }
 }

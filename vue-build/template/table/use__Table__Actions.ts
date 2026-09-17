@@ -30,6 +30,7 @@ export function use__Table__Actions (options: __Table__ActionOptions = {}) {
       }
     : {}
 
+  // 內建 builder 的文字與圖示有預設，要換就在最後一個參數覆寫：useEditAction(TABLE, row, { label: '修改', icon: mdiFileEdit })
   return {
     new: useNewAction(TABLE, newOptions),
     edit: row ? useEditAction(TABLE, row) : none,

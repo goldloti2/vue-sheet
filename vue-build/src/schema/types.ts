@@ -12,7 +12,8 @@ interface ColumnTypes {
   text: { value: string | null }
   number: { value: number | null, extra: { min?: number, max?: number } }
   date: { value: Date | null }
-  // 外鍵欄位（見文件 4.2 節一對多關聯慣例）；refTable 對應 schema/index.ts 的 schemas 裡的 key
+  // 外鍵欄位（見文件 4.2 節一對多關聯慣例）；refTable 對應 schema/index.ts 的 schemas 裡的 key。
+  // 顯示時用對方的 $label（對方 schema 的 labelColumn），store 會把對方那一列掛成 row.$欄位key
   ref: { value: string | null, extra: { refTable: string } }
   // 清單類欄位：只能是 options 裡的其中一個值
   select: { value: string | null, extra: { options: string[] } }
@@ -66,7 +67,7 @@ export interface TableSchema {
   sheetName: string
   // 這張表的 ID 欄（sheetHeader 值）。系統欄位，不放進 columns（見文件 6.5 節）
   idColumn: string
-  // 用哪一欄稱呼一列（欄位 key，真實或虛擬都行）；省略就是 id。store 據此掛 row.$label
+  // 用哪一欄稱呼一列（欄位 key，真實或虛擬都行），store 據此掛 row.$label；別的表 ref 到這裡就顯示它。省略就是 id
   labelColumn?: string
   // 怎麼發一筆新 id，由各表自己決定。常見的前綴式用 prefixedId('TPL')
   newId: () => string
@@ -139,7 +140,8 @@ export function serializeRow (values: Record<string, unknown>, schema: TableSche
 
 // 真實與虛擬欄位都能用：虛擬欄位的值是 store 掛在 row 上的 getter
 export function formatColumnValue (row: object, column: AnyColumn): string {
-  const value = (row as Record<string, unknown>)[column.key]
+  const record = row as Record<string, unknown>
+  const value = record[column.key]
 
   if (value === null || value === undefined) {
     return ''
@@ -147,6 +149,12 @@ export function formatColumnValue (row: object, column: AnyColumn): string {
 
   if (column.type === 'date' && value instanceof Date) {
     return formatDate(value)
+  }
+
+  // ref 顯示對方的名字；對方還沒載或已被刪就退回 id
+  if (column.type === 'ref') {
+    const parent = record[`$${column.key}`] as { $label?: string } | undefined
+    return parent?.$label ?? String(value)
   }
 
   return String(value)

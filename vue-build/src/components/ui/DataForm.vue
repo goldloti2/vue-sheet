@@ -1,6 +1,10 @@
 <script lang="ts" setup>
+  import type { TableKey } from '@/schema'
   import type { SchemaColumn, TableSchema } from '@/schema/types'
   import { computed } from 'vue'
+  import { useTableList } from '@/composables/useTableList'
+  import { schemas } from '@/schema'
+  import { sortRows } from '@/schema/types'
 
   const props = defineProps<{
     schema: TableSchema
@@ -53,6 +57,27 @@
   function numberBound (column: SchemaColumn, bound: 'min' | 'max'): number | undefined {
     return column.type === 'number' ? column[bound] : undefined
   }
+
+  // ref 欄位的選項就是對方整張表（共用快取）：值是 id、文字是對方的 $label，照對方的 defaultSort 排
+  const refLists = new Map(
+    props.schema.columns
+      .filter(column => column.type === 'ref')
+      .map(column => [column.key, useTableList<{ id: string, $label: string }>(column.refTable as TableKey)] as const),
+  )
+
+  function refItems (column: SchemaColumn): { id: string, title: string }[] {
+    if (column.type !== 'ref') {
+      return []
+    }
+    const list = refLists.get(column.key)
+    return list
+      ? sortRows(list.data.value, schemas[column.refTable as TableKey]).map(row => ({ id: row.id, title: row.$label }))
+      : []
+  }
+
+  function refLoading (column: SchemaColumn): boolean {
+    return refLists.get(column.key)?.loading.value ?? false
+  }
 </script>
 
 <template>
@@ -86,7 +111,19 @@
         @update:model-value="(value) => setTextValue(column, value)"
       />
 
-      <!-- text、ref 都先用純輸入欄；ref 之後再考慮換成關聯資料的選擇器 -->
+      <v-autocomplete
+        v-else-if="column.type === 'ref'"
+        clearable
+        :error-messages="errorFor(column)"
+        item-title="title"
+        item-value="id"
+        :items="refItems(column)"
+        :label="column.label"
+        :loading="refLoading(column)"
+        :model-value="textValue(column)"
+        @update:model-value="(value) => setFieldValue(column, value)"
+      />
+
       <v-text-field
         v-else
         :error-messages="errorFor(column)"

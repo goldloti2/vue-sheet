@@ -58,7 +58,11 @@ Google Sheets 不讓前端裸連（會暴露金鑰，而且每個使用者都要
 
 外鍵放在「多」的那一方，「一」的那一方不存任何清單。
 
-前端不需要為每個關聯另外寫東西：在子表的 schema 欄位標 `{ type: 'ref', refTable: '父表' }` 就完成了，`schema/relations.ts` 會在載入時掃過所有 schema 自動算出關聯圖。標好之後 `DataDetail` 會自動把該欄位變成連到對方 detail 頁的連結，`useRelatedRows(子表, 父表)` 也能直接用，欄位名自動解析。
+前端不需要為每個關聯另外寫東西：在子表的 schema 欄位標 `{ type: 'ref', refTable: '父表' }` 就完成了，`schema/relations.ts` 會在載入時掃過所有 schema 自動算出關聯圖。標好之後任何地方顯示這個欄位都是對方的**名字**而不是 id（要能從 detail 點過去就再列一個 `useGoToRefAction`），`DataForm` 把它做成可搜尋的下拉清單（`v-autocomplete`，父表整個載進共用快取），`useRelatedRows(子表, 父表)` 也能直接用，欄位名自動解析。
+
+一列的名字由**它自己那張表**決定：`TableSchema.labelColumn` 指一個欄位 key（真實或虛擬都行），省略就是 id。「父表用底下第一筆子資料的名字稱呼」就是在父表上定義一個虛擬欄位、`labelColumn` 指它；指向父表的 ref 欄位什麼都不用寫。實作上 store 在每一列掛兩種 getter：`row.$label`（這一列的名字）和每個 ref 欄位一個 `row.$欄位key`（父表那一列），`formatColumnValue` 遇到 ref 就回 `row.$欄位key.$label`——所以 detail、表格、列表卡片、選擇器清單顯示的是同一個字串，沒有任何一處需要知道 ref 的特殊性。`ensureLoaded` 會把 ref 指到的表一起載，getter 才有東西讀。選擇器只能選到存在的列，所以 `ref` 欄位不另外驗證目標存不存在。
+
+🔲 `allowCreate`（清單裡直接「＋ 新增」對方一筆、回來自動選上）還沒做，卡在表單頁當流程呼叫端的幾個問題，見 ROADMAP。
 
 ### Sheet 表頭用中文
 
@@ -305,7 +309,7 @@ onClick: () => runFlow(async () => {
 
 它跟真實欄位共用同一套型別骨架：`ColumnTypes` 那張表定義每種 `type` 的值型別與專屬設定（`number` 的 `min`／`max`、`ref` 的 `refTable`……），`ColumnBase<T>` 是一個欄位最基本的資訊（`key`、`label`、`type` 加專屬設定），`SchemaColumn` 在上面疊 Sheet／表單相關的設定，`VirtualColumn` 疊 `value`／`needs`。以後加一種型別只改 `ColumnTypes`、`coerceValue`、`formatColumnValue`、`DataForm` 四處，兩種欄位自動都有。
 
-**值是 store 掛在 row 上的 getter**（`attachGetters`，在 `load`／`create`／`update` 產生 row 物件時掛；同一個函式也掛 `$label`——這一列的名字，`TableSchema.labelColumn` 指定用哪一欄，省略就是 id；Row 介面 extends `RowBase` 就有它的型別）。所以 `row.title` 讀起來跟真實欄位一模一樣，`sortRows`、`groupRows`、`formatColumnValue`、列表頁的 `row.xxx` 全部不用知道它是算的；`defaultSort` 可以指它。getter 裡讀的是 `store.rows`，在 template 或 `computed` 裡讀就會被追蹤，子表一改當場重算。getter 設成不可列舉，`{ ...row }`、`Object.keys`、JSON 都看不到它，寫入端不會誤送。`needs` 列出的子表由 `ensureLoaded(table)` 順便載進來；`related('子表')` 回傳指向這一列的子表資料，照子表的 `defaultSort` 排（跟 `useRelatedRows` 一致），子表還沒載時是空的、載進來後自動重算。Row 的 TS 介面要自己補 `readonly` 欄位，型別系統才知道它存在。
+**值是 store 掛在 row 上的 getter**（`attachGetters`，在 `load`／`create`／`update` 產生 row 物件時掛；同一個函式也掛 `$label`——這一列的名字，`TableSchema.labelColumn` 指定用哪一欄，省略就是 id，Row 介面 extends `RowBase` 就有它的型別——和 ref 的 `$欄位key`，見第三章）。所以 `row.title` 讀起來跟真實欄位一模一樣，`sortRows`、`groupRows`、`formatColumnValue`、列表頁的 `row.xxx` 全部不用知道它是算的；`defaultSort` 可以指它。getter 裡讀的是 `store.rows`，在 template 或 `computed` 裡讀就會被追蹤，子表一改當場重算。getter 設成不可列舉，`{ ...row }`、`Object.keys`、JSON 都看不到它，寫入端不會誤送。`needs` 列出的子表由 `ensureLoaded(table)` 順便載進來；`related('子表')` 回傳指向這一列的子表資料，照子表的 `defaultSort` 排（跟 `useRelatedRows` 一致），子表還沒載時是空的、載進來後自動重算。Row 的 TS 介面要自己補 `readonly` 欄位，型別系統才知道它存在。
 
 **新增表單的初始值**分三層疊出來，後面的蓋前面的：schema 欄位的 `default`（跟來源無關的固定值）→ 導覽帶來的 `history.state.defaults`（從哪裡按新增決定）→ `useCreateForm` 的第三個參數（頁面自己算得出來的）。`default` 可以是值也可以是函式，函式在打開表單那一刻才求值（例如 `() => new Date()`）。
 

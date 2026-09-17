@@ -74,12 +74,24 @@ export const useTablesStore = defineStore('tables', () => {
     }
   }
 
-  // 虛擬欄位 needs 的子表一起載，getter 才有東西讀
-  async function ensureLoaded (table: TableKey) {
-    const needed = (schemas[table].virtualColumns ?? []).flatMap(column => column.needs ?? []) as TableKey[]
+  // 這張表的 getter 會讀到的其他表：ref 指到的父表、虛擬欄位 needs 的表
+  function tablesNeededBy (table: TableKey): TableKey[] {
+    const schema = schemas[table]
+    const parents = schema.columns.flatMap(column => column.type === 'ref' ? [column.refTable] : [])
+    const needs = (schema.virtualColumns ?? []).flatMap(column => column.needs ?? [])
+    return [...new Set([...parents, ...needs])] as TableKey[]
+  }
+
+  // 相關的表一起載，getter 才有東西讀。seen 擋住父子互相需要的循環
+  async function ensureLoaded (table: TableKey, seen = new Set<TableKey>()) {
+    if (seen.has(table)) {
+      return
+    }
+    seen.add(table)
+
     await Promise.all([
       table in rows ? Promise.resolve() : load(table),
-      ...needed.map(child => ensureLoaded(child)),
+      ...tablesNeededBy(table).map(other => ensureLoaded(other, seen)),
     ])
   }
 
@@ -95,7 +107,7 @@ export const useTablesStore = defineStore('tables', () => {
   }
 
   // 掛在 row 上、讀起來跟真實欄位一樣的 getter（不可列舉，spread / JSON / Object.keys 都看不到）：
-  // 虛擬欄位、$label（這一列的名字）
+  // 虛擬欄位、$label（這一列的名字）、每個 ref 欄位的 $欄位key（父表那一列）
   function attachGetters<Row extends HasId> (table: TableKey, row: Row): Row {
     const schema = schemas[table]
 
@@ -106,6 +118,16 @@ export const useTablesStore = defineStore('tables', () => {
     }
 
     defineGetter(row, '$label', () => rowLabel(row, schema))
+
+    for (const column of schema.columns) {
+      if (column.type === 'ref') {
+        const parentTable = column.refTable as TableKey
+        defineGetter(row, `$${column.key}`, () => {
+          const id = (row as Record<string, unknown>)[column.key]
+          return (rows[parentTable] ?? []).find(candidate => (candidate as HasId).id === id)
+        })
+      }
+    }
 
     return row
   }

@@ -70,7 +70,7 @@
 | --- | --- |
 | `sheetName` | Google Sheet 分頁的實際名稱，也是打 API 時 `table=` 的值 |
 | `idColumn` | 這張表的 ID 欄，填 Sheet 的**實際表頭文字** |
-| `labelColumn` | 用哪一欄稱呼一列（欄位 key，真實或虛擬都行），可省略。`row.$label` 讀得到（`__Table__Row` extends `RowBase` 就有型別）；省略就是 id |
+| `labelColumn` | 用哪一欄稱呼一列（欄位 key，真實或虛擬都行），可省略。別的表 ref 到這裡、選擇器清單、`row.$label`（`__Table__Row` extends `RowBase` 就有型別）都顯示它；省略就是 id |
 | `columns[].key` | 程式裡用的英文欄位名 |
 | `columns[].label` | 顯示用的中文標籤 |
 | `columns[].sheetHeader` | Sheet 的實際表頭；跟 `label` 同值時可省略 |
@@ -85,7 +85,7 @@
 
 ### 跨表關聯
 
-在 schema 欄位標 `{ type: 'ref', refTable: '另一張表' }` 就完成了，**不用**另外註冊。標好之後詳細頁的該欄位會自動變成連到對方的連結，也可以用 `useRelatedRows('子表', '父表')` 取得關聯資料。
+在 schema 欄位標 `{ type: 'ref', refTable: '另一張表' }` 就完成了，**不用**另外註冊。標好之後這個欄位在任何地方都顯示對方的名字（對方 schema 的 `labelColumn`）、表單會變成可搜尋的選擇器（要能從詳細頁點過去，在 `fieldActions` 列一個 `useGoToRefAction`）；也可以用 `useRelatedRows('子表', '父表')` 取得關聯資料。
 
 ---
 

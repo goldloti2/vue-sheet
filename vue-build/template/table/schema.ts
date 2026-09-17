@@ -12,7 +12,7 @@ export interface __Table__Row extends RowBase {
 export const __table__Schema: TableSchema = {
   sheetName: '範本',
   idColumn: 'TPL-ID',
-  // 用哪一欄稱呼一列（可省略，省略就是 id），row.$label 讀得到
+  // 用哪一欄稱呼一列（可省略，省略就是 id）：row.$label、別的表 ref 到這裡、選擇器清單都顯示它
   labelColumn: 'name',
   // 怎麼發新 id，各表自己決定。prefixedId 是現成的前綴式（TPL-11eef1a8）；
   // 要別種格式就自己寫一個 () => string 塞進來
@@ -25,7 +25,8 @@ export const __table__Schema: TableSchema = {
 
     // 其他可用型別：
     // { key: 'status', label: '狀態', type: 'select', options: ['選項A', '選項B'] },
-    // { key: 'parent', label: 'Parent', type: 'ref', refTable: 'parent' },
+    // ref 欄位在表單是選擇器、顯示時是對方的名字（對方 schema 的 labelColumn），這裡不用多寫：
+    // { key: 'parent', label: '上層', type: 'ref', refTable: 'parent' },
 
     // 新增表單的初始值用 default，可省略。值或函式都可以，函式是打開表單那一刻才求值：
     // { key: 'status', label: '狀態', type: 'select', options: [...], default: '選項A' },

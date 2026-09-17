@@ -28,7 +28,9 @@
 
 ### 跨表關聯
 - `schema/relations.ts` 掃 schema 的 `ref` 欄位自動產生關聯圖，新增關聯只要標 `type: 'ref'`
-- `ref` 欄位在 detail 頁的「前往對方」是欄位動作 `useGoToRefAction`，頁面自己列
+- store 在每列掛每個 ref 欄位的 `$欄位key`（父列），`formatColumnValue` 遇到 ref 就顯示對方的 `$label`，所以 detail／表格／列表／選擇器全都顯示名字、沒有 ref 專用元件
+- `DataForm` 的 `ref` 欄位是父表整表的可搜尋下拉清單（`v-autocomplete`），每列文字與搜尋比對都是對方的 `$label`；「前往對方」是欄位動作 `useGoToRefAction`，頁面自己列
+- `ensureLoaded(table)` 會把 ref 指到的表和虛擬欄位 `needs` 的表一起載（擋循環）
 - `useRelatedRows(子表, 父表)` 依關聯圖解析外鍵欄位，整表撈一次後在前端分組
 
 ### 資料存取
@@ -93,8 +95,6 @@
 
 ## 未完成
 
-> 前端這邊的建議順序：`ref` 關聯選擇器優先，實際使用最有感。
-
 ### 後端（完全還沒開始）
 - Apps Script 的 `doGet`/`doPost` 入口與泛用 CRUD 引擎
 - Schema.gs、SheetUtils.gs（header 對應、row array ↔ object；ID 改由前端產生，後端不發）
@@ -155,7 +155,6 @@
 - **前端驗證**：form 層已完成（`schema/validation.ts` 的 `validateRow`＋`SchemaColumn` 上的 `required`／`min`／`max`，見 [README 4.5](README.md#45-schema-的角色)）。剩下的：
   - **store 寫入層還沒接**同一個 `validateRow`。等累積寫入把寫入路徑定下來再做，免得白搬一次
   - 日期範圍、文字長度、正則格式都還沒有，等真的有需求再加進 `SchemaColumn`
-  - `ref` 欄位不檢查目標是否存在。等關聯選擇器做好（見「UI 功能」），改成用選的就不會填到不存在的
 - 驗證的分工已定案，見 [README 4.5](README.md#45-schema-的角色)：合法性只在前端做，一份 schema 推導出的驗證函式用在 form 層（即時提示）與 store 寫入層（擋程式 bug）兩處；後端只做安全性與結構完整性
 - **關聯連帶刪除**（可選，設計者在 schema 上開）：父表的條目被刪時，`ref` 指向它的子表條目也一起刪，不留孤兒
   - 開關放在 `ref` 欄位上：`{ type: 'ref', refTable: '父表', onDelete: 'cascade' }`，不標就維持現狀（子條目留著、ref 指向不存在的 id）
@@ -164,15 +163,13 @@
 - 樂觀鎖定：`updatedAt` 欄位與衝突提示都還沒做
 
 ### UI 功能
-- 搜尋列、篩選、排序的操作介面（目前排序只有 schema 的 `defaultSort`，使用者不能自己改）
-- `ref` 欄位的關聯選擇器：`DataForm` 目前把 `ref` 當純文字輸入，要自己打 `TPL-xxxxxxxx`，實際使用最痛的一個。改成跳出式選單，schema 的 ref 欄位多幾個設定：
-  ```ts
-  { type: 'ref', refTable: 'parent', display: ['name', 'date'], allowCreate: true }
-  ```
-  - `display`：清單每列顯示哪幾欄；省略就顯示 id
-  - 搜尋：比對 `display` 那幾欄的顯示文字。跟搜尋列共用「列 → 可搜尋文字」的函式，可以一起做
-  - `allowCreate`：清單最上面一項「＋ 新增…」＝ `runStep('/parent/new')` 拿到新建那筆、回來自動選上。依賴流程機制
-  - 順便解掉「ref 不檢查目標存在」那條驗證缺口：用選的就選不到不存在的
+- 搜尋列、篩選、排序的操作介面（目前排序只有 schema 的 `defaultSort`，使用者不能自己改）。搜尋的「列 → 可搜尋文字」可以從 `row.$label` 起步，再看要不要多比對幾欄
+- 關聯選擇器的 `allowCreate`：清單最上面一項「＋ 新增…」，開父表的新增表單、回來自動選上。看起來是 `runStep('/父表/new')`，但表單頁當「呼叫端」跟動作當呼叫端不一樣，四件事要先解：
+  - 回來時 `useCreateForm` 的 `onActivated` 會把表單重置，使用者填到一半的東西會丟掉——要能分辨「從子步驟回來」和「重新進入」
+  - 離開表單頁去開父表的新增會被 `useLeaveGuard` 攔下來問要不要放棄
+  - 這張表單可能本身就是某條流程的一步（例如「新增父表接著新增子表」的第二步），`runFlow` 不能套疊，而且 `runStep` 在流程中會用 `replace`，把目前這張表單頁換掉
+  - 完成後要回到原本那張表單（`back`），不是像流程一樣往前走
+  - 等真的常用到再做；現在的替代路徑是先去父表新增、再回來選
 - 圖片欄位與上傳（存 Google Drive）
 - 總覽頁範本（`DataDashboardTemplate`）：保留了位置但沒有具體需求
 - `TabView` 放多個獨立面板（例如兩張表的列表當成一組頁籤）目前只有內容層可用，動作層會壞掉。根源是兩個面板一旦都被看過就同時掛著（`v-window` 用 `v-show` 切換），而 FAB 與 App Bar 動作都假設同時只有一個頁面活著：

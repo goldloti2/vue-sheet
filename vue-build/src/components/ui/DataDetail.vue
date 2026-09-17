@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+  import type { FieldActions, PageAction } from '@/composables/actions/useTableActions'
   import type { TableSchema } from '@/schema/types'
   import { computed } from 'vue'
   import DetailField from '@/components/ui/DetailField.vue'
@@ -8,7 +9,7 @@
     key: string
     label: string
     value: string
-    to?: string
+    action?: PageAction
   }
 
   const props = defineProps<{
@@ -16,20 +17,23 @@
     row: object | null
     loading: boolean
     error: string | null
+    // 欄位 key → 動作；每欄只用第一個。沒列的欄位就沒有動作，ref 的前往也要自己列（useGoToRefAction）
+    fieldActions?: FieldActions
   }>()
 
-  // 真實與虛擬欄位一視同仁，照 detailOrder 排；ref 欄位變成連到對方 detail 的連結
+  // 真實與虛擬欄位一視同仁，照 detailOrder 排
   const fields = computed<Field[]>(() => {
     const row = props.row
     if (!row) {
       return []
     }
 
-    const fieldList: Field[] = allColumns(props.schema).map(column => {
-      const value = formatColumnValue(row, column)
-      const to = column.type === 'ref' && value ? `/${column.refTable}/${value}` : undefined
-      return { key: column.key, label: column.label, value, to }
-    })
+    const fieldList: Field[] = allColumns(props.schema).map(column => ({
+      key: column.key,
+      label: column.label,
+      value: formatColumnValue(row, column),
+      action: props.fieldActions?.[column.key]?.value[0],
+    }))
 
     if (!props.schema.detailOrder) {
       return fieldList
@@ -53,8 +57,8 @@
       <DetailField
         v-for="field in fields"
         :key="field.key"
+        :action="field.action"
         :label="field.label"
-        :to="field.to"
         :value="field.value"
       />
     </template>

@@ -96,7 +96,7 @@ src/
     GroupedList.vue           多層可收合分組
     DataTable.vue             表格式列表；detail 頁內嵌的關聯子表格也用同一個
     DataDetail.vue            整頁 detail 欄位區，自帶 loading/error/找不到資料三種狀態
-    DetailField.vue           單一欄位顯示
+    DetailField.vue           單一欄位顯示，可帶一個動作（整格可點）
     DataForm.vue              表單版的 DataDetail，依 column.type 自動選輸入元件
     PageFab.vue               右下角浮動按鈕
     RecordNav.vue             detail 頁左右兩側的上/下一筆箭頭
@@ -126,7 +126,8 @@ src/
     useFlow.ts                連續動作：runFlow / runStep / resumeStep（見 4.4）
     actions/
       useTableActions.ts        PageAction 型別 + 通用動作 builder
-                                （useNewAction/useEditAction/useDeleteAction/useBulkDeleteAction/useQuickEditAction）
+                                （useNewAction/useEditAction/useDeleteAction/useBulkDeleteAction/useQuickEditAction
+                                 + 欄位動作 useGoToRefAction/useOpenUrlAction/useSetFieldAction）
   stores/
     tables.ts                 每張表一份共用快取 + 寫入用的 CRUD action（見 4.2）
   services/
@@ -408,6 +409,7 @@ hooks: {
 - App Bar 右側動作按鈕：頁面用 `useAppBarActions()` 註冊，≤2 顆直接顯示，≥3 顆收成「⋮」下拉。跟 FAB 不同，這裡走 **provide/inject** 而非 Teleport——app-bar 在轉場動畫的 `.page-transition-viewport` 之外，不會被 `transform` 影響，不需要真的搬 DOM
 - **表單頁的按鈕放在螢幕最底端**，用 `useBottomActions()` 註冊，暫時取代底部導覽列，離開頁面自動還原。這樣「取消／送出」永遠在拇指構得到的地方，不用把長表單捲到最後才按得到；而表單本來就是「要按到才算完成」的頁面，此時不該讓人分心去切分頁
 - FAB、App Bar、底部動作列共用同一種 `PageAction` 型別 `{ key, label, icon?, onClick, confirm? }`。頁面自己決定用哪幾個、放哪裡。`icon` 是可選的——前兩者靠它顯示，底部動作列只用文字
+- **detail 頁的欄位也能掛一個動作**（`DataDetail` 的 `fieldActions`：欄位 key → `PageActions`，每欄只用第一個）：右邊出現圖示、整格可點，走同一個 `runAction`。ref 的「前往對方」不是內建的，跟開網址、改成今天一樣是 builder（`useGoToRefAction`／`useOpenUrlAction`／`useSetFieldAction`），要就列進去、不要就不列——沒有「空陣列代表內建」這種第三態。從 `use表名Actions({ row })` 拿，跟其他動作同一個家。ref 那格從 `<RouterLink>` 變成 `<button>`，中鍵開新分頁沒了，跟 `PageAction` 沒有 `to` 是同一個取捨；導覽用 `push`，回來時 detail 還在
 - 三塊都走同一個 `registerActions`（`useActionSlot.ts`）。每一塊都是**單一 setter**，所以一定要靠 `isActive` 擋住被 KeepAlive 快取的頁面：它們仍然是全速運轉的（見 4.3），動作一變就會蓋掉當前頁面的
 - **需要確認的動作只要宣告 `confirm: { title, text }`**，不用自己擺 `ConfirmDialog`。`AppShell` 用跟 `useAppBarActions` 同一套 provide/inject 提供 `runAction`，按鈕點下去交給它：有 `confirm` 就先 `await confirm()`（`useConfirm.ts`），說好才跑 `onClick`；`onClick` 拋錯一律進 snackbar。整個 App 只有一個確認框實例。宣告式的 `confirm` 只是語法糖——它對每個動作都一樣、動作本體不需要知道；`askFields` 沒有同樣的糖，因為它的結果是動作要拿去用的
 - **所有 builder 都回傳 `ComputedRef<PageAction[]>`**（`PageActions`），沒有單數複數之分，呼叫端可以直接串接；沒有可用動作時就是空陣列，不需要 `undefined` 或 null 檢查

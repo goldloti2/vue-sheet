@@ -1,6 +1,6 @@
 # DetailField
 
-單一欄位的「標籤 + 值」一列。`DataDetail` 內部就是用它，**一般 detail 頁不用直接碰**——需要在 detail 區塊外另外顯示欄位時才用。給了 `to` 值就變成連結，右邊自動加箭頭圖示。
+單一欄位的「標籤 + 值」一列。`DataDetail` 內部就是用它，**一般 detail 頁不用直接碰**——需要在 detail 區塊外另外顯示欄位時才用。給了 `action` 就變成可點的一格，右邊顯示動作的圖示，按下去走 `runAction`（`confirm`、錯誤 snackbar 都有）。
 
 ## Usage
 
@@ -10,7 +10,7 @@
 </script>
 
 <template>
-  <DetailField label="標籤" to="/路徑" value="內容" />
+  <DetailField :action="action" label="標籤" value="內容" />
 </template>
 ```
 
@@ -20,4 +20,4 @@
 | --- | --- | --- |
 | `label` | `string` | **必填**，左側標籤 |
 | `value` | `string` | **必填**，已格式化好的字串 |
-| `to` | `string?` | 有給就變連結 |
+| `action` | `PageAction?` | 有給就整格可點，右邊顯示圖示 |

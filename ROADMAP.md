@@ -27,7 +27,7 @@
 
 ### 跨表關聯
 - `schema/relations.ts` 掃 schema 的 `ref` 欄位自動產生關聯圖，新增關聯只要標 `type: 'ref'`
-- `DataDetail` 對 `ref` 欄位自動產生連到對方 detail 頁的連結
+- `ref` 欄位在 detail 頁的「前往對方」是欄位動作 `useGoToRefAction`，頁面自己列
 - `useRelatedRows(子表, 父表)` 依關聯圖解析外鍵欄位，整表撈一次後在前端分組
 
 ### 資料存取
@@ -46,8 +46,9 @@
 - 其他：`PageFab`、`TabView`、`RecordNav`、`AppDialog`、`ConfirmDialog`、`FieldsDialog`（只顯示幾欄的 `DataForm`）
 
 ### 動作系統
-- `PageAction` 型別（`{ key, label, icon?, onClick, confirm? }`），FAB、App Bar、底部動作列共用同一種描述
+- `PageAction` 型別（`{ key, label, icon?, onClick, confirm? }`），FAB、App Bar、底部動作列、detail 欄位動作共用同一種描述
 - 通用 builder：`useNewAction` / `useEditAction` / `useDeleteAction` / `useBulkDeleteAction` / `useQuickEditAction`，一律回傳 `ComputedRef<PageAction[]>`
+- 欄位動作（`DataDetail` 的 `fieldActions`，一欄一個、整格可點）：`useGoToRefAction`（ref 前往對方）／`useOpenUrlAction`（開新分頁）／`useSetFieldAction`（立即改成某個值，可帶 confirm）
 - 需要確認的動作宣告 `confirm` 就好，`useActionRunner` 先 `await confirm()` 再跑，錯誤進 snackbar；頁面不用擺 `ConfirmDialog`
 - `confirm()` / `askFields()`：是／否與問幾個欄位的對話框，都是 module-level 狀態 + `AppShell` 掛一個實例 + promise；`useQuickEditAction` 用後者把選取的多筆改成同一個值（欄位由設計者定，只選一筆時顯示現值）
 - 每張表的動作（含批次刪除）一律從 `use表名Actions(options)` 取，用不到的是空陣列

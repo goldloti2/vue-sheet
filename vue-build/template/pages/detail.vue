@@ -20,7 +20,7 @@
   const { swipe } = useSiblingNav('__table__', id)
   const { row, loading, error } = useTableRow<__Table__Row>('__table__', id)
 
-  const { delete: deleteActions, edit: editActions } = use__Table__Actions({ row })
+  const { delete: deleteActions, edit: editActions, fieldActions } = use__Table__Actions({ row })
   useAppBarActions(() => deleteActions.value)
 </script>
 
@@ -28,6 +28,7 @@
   <div v-touch="swipe">
     <DataDetail
       :error="error"
+      :field-actions="fieldActions"
       :loading="loading"
       :row="row"
       :schema="__table__Schema"

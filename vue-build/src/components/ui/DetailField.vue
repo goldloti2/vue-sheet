@@ -1,25 +1,33 @@
 <script lang="ts" setup>
-  import { mdiChevronRightCircle } from '@mdi/js'
-  import { RouterLink } from 'vue-router'
+  import type { PageAction } from '@/composables/actions/useTableActions'
+  import { useRunAction } from '@/composables/useActionRunner'
 
   interface DetailFieldProps {
     label: string
     value: string
-    // 有傳的話 value 會變成連到該路徑的連結（例如關聯欄位連到對應表的 detail 頁）
-    to?: string
+    // 這一欄的動作：右邊出現圖示，整格都能點（見 README 八）
+    action?: PageAction
   }
 
   defineProps<DetailFieldProps>()
+
+  const runAction = useRunAction()
 </script>
 
 <template>
   <div class="detail-field">
     <span class="detail-field__label text-body-medium text-medium-emphasis">{{ label }}</span>
 
-    <RouterLink v-if="to" class="detail-field__value detail-field__link text-body-large" :to="to">
+    <button
+      v-if="action"
+      :aria-label="action.label"
+      class="detail-field__value detail-field__action text-body-large"
+      type="button"
+      @click="runAction(action)"
+    >
       <span>{{ value }}</span>
-      <v-icon :icon="mdiChevronRightCircle" size="18" />
-    </RouterLink>
+      <v-icon :icon="action.icon" size="18" />
+    </button>
 
     <span v-else class="detail-field__value text-body-large">{{ value }}</span>
   </div>
@@ -44,11 +52,15 @@
   text-align: left;
 }
 
-.detail-field__link {
+.detail-field__action {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  padding: 0;
+  border: 0;
+  background: none;
   color: inherit;
-  text-decoration: none;
+  font: inherit;
+  cursor: pointer;
 }
 </style>

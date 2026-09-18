@@ -25,6 +25,7 @@
 - `detailOrder` / `formOrder` 分別控制詳細頁與表單頁的欄位順序
 - `virtualColumns`：不在 Sheet 上、讀的時候才算的欄位，來源可以是自己這列或 `needs` 宣告的子表（`related()`）。store 掛成 row 上的 getter，顯示、排序、分組都跟真實欄位一樣；兩種欄位共用 `ColumnTypes`／`ColumnBase` 型別骨架
 - `labelColumn`：一列怎麼稱呼（欄位 key，省略就是 id），store 掛成 `row.$label`
+- `TableSchema<Row>`：各表宣告時帶自己的 Row 介面，欄位 key 與 `type` 對著它檢查，虛擬欄位 `value` 的 `row` 有型別；框架端用不帶參數的 `TableSchema`
 
 ### 跨表關聯
 - `schema/relations.ts` 掃 schema 的 `ref` 欄位自動產生關聯圖，新增關聯只要標 `type: 'ref'`
@@ -41,6 +42,19 @@
 - `useNotify`：全 App 一則 snackbar 訊息，由 `AppShell` 渲染
 - 新增的 id 由前端發：`newId` 是 schema 上的必填函式，格式由各表決定（`prefixedId('TPL')` 是現成的前綴式）。後端收到已存在的 id 就當作重送、回傳既有那筆
 - 跨表算出來的值靠共用快取的 reactivity 自動重算，不需要跨表失效機制
+
+### 累積寫入
+改動先累積在前端，由使用者按「推送」才一次寫進 Sheet。設計與實作見 [README 4.2](README.md#42-資料流讀取與寫入)。
+- 佇列 `pending`、合併規則、`flush`、`hasPending` / `flushing` / `flushError`
+- 四個寫入 action 變成同步的，只動快取與佇列
+- 流程存檔點 `beginFlow` / `commitFlow` / `rollbackFlow`（給連續動作用；流程進行中 `flush` 會被擋下）
+- App Bar 最右側的同步鈕（`refresh()` ＝ 推送 + 重抓所有已載入的表）+ 未推送圓點標記（失敗轉紅）+ `beforeunload` 攔截
+- 表單開著的時候同步鈕停用（`useSyncHold` 持有 `holdSync()`，`canSync` 判斷）
+- flush 失敗保持「未推送」狀態並用 snackbar 報錯，讓使用者重按。因為 id 由前端發，整批重送是安全的——刻意**不做**「記錄哪幾筆成功了」的逐筆補償邏輯
+- **重抓前一定先 flush**，沒清乾淨就不重抓；沒有「只重抓一張表」的 API
+- 跨表寫入順序無所謂。Sheet 沒有外鍵約束，後端也不做合法性驗證，所以父表子表誰先寫都不會壞
+- 目前 `flush` 是逐筆送 N 次請求，通用 batch 端點等接真後端時一起做（見「後端 API 介面」）
+- 決定不做：**佇列持久化**。佇列只在記憶體，重整／當機／分頁被系統殺掉就會丟掉未推送的變更（`beforeunload` 只擋得住主動關分頁）。單人使用、推送就是一顆鈕，不值得。哪天要做的話：存 `localStorage`（`values` 進佇列時就已序列化，直接 `JSON.stringify`）、流程期間暫停寫入（磁碟上停在流程開始前的樣子，被殺掉再開等於自動回滾）；唯一貴的是開機後要把佇列重新疊回從後端抓來的 `rows`，需要一個部分欄位版的 `coerceRow`
 
 ### 共用元件庫
 - 列表：`DataList`（卡片式單列，含長按多選）、`ListField`、`GroupedList`（多層可收合分組）、`DataTable`（表格式，也用於 detail 頁內嵌子表格；`columns` 可指虛擬欄位）
@@ -116,44 +130,16 @@
 
 - **ID 由前端產生**（`create` 的 payload 帶 id）。這讓重送變成冪等的：`create` 定義成「id 不存在就建、已存在就當作已完成」，整批重送是安全的，不需要記錄哪幾筆成功過。也讓待推送佇列可以直接用 `table + id` 當 key，因為不會出現「刪掉又新增同一個 id」
 - 後端仍然要擋重複 id——Sheet 可以手動打開來改，不能假設 id 只由前端產生
-- `bulkUpdate { ids, data }` 的語意是「多筆的指定欄位改成同一個值」，對應批次快速編輯。後端可以直接落到一次 `sheet.getRangeList([...]).setValue(...)`
+- `bulkUpdate { ids, data }` 的語意是「多筆的指定欄位改成同一個值」。後端可以直接落到一次 `sheet.getRangeList([...]).setValue(...)`
+- 前端目前只送 `create`／`update`／`delete`：佇列是逐筆的，快速編輯與批次刪除都拆成多個單筆操作進佇列（合併規則才適用）。`bulkUpdate`／`bulkDelete` 留在介面裡，等 batch 端點定下來再看要不要保留
 - `bulkCreate`：等真的有匯入需求再說
 - **累積寫入需要通用 batch 端點**（一次請求帶多個操作）。因為佇列裡每筆的值都不同，`bulkUpdate { ids, data }` 涵蓋不了，硬拆成 N 次 `update` 就失去批次的意義
 
 > 註：每分鐘 60 次寫入是 Sheets REST API 的配額，用 Apps Script 內建的 `SpreadsheetApp` 並不適用。批次要省的是**每次 Web App 請求的 script 冷啟成本（約 0.5～2 秒）**，不是配額。
 
-### 累積寫入（已完成，只差持久化）
-
-改動先累積在前端，由使用者按「推送」才一次寫進 Sheet。設計與實作見 [README 4.2](README.md#42-資料流讀取與寫入)。
-
-**已完成**
-- 佇列 `pending`、合併規則、`flush`、`hasPending` / `flushing` / `flushError`
-- 四個寫入 action 變成同步的，只動快取與佇列
-- 流程存檔點 `beginFlow` / `commitFlow` / `rollbackFlow`（給連續動作用；流程進行中 `flush` 會被擋下）
-- App Bar 最右側的同步鈕（`refresh()` ＝ 推送 + 重抓所有已載入的表）+ 未推送圓點標記（失敗轉紅）+ `beforeunload` 攔截
-- 表單開著的時候同步鈕停用（`useSyncHold` 持有 `holdSync()`，`canSync` 判斷）
-- flush 失敗保持「未推送」狀態並用 snackbar 報錯，讓使用者重按。因為 id 由前端發，整批重送是安全的——刻意**不做**「記錄哪幾筆成功了」的逐筆補償邏輯
-- **重抓前一定先 flush**，沒清乾淨就不重抓；沒有「只重抓一張表」的 API
-- 跨表寫入順序無所謂。Sheet 沒有外鍵約束，後端也不做合法性驗證，所以父表子表誰先寫都不會壞
-
-**還沒做**
-- 佇列持久化（見下面「持久化：先不做」）
-- 通用 batch 端點。目前 `flush` 是逐筆送 N 次請求，後端整個還沒開始寫，等接真後端時一起做
-
-**持久化：先不做**
-
-佇列只存在記憶體，所以重整／當機／分頁被系統殺掉就會丟掉未推送的變更（`beforeunload` 只擋得住主動關分頁）。可接受，先不做。
-
-要做的話，貴的只有一塊：**開機後要把佇列重新套回 `rows`**。記憶體版裡佇列和快取一起生一起死、永遠一致；持久化之後兩者分家，開機時 `rows` 從後端抓回來不含未推送的東西，必須把佇列重新疊上去（待建立 append、待更新 merge、待刪除移除），否則使用者的未推送新增在畫面上消失了卻還躺在佇列裡。這也需要一個 `coercePartial`（`coerceRow` 會補滿所有欄位，不能拿來做部分合併；`coerceValue` 目前沒 export）。
-
-其餘都便宜，前提是先守住兩條，這樣之後加持久化是純增量而不是改資料結構：
-
-- **`values` 進佇列時就序列化**（見上）——沒有 `Date`，可以直接 `JSON.stringify`
-- **流程期間暫停寫入 localStorage**——這條直接消滅了「佇列該活過重整、流程必須死在重整」的衝突。磁碟上的佇列會一直停在流程開始前的樣子，App 中途被殺掉時開機讀到的正好就是回滾後的狀態，不必持久化 snapshot、也不必寫任何開機回滾邏輯。流程正常結束才恢復並寫一次
-
 ### 資料一致性
 - **前端驗證**：form 層已完成（`schema/validation.ts` 的 `validateRow`＋`SchemaColumn` 上的 `required`／`min`／`max`，見 [README 4.5](README.md#45-schema-的角色)）。剩下的：
-  - **store 寫入層還沒接**同一個 `validateRow`。等累積寫入把寫入路徑定下來再做，免得白搬一次
+  - **store 寫入層還沒接**同一個 `validateRow`。寫入路徑已經定了（`create`／`update` 進佇列前），接上就好
   - 日期範圍、文字長度、正則格式都還沒有，等真的有需求再加進 `SchemaColumn`
 - 驗證的分工已定案，見 [README 4.5](README.md#45-schema-的角色)：合法性只在前端做，一份 schema 推導出的驗證函式用在 form 層（即時提示）與 store 寫入層（擋程式 bug）兩處；後端只做安全性與結構完整性
 - **關聯連帶刪除**（可選，設計者在 schema 上開）：父表的條目被刪時，`ref` 指向它的子表條目也一起刪，不留孤兒
@@ -176,11 +162,8 @@
   - `useAppBarActions` 是單一 setter，後掛載的會蓋掉前面的，切頁籤也不會重新註冊
   - `PageFab` 靠 `onActivated`/`onDeactivated` 決定要不要 teleport，那是 `<KeepAlive>` 的 hook，`v-show` 切換不會觸發，於是兩顆 FAB 一起掛在 body 上
   - `useListOrder` 沒有 active 判斷，兩個面板都會把自己的順序發布到同一個 key、互相蓋掉，detail 頁的上/下一筆會跟著錯亂
-  - 方向是讓面板知道自己是不是當前頁籤（面板收一個 `active` prop，`PageFab` 也加一個跟現有 KeepAlive 狀態做 AND、預設 `true`），但實際要傳到哪一層等真的要寫這種頁面時再定。修好之後 `template/` 要補上這種頁面的寫法
-
-### 多選與批次
-- 多選模式不要自動取消，改成右上角出現 X 才關閉
-- 全選（考慮中）
+  - 修法已定，等真的要寫這種頁面時再做：`TabView` 每個 `v-window-item` 裡包一層內部小元件 `TabViewPanel`，`provide` 一個 `computed(() => model === tab)`（provide 以元件為單位，要這一層才能每個頁籤各一份）；新增 `panelActiveKey`，`registerActions`、`PageFab`、`useListOrder` 各 `inject(panelActiveKey, ref(true))`，`isActive` 改成 `KeepAlive 狀態 && panel`、兩者都 watch。不在頁籤裡就是 `true`，現有頁面零改動。KeepAlive 巢狀是對的：頁面被快取時 Vue 對整棵子樹叫 `onDeactivated`。動的是 `TabView.vue`、`useActionSlot.ts`、`PageFab.vue`、`useListOrder.ts` 加一個放 key 的小檔，四五十行；文件補在 `TabView.md`，不另加頁面範本
+  - **不同頁籤不同 FAB**：頁籤＝篩選的頁現在就做得到，頁面自己 `computed(() => 目前頁籤 === 'A' ? actionsA.value : actionsB.value)` 餵給 `PageFab`——FAB 是頁面掛的，頁面知道現在哪個頁籤。上面的修法解的是「面板自己掛自己的 FAB／動作」那種，兩者不衝突
 
 ### PWA 與離線
 - manifest.json、Service Worker 都還沒建立（`vite-plugin-pwa` 未安裝）
@@ -201,6 +184,7 @@
 
 這些不是待辦，是「現在這樣做，但知道為什麼不理想」的紀錄。
 
-- **`refTable` 沒有型別檢查**：只存代稱字串，不保證真的存在於 `schemas`。為了避免 `schema/types.ts` 反向 import `schema/index.ts` 造成循環依賴，先接受
+- **`refTable`／`needs` 沒有型別檢查**：只存代稱字串，不保證真的存在於 `schemas`。為了避免 `schema/types.ts` 反向 import `schema/index.ts` 造成循環依賴，先接受
+- **關聯只認「(子表, 父表)」這一對**：`getRelation`／`related('子表')`／`useRelatedRows` 都用表名找邊，同一張表若有兩個 ref 欄位指向同一張表（平行邊）只會走第一條。改法是以 ref 欄位為單位（`related('子表', '欄位key')`，只有一條邊時可省略），真的出現再改
 - **`template/` 不在 `src/` 底下**，所以不會被 lint 與型別檢查掃到，元件 props 改了範本不會自動報錯。目前靠「把範本複製成一張暫時的表、建置過再刪掉」手動驗證
 - **刪除時會閃一下「找不到這筆資料」**：快取更新後、返回動畫還在跑的期間，detail 頁的 row 已經是 null。因為那筆資料確實已經不存在，語意上可接受，所以沒有為它增加凍結顯示的機制

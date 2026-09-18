@@ -149,6 +149,7 @@ src/
     relations.ts              掃 schema 的 ref 欄位自動算出的關聯圖
     index.ts                  代稱 → Schema 對照表，匯出 TableKey
   config/navigation.ts        導覽項目設定
+  router/index.ts             路由實例 + 轉場方向判定、leaveAfterAction / pushWithDefaults（見 4.4、八）
   pages/                      檔案即路由
     表名/index.vue              → /表名          列表
     表名/new.vue                → /表名/new      新增
@@ -187,7 +188,7 @@ store.removeMany(table, ids)     // 從快取移除多筆
 - 同一筆的多次操作在**寫入當下**就合併掉，不是留到 flush 才算：`update` + `update` 併成一次、`create` + `update` 併進那個 `create`、`create` + `delete` 整組移除（根本不用送）、`update` + `delete` 只留 `delete`
 - 表單一律送整列（不做最小差集），所以 `update` 的 `values` 就是整列——payload 大一點，但省掉在表單裡比對原始值的複雜度
 
-`values` 在進佇列時就序列化，不存 `Partial<Row>`，有兩個理由：那本來就是要送給後端的形狀，flush 拿了就送；而且裡面沒有 `Date` 物件，之後要加持久化時 `JSON.stringify` 直接可用，不必回頭改資料結構。
+`values` 在進佇列時就序列化，不存 `Partial<Row>`，有兩個理由：那本來就是要送給後端的形狀，flush 拿了就送；而且裡面沒有 `Date` 物件，哪天要存 `localStorage` 時 `JSON.stringify` 直接可用，不必回頭改資料結構。
 
 三個結構各管一件事：
 
@@ -196,8 +197,6 @@ store.removeMany(table, ids)     // 從快取移除多筆
 | `rows` | 畫面看到的資料。已送出的、沒送出的、流程建的全混在一起，刻意不分——畫面不該關心一筆送出去了沒 | 畫面 |
 | `pending` | 還沒寫到後端的那批 | flush |
 | `activeFlow` | 流程碰過的每張表**在被碰之前**的樣子 | 回滾 |
-
-之後要做「這筆尚未推送」的醒目標記，是去查 `pending` 有沒有這個 key，不是在 `rows` 的資料上加旗標。
 
 **推送**：`flush()` 逐筆送出佇列，成功一筆就移掉一筆。**失敗不還原**——已經送出的就是送出了，剩下的留在佇列裡等使用者再按一次；因為 id 由前端發，重送本來就是安全的，所以刻意**不做**「哪幾筆成功了」的補償邏輯。`flush()` 不往外拋，錯誤記在 `store.flushError`，回傳佇列是不是清空了。
 
@@ -215,9 +214,9 @@ store.removeMany(table, ids)     // 從快取移除多筆
 
 存檔點是**隱式**的：流程期間的寫入不是連接器做的，是表單頁做的，`useCreateForm` 跟連接器隔著一次導覽、是不同的元件，拿不到顯式傳下去的 tx（函式塞不進 `history.state`）。所以 `activeFlow` 是 store 裡的環境狀態，`store.create/update` 自己去看。
 
-> 🔲 **佇列不持久化**，重整／當機／分頁被系統殺掉就會丟掉未推送的變更（`beforeunload` 只擋得住主動關分頁）。可接受，之後要做的話見 [ROADMAP](ROADMAP.md)。
+**佇列不持久化**（決定不做）：重整／當機／分頁被系統殺掉就會丟掉未推送的變更，`beforeunload` 只擋得住主動關分頁。單人使用、推送就是一顆鈕，可接受；哪天要做的話怎麼做記在 [ROADMAP](ROADMAP.md) 累積寫入段。
 
-**新增的 id 由前端發**（`store.create` 呼叫 `schema.newId()`），不等後端回傳。**怎麼發是每張表自己的事**——`newId` 是 schema 上的必填函式，框架不持有任何 id 格式的政策，只提供現成的 `prefixedId('TPL')`（前綴 + 8 碼十六進位隨機值，例如 `TPL-11eef1a8`）給常見情況用；要日期編號、流水號之類的就自己寫一個 `() => string` 塞進去。這讓重送變成安全的：`create` 的語意是「id 不存在就建、已存在就當作已完成」，所以整批重送不需要記錄哪幾筆成功過。後端仍然要擋重複 id——Sheet 可以手動打開來改，不能假設 id 只從這裡來。之後累積寫入要在送出前就知道 id，這是前置條件。
+**新增的 id 由前端發**（`store.create` 呼叫 `schema.newId()`），不等後端回傳。**怎麼發是每張表自己的事**——`newId` 是 schema 上的必填函式，框架不持有任何 id 格式的政策，只提供現成的 `prefixedId('TPL')`（前綴 + 8 碼十六進位隨機值，例如 `TPL-11eef1a8`）給常見情況用；要日期編號、流水號之類的就自己寫一個 `() => string` 塞進去。這讓重送變成安全的：`create` 的語意是「id 不存在就建、已存在就當作已完成」，所以整批重送不需要記錄哪幾筆成功過。後端仍然要擋重複 id——Sheet 可以手動打開來改，不能假設 id 只從這裡來。累積寫入的佇列要在送出前就知道 id，這也是它的前置條件。
 
 一般頁面連這四個 action 都用不到——新增/編輯用 `useCreateForm`／`useEditForm`，刪除用 `useDeleteAction`／`useBulkDeleteAction`，內部都接好了。
 
@@ -301,7 +300,7 @@ onClick: () => runFlow(async () => {
 
 > ✅ **form 層已實作。** 約束寫在欄位上（`required`，以及 number 專用的 `min`／`max`），`useTableForm` 在送出前呼叫 `validateRow`，不通過就不送、把 `fieldErrors` 交給 `DataForm` 逐欄顯示。**第一次按送出之前不提示**，免得使用者才剛打開表單就滿江紅；按過一次之後改成即時更新，錯誤在改好的當下就消失。
 >
-> 🔲 **store 寫入層還沒接。** 等累積寫入把寫入路徑定下來再接同一個 `validateRow`（見 ROADMAP）。
+> 🔲 **store 寫入層還沒接。** 寫入路徑已經定了（`create`／`update` 進佇列前），接同一個 `validateRow` 就好（見 ROADMAP）。
 >
 > 型別層面的限制不靠驗證函式，而是靠輸入元件本身：number 用 `v-number-input`（連 `min`／`max` 一起傳下去）、date 用 `v-date-input`、select 用 `v-select` 只能選 `options`。驗證函式擋的是元件擋不住的那些（沒填、超出範圍）。
 
@@ -331,7 +330,7 @@ onClick: () => runFlow(async () => {
 
 不管套到哪張表都是同一套範本，差別只在開了哪些功能。實際檔案見 `vue-build/template/`。
 
-- **列表**：卡片式（適合瀏覽）或表格式（適合比對、多選）。排序依 `schema.defaultSort`。可選功能：分組、Tabs 篩選、搜尋、多選
+- **列表**：卡片式（適合瀏覽）或表格式（適合比對、多選）。排序依 `schema.defaultSort`。可選功能：分組、Tabs 篩選、多選（🔲 搜尋列還沒做）
 - **詳細**：顯示單筆所有欄位（含 schema 的虛擬欄位），順序依 `schema.detailOrder`。可選功能：內嵌關聯子表格、編輯/刪除入口
 - **表單**：依欄位型別自動選輸入元件，順序依 `schema.formOrder`。新增與編輯共用同一套版面
 - **總覽**：彙整多筆/跨表的聚合數字。目前沒有具體需求，保留位置
@@ -340,7 +339,7 @@ onClick: () => runFlow(async () => {
 
 ### 4.7 後端客製邏輯擴充點（Hooks）
 
-> 🔲 **尚未實作。** 這是後端的擴充點，而後端整個還沒開始寫；前端 `TableSchema` 也還沒有 `hooks` 欄位。這裡只記設計方向。
+> 🔲 **尚未實作。** 這是後端的擴充點，而後端整個還沒開始寫；前端 `TableSchema` 也還沒有 `hooks` 欄位。這裡只記設計方向。前端算得出來、不用寫回 Sheet 的欄位已經有 `virtualColumns`（4.5），hooks 是給「要落到 Sheet 上」的邏輯用的。
 
 某張表需要「不只是泛用 CRUD」的邏輯時（自動算欄位、送出前驗證、建立後通知），在 Schema 裡掛勾：
 
@@ -362,7 +361,7 @@ hooks: {
 ### 請求與回應
 
 - 讀取走 `doGet` + query string，寫入走 `doPost` + JSON body，body 帶 `action` 欄位。這是 Apps Script 只有 doGet/doPost 兩種入口所決定的，不是可選項
-- 支援的 action：`create`、`update`、`delete`、`bulkUpdate`（一次對多筆 id 套用同樣的欄位更新，格式 `{ action, table, ids, data }`，一次執行內完成多筆，避免來回呼叫）
+- action：`create`、`update`、`delete`（假後端另有 `bulkUpdate`，但前端的佇列一律逐筆送，快速編輯與批次刪除都拆成多個單筆操作，目前沒有人叫它）。完整介面與之後的 batch 端點見 ROADMAP「後端 API 介面」
 - payload 裡的欄位值**由前端轉成 sheet 的形狀**（表頭當 key、值是字串）再送出，後端拿到什麼就寫什麼，不自己做型別轉換
 - 保留字：`table`、`id`、`action` 不能拿來當篩選欄位名稱
 - 回應統一包裝成 `{ success: true, data }` 或 `{ success: false, error: { message } }`
@@ -379,11 +378,9 @@ hooks: {
 
 ### 資料一致性
 
-> 🔲 **尚未實作。** 下面兩項都還沒做——目前送出前完全沒有檢查，也沒有 `updatedAt` 欄位。
+**驗證**：分工見 4.5——合法性只在前端做（form 層已接、store 寫入層還沒），後端只做安全性與結構完整性。目的不是防外部攻擊（那已經靠 Google 帳號擋掉了），而是防自己送出壞資料。
 
-**驗證**：前後端都做，但都是「照 Schema 動態檢查 required/type」的輕量通用函式。目的不是防外部攻擊（那已經靠 Google 帳號擋掉了），而是防自己送出壞資料。兩邊各寫一份即可，不需要共用程式碼。
-
-**多裝置同時編輯**：做樂觀鎖定。每筆資料帶系統維護的 `updatedAt`，讀取時帶回、編輯送出時附上讀取當下的值，後端比對不一致就回錯誤讓前端提示「已被修改，請重新整理」，而不是直接覆蓋。
+🔲 **多裝置同時編輯**（還沒做，也沒有 `updatedAt` 欄位）：做樂觀鎖定。每筆資料帶系統維護的 `updatedAt`，讀取時帶回、編輯送出時附上讀取當下的值，後端比對不一致就回錯誤讓前端提示「已被修改，請重新整理」，而不是直接覆蓋。
 
 > `id` 與 `updatedAt` 是每張表都有的系統欄位，由後端統一處理，個別 Schema 不列出。前端 `TableSchema` 比照辦理：用獨立的 `idColumn` 指出 ID 對應的表頭，不放進 `columns`；`coerceRow()` 固定把它轉成 row 物件的 `id`。
 

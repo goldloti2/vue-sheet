@@ -66,6 +66,8 @@
 
 ### schema.ts 裡要填什麼
 
+先寫 `__Table__Row` 介面，再宣告 `__table__Schema: TableSchema<__Table__Row>`——這樣欄位 `key`、`labelColumn`、`detailOrder`、`defaultSort` 打錯字會直接紅字，`type` 跟介面的值型別對不上也會抓，虛擬欄位 `value` 的 `row` 也不用轉型。介面裡要自己補 store 會掛上去的東西：虛擬欄位的 `readonly xxx`，還有每個 ref 欄位對應的 `readonly $欄位key?: 對方Row`（`value` 裡要讀父表才需要）。
+
 | 欄位 | 用途 |
 | --- | --- |
 | `sheetName` | Google Sheet 分頁的實際名稱，也是打 API 時 `table=` 的值 |
@@ -78,7 +80,7 @@
 | `columns[].options` | 只有 `type: 'select'` 要填，該欄位的可選值 |
 | `columns[].refTable` | 只有 `type: 'ref'` 要填，指向哪張表（`schemas` 的 key） |
 | `columns[].default` | 新增表單的初始值，可省略。值或函式（`() => new Date()`），函式在打開表單時才求值 |
-| `virtualColumns` | 不在 Sheet 上、讀的時候才算的欄位，可省略。每個 `{ key, label, type, needs?, value: (row, { related }) => 值 }`，`type` 跟真實欄位一樣、決定 `value` 的回傳型別；要看子表就在 `needs` 列出表名，`related('子表')` 才拿得到指向這列的資料。store 會把它掛成 row 上的 getter，`row.key` 直接讀，排序、分組、顯示都跟真實欄位一樣。`__Table__Row` 要補 `readonly` 欄位讓 TS 知道 |
+| `virtualColumns` | 不在 Sheet 上、讀的時候才算的欄位，可省略。每個 `{ key, label, type, needs?, value: (row, { related }) => 值 }`，`type` 跟真實欄位一樣、決定 `value` 的回傳型別；要看子表就在 `needs` 列出表名，`related('子表')` 才拿得到指向這列的資料。store 會把它掛成 row 上的 getter，`row.key` 直接讀，排序、分組、顯示都跟真實欄位一樣。要讀父表就用 `row.$欄位key`（ref 欄位自動掛，`__Table__Row` 裡宣告過型別才看得到） |
 | `defaultSort` | 列表頁預設排序，多筆依序當 tiebreaker。可省略 |
 | `detailOrder` | 詳細頁欄位順序。可省略，省略就沿用 `columns` 順序 |
 | `formOrder` | 表單頁欄位順序。可省略，跟 `detailOrder` 分開設定 |

@@ -2,14 +2,17 @@
 import type { RowBase, TableSchema } from './types'
 import { prefixedId } from './types'
 
-// 每個 column 一個欄位；id 與 $label 來自 RowBase，不放進 columns
+// 每個 column 一個欄位；id 與 $label 來自 RowBase，不放進 columns。
+// 虛擬欄位與 ref 對應的 $欄位 也要列在這裡（readonly），schema 會對著這個介面檢查 key 跟型別
 export interface __Table__Row extends RowBase {
   name: string | null
   amount: number | null
   date: Date | null
+  // readonly total: number | null
+  // readonly $parent?: ParentRow
 }
 
-export const __table__Schema: TableSchema = {
+export const __table__Schema: TableSchema<__Table__Row> = {
   sheetName: '範本',
   idColumn: 'TPL-ID',
   // 用哪一欄稱呼一列（可省略，省略就是 id）：row.$label、別的表 ref 到這裡、選擇器清單都顯示它
@@ -39,11 +42,12 @@ export const __table__Schema: TableSchema = {
 
   // 以下都可省略
   // 虛擬欄位：不在 Sheet 上、讀的時候才算出來的欄位，store 會掛成 row 上的 getter，用法跟真實欄位一樣
-  // （row.total 直接讀、可排序分組、DataDetail/DataTable 自動顯示）。type 決定 value 的回傳型別；
-  // 要看子表就用 needs 宣告，related('子表') 才拿得到指向這一列的資料。記得在 __Table__Row 補 readonly 欄位
+  // （row.total 直接讀、可排序分組、DataDetail/DataTable 自動顯示）。type 決定 value 的回傳型別，row 就是 __Table__Row；
+  // 要看子表就用 needs 宣告，related('子表') 才拿得到指向這一列的資料；父表直接讀 row.$parent（ref 欄位自動掛）
   // virtualColumns: [
-  //   { key: 'total', label: '總額', type: 'number', value: row => ((row as __Table__Row).amount ?? 0) * 2 },
+  //   { key: 'total', label: '總額', type: 'number', value: row => (row.amount ?? 0) * 2 },
   //   { key: 'title', label: '名稱', type: 'text', needs: ['child'], value: (_row, { related }) => related<ChildRow>('child')[0]?.name ?? '(空)' },
+  //   { key: 'parentName', label: '上層名稱', type: 'text', value: row => row.$parent?.name ?? '' },
   // ],
   // 列表頁預設排序，多筆依序當 tiebreaker
   defaultSort: [

@@ -1,4 +1,5 @@
 import type { TableKey } from '@/schema'
+import type { TableSchema } from '@/schema/types'
 import { defineStore } from 'pinia'
 import { computed, reactive, shallowRef } from 'vue'
 import { schemas } from '@/schema'
@@ -109,7 +110,8 @@ export const useTablesStore = defineStore('tables', () => {
   // 掛在 row 上、讀起來跟真實欄位一樣的 getter（不可列舉，spread / JSON / Object.keys 都看不到）：
   // 虛擬欄位、$label（這一列的名字）、每個 ref 欄位的 $欄位key（父表那一列）
   function attachGetters<Row extends HasId> (table: TableKey, row: Row): Row {
-    const schema = schemas[table]
+    // 用不帶 Row 的 TableSchema 接，否則 schemas[table] 是各表 schema 的 union，value 的參數會變成所有 Row 的交集
+    const schema: TableSchema = schemas[table]
 
     for (const column of schema.virtualColumns ?? []) {
       defineGetter(row, column.key, () => column.value(row, {

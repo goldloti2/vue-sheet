@@ -23,16 +23,29 @@ export type ColumnType = keyof ColumnTypes
 export type ColumnValue<T extends ColumnType> = ColumnTypes[T]['value']
 type ColumnExtra<T extends ColumnType> = ColumnTypes[T] extends { extra: infer Extra } ? Extra : object
 
-// 一個欄位最基本的資訊：key、label、型別、型別專屬設定。真實與虛擬欄位都疊在這上面
-export type ColumnBase<T extends ColumnType = ColumnType> = {
-  key: string
+// 框架端不知道也不在乎是哪張表的 Row，所以預設是 any：key 退化成 string、value 的 row 退化成 any。
+// 不用 object 是因為 keyof Row 讓 TS 把 Row 判成逆變，TableSchema<XxxRow> 會塞不進 TableSchema<object>
+type AnyRow = any
+
+// Row 裡值型別放得下 Value 的欄位名；id 與 $ 開頭的系統欄位不算
+type ColumnKey<Row extends object, Value> = {
+  [K in keyof Row & string]: K extends 'id' | `$${string}` ? never : Row[K] extends Value ? K : never
+}[keyof Row & string]
+
+// 任一欄位名，給 labelColumn / detailOrder 這種不挑型別的地方
+export type RowKey<Row extends object> = ColumnKey<Row, unknown>
+
+// 一個欄位最基本的資訊：key、label、型別、型別專屬設定。真實與虛擬欄位都疊在這上面。
+// 帶 Row 時 key 只能是 Row 裡型別相符的欄位（type: 'number' 只能綁 number | null 的欄位）
+export type ColumnBase<Row extends object = AnyRow, T extends ColumnType = ColumnType> = {
+  key: ColumnKey<Row, ColumnValue<T>>
   label: string
   type: T
 } & ColumnExtra<T>
 
 // 真實欄位：Sheet 上有的，多了表頭對應與表單設定
-export type SchemaColumn = {
-  [T in ColumnType]: ColumnBase<T> & {
+export type SchemaColumn<Row extends object = AnyRow> = {
+  [T in ColumnType]: ColumnBase<Row, T> & {
     // 省略時預設跟 label 同值（見《GoogleSheet後端App-通用架構》文件 6.6 節）
     sheetHeader?: string
     required?: boolean
@@ -46,40 +59,41 @@ export interface VirtualColumnContext {
 }
 
 // 虛擬欄位：不在 Sheet 上、讀的時候才算。store 會把它掛成 row 上的 getter，讀起來跟真實欄位一樣（見 README 4.5）
-export type VirtualColumn = {
-  [T in ColumnType]: ColumnBase<T> & {
+export type VirtualColumn<Row extends object = AnyRow> = {
+  [T in ColumnType]: ColumnBase<Row, T> & {
     // value 會透過 related() 讀哪些子表；沒宣告就不載
     needs?: string[]
-    value: (row: object, context: VirtualColumnContext) => ColumnValue<T>
+    value: (row: Row, context: VirtualColumnContext) => ColumnValue<T>
   }
 }[ColumnType]
 
 // 顯示用：兩種欄位一起看的時候
-export type AnyColumn = SchemaColumn | VirtualColumn
+export type AnyColumn<Row extends object = AnyRow> = SchemaColumn<Row> | VirtualColumn<Row>
 
-export interface SortSpec {
-  key: string
+export interface SortSpec<Row extends object = AnyRow> {
+  key: RowKey<Row>
   direction: 'asc' | 'desc'
 }
 
-export interface TableSchema {
+// 各表宣告成 TableSchema<XxxRow>，欄位 key 與 value 的 row 就有型別；框架端一律用不帶參數的 TableSchema 接
+export interface TableSchema<Row extends object = AnyRow> {
   // 對應 Google Sheet 分頁的實際名稱，也是打 API 時 table= 的值
   sheetName: string
   // 這張表的 ID 欄（sheetHeader 值）。系統欄位，不放進 columns（見文件 6.5 節）
   idColumn: string
   // 用哪一欄稱呼一列（欄位 key，真實或虛擬都行），store 據此掛 row.$label；別的表 ref 到這裡就顯示它。省略就是 id
-  labelColumn?: string
+  labelColumn?: RowKey<Row>
   // 怎麼發一筆新 id，由各表自己決定。常見的前綴式用 prefixedId('TPL')
   newId: () => string
-  columns: SchemaColumn[]
+  columns: SchemaColumn<Row>[]
   // 算出來的欄位，不進 coerceRow / serializeRow / 表單；顯示、排序、分組都跟真實欄位一樣用
-  virtualColumns?: VirtualColumn[]
+  virtualColumns?: VirtualColumn<Row>[]
   // detail 頁的顯示順序（欄位 key 陣列）。省略時沿用 columns 的順序
-  detailOrder?: string[]
+  detailOrder?: RowKey<Row>[]
   // 表單頁的欄位順序（欄位 key 陣列）。省略時沿用 columns 的順序；
-  formOrder?: string[]
+  formOrder?: RowKey<Row>[]
   // 列表頁預設排序，多筆依序當 tiebreaker。省略/空陣列 = 維持原始（row number）順序
-  defaultSort?: SortSpec[]
+  defaultSort?: SortSpec<Row>[]
 }
 
 function columnHeader (column: SchemaColumn): string {

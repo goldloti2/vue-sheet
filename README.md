@@ -2,6 +2,8 @@
 
 用 Google Sheet 當後端、自己寫前端 GUI（外觀仿 AppSheet）的通用框架。
 
+> 這個 repo 的程式碼與文件都由 Claude（Anthropic 的 AI）生成。作者提供想法與需求、確認程式邏輯、在實機上驗證。
+
 - 目前進度與待辦：[ROADMAP.md](ROADMAP.md)
 - 新增一張表／一個頁面怎麼做：[vue-build/template/README.md](vue-build/template/README.md)
 

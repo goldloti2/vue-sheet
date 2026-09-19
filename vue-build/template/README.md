@@ -81,6 +81,8 @@
 | `columns[].refTable` | 只有 `type: 'ref'` 要填，指向哪張表（`schemas` 的 key） |
 | `columns[].onDelete` | 只有 `type: 'ref'` 有，可省略。`'cascade'`＝對方那筆被刪時這筆也跟著刪；省略就留著 |
 | `columns[].default` | 新增表單的初始值，可省略。值或函式（`() => new Date()`），函式在打開表單時才求值 |
+| `columns[].required` / `min` / `max` | 內建的驗證約束，可省略。`min`／`max` 只有 number 有 |
+| `columns[].validate` | 自己的規則 `(value, row) => 錯誤訊息 \| null`，可省略。內建檢查過了、而且有值時才叫；`value` 跟 `type` 同型別、`row` 是整列（跨欄位比較直接讀） |
 | `virtualColumns` | 不在 Sheet 上、讀的時候才算的欄位，可省略。每個 `{ key, label, type, needs?, value: (row, { related }) => 值 }`，`type` 跟真實欄位一樣、決定 `value` 的回傳型別；要看子表就在 `needs` 列出表名，`related('子表')` 才拿得到指向這列的資料。store 會把它掛成 row 上的 getter，`row.key` 直接讀，排序、分組、顯示都跟真實欄位一樣。要讀父表就用 `row.$欄位key`（ref 欄位自動掛，`__Table__Row` 裡宣告過型別才看得到） |
 | `defaultSort` | 列表頁預設排序，多筆依序當 tiebreaker。可省略 |
 | `detailOrder` | 詳細頁欄位順序。可省略，省略就沿用 `columns` 順序 |

@@ -7,7 +7,7 @@ export function isEmpty (value: unknown): boolean {
   return EMPTY_VALUES.has(value)
 }
 
-function columnError (value: unknown, column: SchemaColumn): string | null {
+function columnError (value: unknown, column: SchemaColumn, row: object): string | null {
   if (isEmpty(value)) {
     return column.required ? `請填寫${column.label}` : null
   }
@@ -25,7 +25,9 @@ function columnError (value: unknown, column: SchemaColumn): string | null {
     return `${column.label}不是有效的選項`
   }
 
-  return null
+  // 內建檢查都過了才輪到設計者的規則。
+  const validate = column.validate as ((value: unknown, row: object) => string | null) | undefined
+  return validate ? validate(value, row) : null
 }
 
 // 回傳 { 欄位 key: 錯誤訊息 }，全部合法就是空物件。給了 keys 就只檢查那幾欄
@@ -37,7 +39,7 @@ export function validateRow (row: object, schema: TableSchema, keys?: readonly s
       continue
     }
 
-    const message = columnError((row as Record<string, unknown>)[column.key], column)
+    const message = columnError((row as Record<string, unknown>)[column.key], column, row)
     if (message !== null) {
       errors[column.key] = message
     }

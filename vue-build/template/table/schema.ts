@@ -40,6 +40,8 @@ export const __table__Schema: TableSchema<__Table__Row> = {
     // 驗證用的約束，都可省略。空著就是「不限制」：
     //   required: true   空值就擋下送出，所有型別通用
     //   min / max        只有 number 有，同時當輸入欄的上下限與送出前的檢查
+    //   validate         自己的規則，內建檢查過了、而且有值時才叫；value 跟 type 同型別、row 是整列，回錯誤訊息或 null
+    // { key: 'endDate', label: '結束日', type: 'date', validate: (value, row) => row.date && value < row.date ? '不能早於日期' : null },
   ],
 
   // 以下都可省略

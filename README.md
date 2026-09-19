@@ -306,6 +306,8 @@ onClick: () => runFlow(async () => {
 
 型別層面的限制不靠驗證函式，而是靠輸入元件本身：number 用 `v-number-input`（連 `min`／`max` 一起傳下去）、date 用 `v-date-input`、select 用 `v-select` 只能選 `options`。驗證函式擋的是元件擋不住的那些（沒填、超出範圍）。
 
+**內建的約束只有 `required`／`min`／`max`／`select` 選項**，其他規則（日期先後、文字格式、跨欄位比較）不逐一加進框架，而是欄位上一個 `validate: (value, row) => 錯誤訊息 | null` 讓設計者自己寫。內建檢查過了、而且有值時才叫——空值是 `required` 的事，設計者不用每條規則都先判 null；代價是「某條件下才必填」寫不了。`value` 的型別跟 `type` 走、`row` 是 `TableSchema<Row>` 的那個 Row，跨欄位規則直接讀。一欄一個函式，多條規則自己在裡面串。store 層的 `update` 只給了幾欄時，會拿快取裡那筆合併後再驗，所以 `row` 永遠是整列。
+
 `schema/index.ts` 另外帶「代稱 → 實際 Sheet 分頁名稱」的對照：程式碼裡好打的英文代稱（例如 `'order'`）不等於 Sheet 分頁的實際名稱（可能是中文）。打 API 時用的是 schema 裡的 `sheetName`，兩者故意分開——換代稱不影響 API，換分頁名稱也不用到處改字串。
 
 **虛擬欄位**（`virtualColumns`）：不存在 Sheet 上、讀的時候才算出來的欄位。來源可以是這一列自己（價格加手續費），也可以是子表（父表用「底下第一筆子資料的名字」當標題、子表金額的加總）。跟 `columns` 分開放，所以 `coerceRow`／`serializeRow`／`columnValues`／表單全部不用知道它——它們只認 `columns`，這就是「虛擬欄位除了不能編輯，其他都跟真實欄位一樣」的由來。

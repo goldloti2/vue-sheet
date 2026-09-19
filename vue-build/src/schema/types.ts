@@ -51,6 +51,8 @@ export type SchemaColumn<Row extends object = AnyRow> = {
     sheetHeader?: string
     required?: boolean
     default?: ColumnDefault<ColumnValue<T>>
+    // 設計者自訂的規則：內建檢查過了、而且有值時才叫，回錯誤訊息或 null。
+    validate?: (value: NonNullable<ColumnValue<T>>, row: Row) => string | null
   }
 }[ColumnType]
 

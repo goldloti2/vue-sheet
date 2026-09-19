@@ -310,8 +310,9 @@ export const useTablesStore = defineStore('tables', () => {
   }
 
   function update<Row extends HasId> (table: TableKey, id: string, values: Record<string, unknown>): Row {
-    // values 可以只給幾欄，所以只驗給了的
-    assertValid(table, values, Object.keys(values))
+    // values 可以只給幾欄：只驗給了的，但用合併後的整列驗，跨欄位的 validate 才看得到其他欄
+    const existing = (rows[table] ?? []).find(row => (row as HasId).id === id) as Record<string, unknown> | undefined
+    assertValid(table, { ...existing, ...values }, Object.keys(values))
 
     const schema = schemas[table]
     let updated = { id, ...values } as Row

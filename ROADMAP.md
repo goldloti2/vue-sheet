@@ -77,6 +77,7 @@
 ### 表單與多選
 - `useCreateForm` / `useEditForm` 收掉新增與編輯的重複邏輯（起始值、載入、送出、導覽、錯誤狀態）
 - 新增表單的預設值三層：schema 的 `default` → `useNewAction` 經 `history.state` 帶來的 → `useCreateForm` 的參數
+- 前端驗證：`schema/validation.ts` 的 `validateRow`（`required`／`min`／`max`／`select` 選項）一份，form 層與 `askFields` 送出前逐欄提示、store 的 `create`／`update` 寫入前再擋一次（拋錯、不動快取）；後端只做結構完整性，分工見 [README 4.5](README.md#45-schema-的角色)
 - `useMultiSelect` + `useLongPress`：長按進入多選，選取狀態由「有沒有選取任何一筆」推導
 - 批次刪除走動作的 `confirm`
 
@@ -139,10 +140,7 @@
 > 註：每分鐘 60 次寫入是 Sheets REST API 的配額，用 Apps Script 內建的 `SpreadsheetApp` 並不適用。批次要省的是**每次 Web App 請求的 script 冷啟成本（約 0.5～2 秒）**，不是配額。
 
 ### 資料一致性
-- **前端驗證**：form 層已完成（`schema/validation.ts` 的 `validateRow`＋`SchemaColumn` 上的 `required`／`min`／`max`，見 [README 4.5](README.md#45-schema-的角色)）。剩下的：
-  - **store 寫入層還沒接**同一個 `validateRow`。寫入路徑已經定了（`create`／`update` 進佇列前），接上就好
-  - 日期範圍、文字長度、正則格式都還沒有，等真的有需求再加進 `SchemaColumn`
-- 驗證的分工已定案，見 [README 4.5](README.md#45-schema-的角色)：合法性只在前端做，一份 schema 推導出的驗證函式用在 form 層（即時提示）與 store 寫入層（擋程式 bug）兩處；後端只做安全性與結構完整性
+- 更多驗證約束（日期範圍、文字長度、正則格式）：等真的有需求再加進 `SchemaColumn`，`validateRow` 一處改就兩層都有
 - 樂觀鎖定：`updatedAt` 欄位與衝突提示都還沒做
 
 ### UI 功能

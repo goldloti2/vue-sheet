@@ -5,6 +5,7 @@ import { computed, reactive, shallowRef } from 'vue'
 import { schemas } from '@/schema'
 import { cascadeRelations, getRelation } from '@/schema/relations'
 import { rowLabel, serializeRow, sortRows } from '@/schema/types'
+import { validateRow } from '@/schema/validation'
 import { fetchTable, mutateTable } from '@/services/appScript'
 
 const pendingLoads = new Map<TableKey, Promise<void>>()
@@ -287,7 +288,18 @@ export const useTablesStore = defineStore('tables', () => {
     activeFlow.value = null
   }
 
+  // 寫入前再驗一次（form 層已經逐欄提示過，這裡擋的是繞過表單的程式 bug）。有錯就拋，什麼都不動
+  function assertValid (table: TableKey, values: Record<string, unknown>, keys?: readonly string[]): void {
+    const errors = validateRow(values, schemas[table], keys)
+    const messages = Object.values(errors)
+    if (messages.length > 0) {
+      throw new Error(messages.join('、'))
+    }
+  }
+
   function create<Row extends HasId> (table: TableKey, values: Record<string, unknown>): Row {
+    assertValid(table, values)
+
     const schema = schemas[table]
     const created = attachGetters(table, { id: schema.newId(), ...values } as Row)
 
@@ -298,6 +310,9 @@ export const useTablesStore = defineStore('tables', () => {
   }
 
   function update<Row extends HasId> (table: TableKey, id: string, values: Record<string, unknown>): Row {
+    // values 可以只給幾欄，所以只驗給了的
+    assertValid(table, values, Object.keys(values))
+
     const schema = schemas[table]
     let updated = { id, ...values } as Row
 

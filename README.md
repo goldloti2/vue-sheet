@@ -298,13 +298,13 @@ onClick: () => runFlow(async () => {
 
 前後端各自維護一份 Schema，不共用程式碼。欄位改動期間先接受手動同步，之後真的常對不起來再考慮做產生器。
 
-🔶 **驗證的分工**：**合法性驗證只在前端做**——required、數值範圍、`select` 的選項這些，全部從 schema 推導出同一份驗證函式（`schema/validation.ts` 的 `validateRow`），用在兩個地方：form 層即時逐欄提示（給使用者看），以及 store 的寫入 action 再擋一次（給程式看，因為所有寫入只能走 store，那是唯一的窄口）。後端只做安全性與**結構完整性**檢查：id 不重複、`update`／`delete` 的目標存在、表名與欄位名都在 schema 內。最後一項不能省——打錯的欄位名會直接在 Sheet 上長出一欄新表頭或寫錯格。反正 Sheet 本來就能手動打開來亂改，後端擋合法性也擋不完整，不如把那份責任明確劃給前端。
+**驗證的分工**：**合法性驗證只在前端做**——required、數值範圍、`select` 的選項這些，全部從 schema 推導出同一份驗證函式（`schema/validation.ts` 的 `validateRow`），用在兩個地方：form 層即時逐欄提示（給使用者看），以及 store 的寫入 action 再擋一次（給程式看，因為所有寫入只能走 store，那是唯一的窄口）。後端只做安全性與**結構完整性**檢查：id 不重複、`update`／`delete` 的目標存在、表名與欄位名都在 schema 內。最後一項不能省——打錯的欄位名會直接在 Sheet 上長出一欄新表頭或寫錯格。反正 Sheet 本來就能手動打開來亂改，後端擋合法性也擋不完整，不如把那份責任明確劃給前端。
 
-> ✅ **form 層已實作。** 約束寫在欄位上（`required`，以及 number 專用的 `min`／`max`），`useTableForm` 在送出前呼叫 `validateRow`，不通過就不送、把 `fieldErrors` 交給 `DataForm` 逐欄顯示。**第一次按送出之前不提示**，免得使用者才剛打開表單就滿江紅；按過一次之後改成即時更新，錯誤在改好的當下就消失。
->
-> 🔲 **store 寫入層還沒接。** 寫入路徑已經定了（`create`／`update` 進佇列前），接同一個 `validateRow` 就好（見 ROADMAP）。
->
-> 型別層面的限制不靠驗證函式，而是靠輸入元件本身：number 用 `v-number-input`（連 `min`／`max` 一起傳下去）、date 用 `v-date-input`、select 用 `v-select` 只能選 `options`。驗證函式擋的是元件擋不住的那些（沒填、超出範圍）。
+**form 層**：約束寫在欄位上（`required`，以及 number 專用的 `min`／`max`），`useTableForm` 在送出前呼叫 `validateRow`，不通過就不送、把 `fieldErrors` 交給 `DataForm` 逐欄顯示。**第一次按送出之前不提示**，免得使用者才剛打開表單就滿江紅；按過一次之後改成即時更新，錯誤在改好的當下就消失。`askFields` 同一套，只驗問到的欄位。
+
+**store 層**：`create`／`update` 在碰快取與佇列之前先跑同一個 `validateRow`，有錯就把各欄訊息串成一句拋出去、什麼都不動。`update` 的 `values` 可以只給幾欄，所以只驗給了的那幾欄。這層擋到的是繞過表單的程式 bug（例如 `useSetFieldAction` 塞了不合法的值），錯誤經 `useActionRunner` 進 snackbar；不另做逐欄的錯誤型別，逐欄顯示是 form 層的事。
+
+型別層面的限制不靠驗證函式，而是靠輸入元件本身：number 用 `v-number-input`（連 `min`／`max` 一起傳下去）、date 用 `v-date-input`、select 用 `v-select` 只能選 `options`。驗證函式擋的是元件擋不住的那些（沒填、超出範圍）。
 
 `schema/index.ts` 另外帶「代稱 → 實際 Sheet 分頁名稱」的對照：程式碼裡好打的英文代稱（例如 `'order'`）不等於 Sheet 分頁的實際名稱（可能是中文）。打 API 時用的是 schema 裡的 `sheetName`，兩者故意分開——換代稱不影響 API，換分頁名稱也不用到處改字串。
 
@@ -380,7 +380,7 @@ hooks: {
 
 ### 資料一致性
 
-**驗證**：分工見 4.5——合法性只在前端做（form 層已接、store 寫入層還沒），後端只做安全性與結構完整性。目的不是防外部攻擊（那已經靠 Google 帳號擋掉了），而是防自己送出壞資料。
+**驗證**：分工見 4.5——合法性只在前端做（form 層與 store 寫入層都接了同一個 `validateRow`），後端只做安全性與結構完整性。目的不是防外部攻擊（那已經靠 Google 帳號擋掉了），而是防自己送出壞資料。
 
 🔲 **多裝置同時編輯**（還沒做，也沒有 `updatedAt` 欄位）：做樂觀鎖定。每筆資料帶系統維護的 `updatedAt`，讀取時帶回、編輯送出時附上讀取當下的值，後端比對不一致就回錯誤讓前端提示「已被修改，請重新整理」，而不是直接覆蓋。
 

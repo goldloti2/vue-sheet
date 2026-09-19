@@ -3,7 +3,7 @@ import type { TableSchema } from '@/schema/types'
 import { defineStore } from 'pinia'
 import { computed, reactive, shallowRef } from 'vue'
 import { schemas } from '@/schema'
-import { getRelation } from '@/schema/relations'
+import { cascadeRelations, getRelation } from '@/schema/relations'
 import { rowLabel, serializeRow, sortRows } from '@/schema/types'
 import { fetchTable, mutateTable } from '@/services/appScript'
 
@@ -75,15 +75,16 @@ export const useTablesStore = defineStore('tables', () => {
     }
   }
 
-  // 這張表的 getter 會讀到的其他表：ref 指到的父表、虛擬欄位 needs 的表
+  // 這張表要用就得一起載的其他表：ref 指到的父表、虛擬欄位 needs 的表、刪除時要連帶刪的子表
   function tablesNeededBy (table: TableKey): TableKey[] {
     const schema = schemas[table]
     const parents = schema.columns.flatMap(column => column.type === 'ref' ? [column.refTable] : [])
     const needs = (schema.virtualColumns ?? []).flatMap(column => column.needs ?? [])
-    return [...new Set([...parents, ...needs])] as TableKey[]
+    const cascades = cascadeRelations(table).map(relation => relation.childTable)
+    return [...new Set([...parents, ...needs, ...cascades])] as TableKey[]
   }
 
-  // 相關的表一起載，getter 才有東西讀。seen 擋住父子互相需要的循環
+  // 相關的表一起載，getter 才有東西讀、連帶刪除才找得到子列。seen 擋住父子互相需要的循環
   async function ensureLoaded (table: TableKey, seen = new Set<TableKey>()) {
     if (seen.has(table)) {
       return
@@ -313,16 +314,34 @@ export const useTablesStore = defineStore('tables', () => {
   }
 
   function remove (table: TableKey, id: string): void {
-    patch(table, list => list.filter(row => (row as HasId).id !== id))
-    enqueue(table, id, 'delete', {})
+    removeMany(table, [id])
   }
 
+  // 刪完之後順著標了 cascade 的關聯把指向這些列的子列也刪掉，多層遞迴；
+  // 走同一條 patch + enqueue，佇列合併與流程存檔點都自動涵蓋。子表沒載就找不到子列，所以 ensureLoaded 會把它們一起載
   function removeMany (table: TableKey, ids: Iterable<string>): void {
     const targets = new Set(ids)
+    if (targets.size === 0) {
+      return
+    }
+
+    // 先確認子表都在，免得刪到一半才發現
+    const cascades = cascadeRelations(table)
+    for (const relation of cascades) {
+      if (!rows[relation.childTable]) {
+        throw new Error(`子表 "${relation.childTable}" 尚未載入，無法連帶刪除`)
+      }
+    }
 
     patch(table, list => list.filter(row => !targets.has((row as HasId).id)))
     for (const id of targets) {
       enqueue(table, id, 'delete', {})
+    }
+
+    for (const relation of cascades) {
+      removeMany(relation.childTable, (rows[relation.childTable] ?? [])
+        .filter(row => targets.has((row as Record<string, unknown>)[relation.column] as string))
+        .map(row => (row as HasId).id))
     }
   }
 

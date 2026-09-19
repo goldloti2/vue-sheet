@@ -30,6 +30,8 @@ export const __table__Schema: TableSchema<__Table__Row> = {
     // { key: 'status', label: '狀態', type: 'select', options: ['選項A', '選項B'] },
     // ref 欄位在表單是選擇器、顯示時是對方的名字（對方 schema 的 labelColumn），這裡不用多寫：
     // { key: 'parent', label: '上層', type: 'ref', refTable: 'parent' },
+    // 對方那筆被刪時要連這筆一起刪就加 onDelete（不加＝留著，ref 指向不存在的 id）：
+    // { key: 'parent', label: '上層', type: 'ref', refTable: 'parent', onDelete: 'cascade' },
 
     // 新增表單的初始值用 default，可省略。值或函式都可以，函式是打開表單那一刻才求值：
     // { key: 'status', label: '狀態', type: 'select', options: [...], default: '選項A' },

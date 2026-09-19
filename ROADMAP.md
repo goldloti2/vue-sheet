@@ -33,6 +33,7 @@
 - `DataForm` 的 `ref` 欄位是父表整表的可搜尋下拉清單（`v-autocomplete`），每列文字與搜尋比對都是對方的 `$label`；「前往對方」是欄位動作 `useGoToRefAction`，頁面自己列
 - `ensureLoaded(table)` 會把 ref 指到的表和虛擬欄位 `needs` 的表一起載（擋循環）
 - `useRelatedRows(子表, 父表)` 依關聯圖解析外鍵欄位，整表撈一次後在前端分組
+- 連帶刪除：ref 欄位標 `onDelete: 'cascade'`，父列被刪時 `store.removeMany` 順著關聯圖把子列也刪掉（多層遞迴，走同一條 `patch`＋`enqueue`）；`ensureLoaded` 會把 cascade 的子表一起載
 
 ### 資料存取
 - `stores/tables.ts`：每張表一份全 App 共用的快取，同一張表不會重複打 API
@@ -142,10 +143,6 @@
   - **store 寫入層還沒接**同一個 `validateRow`。寫入路徑已經定了（`create`／`update` 進佇列前），接上就好
   - 日期範圍、文字長度、正則格式都還沒有，等真的有需求再加進 `SchemaColumn`
 - 驗證的分工已定案，見 [README 4.5](README.md#45-schema-的角色)：合法性只在前端做，一份 schema 推導出的驗證函式用在 form 層（即時提示）與 store 寫入層（擋程式 bug）兩處；後端只做安全性與結構完整性
-- **關聯連帶刪除**（可選，設計者在 schema 上開）：父表的條目被刪時，`ref` 指向它的子表條目也一起刪，不留孤兒
-  - 開關放在 `ref` 欄位上：`{ type: 'ref', refTable: '父表', onDelete: 'cascade' }`，不標就維持現狀（子條目留著、ref 指向不存在的 id）
-  - 實作點在 `store.remove`／`removeMany`：刪完父表後順著 `relations.ts` 的關聯圖找到標了 cascade 的子表，把 ref 落在被刪 id 裡的子條目也 `removeMany`，多層關聯遞迴。走原本的 `patch`＋`enqueue`，所以佇列合併、流程存檔點與回滾都自動涵蓋，後端不用知道這件事
-  - 範圍只到「刪除當下」。Sheet 手動改出來的孤兒（載入時掃一遍）是另一件事，先不做
 - 樂觀鎖定：`updatedAt` 欄位與衝突提示都還沒做
 
 ### UI 功能

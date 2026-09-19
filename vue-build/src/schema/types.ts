@@ -13,8 +13,9 @@ interface ColumnTypes {
   number: { value: number | null, extra: { min?: number, max?: number } }
   date: { value: Date | null }
   // 外鍵欄位（見文件 4.2 節一對多關聯慣例）；refTable 對應 schema/index.ts 的 schemas 裡的 key。
-  // 顯示時用對方的 $label（對方 schema 的 labelColumn），store 會把對方那一列掛成 row.$欄位key
-  ref: { value: string | null, extra: { refTable: string } }
+  // 顯示時用對方的 $label（對方 schema 的 labelColumn），store 會把對方那一列掛成 row.$欄位key。
+  // onDelete: 'cascade' 表示對方那一列被刪時，指向它的這些列也一起刪；不標就留著（ref 指向不存在的 id）
+  ref: { value: string | null, extra: { refTable: string, onDelete?: 'cascade' } }
   // 清單類欄位：只能是 options 裡的其中一個值
   select: { value: string | null, extra: { options: string[] } }
 }

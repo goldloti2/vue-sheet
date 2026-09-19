@@ -64,6 +64,8 @@ Google Sheets 不讓前端裸連（會暴露金鑰，而且每個使用者都要
 
 一列的名字由**它自己那張表**決定：`TableSchema.labelColumn` 指一個欄位 key（真實或虛擬都行），省略就是 id。「父表用底下第一筆子資料的名字稱呼」就是在父表上定義一個虛擬欄位、`labelColumn` 指它；指向父表的 ref 欄位什麼都不用寫。實作上 store 在每一列掛兩種 getter：`row.$label`（這一列的名字）和每個 ref 欄位一個 `row.$欄位key`（父表那一列），`formatColumnValue` 遇到 ref 就回 `row.$欄位key.$label`——所以 detail、表格、列表卡片、選擇器清單顯示的是同一個字串，沒有任何一處需要知道 ref 的特殊性。`ensureLoaded` 會把 ref 指到的表一起載，getter 才有東西讀。選擇器只能選到存在的列，所以 `ref` 欄位不另外驗證目標存不存在。
 
+**連帶刪除**是可選的，開在 ref 欄位上：`{ type: 'ref', refTable: '父表', onDelete: 'cascade' }`。父列被刪時 `store.removeMany` 順著 `relations.ts` 找標了 cascade 的子表，把 ref 落在被刪 id 裡的子列也 `removeMany`，多層遞迴；走的是同一條 `patch`＋`enqueue`，所以佇列合併、流程存檔點與回滾都自動涵蓋，後端不用知道這件事。不標就維持原狀：子列留著、ref 指向不存在的 id（顯示退回 id）。子表要在快取裡才找得到子列，所以 `ensureLoaded` 把 cascade 的子表跟父表、`needs` 的表一起載；沒載就刪的話 `removeMany` 在動任何東西之前先拋錯。範圍只到「刪除當下」，Sheet 手動改出來的孤兒不管。
+
 🔲 `allowCreate`（清單裡直接「＋ 新增」對方一筆、回來自動選上）還沒做，卡在表單頁當流程呼叫端的幾個問題，見 ROADMAP。
 
 ### Sheet 表頭用中文

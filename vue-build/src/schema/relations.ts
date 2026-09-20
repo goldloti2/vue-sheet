@@ -23,15 +23,12 @@ export const relations: Relation[] = Object.entries(schemas).flatMap(([table, sc
   return result
 })
 
-export function getRelation (childTable: TableKey, parentTable: TableKey): Relation {
-  const relation = relations.find(candidate => candidate.childTable === childTable && candidate.parentTable === parentTable)
-  if (!relation) {
-    throw new Error(`no relation from "${childTable}" to "${parentTable}"`)
-  }
-  return relation
+// 指向這張表的關聯（每個子表的 ref 欄位一條）
+export function childRelations (parentTable: TableKey): Relation[] {
+  return relations.filter(candidate => candidate.parentTable === parentTable)
 }
 
-// 這張表的列被刪時要跟著刪的關聯（標了 cascade 的子表 ref 欄位）
+// 其中標了 cascade 的：這張表的列被刪時要跟著刪
 export function cascadeRelations (parentTable: TableKey): Relation[] {
-  return relations.filter(candidate => candidate.parentTable === parentTable && candidate.onDelete === 'cascade')
+  return childRelations(parentTable).filter(candidate => candidate.onDelete === 'cascade')
 }

@@ -23,7 +23,7 @@
 - `columnValues`（組送出用 payload）、`emptyRow`（新增表單起始值，套用欄位的 `default`）
 - `sortRows`（依 `defaultSort`）、`sortByKey`、`groupRows`（多層分組）、`flattenGroups`（把分組攤回畫面順序）
 - `detailOrder` / `formOrder` 分別控制詳細頁與表單頁的欄位順序
-- `virtualColumns`：不在 Sheet 上、讀的時候才算的欄位，來源可以是自己這列或 `needs` 宣告的子表（`related()`）。store 掛成 row 上的 getter，顯示、排序、分組都跟真實欄位一樣；兩種欄位共用 `ColumnTypes`／`ColumnBase` 型別骨架
+- `virtualColumns`：不在 Sheet 上、讀的時候才算的欄位，來源可以是自己這列、父列（`row.$欄位key`）或子列（`row.$子表key`）。store 掛成 row 上的 getter，顯示、排序、分組都跟真實欄位一樣；兩種欄位共用 `ColumnTypes`／`ColumnBase` 型別骨架
 - `labelColumn`：一列怎麼稱呼（欄位 key，省略就是 id），store 掛成 `row.$label`
 - `TableSchema<Row>`：各表宣告時帶自己的 Row 介面，欄位 key 與 `type` 對著它檢查，虛擬欄位 `value` 的 `row` 有型別；框架端用不帶參數的 `TableSchema`
 
@@ -31,13 +31,13 @@
 - `schema/relations.ts` 掃 schema 的 `ref` 欄位自動產生關聯圖，新增關聯只要標 `type: 'ref'`
 - store 在每列掛每個 ref 欄位的 `$欄位key`（父列），`formatColumnValue` 遇到 ref 就顯示對方的 `$label`，所以 detail／表格／列表／選擇器全都顯示名字、沒有 ref 專用元件
 - `DataForm` 的 `ref` 欄位是父表整表的可搜尋下拉清單（`v-autocomplete`），每列文字與搜尋比對都是對方的 `$label`；「前往對方」是欄位動作 `useGoToRefAction`，頁面自己列
-- `ensureLoaded(table)` 會把 ref 指到的表和虛擬欄位 `needs` 的表一起載（擋循環）
-- `useRelatedRows(子表, 父表)` 依關聯圖解析外鍵欄位，整表撈一次後在前端分組
+- store 也在每張父表的列掛 `$子表key`（指向這列的子列陣列，照子表 `defaultSort` 排），零設定；虛擬欄位與頁面直接讀它，不用另外查
+- `ensureLoaded(table)` 會把父表與子表一起載（擋循環）
 - 連帶刪除：ref 欄位標 `onDelete: 'cascade'`，父列被刪時 `store.removeMany` 順著關聯圖把子列也刪掉（多層遞迴，走同一條 `patch`＋`enqueue`）；`ensureLoaded` 會把 cascade 的子表一起載
 
 ### 資料存取
 - `stores/tables.ts`：每張表一份全 App 共用的快取，同一張表不會重複打 API
-- `useTableList` / `useSortedTableList` / `useTableRow` / `useRelatedRows` 都讀同一份
+- `useTableList` / `useSortedTableList` / `useTableRow` 都讀同一份
 - 寫入走 store 的 `create` / `update` / `remove` / `removeMany`：改快取並進佇列，呼叫端不用手動 refresh
 - 待寫入佇列 `pending`（含合併規則）與手動推送；四個寫入 action 是同步的，只動快取與佇列
 - `useNotify`：全 App 一則 snackbar 訊息，由 `AppShell` 渲染
@@ -140,6 +140,7 @@
 > 註：每分鐘 60 次寫入是 Sheets REST API 的配額，用 Apps Script 內建的 `SpreadsheetApp` 並不適用。批次要省的是**每次 Web App 請求的 script 冷啟成本（約 0.5～2 秒）**，不是配額。
 
 ### 資料一致性
+- **平行邊**：同一張子表有兩個 ref 欄位指向同一張父表時，`$子表key` 兩條會撞名、後掛的蓋掉前面的，目前沒有任何警告。改法是名字帶欄位（例如 `$item_fromWarehouse`），只有一條邊時維持 `$item`；`attachGetters` 裡看同一張子表有幾條邊就知道
 - 樂觀鎖定：`updatedAt` 欄位與衝突提示都還沒做
 
 ### UI 功能
@@ -178,7 +179,6 @@
 
 這些不是待辦，是「現在這樣做，但知道為什麼不理想」的紀錄。
 
-- **`refTable`／`needs` 沒有型別檢查**：只存代稱字串，不保證真的存在於 `schemas`。為了避免 `schema/types.ts` 反向 import `schema/index.ts` 造成循環依賴，先接受
-- **關聯只認「(子表, 父表)」這一對**：`getRelation`／`related('子表')`／`useRelatedRows` 都用表名找邊，同一張表若有兩個 ref 欄位指向同一張表（平行邊）只會走第一條。改法是以 ref 欄位為單位（`related('子表', '欄位key')`，只有一條邊時可省略），真的出現再改
+- **`refTable` 沒有型別檢查**：只存代稱字串，不保證真的存在於 `schemas`。為了避免 `schema/types.ts` 反向 import `schema/index.ts` 造成循環依賴，先接受
 - **`template/` 不在 `src/` 底下**，所以不會被 lint 與型別檢查掃到，元件 props 改了範本不會自動報錯。目前靠「把範本複製成一張暫時的表、建置過再刪掉」手動驗證
 - **刪除時會閃一下「找不到這筆資料」**：快取更新後、返回動畫還在跑的期間，detail 頁的 row 已經是 null。因為那筆資料確實已經不存在，語意上可接受，所以沒有為它增加凍結顯示的機制

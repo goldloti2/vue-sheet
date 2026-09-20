@@ -56,17 +56,11 @@ export type SchemaColumn<Row extends object = AnyRow> = {
   }
 }[ColumnType]
 
-// 虛擬欄位算值時能拿到的東西：related('子表') 是指向這一列的子表資料，只有 needs 宣告過的表拿得到
-export interface VirtualColumnContext {
-  related: <Child>(childTable: string) => Child[]
-}
-
-// 虛擬欄位：不在 Sheet 上、讀的時候才算。store 會把它掛成 row 上的 getter，讀起來跟真實欄位一樣（見 README 4.5）
+// 虛擬欄位：不在 Sheet 上、讀的時候才算。store 會把它掛成 row 上的 getter，讀起來跟真實欄位一樣（見 README 4.5）。
+// 父表走 row.$欄位key、子表走 row.$子表key，都是 store 掛好的，value 直接讀
 export type VirtualColumn<Row extends object = AnyRow> = {
   [T in ColumnType]: ColumnBase<Row, T> & {
-    // value 會透過 related() 讀哪些子表；沒宣告就不載
-    needs?: string[]
-    value: (row: Row, context: VirtualColumnContext) => ColumnValue<T>
+    value: (row: Row) => ColumnValue<T>
   }
 }[ColumnType]
 

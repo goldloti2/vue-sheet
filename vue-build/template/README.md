@@ -83,14 +83,14 @@
 | `columns[].default` | 新增表單的初始值，可省略。值或函式（`() => new Date()`），函式在打開表單時才求值 |
 | `columns[].required` / `min` / `max` | 內建的驗證約束，可省略。`min`／`max` 只有 number 有 |
 | `columns[].validate` | 自己的規則 `(value, row) => 錯誤訊息 \| null`，可省略。內建檢查過了、而且有值時才叫；`value` 跟 `type` 同型別、`row` 是整列（跨欄位比較直接讀） |
-| `virtualColumns` | 不在 Sheet 上、讀的時候才算的欄位，可省略。每個 `{ key, label, type, needs?, value: (row, { related }) => 值 }`，`type` 跟真實欄位一樣、決定 `value` 的回傳型別；要看子表就在 `needs` 列出表名，`related('子表')` 才拿得到指向這列的資料。store 會把它掛成 row 上的 getter，`row.key` 直接讀，排序、分組、顯示都跟真實欄位一樣。要讀父表就用 `row.$欄位key`（ref 欄位自動掛，`__Table__Row` 裡宣告過型別才看得到） |
+| `virtualColumns` | 不在 Sheet 上、讀的時候才算的欄位，可省略。每個 `{ key, label, type, value: row => 值 }`，`type` 跟真實欄位一樣、決定 `value` 的回傳型別。store 會把它掛成 row 上的 getter，`row.key` 直接讀，排序、分組、顯示都跟真實欄位一樣。父表用 `row.$欄位key`、子表用 `row.$子表key`（都是 store 自動掛的，`__Table__Row` 裡宣告過型別才看得到） |
 | `defaultSort` | 列表頁預設排序，多筆依序當 tiebreaker。可省略 |
 | `detailOrder` | 詳細頁欄位順序。可省略，省略就沿用 `columns` 順序 |
 | `formOrder` | 表單頁欄位順序。可省略，跟 `detailOrder` 分開設定 |
 
 ### 跨表關聯
 
-在 schema 欄位標 `{ type: 'ref', refTable: '另一張表' }` 就完成了，**不用**另外註冊。標好之後這個欄位在任何地方都顯示對方的名字（對方 schema 的 `labelColumn`）、表單會變成可搜尋的選擇器（要能從詳細頁點過去，在 `fieldActions` 列一個 `useGoToRefAction`）；也可以用 `useRelatedRows('子表', '父表')` 取得關聯資料。父表那筆被刪時要連子表一起刪，在 ref 欄位加 `onDelete: 'cascade'`，刪除動作不用改。
+在 schema 欄位標 `{ type: 'ref', refTable: '另一張表' }` 就完成了，**不用**另外註冊。標好之後這個欄位在任何地方都顯示對方的名字（對方 schema 的 `labelColumn`）、表單會變成可搜尋的選擇器（要能從詳細頁點過去，在 `fieldActions` 列一個 `useGoToRefAction`）。兩邊的列都能直接走到對方：子列 `row.$欄位key` 是父列、父列 `row.$子表key` 是子列陣列（照子表的 `defaultSort` 排），store 自動掛、關聯的表自動一起載，在 `__Table__Row` 補上型別就能用。父表那筆被刪時要連子表一起刪，在 ref 欄位加 `onDelete: 'cascade'`，刪除動作不用改。
 
 ---
 

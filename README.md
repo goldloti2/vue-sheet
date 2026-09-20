@@ -60,11 +60,13 @@ Google Sheets 不讓前端裸連（會暴露金鑰，而且每個使用者都要
 
 外鍵放在「多」的那一方，「一」的那一方不存任何清單。
 
-前端不需要為每個關聯另外寫東西：在子表的 schema 欄位標 `{ type: 'ref', refTable: '父表' }` 就完成了，`schema/relations.ts` 會在載入時掃過所有 schema 自動算出關聯圖。標好之後任何地方顯示這個欄位都是對方的**名字**而不是 id（要能從 detail 點過去就再列一個 `useGoToRefAction`），`DataForm` 把它做成可搜尋的下拉清單（`v-autocomplete`，父表整個載進共用快取），`useRelatedRows(子表, 父表)` 也能直接用，欄位名自動解析。
+前端不需要為每個關聯另外寫東西：在子表的 schema 欄位標 `{ type: 'ref', refTable: '父表' }` 就完成了，`schema/relations.ts` 會在載入時掃過所有 schema 自動算出關聯圖。標好之後任何地方顯示這個欄位都是對方的**名字**而不是 id（要能從 detail 點過去就再列一個 `useGoToRefAction`），`DataForm` 把它做成可搜尋的下拉清單（`v-autocomplete`，父表整個載進共用快取）。
 
-一列的名字由**它自己那張表**決定：`TableSchema.labelColumn` 指一個欄位 key（真實或虛擬都行），省略就是 id。「父表用底下第一筆子資料的名字稱呼」就是在父表上定義一個虛擬欄位、`labelColumn` 指它；指向父表的 ref 欄位什麼都不用寫。實作上 store 在每一列掛兩種 getter：`row.$label`（這一列的名字）和每個 ref 欄位一個 `row.$欄位key`（父表那一列），`formatColumnValue` 遇到 ref 就回 `row.$欄位key.$label`——所以 detail、表格、列表卡片、選擇器清單顯示的是同一個字串，沒有任何一處需要知道 ref 的特殊性。`ensureLoaded` 會把 ref 指到的表一起載，getter 才有東西讀。選擇器只能選到存在的列，所以 `ref` 欄位不另外驗證目標存不存在。
+一列的名字由**它自己那張表**決定：`TableSchema.labelColumn` 指一個欄位 key（真實或虛擬都行），省略就是 id。「父表用底下第一筆子資料的名字稱呼」就是在父表上定義一個虛擬欄位、`labelColumn` 指它；指向父表的 ref 欄位什麼都不用寫。實作上 store 在每一列掛三種 getter：`row.$label`（這一列的名字）、每個 ref 欄位一個 `row.$欄位key`（父列）、每張指向這張表的子表一個 `row.$子表key`（子列陣列，照子表的 `defaultSort` 排）。`formatColumnValue` 遇到 ref 就回 `row.$欄位key.$label`——所以 detail、表格、列表卡片、選擇器清單顯示的是同一個字串，沒有任何一處需要知道 ref 的特殊性。`ensureLoaded` 會把父表與子表一起載，getter 才有東西讀。選擇器只能選到存在的列，所以 `ref` 欄位不另外驗證目標存不存在。
 
-**連帶刪除**是可選的，開在 ref 欄位上：`{ type: 'ref', refTable: '父表', onDelete: 'cascade' }`。父列被刪時 `store.removeMany` 順著 `relations.ts` 找標了 cascade 的子表，把 ref 落在被刪 id 裡的子列也 `removeMany`，多層遞迴；走的是同一條 `patch`＋`enqueue`，所以佇列合併、流程存檔點與回滾都自動涵蓋，後端不用知道這件事。不標就維持原狀：子列留著、ref 指向不存在的 id（顯示退回 id）。子表要在快取裡才找得到子列，所以 `ensureLoaded` 把 cascade 的子表跟父表、`needs` 的表一起載；沒載就刪的話 `removeMany` 在動任何東西之前先拋錯。範圍只到「刪除當下」，Sheet 手動改出來的孤兒不管。
+`$子表key` 是「一」的那一方**不存清單**這條慣例的另一半：Sheet 上真相只有子表的 ref 欄位一份，父列上的陣列是讀的時候從它算出來的，所以新增／刪除子列不用維護任何東西。名字用子表的代稱（`$item`），零設定；同一張子表有兩個 ref 欄位指向同一張父表時會撞名，見 ROADMAP 的平行邊。代價是載一張表就會把它的父表與子表都載進來——這個 App 的規模無所謂，而且要顯示關聯資料本來就得整張載。
+
+**連帶刪除**是可選的，開在 ref 欄位上：`{ type: 'ref', refTable: '父表', onDelete: 'cascade' }`。父列被刪時 `store.removeMany` 順著 `relations.ts` 找標了 cascade 的子表，把 ref 落在被刪 id 裡的子列也 `removeMany`，多層遞迴；走的是同一條 `patch`＋`enqueue`，所以佇列合併、流程存檔點與回滾都自動涵蓋，後端不用知道這件事。不標就維持原狀：子列留著、ref 指向不存在的 id（顯示退回 id）。子表要在快取裡才找得到子列，`ensureLoaded` 本來就會把子表一起載；沒載就刪的話 `removeMany` 在動任何東西之前先拋錯。範圍只到「刪除當下」，Sheet 手動改出來的孤兒不管。
 
 🔲 `allowCreate`（清單裡直接「＋ 新增」對方一筆、回來自動選上）還沒做，卡在表單頁當流程呼叫端的幾個問題，見 ROADMAP。
 
@@ -116,7 +118,6 @@ src/
     useTableList.ts           整表讀取（走共用快取）
     useSortedTableList.ts     上者 + schema.defaultSort 排序；列表頁預設用這個
     useTableRow.ts            單筆讀取
-    useRelatedRows.ts         子表整表 + 依關聯圖的外鍵分組
     useTableForm.ts           useCreateForm / useEditForm，新增與編輯的共用邏輯
     useRouteId.ts             [id] 頁面取路由參數（見 4.3）
     useListOrder.ts           列表頁發布顯示順序、detail 頁取上/下一筆
@@ -166,7 +167,7 @@ src/
 **讀取**：同一張表全 App 只抓一次，共用一份。
 
 ```
-頁面 → useTableList/useSortedTableList/useTableRow/useRelatedRows
+頁面 → useTableList/useSortedTableList/useTableRow
      → stores/tables.ts（有快取就直接給，沒有才抓）
      → services/appScript.ts fetchTable
      → 後端回原始字串 → coerceRow 依 schema 轉型別 → 存進快取
@@ -312,11 +313,11 @@ onClick: () => runFlow(async () => {
 
 **虛擬欄位**（`virtualColumns`）：不存在 Sheet 上、讀的時候才算出來的欄位。來源可以是這一列自己（價格加手續費），也可以是子表（父表用「底下第一筆子資料的名字」當標題、子表金額的加總）。跟 `columns` 分開放，所以 `coerceRow`／`serializeRow`／`columnValues`／表單全部不用知道它——它們只認 `columns`，這就是「虛擬欄位除了不能編輯，其他都跟真實欄位一樣」的由來。
 
-它跟真實欄位共用同一套型別骨架：`ColumnTypes` 那張表定義每種 `type` 的值型別與專屬設定（`number` 的 `min`／`max`、`ref` 的 `refTable`……），`ColumnBase<T>` 是一個欄位最基本的資訊（`key`、`label`、`type` 加專屬設定），`SchemaColumn` 在上面疊 Sheet／表單相關的設定，`VirtualColumn` 疊 `value`／`needs`。以後加一種型別只改 `ColumnTypes`、`coerceValue`、`formatColumnValue`、`DataForm` 四處，兩種欄位自動都有。
+它跟真實欄位共用同一套型別骨架：`ColumnTypes` 那張表定義每種 `type` 的值型別與專屬設定（`number` 的 `min`／`max`、`ref` 的 `refTable`……），`ColumnBase<T>` 是一個欄位最基本的資訊（`key`、`label`、`type` 加專屬設定），`SchemaColumn` 在上面疊 Sheet／表單相關的設定，`VirtualColumn` 疊 `value`。以後加一種型別只改 `ColumnTypes`、`coerceValue`、`formatColumnValue`、`DataForm` 四處，兩種欄位自動都有。
 
 **schema 對著 Row 介面檢查**：各表宣告成 `TableSchema<XxxRow>`，欄位 `key`、`labelColumn`、`detailOrder`、`defaultSort` 就只能填 Row 有的欄位名，而且 `type` 要跟 Row 那個欄位的值型別對得上（`type: 'number'` 只能綁 `number | null` 的欄位）；虛擬欄位 `value` 拿到的 `row` 也直接是 `XxxRow`，不用轉型。Row 介面仍然是手寫的（`readonly total`、`readonly $parent?: ParentRow` 這些 store 會掛、TS 不知道的欄位要自己補），泛型只做單向檢查，不會反過來從 schema 產生介面——那需要兩段式 builder 加跨表的延遲查表，讀起來不再是一眼看完的物件字面值，不值得。框架端一律用不帶參數的 `TableSchema` 接，它的 Row 預設是 `any`（key 退化成 `string`、`row` 退化成 `any`）：不用 `object` 是因為 `keyof Row` 讓 TS 把 `Row` 判成逆變，`TableSchema<XxxRow>` 會塞不進 `TableSchema<object>`。
 
-**值是 store 掛在 row 上的 getter**（`attachGetters`，在 `load`／`create`／`update` 產生 row 物件時掛；同一個函式也掛 `$label`——這一列的名字，`TableSchema.labelColumn` 指定用哪一欄，省略就是 id，Row 介面 extends `RowBase` 就有它的型別——和 ref 的 `$欄位key`，見第三章）。所以 `row.title` 讀起來跟真實欄位一模一樣，`sortRows`、`groupRows`、`formatColumnValue`、列表頁的 `row.xxx` 全部不用知道它是算的；`defaultSort` 可以指它。getter 裡讀的是 `store.rows`，在 template 或 `computed` 裡讀就會被追蹤，子表一改當場重算。getter 設成不可列舉，`{ ...row }`、`Object.keys`、JSON 都看不到它，寫入端不會誤送。`needs` 列出的子表由 `ensureLoaded(table)` 順便載進來；`related('子表')` 回傳指向這一列的子表資料，照子表的 `defaultSort` 排（跟 `useRelatedRows` 一致），子表還沒載時是空的、載進來後自動重算。
+**值是 store 掛在 row 上的 getter**（`attachGetters`，在 `load`／`create`／`update` 產生 row 物件時掛；同一個函式也掛 `$label`——這一列的名字，`TableSchema.labelColumn` 指定用哪一欄，省略就是 id，Row 介面 extends `RowBase` 就有它的型別——和 ref 的 `$欄位key`，見第三章）。所以 `row.title` 讀起來跟真實欄位一模一樣，`sortRows`、`groupRows`、`formatColumnValue`、列表頁的 `row.xxx` 全部不用知道它是算的；`defaultSort` 可以指它。getter 裡讀的是 `store.rows`，在 template 或 `computed` 裡讀就會被追蹤，子表一改當場重算。getter 設成不可列舉，`{ ...row }`、`Object.keys`、JSON 都看不到它，寫入端不會誤送。跨表的值直接讀 store 掛好的 `row.$欄位key`（父列）與 `row.$子表key`（子列陣列），`ensureLoaded` 會把它們一起載；子表還沒載時陣列是空的、載進來後自動重算。
 
 **新增表單的初始值**分三層疊出來，後面的蓋前面的：schema 欄位的 `default`（跟來源無關的固定值）→ 導覽帶來的 `history.state.defaults`（從哪裡按新增決定）→ `useCreateForm` 的第三個參數（頁面自己算得出來的）。`default` 可以是值也可以是函式，函式在打開表單那一刻才求值（例如 `() => new Date()`）。
 

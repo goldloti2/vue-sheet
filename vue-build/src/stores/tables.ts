@@ -1,9 +1,10 @@
 import type { TableKey } from '@/schema'
+import type { Relation } from '@/schema/relations'
 import type { TableSchema } from '@/schema/types'
 import { defineStore } from 'pinia'
 import { computed, reactive, shallowRef } from 'vue'
 import { schemas } from '@/schema'
-import { cascadeRelations, getRelation } from '@/schema/relations'
+import { cascadeRelations, childRelations } from '@/schema/relations'
 import { rowLabel, serializeRow, sortRows } from '@/schema/types'
 import { validateRow } from '@/schema/validation'
 import { fetchTable, mutateTable } from '@/services/appScript'
@@ -76,16 +77,14 @@ export const useTablesStore = defineStore('tables', () => {
     }
   }
 
-  // 這張表要用就得一起載的其他表：ref 指到的父表、虛擬欄位 needs 的表、刪除時要連帶刪的子表
+  // 這張表要用就得一起載的其他表：ref 指到的父表（$欄位key）與指向它的子表（$子表key、連帶刪除）
   function tablesNeededBy (table: TableKey): TableKey[] {
-    const schema = schemas[table]
-    const parents = schema.columns.flatMap(column => column.type === 'ref' ? [column.refTable] : [])
-    const needs = (schema.virtualColumns ?? []).flatMap(column => column.needs ?? [])
-    const cascades = cascadeRelations(table).map(relation => relation.childTable)
-    return [...new Set([...parents, ...needs, ...cascades])] as TableKey[]
+    const parents = schemas[table].columns.flatMap(column => column.type === 'ref' ? [column.refTable as TableKey] : [])
+    const children = childRelations(table).map(relation => relation.childTable)
+    return [...new Set([...parents, ...children])]
   }
 
-  // 相關的表一起載，getter 才有東西讀、連帶刪除才找得到子列。seen 擋住父子互相需要的循環
+  // 關聯的表一起載，getter 才有東西讀、連帶刪除才找得到子列。seen 擋住父子互相需要的循環
   async function ensureLoaded (table: TableKey, seen = new Set<TableKey>()) {
     if (seen.has(table)) {
       return
@@ -98,11 +97,10 @@ export const useTablesStore = defineStore('tables', () => {
     ])
   }
 
-  // 指向這一列的子表資料，照子表的 defaultSort 排。子表還沒載就是空的，載進來後讀它的地方會自己重算
-  function relatedRows (parentTable: TableKey, childTable: TableKey, parentId: string): unknown[] {
-    const { column } = getRelation(childTable, parentTable)
-    const matching = (rows[childTable] ?? []).filter(row => (row as Record<string, unknown>)[column] === parentId)
-    return sortRows(matching, schemas[childTable])
+  // 沿著一條關聯找指向這一列的子列，照子表的 defaultSort 排。子表還沒載就是空的，載進來後讀它的地方會自己重算
+  function relatedRows (relation: Relation, parentId: string): unknown[] {
+    const matching = (rows[relation.childTable] ?? []).filter(row => (row as Record<string, unknown>)[relation.column] === parentId)
+    return sortRows(matching, schemas[relation.childTable])
   }
 
   function defineGetter (row: object, key: string, get: () => unknown): void {
@@ -110,15 +108,13 @@ export const useTablesStore = defineStore('tables', () => {
   }
 
   // 掛在 row 上、讀起來跟真實欄位一樣的 getter（不可列舉，spread / JSON / Object.keys 都看不到）：
-  // 虛擬欄位、$label（這一列的名字）、每個 ref 欄位的 $欄位key（父表那一列）
+  // 虛擬欄位、$label（這一列的名字）、每個 ref 欄位的 $欄位key（父列）、每張子表的 $子表key（子列陣列）
   function attachGetters<Row extends HasId> (table: TableKey, row: Row): Row {
     // 用不帶 Row 的 TableSchema 接，否則 schemas[table] 是各表 schema 的 union，value 的參數會變成所有 Row 的交集
     const schema: TableSchema = schemas[table]
 
     for (const column of schema.virtualColumns ?? []) {
-      defineGetter(row, column.key, () => column.value(row, {
-        related: <Child>(childTable: string) => relatedRows(table, childTable as TableKey, row.id) as Child[],
-      }))
+      defineGetter(row, column.key, () => column.value(row))
     }
 
     defineGetter(row, '$label', () => rowLabel(row, schema))
@@ -131,6 +127,10 @@ export const useTablesStore = defineStore('tables', () => {
           return (rows[parentTable] ?? []).find(candidate => (candidate as HasId).id === id)
         })
       }
+    }
+
+    for (const relation of childRelations(table)) {
+      defineGetter(row, `$${relation.childTable}`, () => relatedRows(relation, row.id))
     }
 
     return row

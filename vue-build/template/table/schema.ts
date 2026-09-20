@@ -3,7 +3,7 @@ import type { RowBase, TableSchema } from './types'
 import { prefixedId } from './types'
 
 // 每個 column 一個欄位；id 與 $label 來自 RowBase，不放進 columns。
-// 虛擬欄位、ref 對應的 $欄位key（父列）、指向這張表的 $子表key（子列陣列）也要列在這裡（readonly），
+// 虛擬欄位、ref 對應的 $欄位key（父列）、指向這張表的 $子表_欄位key（子列陣列）也要列在這裡（readonly），
 // schema 會對著這個介面檢查 key 跟型別
 export interface __Table__Row extends RowBase {
   name: string | null
@@ -11,7 +11,7 @@ export interface __Table__Row extends RowBase {
   date: Date | null
   // readonly total: number | null
   // readonly $parent?: ParentRow
-  // readonly $child: ChildRow[]
+  // readonly $child_parent: ChildRow[]
 }
 
 export const __table__Schema: TableSchema<__Table__Row> = {
@@ -49,10 +49,11 @@ export const __table__Schema: TableSchema<__Table__Row> = {
   // 以下都可省略
   // 虛擬欄位：不在 Sheet 上、讀的時候才算出來的欄位，store 會掛成 row 上的 getter，用法跟真實欄位一樣
   // （row.total 直接讀、可排序分組、DataDetail/DataTable 自動顯示）。type 決定 value 的回傳型別，row 就是 __Table__Row；
-  // 父表讀 row.$parent（ref 欄位自動掛）、子表讀 row.$child（指向這張表的子表自動掛、照子表 defaultSort 排），關聯的表會一起載
+  // 父表讀 row.$parent（ref 欄位自動掛）、子表讀 row.$子表_欄位（例如 child 表用 parent 欄位指過來就是 row.$child_parent，
+  // 照子表 defaultSort 排），關聯的表會一起載
   // virtualColumns: [
   //   { key: 'total', label: '總額', type: 'number', value: row => (row.amount ?? 0) * 2 },
-  //   { key: 'title', label: '名稱', type: 'text', value: row => row.$child[0]?.name ?? '(空)' },
+  //   { key: 'title', label: '名稱', type: 'text', value: row => row.$child_parent[0]?.name ?? '(空)' },
   //   { key: 'parentName', label: '上層名稱', type: 'text', value: row => row.$parent?.name ?? '' },
   // ],
   // 列表頁預設排序，多筆依序當 tiebreaker

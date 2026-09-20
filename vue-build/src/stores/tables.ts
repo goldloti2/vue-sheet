@@ -77,7 +77,7 @@ export const useTablesStore = defineStore('tables', () => {
     }
   }
 
-  // 這張表要用就得一起載的其他表：ref 指到的父表（$欄位key）與指向它的子表（$子表key、連帶刪除）
+  // 這張表要用就得一起載的其他表：ref 指到的父表（$欄位key）與指向它的子表（$子表_欄位key、連帶刪除）
   function tablesNeededBy (table: TableKey): TableKey[] {
     const parents = schemas[table].columns.flatMap(column => column.type === 'ref' ? [column.refTable as TableKey] : [])
     const children = childRelations(table).map(relation => relation.childTable)
@@ -108,7 +108,7 @@ export const useTablesStore = defineStore('tables', () => {
   }
 
   // 掛在 row 上、讀起來跟真實欄位一樣的 getter（不可列舉，spread / JSON / Object.keys 都看不到）：
-  // 虛擬欄位、$label（這一列的名字）、每個 ref 欄位的 $欄位key（父列）、每張子表的 $子表key（子列陣列）
+  // 虛擬欄位、$label（這一列的名字）、每個 ref 欄位的 $欄位key（父列）、每張子表的 $子表_欄位key（子列陣列）
   function attachGetters<Row extends HasId> (table: TableKey, row: Row): Row {
     // 用不帶 Row 的 TableSchema 接，否則 schemas[table] 是各表 schema 的 union，value 的參數會變成所有 Row 的交集
     const schema: TableSchema = schemas[table]
@@ -129,8 +129,9 @@ export const useTablesStore = defineStore('tables', () => {
       }
     }
 
+    // 名字帶上子表的 ref 欄位（$child_parent），同一張子表兩個 ref 指過來也不會撞
     for (const relation of childRelations(table)) {
-      defineGetter(row, `$${relation.childTable}`, () => relatedRows(relation, row.id))
+      defineGetter(row, `$${relation.childTable}_${relation.column}`, () => relatedRows(relation, row.id))
     }
 
     return row

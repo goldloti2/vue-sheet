@@ -2,34 +2,40 @@ import type { PageAction } from '@/composables/actions/useTableActions'
 import type { InjectionKey } from 'vue'
 import { inject, onActivated, onDeactivated, onUnmounted, watch } from 'vue'
 
-export type ActionSlotSetter = (actions: PageAction[]) => void
+export type SlotSetter<Value> = (value: Value) => void
+export type ActionSlotSetter = SlotSetter<PageAction[]>
 
-// 把頁面的動作註冊到 `AppShell` 上的某一塊（App Bar、底部列）。
-export function registerActions (key: InjectionKey<ActionSlotSetter>, source: () => PageAction[]): void {
-  const setActions = inject(key)
-  if (!setActions) {
+// 把頁面的東西登記到 `AppShell` 上的某一塊，離開（含被 KeepAlive 收起來）就還原成 empty
+export function registerSlot<Value> (key: InjectionKey<SlotSetter<Value>>, source: () => Value, empty: Value): void {
+  const setValue = inject(key)
+  if (!setValue) {
     return
   }
 
   let isActive = true
 
-  watch(source, actions => {
+  watch(source, value => {
     if (isActive) {
-      setActions(actions)
+      setValue(value)
     }
   }, { immediate: true })
 
   onActivated(() => {
     isActive = true
-    setActions(source())
+    setValue(source())
   })
 
   onDeactivated(() => {
     isActive = false
-    setActions([])
+    setValue(empty)
   })
 
   onUnmounted(() => {
-    setActions([])
+    setValue(empty)
   })
+}
+
+// 動作版：App Bar、底部列
+export function registerActions (key: InjectionKey<ActionSlotSetter>, source: () => PageAction[]): void {
+  registerSlot(key, source, [])
 }

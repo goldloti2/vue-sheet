@@ -63,6 +63,12 @@
 - 表單：`DataForm`（依 `column.type` 自動選輸入元件）
 - 其他：`PageFab`、`TabView`、`RecordNav`、`AppDialog`、`ConfirmDialog`、`FieldsDialog`（只顯示幾欄的 `DataForm`）
 
+### 搜尋
+- 欄位開 `searchable: true` 才進搜尋（預設關），真實與虛擬欄位都行；`text`／`ref` 是搜尋列的比對對象，其他型別留給篩選
+- `useSearch(query, rows, schema)`：純函數式，每列的可搜尋文字（searchable 欄位的顯示文字接起來、小寫）只跟 rows 一起重算，敲字只做 `includes`；query 依空白切詞、雙引號包起來的當一個詞，每個詞都要命中（AND）
+- **query 屬於頁面**：`useAppBarSearch(query, { onFilter? })` 登記後 App Bar 才出現放大鏡，按下去整條換成輸入框（給了 `onFilter` 右側多一顆篩選鈕）；關閉清空 query、換頁自動收起、回到還帶著 query 的頁面自動重開。頁籤＝篩選的頁就是 `rows → useSearch → 頁籤切`，搜尋跨所有頁籤；多面板的頁把同一個 `query` 傳進每個面板各自 `useSearch`，不需要「哪個面板是當前」的訊號
+- 只為搜尋存在的虛擬欄位（例如父表把所有子列的名字接起來）照常寫、標 `searchable`，不排進 `detailOrder` 就不會顯示
+
 ### 動作系統
 - `PageAction` 型別（`{ key, label, icon, onClick, confirm? }`），FAB、App Bar、底部動作列、detail 欄位動作共用同一種描述；內建 builder 的 label／icon 可用 `ActionLook` 覆寫
 - 通用 builder：`useNewAction` / `useEditAction` / `useDeleteAction` / `useBulkDeleteAction` / `useQuickEditAction`，一律回傳 `ComputedRef<PageAction[]>`
@@ -143,7 +149,7 @@
 - 樂觀鎖定：`updatedAt` 欄位與衝突提示都還沒做
 
 ### UI 功能
-- 搜尋列、篩選、排序的操作介面（目前排序只有 schema 的 `defaultSort`，使用者不能自己改）。搜尋的「列 → 可搜尋文字」可以從 `row.$label` 起步，再看要不要多比對幾欄
+- 篩選與排序的操作介面（目前排序只有 schema 的 `defaultSort`，使用者不能自己改）。`searchable: true` 的非字串欄位（`select`／`number`／`date`）就是篩選的對象，入口是搜尋欄右側的篩選鈕（`useAppBarSearch` 的 `onFilter`，接口留好了）
 - 關聯選擇器的 `allowCreate`：清單最上面一項「＋ 新增…」，開父表的新增表單、回來自動選上。看起來是 `runStep('/父表/new')`，但表單頁當「呼叫端」跟動作當呼叫端不一樣，四件事要先解：
   - 回來時 `useCreateForm` 的 `onActivated` 會把表單重置，使用者填到一半的東西會丟掉——要能分辨「從子步驟回來」和「重新進入」
   - 離開表單頁去開父表的新增會被 `useLeaveGuard` 攔下來問要不要放棄

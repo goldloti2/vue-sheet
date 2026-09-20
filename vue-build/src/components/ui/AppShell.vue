@@ -1,12 +1,14 @@
 <script lang="ts" setup>
   import type { PageAction } from '@/composables/actions/useTableActions'
-  import { mdiArrowLeft, mdiDotsVertical, mdiRefresh } from '@mdi/js'
-  import { computed, onBeforeUnmount, onMounted, provide, shallowRef } from 'vue'
+  import type { AppBarSearch } from '@/composables/useAppBarSearch'
+  import { mdiArrowLeft, mdiDotsVertical, mdiFilterVariant, mdiMagnify, mdiRefresh } from '@mdi/js'
+  import { computed, onBeforeUnmount, onMounted, provide, shallowRef, watch } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
   import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
   import FieldsDialog from '@/components/ui/FieldsDialog.vue'
   import { provideActionRunner } from '@/composables/useActionRunner'
   import { appBarActionsKey } from '@/composables/useAppBarActions'
+  import { appBarSearchKey } from '@/composables/useAppBarSearch'
   import { confirmFields, fieldsDialog } from '@/composables/useAskFields'
   import { bottomActionsKey } from '@/composables/useBottomActions'
   import { acceptConfirm, confirmDialog } from '@/composables/useConfirm'
@@ -44,6 +46,25 @@
   provide(bottomActionsKey, actions => {
     bottomActions.value = actions
   })
+
+  // 頁面登記了搜尋才有放大鏡；按下去 App Bar 換成輸入框。query 是頁面的 ref，關掉時清空
+  const search = shallowRef<AppBarSearch | null>(null)
+  provide(appBarSearchKey, value => {
+    search.value = value
+  })
+  const searchOpen = shallowRef(false)
+
+  // 換頁就收起來；回到還帶著 query 的頁面（KeepAlive）就重新打開，讓列表跟搜尋欄一致
+  watch(search, value => {
+    searchOpen.value = value !== null && value.query.value !== ''
+  })
+
+  function closeSearch () {
+    if (search.value) {
+      search.value.query.value = ''
+    }
+    searchOpen.value = false
+  }
 
   // 動作的執行與確認框都在這裡，頁面只負責註冊動作
   const runAction = provideActionRunner()
@@ -89,10 +110,37 @@
 
 <template>
   <v-app-bar>
-    <v-app-bar-nav-icon :icon="showBack ? mdiArrowLeft : undefined" @click="handleLeadingIconClick" />
-    <v-app-bar-title>{{ title }}</v-app-bar-title>
+    <!-- 搜尋模式：整條 App Bar 換成返回鍵 + 輸入框，標題與動作先讓位 -->
+    <template v-if="searchOpen && search">
+      <v-app-bar-nav-icon aria-label="關閉搜尋" :icon="mdiArrowLeft" @click="closeSearch" />
 
-    <template #append>
+      <!-- clearable 清空時給的是 null，收回成空字串 -->
+      <v-text-field
+        :append-inner-icon="search.onFilter ? mdiFilterVariant : undefined"
+        autofocus
+        bg-color="grey-lighten-3"
+        class="mr-4"
+        clearable
+        density="compact"
+        flat
+        hide-details
+        :model-value="search.query.value"
+        placeholder="搜尋"
+        rounded="pill"
+        variant="solo"
+        @click:append-inner="search.onFilter"
+        @update:model-value="(value) => search && (search.query.value = value ?? '')"
+      />
+    </template>
+
+    <template v-else>
+      <v-app-bar-nav-icon :icon="showBack ? mdiArrowLeft : undefined" @click="handleLeadingIconClick" />
+      <v-app-bar-title>{{ title }}</v-app-bar-title>
+    </template>
+
+    <template v-if="!(searchOpen && search)" #append>
+      <v-btn v-if="search" aria-label="搜尋" :icon="mdiMagnify" @click="searchOpen = true" />
+
       <template v-if="appBarActions.length <= 2">
         <v-btn
           v-for="action in appBarActions"

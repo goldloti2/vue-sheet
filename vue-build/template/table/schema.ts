@@ -24,7 +24,8 @@ export const __table__Schema: TableSchema<__Table__Row> = {
   newId: prefixedId('TPL'),
   columns: [
     // label 就是 Sheet 表頭文字；兩者不同時才另外加 sheetHeader: '實際表頭'
-    { key: 'name', label: '名稱', type: 'text', required: true },
+    // searchable 開了才進搜尋列（text / ref）；其他型別開了是給篩選用（還沒做）。預設關
+    { key: 'name', label: '名稱', type: 'text', required: true, searchable: true },
     { key: 'amount', label: '金額', type: 'number', min: 0 },
     { key: 'date', label: '日期', type: 'date' },
 

@@ -123,6 +123,8 @@ src/
     useListOrder.ts           列表頁發布顯示順序、detail 頁取上/下一筆
     useActionSlot.ts          把動作註冊到 AppShell 某一塊的共用機制（含 KeepAlive 防護）
     useAppBarActions.ts       註冊到 App Bar 右側
+    useAppBarSearch.ts        登記頁面的搜尋 query，App Bar 才出現放大鏡（見八）
+    useSearch.ts              useSearch(query, rows, schema)：依 searchable 欄位過濾 rows
     useBottomActions.ts       註冊到螢幕最底端，暫時取代導覽列（表單頁用）
     useActionRunner.ts        動作的執行（confirm 先問、錯誤進 snackbar），由 AppShell 提供
     useConfirm.ts             confirm()：是／否對話框，回傳 promise
@@ -335,7 +337,7 @@ onClick: () => runFlow(async () => {
 
 不管套到哪張表都是同一套範本，差別只在開了哪些功能。實際檔案見 `vue-build/template/`。
 
-- **列表**：卡片式（適合瀏覽）或表格式（適合比對、多選）。排序依 `schema.defaultSort`。可選功能：分組、Tabs 篩選、多選（🔲 搜尋列還沒做）
+- **列表**：卡片式（適合瀏覽）或表格式（適合比對、多選）。排序依 `schema.defaultSort`。可選功能：分組、Tabs 篩選、多選、搜尋（`useSearch` + `useAppBarSearch`，見八）
 - **詳細**：顯示單筆所有欄位（含 schema 的虛擬欄位），順序依 `schema.detailOrder`。可選功能：內嵌關聯子表格、編輯/刪除入口
 - **表單**：依欄位型別自動選輸入元件，順序依 `schema.formOrder`。新增與編輯共用同一套版面
 - **總覽**：彙整多筆/跨表的聚合數字。目前沒有具體需求，保留位置
@@ -417,6 +419,7 @@ hooks: {
 - 長按列表項目進入多選模式，選取狀態一有內容就自動進入、清空就自動離開，不另外存 boolean
 - 右下角 FAB：動作 ≤2 顆固定顯示，≥3 顆收合成 speed-dial
 - App Bar 右側動作按鈕：頁面用 `useAppBarActions()` 註冊，≤2 顆直接顯示，≥3 顆收成「⋮」下拉。跟 FAB 不同，這裡走 **provide/inject** 而非 Teleport——app-bar 在轉場動畫的 `.page-transition-viewport` 之外，不會被 `transform` 影響，不需要真的搬 DOM
+- **搜尋在 App Bar 上**：頁面 `useAppBarSearch(query)` 登記後才出現放大鏡，按下去整條 App Bar 換成「←＋輸入框」（淺灰藥丸形），標題與動作先讓位；← 關閉並清空 query。跟動作一樣走 `registerSlot`，換頁自動收起；回到還帶著 query 的頁面（KeepAlive）會自動重開，讓搜尋欄跟被過濾的列表一致。**query 是頁面的 ref，AppShell 只負責讓使用者打字進去**——過濾本身是頁面用 `useSearch(query, rows, schema)` 做的：只比 `searchable: true` 的 `text`／`ref` 欄位（真實與虛擬都行，ref 比的是父列的名字），每列的可搜尋文字只在 rows 變時重算、敲字只做 `includes`；query 依空白切詞、雙引號包起來的當一個詞，每個詞都要命中。全部小寫比對，不做全半形正規化。有頁籤的頁先搜再依頁籤切，所以一個 query 跨所有頁籤；多面板的頁把同一個 `query` 傳進每個面板各自過濾，不需要「哪個面板是當前」的訊號。輸入框右側的篩選鈕要給 `onFilter` 才出現，篩選本身還沒做（🔲，見 ROADMAP）
 - **表單頁的按鈕放在螢幕最底端**，用 `useBottomActions()` 註冊，暫時取代底部導覽列，離開頁面自動還原。這樣「取消／送出」永遠在拇指構得到的地方，不用把長表單捲到最後才按得到；而表單本來就是「要按到才算完成」的頁面，此時不該讓人分心去切分頁
 - FAB、App Bar、底部動作列共用同一種 `PageAction` 型別 `{ key, label, icon, onClick, confirm? }`。頁面自己決定用哪幾個、放哪裡。`icon` 一律要給——底部動作列雖然只顯示文字，但形狀統一，同一個動作搬到別的位置不用補東西
 - 內建 builder（新增／編輯／刪除／批次刪除／ref 前往／開網址）的 `label` 與 `icon` 都有預設，各表要換就傳 `ActionLook`（`{ label?, icon? }`）覆寫；自訂的動作（快速編輯、改成某值）沒有預設，在各表的 `use表名Actions.ts` 裡宣告時自己給。框架的預設圖示集中在 `useTableActions.ts` 的 `actionIcons`，表單的取消／送出也從那裡拿

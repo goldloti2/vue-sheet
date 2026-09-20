@@ -42,6 +42,8 @@ export type ColumnBase<Row extends object = AnyRow, T extends ColumnType = Colum
   key: ColumnKey<Row, ColumnValue<T>>
   label: string
   type: T
+  // 開了才進搜尋／篩選：text 與 ref 是搜尋列的比對對象，其他型別是篩選（還沒做）。預設關
+  searchable?: boolean
 } & ColumnExtra<T>
 
 // 真實欄位：Sheet 上有的，多了表頭對應與表單設定

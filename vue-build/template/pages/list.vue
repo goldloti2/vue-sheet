@@ -22,10 +22,11 @@
 
   const { data, loading, error } = useSortedTableList<__Table__Row>('__table__', __table__Schema)
 
-  // 要搜尋列的話（哪些欄位能搜看 schema 的 searchable）：上面的 data 改名成 allRows，再
+  // 要搜尋列與篩選的話（哪些欄位能搜、能篩看 schema 的 searchable）：上面的 data 改名成 allRows，再
   //   const query = ref('')
-  //   useAppBarSearch(query)
-  //   const data = useSearch(query, allRows, __table__Schema)
+  //   const filters = ref<Filters>({})
+  //   useAppBarSearch(query, { schema: __table__Schema, filters, rows: allRows })
+  //   const data = useSearch(query, useFilter(filters, allRows, __table__Schema), __table__Schema)
 
   useListOrder('__table__', computed(() => data.value.map(row => row.id)))
 </script>

@@ -6,13 +6,16 @@
   import { useRoute, useRouter } from 'vue-router'
   import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
   import FieldsDialog from '@/components/ui/FieldsDialog.vue'
+  import FilterDrawer from '@/components/ui/FilterDrawer.vue'
   import { provideActionRunner } from '@/composables/useActionRunner'
   import { appBarActionsKey } from '@/composables/useAppBarActions'
   import { appBarSearchKey } from '@/composables/useAppBarSearch'
   import { confirmFields, fieldsDialog } from '@/composables/useAskFields'
   import { bottomActionsKey } from '@/composables/useBottomActions'
   import { acceptConfirm, confirmDialog } from '@/composables/useConfirm'
+  import { hasActiveFilter } from '@/composables/useFilter'
   import { notice, notify } from '@/composables/useNotify'
+  import { overlayOpenKey } from '@/composables/useOverlay'
   import { navigationCount } from '@/router'
   import { useTablesStore } from '@/stores/tables'
 
@@ -54,15 +57,26 @@
   })
   const searchOpen = shallowRef(false)
 
-  // 換頁就收起來；回到還帶著 query 的頁面（KeepAlive）就重新打開，讓列表跟搜尋欄一致
+  // 換頁就收起來；回到還帶著 query 或篩選的頁面（KeepAlive）就重新打開，讓列表跟搜尋欄一致
   watch(search, value => {
-    searchOpen.value = value !== null && value.query.value !== ''
+    searchOpen.value = value !== null && (value.query.value !== '' || hasActiveFilter(value.filter?.filters.value ?? {}))
+    filterOpen.value = false
   })
 
+  // 篩選收在搜尋欄裡：右側那顆鈕開右側抽屜，有條件生效時鈕變主色。抽屜開著時 FAB 讓開
+  const filterOpen = shallowRef(false)
+  provide(overlayOpenKey, filterOpen)
+  const filterActive = computed(() => hasActiveFilter(search.value?.filter?.filters.value ?? {}))
+
+  // 關閉搜尋＝清掉 query 與篩選、收起抽屜，列表回到全部
   function closeSearch () {
     if (search.value) {
       search.value.query.value = ''
+      if (search.value.filter) {
+        search.value.filter.filters.value = {}
+      }
     }
+    filterOpen.value = false
     searchOpen.value = false
   }
 
@@ -116,7 +130,6 @@
 
       <!-- clearable 清空時給的是 null，收回成空字串 -->
       <v-text-field
-        :append-inner-icon="search.onFilter ? mdiFilterVariant : undefined"
         autofocus
         bg-color="grey-lighten-3"
         class="mr-4"
@@ -128,9 +141,19 @@
         placeholder="搜尋"
         rounded="pill"
         variant="solo"
-        @click:append-inner="search.onFilter"
         @update:model-value="(value) => search && (search.query.value = value ?? '')"
-      />
+      >
+        <template v-if="search.filter" #append-inner>
+          <v-btn
+            aria-label="篩選"
+            :color="filterActive ? 'primary' : undefined"
+            density="comfortable"
+            :icon="mdiFilterVariant"
+            variant="text"
+            @click="filterOpen = true"
+          />
+        </template>
+      </v-text-field>
     </template>
 
     <template v-else>
@@ -201,6 +224,14 @@
     :schema="fieldsDialog.schema"
     :title="fieldsDialog.title"
     @confirm="confirmFields"
+  />
+
+  <FilterDrawer
+    v-if="search?.filter"
+    v-model="search.filter.filters.value"
+    v-model:open="filterOpen"
+    :rows="search.filter.rows.value"
+    :schema="search.filter.schema"
   />
 
   <v-snackbar v-model="notice.open" :color="notice.color">{{ notice.text }}</v-snackbar>

@@ -63,10 +63,12 @@
 - 表單：`DataForm`（依 `column.type` 自動選輸入元件）
 - 其他：`PageFab`、`TabView`、`RecordNav`、`AppDialog`、`ConfirmDialog`、`FieldsDialog`（只顯示幾欄的 `DataForm`）
 
-### 搜尋
-- 欄位開 `searchable: true` 才進搜尋（預設關），真實與虛擬欄位都行；`text`／`ref` 是搜尋列的比對對象，其他型別留給篩選
+### 搜尋與篩選
+- 欄位開 `searchable: true` 才進搜尋或篩選（預設關），真實與虛擬欄位都行：`text`／`ref` 是搜尋列的比對對象，`select`／`number`／`date` 是篩選抽屜的欄位
 - `useSearch(query, rows, schema)`：純函數式，每列的可搜尋文字（searchable 欄位的顯示文字接起來、小寫）只跟 rows 一起重算，敲字只做 `includes`；query 依空白切詞、雙引號包起來的當一個詞，每個詞都要命中（AND）
-- **query 屬於頁面**：`useAppBarSearch(query, { onFilter? })` 登記後 App Bar 才出現放大鏡，按下去整條換成輸入框（給了 `onFilter` 右側多一顆篩選鈕）；關閉清空 query、換頁自動收起、回到還帶著 query 的頁面自動重開。頁籤＝篩選的頁就是 `rows → useSearch → 頁籤切`，搜尋跨所有頁籤；多面板的頁把同一個 `query` 傳進每個面板各自 `useSearch`，不需要「哪個面板是當前」的訊號
+- `useFilter(filters, rows, schema)`：`Filters = { 欄位key: { values?, min?, max? } }`，select 用 `values`（`null` 是空白）、number／date 共用 `min`／`max`；欄位之間 AND、`values` 之間 OR；設了範圍而值是空的列排除、select 只有勾了空白才留
+- **query 與 filters 都屬於頁面**：`useAppBarSearch(query, { schema, filters, rows }?)` 登記後 App Bar 才出現放大鏡，按下去整條換成輸入框；給了 filter 就在輸入框內最右多一顆篩選鈕（有條件生效時主色），開右側抽屜 `FilterDrawer`，改了即時生效。← 關閉清掉 query 與篩選、換頁自動收起、回到還帶著 query 或篩選的頁面自動重開；抽屜開著時 `PageFab` 讓開（`useOverlay` 的 `overlayOpenKey`）。頁面串法 `rows → useFilter → useSearch → 頁籤切`，跨所有頁籤；多面板的頁把同一組 query／filters 傳進每個面板各自過濾，不需要「哪個面板是當前」的訊號
+- 抽屜：欄位順序照 `detailOrder`（沒排的接在後面）；select 是等寬 grid 的 chip，一列幾顆由最長選項的估計寬度決定，只列 rows 裡出現過的值（照 `options` 順序、`options` 沒有的排最後、有空的列才有「(空白)」）；number 兩格最小／最大、date 兩格從／到
 - 只為搜尋存在的虛擬欄位（例如父表把所有子列的名字接起來）照常寫、標 `searchable`，不排進 `detailOrder` 就不會顯示
 
 ### 動作系統
@@ -149,7 +151,7 @@
 - 樂觀鎖定：`updatedAt` 欄位與衝突提示都還沒做
 
 ### UI 功能
-- 篩選與排序的操作介面（目前排序只有 schema 的 `defaultSort`，使用者不能自己改）。`searchable: true` 的非字串欄位（`select`／`number`／`date`）就是篩選的對象，入口是搜尋欄右側的篩選鈕（`useAppBarSearch` 的 `onFilter`，接口留好了）
+- 排序的操作介面（目前只有 schema 的 `defaultSort`，使用者不能自己改）
 - 關聯選擇器的 `allowCreate`：清單最上面一項「＋ 新增…」，開父表的新增表單、回來自動選上。看起來是 `runStep('/父表/new')`，但表單頁當「呼叫端」跟動作當呼叫端不一樣，四件事要先解：
   - 回來時 `useCreateForm` 的 `onActivated` 會把表單重置，使用者填到一半的東西會丟掉——要能分辨「從子步驟回來」和「重新進入」
   - 離開表單頁去開父表的新增會被 `useLeaveGuard` 攔下來問要不要放棄

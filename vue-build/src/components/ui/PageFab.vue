@@ -1,9 +1,10 @@
 <script lang="ts" setup>
   import type { PageAction } from '@/composables/actions/useTableActions'
   import { mdiClose, mdiDotsVertical } from '@mdi/js'
-  import { computed, onActivated, onDeactivated, shallowRef } from 'vue'
+  import { computed, inject, onActivated, onDeactivated, ref, shallowRef } from 'vue'
   import { useLayout } from 'vuetify'
   import { useRunAction } from '@/composables/useActionRunner'
+  import { overlayOpenKey } from '@/composables/useOverlay'
 
   defineProps<{
     actions: PageAction[]
@@ -15,6 +16,9 @@
   const offsetStyle = computed(() => ({ bottom: `${mainRect.value.bottom + 16}px` }))
 
   const open = shallowRef(false)
+
+  // 篩選抽屜這種蓋整頁的東西開著時先讓開，FAB 的 z-index 本來就在 layout 之上
+  const overlayOpen = inject(overlayOpenKey, ref(false))
 
   const isActive = shallowRef(true)
   onActivated(() => {
@@ -34,7 +38,7 @@
 
 <template>
   <Teleport to="body">
-    <div v-if="isActive && actions.length > 0" class="page-fab" :style="offsetStyle">
+    <div v-if="isActive && !overlayOpen && actions.length > 0" class="page-fab" :style="offsetStyle">
       <template v-if="actions.length <= 2">
         <v-fab
           v-for="action in actions"

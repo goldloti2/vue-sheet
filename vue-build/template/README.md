@@ -83,7 +83,7 @@
 | `columns[].default` | 新增表單的初始值，可省略。值或函式（`() => new Date()`），函式在打開表單時才求值 |
 | `columns[].required` / `min` / `max` | 內建的驗證約束，可省略。`min`／`max` 只有 number 有 |
 | `columns[].validate` | 自己的規則 `(value, row) => 錯誤訊息 \| null`，可省略。內建檢查過了、而且有值時才叫；`value` 跟 `type` 同型別、`row` 是整列（跨欄位比較直接讀） |
-| `columns[].searchable` | 開了才進搜尋（`text`／`ref`）或篩選（其他型別，還沒做），預設關。虛擬欄位也能標 |
+| `columns[].searchable` | 開了才進搜尋（`text`／`ref`）或篩選抽屜（`select`／`number`／`date`），預設關。虛擬欄位也能標 |
 | `virtualColumns` | 不在 Sheet 上、讀的時候才算的欄位，可省略。每個 `{ key, label, type, value: row => 值 }`，`type` 跟真實欄位一樣、決定 `value` 的回傳型別。store 會把它掛成 row 上的 getter，`row.key` 直接讀，排序、分組、顯示都跟真實欄位一樣。父表用 `row.$欄位key`、子表用 `row.$子表_欄位key`（都是 store 自動掛的，`__Table__Row` 裡宣告過型別才看得到） |
 | `defaultSort` | 列表頁預設排序，多筆依序當 tiebreaker。可省略 |
 | `detailOrder` | 詳細頁欄位順序。可省略，省略就沿用 `columns` 順序 |
@@ -126,15 +126,16 @@
 | `useBottomActions()` | 螢幕最底端，**暫時取代導覽列**；表單的取消／送出用這個，離開頁面自動還原 |
 | `DataDetail` 的 `fieldActions` | detail 頁某一欄的右邊，一欄一個、整格可點；ref 前往、開網址、改成今天都是這種 |
 
-列表頁要搜尋列的話三行：query 是頁面的 ref，登記給 App Bar，再用它過濾。哪些欄位能搜由 schema 的 `searchable` 決定：
+列表頁要搜尋列與篩選的話四行：query 與 filters 都是頁面的 ref，登記給 App Bar，再用它們過濾。哪些欄位能搜、能篩由 schema 的 `searchable` 決定（`text`／`ref` 進搜尋，`select`／`number`／`date` 進篩選抽屜）：
 
 ```ts
 const query = ref('')
-useAppBarSearch(query)                               // App Bar 出現放大鏡
-const data = useSearch(query, allRows, __table__Schema)   // 之後 v-for / useListOrder 都用 data
+const filters = ref<Filters>({})
+useAppBarSearch(query, { schema: __table__Schema, filters, rows: allRows })   // 放大鏡 + 搜尋欄內的篩選鈕
+const data = useSearch(query, useFilter(filters, allRows, __table__Schema), __table__Schema)   // 之後 v-for / useListOrder 都用 data
 ```
 
-有頁籤的頁先 `useSearch` 再依頁籤切，搜尋就跨所有頁籤。之後要接篩選面板，第二個參數給 `{ onFilter }`，搜尋欄右側會多一顆按鈕。
+只要搜尋不要篩選就省掉 `filters` 跟第二個參數。有頁籤的頁先篩、再搜、再依頁籤切，兩者都跨所有頁籤。抽屜的欄位順序照 `detailOrder`，select 只列資料裡出現過的值。
 
 表單頁不用自己組那兩顆按鈕——`useCreateForm`／`useEditForm` 回傳現成的 `actions`，照 `pages/new.vue`、`pages/edit.vue` 的寫法接上去就好。「有改動要不要放棄」的確認也不用管：兩個 composable 會登記到 `useLeaveGuard`，不管是按取消、返回鍵還是切導覽列都會先問。
 

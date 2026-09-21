@@ -26,6 +26,7 @@
 - `virtualColumns`：不在 Sheet 上、讀的時候才算的欄位，來源可以是自己這列、父列（`row.$欄位key`）或子列（`row.$子表_欄位key`）。store 掛成 row 上的 getter，顯示、排序、分組都跟真實欄位一樣；兩種欄位共用 `ColumnTypes`／`ColumnBase` 型別骨架
 - `labelColumn`：一列怎麼稱呼（欄位 key，省略就是 id），store 掛成 `row.$label`
 - `TableSchema<Row>`：各表宣告時帶自己的 Row 介面，欄位 key 與 `type` 對著它檢查，虛擬欄位 `value` 的 `row` 有型別；框架端用不帶參數的 `TableSchema`
+- `select` 的 `allowCustom`：`options` 只當建議清單，表單變 `v-combobox`、打別的字也收、驗證跳過選項檢查；資料形狀還是一個字串，顯示與篩選不用知道差別
 
 ### 跨表關聯
 - `schema/relations.ts` 掃 schema 的 `ref` 欄位自動產生關聯圖，新增關聯只要標 `type: 'ref'`
@@ -152,6 +153,7 @@
 
 ### UI 功能
 - 排序的操作介面（目前只有 schema 的 `defaultSort`，使用者不能自己改）
+- `allowCustom` 的建議清單也列資料裡用過的值：schema 上再一個開關（布林，預設關）決定要不要；開了就是 `options` 照原順序在前、資料裡有但 `options` 沒有的接在後面（去重、出現次數多的在前、同次數依字串）。`DataForm` 從 `schemas` 反查自己是哪張表拿共用快取，呼叫端不用改；抽屜列 chip 的那段抽成同一個共用函式，兩邊排法才一致。還沒做是因為「清單自己長」跟「設計者定的預設值」哪種好用還不確定
 - 關聯選擇器的 `allowCreate`：清單最上面一項「＋ 新增…」，開父表的新增表單、回來自動選上。看起來是 `runStep('/父表/new')`，但表單頁當「呼叫端」跟動作當呼叫端不一樣，四件事要先解：
   - 回來時 `useCreateForm` 的 `onActivated` 會把表單重置，使用者填到一半的東西會丟掉——要能分辨「從子步驟回來」和「重新進入」
   - 離開表單頁去開父表的新增會被 `useLeaveGuard` 攔下來問要不要放棄

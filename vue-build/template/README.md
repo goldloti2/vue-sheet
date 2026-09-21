@@ -78,6 +78,7 @@
 | `columns[].sheetHeader` | Sheet 的實際表頭；跟 `label` 同值時可省略 |
 | `columns[].type` | `text` / `number` / `date` / `select` / `ref` |
 | `columns[].options` | 只有 `type: 'select'` 要填，該欄位的可選值 |
+| `columns[].allowCustom` | 只有 `type: 'select'` 有，可省略。開了 `options` 就只是建議，表單裡打別的字也直接當值、不驗證 |
 | `columns[].refTable` | 只有 `type: 'ref'` 要填，指向哪張表（`schemas` 的 key） |
 | `columns[].onDelete` | 只有 `type: 'ref'` 有，可省略。`'cascade'`＝對方那筆被刪時這筆也跟著刪；省略就留著 |
 | `columns[].default` | 新增表單的初始值，可省略。值或函式（`() => new Date()`），函式在打開表單時才求值 |

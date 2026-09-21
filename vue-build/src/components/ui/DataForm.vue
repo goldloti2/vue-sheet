@@ -102,6 +102,16 @@
         @update:model-value="(value) => setFieldValue(column, value)"
       />
 
+      <!-- allowCustom：options 只是建議，打了清單外的字也直接當值 -->
+      <v-combobox
+        v-else-if="column.type === 'select' && column.allowCustom"
+        :error-messages="errorFor(column)"
+        :items="column.options"
+        :label="column.label"
+        :model-value="textValue(column)"
+        @update:model-value="(value) => setTextValue(column, value)"
+      />
+
       <v-select
         v-else-if="column.type === 'select'"
         :error-messages="errorFor(column)"

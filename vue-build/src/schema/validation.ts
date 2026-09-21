@@ -21,7 +21,7 @@ function columnError (value: unknown, column: SchemaColumn, row: object): string
     }
   }
 
-  if (column.type === 'select' && !column.options.includes(String(value))) {
+  if (column.type === 'select' && !column.allowCustom && !column.options.includes(String(value))) {
     return `${column.label}不是有效的選項`
   }
 

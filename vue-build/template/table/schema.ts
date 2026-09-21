@@ -31,6 +31,8 @@ export const __table__Schema: TableSchema<__Table__Row> = {
 
     // 其他可用型別：
     // { key: 'status', label: '狀態', type: 'select', options: ['選項A', '選項B'] },
+    // options 只當建議、也接受自己打的值（表單變成 combobox）：
+    // { key: 'method', label: '方式', type: 'select', options: ['選項A', '選項B'], allowCustom: true },
     // ref 欄位在表單是選擇器、顯示時是對方的名字（對方 schema 的 labelColumn），這裡不用多寫：
     // { key: 'parent', label: '上層', type: 'ref', refTable: 'parent' },
     // 對方那筆被刪時要連這筆一起刪就加 onDelete（不加＝留著，ref 指向不存在的 id）：

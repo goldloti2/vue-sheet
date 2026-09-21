@@ -16,8 +16,8 @@ interface ColumnTypes {
   // 顯示時用對方的 $label（對方 schema 的 labelColumn），store 會把對方那一列掛成 row.$欄位key。
   // onDelete: 'cascade' 表示對方那一列被刪時，指向它的這些列也一起刪；不標就留著（ref 指向不存在的 id）
   ref: { value: string | null, extra: { refTable: string, onDelete?: 'cascade' } }
-  // 清單類欄位：只能是 options 裡的其中一個值
-  select: { value: string | null, extra: { options: string[] } }
+  // 清單類欄位：只能是 options 裡的其中一個值；allowCustom 開了就變成建議清單，打別的也收
+  select: { value: string | null, extra: { options: string[], allowCustom?: boolean } }
 }
 
 export type ColumnType = keyof ColumnTypes

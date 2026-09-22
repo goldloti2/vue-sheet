@@ -2,7 +2,7 @@
   import type { ColumnFilter, Filters } from '@/composables/useFilter'
   import type { AnyColumn, TableSchema } from '@/schema/types'
   import { computed } from 'vue'
-  import { filterableColumns, selectKey } from '@/composables/useFilter'
+  import { filterableColumns, presentValues } from '@/composables/useFilter'
 
   const props = defineProps<{
     schema: TableSchema
@@ -24,18 +24,11 @@
     value: string
   }
 
-  // 資料裡出現過的值，照 options 的順序；options 裡沒有的（Sheet 手動改出來的）排最後；有空的才給「(空白)」
+  // 只列資料裡出現過的值（options 順序在前、多出來的接後面）；有空的才給「(空白)」
   function selectItems (column: AnyColumn): SelectItem[] {
-    const present = new Set<string | null>()
-    for (const row of props.rows) {
-      present.add(selectKey((row as Record<string, unknown>)[column.key]))
-    }
-
-    const options = column.type === 'select' ? column.options : []
-    const known = options.filter(option => present.has(option))
-    const unknown = [...present].filter((value): value is string => value !== null && !options.includes(value))
-    const items = [...known, ...unknown].map(value => ({ title: value, value }))
-    if (present.has(null)) {
+    const { known, extra, hasBlank } = presentValues(props.rows, column)
+    const items = [...known, ...extra].map(value => ({ title: value, value }))
+    if (hasBlank) {
       items.push({ title: '(空白)', value: BLANK })
     }
     return items

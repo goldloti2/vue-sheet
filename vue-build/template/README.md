@@ -79,6 +79,7 @@
 | `columns[].type` | `text` / `number` / `date` / `select` / `ref` |
 | `columns[].options` | 只有 `type: 'select'` 要填，該欄位的可選值 |
 | `columns[].allowCustom` | 只有 `type: 'select'` 有，可省略。開了 `options` 就只是建議，表單裡打別的字也直接當值、不驗證 |
+| `columns[].suggestFromData` | 只有 `allowCustom` 的欄位有意義，可省略。開了建議清單會接上這張表資料裡用過、`options` 沒有的值（次數多的在前） |
 | `columns[].refTable` | 只有 `type: 'ref'` 要填，指向哪張表（`schemas` 的 key） |
 | `columns[].onDelete` | 只有 `type: 'ref'` 有，可省略。`'cascade'`＝對方那筆被刪時這筆也跟著刪；省略就留著 |
 | `columns[].default` | 新增表單的初始值，可省略。值或函式（`() => new Date()`），函式在打開表單時才求值 |

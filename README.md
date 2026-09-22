@@ -310,7 +310,7 @@ onClick: () => runFlow(async () => {
 
 **store 層**：`create`／`update` 在碰快取與佇列之前先跑同一個 `validateRow`，有錯就把各欄訊息串成一句拋出去、什麼都不動。`update` 的 `values` 可以只給幾欄，所以只驗給了的那幾欄。這層擋到的是繞過表單的程式 bug（例如 `useSetFieldAction` 塞了不合法的值），錯誤經 `useActionRunner` 進 snackbar；不另做逐欄的錯誤型別，逐欄顯示是 form 層的事。
 
-型別層面的限制不靠驗證函式，而是靠輸入元件本身：number 用 `v-number-input`（連 `min`／`max` 一起傳下去）、date 用 `v-date-input`、select 用 `v-select` 只能選 `options`。驗證函式擋的是元件擋不住的那些（沒填、超出範圍）。select 加 `allowCustom: true` 就變 `v-combobox`：`options` 只是建議清單、打別的字也收，驗證跟著跳過選項檢查——資料形狀還是一個字串，顯示與篩選都不用知道差別（篩選抽屜本來就列資料裡出現過的值）。
+型別層面的限制不靠驗證函式，而是靠輸入元件本身：number 用 `v-number-input`（連 `min`／`max` 一起傳下去）、date 用 `v-date-input`、select 用 `v-select` 只能選 `options`。驗證函式擋的是元件擋不住的那些（沒填、超出範圍）。select 加 `allowCustom: true` 就變 `v-combobox`：`options` 只是建議清單、打別的字也收，驗證跟著跳過選項檢查——資料形狀還是一個字串，顯示與篩選都不用知道差別（篩選抽屜本來就列資料裡出現過的值）。再開 `suggestFromData` 建議清單會接上這張表資料裡用過、`options` 沒有的值：`options` 照原順序在前，多出來的依出現次數再依字串，跟篩選抽屜共用 `presentValues` 所以排法一致。`DataForm` 只拿到 schema，靠 `schemas` 反查自己是哪張表來讀共用快取（schema 物件是單例），呼叫端不用多傳；沒開的欄位不會多載任何東西。兩個開關分開是因為「清單自己長」不一定是好事——打錯過的值也會變成建議，清單只會長不會收。
 
 **內建的約束只有 `required`／`min`／`max`／`select` 選項**，其他規則（日期先後、文字格式、跨欄位比較）不逐一加進框架，而是欄位上一個 `validate: (value, row) => 錯誤訊息 | null` 讓設計者自己寫。內建檢查過了、而且有值時才叫——空值是 `required` 的事，設計者不用每條規則都先判 null；代價是「某條件下才必填」寫不了。`value` 的型別跟 `type` 走、`row` 是 `TableSchema<Row>` 的那個 Row，跨欄位規則直接讀。一欄一個函式，多條規則自己在裡面串。store 層的 `update` 只給了幾欄時，會拿快取裡那筆合併後再驗，所以 `row` 永遠是整列。
 

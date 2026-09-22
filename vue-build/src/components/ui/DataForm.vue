@@ -2,6 +2,7 @@
   import type { TableKey } from '@/schema'
   import type { SchemaColumn, TableSchema } from '@/schema/types'
   import { computed } from 'vue'
+  import { presentValues } from '@/composables/useFilter'
   import { useTableList } from '@/composables/useTableList'
   import { schemas } from '@/schema'
   import { sortRows } from '@/schema/types'
@@ -78,6 +79,22 @@
   function refLoading (column: SchemaColumn): boolean {
     return refLists.get(column.key)?.loading.value ?? false
   }
+
+  // suggestFromData 要讀自己這張表的列。DataForm 只拿到 schema，從 schemas 反查代稱（schema 物件是單例）
+  const ownTable = (Object.keys(schemas) as TableKey[]).find(key => schemas[key] === props.schema)
+  const wantsOwnRows = props.schema.columns.some(column => column.type === 'select' && column.suggestFromData)
+  const ownList = ownTable && wantsOwnRows ? useTableList<object>(ownTable) : null
+
+  // combobox 的建議：options 全部照原順序在前，開了 suggestFromData 再接資料裡多出來的值（跟篩選抽屜同一個排法）
+  function suggestions (column: SchemaColumn): string[] {
+    if (column.type !== 'select') {
+      return []
+    }
+    if (!column.suggestFromData || !ownList) {
+      return column.options
+    }
+    return [...column.options, ...presentValues(ownList.data.value, column).extra]
+  }
 </script>
 
 <template>
@@ -106,7 +123,7 @@
       <v-combobox
         v-else-if="column.type === 'select' && column.allowCustom"
         :error-messages="errorFor(column)"
-        :items="column.options"
+        :items="suggestions(column)"
         :label="column.label"
         :model-value="textValue(column)"
         @update:model-value="(value) => setTextValue(column, value)"

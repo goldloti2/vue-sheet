@@ -31,6 +31,37 @@ export function filterableColumns (schema: TableSchema): AnyColumn[] {
   return [...columns].sort((a, b) => rank(a) - rank(b))
 }
 
+export interface PresentValues {
+  // options 裡在資料出現過的，照 options 順序
+  known: string[]
+  // 資料裡有、options 沒有的（allowCustom 打的、Sheet 手動改的），出現次數多的在前，同次數依字串
+  extra: string[]
+  hasBlank: boolean
+}
+
+// 一個 select 欄位在 rows 裡實際出現過哪些值。篩選抽屜的 chip 與 suggestFromData 的建議清單都從這裡拿，排法才一致
+export function presentValues (rows: readonly object[], column: AnyColumn): PresentValues {
+  const counts = new Map<string, number>()
+  let hasBlank = false
+  for (const row of rows) {
+    const key = selectKey((row as Record<string, unknown>)[column.key])
+    if (key === null) {
+      hasBlank = true
+    } else {
+      counts.set(key, (counts.get(key) ?? 0) + 1)
+    }
+  }
+
+  const options = column.type === 'select' ? column.options : []
+  const known = options.filter(option => counts.has(option))
+  // eslint-disable-next-line unicorn/no-array-sort
+  const extra = [...counts.keys()].filter(value => !options.includes(value)).sort((a, b) => {
+    const byCount = (counts.get(b) ?? 0) - (counts.get(a) ?? 0)
+    return byCount === 0 ? a.localeCompare(b) : byCount
+  })
+  return { known, extra, hasBlank }
+}
+
 function isActive (filter: ColumnFilter | undefined): boolean {
   if (!filter) {
     return false

@@ -6,7 +6,7 @@
 
 ```vue
 <script lang="ts" setup>
-  import ListField from '@/components/ui/ListField.vue'
+  import ListField from '@/components/ui/list/ListField.vue'
 </script>
 
 <template>

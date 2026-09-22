@@ -1,7 +1,7 @@
 import type { PageAction } from '@/composables/actions/useTableActions'
-import type { ActionSlotSetter } from '@/composables/useActionSlot'
+import type { ActionSlotSetter } from '@/composables/shell/useActionSlot'
 import type { InjectionKey } from 'vue'
-import { registerActions } from '@/composables/useActionSlot'
+import { registerActions } from '@/composables/shell/useActionSlot'
 
 export const appBarActionsKey: InjectionKey<ActionSlotSetter> = Symbol('appBarActions')
 

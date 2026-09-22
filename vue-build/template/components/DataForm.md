@@ -12,8 +12,8 @@
 
 ```vue
 <script lang="ts" setup>
-  import DataForm from '@/components/ui/DataForm.vue'
-  import { useCreateForm } from '@/composables/useTableForm'
+  import DataForm from '@/components/ui/record/DataForm.vue'
+  import { useCreateForm } from '@/composables/form/useTableForm'
 
   const { form, fieldErrors } = useCreateForm('__table__', schema)
 </script>

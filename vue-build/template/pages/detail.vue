@@ -6,14 +6,14 @@
 <script lang="ts" setup>
   import type { __Table__Row } from '@/schema/__table__'
   import { Touch as vTouch } from 'vuetify/directives'
-  import DataDetail from '@/components/ui/DataDetail.vue'
-  import PageFab from '@/components/ui/PageFab.vue'
-  import RecordNav from '@/components/ui/RecordNav.vue'
+  import DataDetail from '@/components/ui/record/DataDetail.vue'
+  import RecordNav from '@/components/ui/record/RecordNav.vue'
+  import PageFab from '@/components/ui/shell/PageFab.vue'
   import { use__Table__Actions } from '@/composables/actions/use__Table__Actions'
-  import { useAppBarActions } from '@/composables/useAppBarActions'
-  import { useSiblingNav } from '@/composables/useListOrder'
-  import { useRouteId } from '@/composables/useRouteId'
-  import { useTableRow } from '@/composables/useTableRow'
+  import { useTableRow } from '@/composables/data/useTableRow'
+  import { useSiblingNav } from '@/composables/navigation/useListOrder'
+  import { useRouteId } from '@/composables/navigation/useRouteId'
+  import { useAppBarActions } from '@/composables/shell/useAppBarActions'
   import { __table__Schema } from '@/schema/__table__'
 
   const id = useRouteId()

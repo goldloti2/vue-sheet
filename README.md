@@ -99,45 +99,54 @@ Sheet 的實際表頭列用中文，方便直接開 Sheet 檢查或手改資料�
 ```
 src/
   components/ui/            共用元件庫（每個元件的用法見 template/components/*.md）
-    AppShell.vue              頂部 AppBar + 導覽外殼；標題來自 route.meta.title，
-                              右側動作按鈕來自 useAppBarActions()
-    DataList.vue              卡片式列表的單列（含長按多選）
-    ListField.vue             DataList 內部的兩列四角排版
-    GroupedList.vue           多層可收合分組
-    DataTable.vue             表格式列表；detail 頁內嵌的關聯子表格也用同一個
-    DataDetail.vue            整頁 detail 欄位區，自帶 loading/error/找不到資料三種狀態
-    DetailField.vue           單一欄位顯示，可帶一個動作（整格可點）
-    DataForm.vue              表單版的 DataDetail，依 column.type 自動選輸入元件
-    PageFab.vue               右下角浮動按鈕
-    RecordNav.vue             detail 頁左右兩側的上/下一筆箭頭
-    TabView.vue               頁籤 + 內容區，切換時依頁籤順序左右滑動
-    AppDialog.vue             對話框外殼
-    ConfirmDialog.vue         是/否確認框，建立在 AppDialog 上
-    FieldsDialog.vue          「問幾個欄位」對話框，內容是只顯示幾欄的 DataForm
-    FilterDrawer.vue          右側篩選抽屜，欄位來自 schema 裡 searchable 的 select/number/date
+    shell/                    整頁外殼與蓋在頁面上的東西
+      AppShell.vue              頂部 AppBar + 導覽外殼；標題來自 route.meta.title，
+                                右側動作按鈕來自 useAppBarActions()
+      PageFab.vue               右下角浮動按鈕
+      FilterDrawer.vue          右側篩選抽屜，欄位來自 schema 裡 searchable 的 select/number/date
+      TabView.vue               頁籤 + 內容區，切換時依頁籤順序左右滑動
+    dialog/
+      AppDialog.vue             對話框外殼
+      ConfirmDialog.vue         是/否確認框，建立在 AppDialog 上
+      FieldsDialog.vue          「問幾個欄位」對話框，內容是只顯示幾欄的 DataForm
+    list/                     多筆的呈現
+      DataList.vue              卡片式列表的單列（含長按多選）
+      ListField.vue             DataList 內部的兩列四角排版
+      GroupedList.vue           多層可收合分組
+      DataTable.vue             表格式列表；detail 頁內嵌的關聯子表格也用同一個
+    record/                   單筆的顯示與編輯
+      DataDetail.vue            整頁 detail 欄位區，自帶 loading/error/找不到資料三種狀態
+      DetailField.vue           單一欄位顯示，可帶一個動作（整格可點）
+      DataForm.vue              表單版的 DataDetail，依 column.type 自動選輸入元件
+      RecordNav.vue             detail 頁左右兩側的上/下一筆箭頭
   composables/
-    useTableList.ts           整表讀取（走共用快取）
-    useSortedTableList.ts     上者 + schema.defaultSort 排序；列表頁預設用這個
-    useTableRow.ts            單筆讀取
-    useTableForm.ts           useCreateForm / useEditForm，新增與編輯的共用邏輯
-    useRouteId.ts             [id] 頁面取路由參數（見 4.3）
-    useListOrder.ts           列表頁發布顯示順序、detail 頁取上/下一筆
-    useActionSlot.ts          把動作註冊到 AppShell 某一塊的共用機制（含 KeepAlive 防護）
-    useAppBarActions.ts       註冊到 App Bar 右側
-    useAppBarSearch.ts        登記頁面的搜尋 query，App Bar 才出現放大鏡（見八）
-    useSearch.ts              useSearch(query, rows, schema)：依 searchable 的 text/ref 欄位比對文字
-    useFilter.ts              useFilter(filters, rows, schema)：依 searchable 的 select/number/date 欄位篩選
-    useOverlay.ts             overlayOpenKey：有東西蓋整頁（篩選抽屜）時通知 PageFab 讓開
-    useBottomActions.ts       註冊到螢幕最底端，暫時取代導覽列（表單頁用）
-    useActionRunner.ts        動作的執行（confirm 先問、錯誤進 snackbar），由 AppShell 提供
-    useConfirm.ts             confirm()：是／否對話框，回傳 promise
-    useLeaveGuard.ts          表單登記 dirty getter；router.beforeEach 離開前先問（見 4.4）
-    useMultiSelect.ts         多選狀態
-    useLongPress.ts           長按偵測
-    useNotify.ts              全 App 一則 snackbar 訊息（module-level，任何地方都能叫）
-    useAskFields.ts           askFields()：開對話框只問幾個欄位，回傳 promise（見 4.4）
-    useSyncHold.ts            這個頁面活著的期間不准同步（表單 composable 內部用）
-    useFlow.ts                連續動作：runFlow / runStep / resumeStep（見 4.4）
+    data/                     讀資料
+      useTableList.ts           整表讀取（走共用快取）
+      useSortedTableList.ts     上者 + schema.defaultSort 排序；列表頁預設用這個
+      useTableRow.ts            單筆讀取
+      useSearch.ts              useSearch(query, rows, schema)：依 searchable 的 text/ref 欄位比對文字
+      useFilter.ts              useFilter(filters, rows, schema)：依 searchable 的 select/number/date 欄位篩選
+    form/                     表單頁
+      useTableForm.ts           useCreateForm / useEditForm，新增與編輯的共用邏輯
+      useLeaveGuard.ts          表單登記 dirty getter；router.beforeEach 離開前先問（見 4.4）
+      useSyncHold.ts            這個頁面活著的期間不准同步（表單 composable 內部用）
+    shell/                    跟 AppShell 溝通、或由它提供的東西
+      useActionSlot.ts          把動作註冊到 AppShell 某一塊的共用機制（含 KeepAlive 防護）
+      useAppBarActions.ts       註冊到 App Bar 右側
+      useAppBarSearch.ts        登記頁面的搜尋 query，App Bar 才出現放大鏡（見八）
+      useBottomActions.ts       註冊到螢幕最底端，暫時取代導覽列（表單頁用）
+      useOverlay.ts             overlayOpenKey：有東西蓋整頁（篩選抽屜）時通知 PageFab 讓開
+      useActionRunner.ts        動作的執行（confirm 先問、錯誤進 snackbar），由 AppShell 提供
+      useNotify.ts              全 App 一則 snackbar 訊息（module-level，任何地方都能叫）
+      useConfirm.ts             confirm()：是／否對話框，回傳 promise
+      useAskFields.ts           askFields()：開對話框只問幾個欄位，回傳 promise（見 4.4）
+    navigation/               路由與頁面之間的接力
+      useRouteId.ts             [id] 頁面取路由參數（見 4.3）
+      useListOrder.ts           列表頁發布顯示順序、detail 頁取上/下一筆
+      useFlow.ts                連續動作：runFlow / runStep / resumeStep（見 4.4）
+    list/                     列表互動
+      useMultiSelect.ts         多選狀態
+      useLongPress.ts           長按偵測
     actions/
       useTableActions.ts        PageAction 型別 + 通用動作 builder
                                 （useNewAction/useEditAction/useDeleteAction/useBulkDeleteAction/useQuickEditAction
@@ -256,7 +265,7 @@ store.removeMany(table, ids)     // 從快取移除多筆
 
 新增/編輯/刪除完成後要離開頁面，用 `@/router` 的 `leaveAfterAction(fallback)`，**不要用 `router.push`**。`push` 會把已經完成任務的表單頁留在歷史裡，按上一頁又回到它（編輯頁是舊表單，刪除後的 detail 更是已經不存在的資料）。`leaveAfterAction` 走瀏覽器返回，沒有 App 內上一頁（例如直接貼網址進來）時才 `replace` 到 fallback。
 
-**連續動作（流程）**：好幾個步驟要一氣呵成時——新增父表那筆後直接進它的 detail、或接著新增子表那筆——用 `@/composables/useFlow` 把它們串成一段 async 程式碼，包在 `runFlow` 裡：
+**連續動作（流程）**：好幾個步驟要一氣呵成時——新增父表那筆後直接進它的 detail、或接著新增子表那筆——用 `@/composables/navigation/useFlow` 把它們串成一段 async 程式碼，包在 `runFlow` 裡：
 
 ```ts
 onClick: () => runFlow(async () => {

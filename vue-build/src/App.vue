@@ -1,6 +1,6 @@
 <script lang="ts" setup>
   import { useRoute } from 'vue-router'
-  import AppShell from '@/components/ui/AppShell.vue'
+  import AppShell from '@/components/ui/shell/AppShell.vue'
   import { navItems } from '@/config/navigation'
   import { transitionDir } from '@/router'
 

@@ -6,7 +6,7 @@
 
 ```vue
 <script lang="ts" setup>
-  import DataTable from '@/components/ui/DataTable.vue'
+  import DataTable from '@/components/ui/list/DataTable.vue'
 </script>
 
 <template>

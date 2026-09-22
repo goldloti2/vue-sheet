@@ -2,7 +2,7 @@
   import type { TableKey } from '@/schema'
   import { mdiMenuLeft, mdiMenuRight } from '@mdi/js'
   import { onActivated, onDeactivated, shallowRef } from 'vue'
-  import { useSiblingNav } from '@/composables/useListOrder'
+  import { useSiblingNav } from '@/composables/navigation/useListOrder'
 
   const props = defineProps<{
     table: TableKey

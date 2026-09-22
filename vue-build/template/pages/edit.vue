@@ -5,10 +5,10 @@
 
 <script lang="ts" setup>
   import type { __Table__Row } from '@/schema/__table__'
-  import DataForm from '@/components/ui/DataForm.vue'
-  import { useBottomActions } from '@/composables/useBottomActions'
-  import { useRouteId } from '@/composables/useRouteId'
-  import { useEditForm } from '@/composables/useTableForm'
+  import DataForm from '@/components/ui/record/DataForm.vue'
+  import { useEditForm } from '@/composables/form/useTableForm'
+  import { useRouteId } from '@/composables/navigation/useRouteId'
+  import { useBottomActions } from '@/composables/shell/useBottomActions'
   import { __table__Schema } from '@/schema/__table__'
 
   const id = useRouteId()

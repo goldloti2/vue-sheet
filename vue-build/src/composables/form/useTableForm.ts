@@ -5,14 +5,14 @@ import type { ComputedRef, MaybeRefOrGetter } from 'vue'
 import type { RouteLocationRaw } from 'vue-router'
 import { computed, onActivated, ref, toValue, watch } from 'vue'
 import { actionIcons } from '@/composables/actions/useTableActions'
-import { resumeStep } from '@/composables/useFlow'
-import { useLeaveGuard } from '@/composables/useLeaveGuard'
-import { useSyncHold } from '@/composables/useSyncHold'
+import { useTableRow } from '@/composables/data/useTableRow'
+import { useLeaveGuard } from '@/composables/form/useLeaveGuard'
+import { useSyncHold } from '@/composables/form/useSyncHold'
+import { resumeStep } from '@/composables/navigation/useFlow'
 import { leaveAfterAction, navigationDefaults } from '@/router'
 import { columnValues, emptyRow } from '@/schema/types'
 import { validateRow } from '@/schema/validation'
 import { useTablesStore } from '@/stores/tables'
-import { useTableRow } from './useTableRow'
 
 interface HasId {
   id: string

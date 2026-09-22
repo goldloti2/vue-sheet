@@ -2,7 +2,7 @@
   import type { FieldActions, PageAction } from '@/composables/actions/useTableActions'
   import type { TableSchema } from '@/schema/types'
   import { computed } from 'vue'
-  import DetailField from '@/components/ui/DetailField.vue'
+  import DetailField from '@/components/ui/record/DetailField.vue'
   import { allColumns, formatColumnValue } from '@/schema/types'
 
   interface Field {

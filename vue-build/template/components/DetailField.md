@@ -6,7 +6,7 @@
 
 ```vue
 <script lang="ts" setup>
-  import DetailField from '@/components/ui/DetailField.vue'
+  import DetailField from '@/components/ui/record/DetailField.vue'
 </script>
 
 <template>

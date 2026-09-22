@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-  import AppDialog from '@/components/ui/AppDialog.vue'
+  import AppDialog from '@/components/ui/dialog/AppDialog.vue'
 
   interface ConfirmDialogProps {
     title: string

@@ -1,7 +1,7 @@
 <script lang="ts" setup>
   import type { TableSchema } from '@/schema/types'
-  import AppDialog from '@/components/ui/AppDialog.vue'
-  import DataForm from '@/components/ui/DataForm.vue'
+  import AppDialog from '@/components/ui/dialog/AppDialog.vue'
+  import DataForm from '@/components/ui/record/DataForm.vue'
 
   interface FieldsDialogProps {
     title: string

@@ -13,8 +13,8 @@ detail 頁左右兩側的「上一筆／下一筆」箭頭。順序來自**列�
 ```vue
 <script lang="ts" setup>
   import { computed } from 'vue'
-  import { useListOrder } from '@/composables/useListOrder'
-  import { useSortedTableList } from '@/composables/useSortedTableList'
+  import { useListOrder } from '@/composables/navigation/useListOrder'
+  import { useSortedTableList } from '@/composables/data/useSortedTableList'
   import { __table__Schema } from '@/schema/__table__'
 
   const { data } = useSortedTableList<__Table__Row>('__table__', __table__Schema)
@@ -35,9 +35,9 @@ detail 頁：
 <script lang="ts" setup>
   // vite-plugin-vuetify 只自動匯入元件、不含指令，v-touch 要自己 import
   import { Touch as vTouch } from 'vuetify/directives'
-  import RecordNav from '@/components/ui/RecordNav.vue'
-  import { useSiblingNav } from '@/composables/useListOrder'
-  import { useRouteId } from '@/composables/useRouteId'
+  import RecordNav from '@/components/ui/record/RecordNav.vue'
+  import { useSiblingNav } from '@/composables/navigation/useListOrder'
+  import { useRouteId } from '@/composables/navigation/useRouteId'
 
   const id = useRouteId()
   const { swipe } = useSiblingNav('__table__', id)

@@ -156,12 +156,12 @@ setStatus: selectedIds
   : none,
 ```
 
-只是要問是／否的話用 `confirm(title, text)`（`@/composables/useConfirm`），回 `Promise<boolean>`；動作上宣告 `confirm: { title, text }` 就是它的語法糖。
+只是要問是／否的話用 `confirm(title, text)`（`@/composables/shell/useConfirm`），回 `Promise<boolean>`；動作上宣告 `confirm: { title, text }` 就是它的語法糖。
 
 `useQuickEditAction` 底下就是 `askFields()`——要自己組的話（例如當流程的一步）直接叫，取消回 `null`：
 
 ```ts
-import { askFields } from '@/composables/useAskFields'
+import { askFields } from '@/composables/shell/useAskFields'
 
 const values = await askFields<__Table__Row>(schema, ['status'], { rows: [current] })
 if (values) {
@@ -176,7 +176,7 @@ if (values) {
 要跳一則短訊息（成功、失敗、已刪除之類的）就直接叫 `notify()`，不需要在頁面上放任何元件：
 
 ```ts
-import { notify } from '@/composables/useNotify'
+import { notify } from '@/composables/shell/useNotify'
 
 notify('已推送')
 notify('推送失敗', 'error')   // 第二個參數是 Vuetify 的 color

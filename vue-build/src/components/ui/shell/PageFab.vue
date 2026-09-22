@@ -3,8 +3,8 @@
   import { mdiClose, mdiDotsVertical } from '@mdi/js'
   import { computed, inject, onActivated, onDeactivated, ref, shallowRef } from 'vue'
   import { useLayout } from 'vuetify'
-  import { useRunAction } from '@/composables/useActionRunner'
-  import { overlayOpenKey } from '@/composables/useOverlay'
+  import { useRunAction } from '@/composables/shell/useActionRunner'
+  import { overlayOpenKey } from '@/composables/shell/useOverlay'
 
   defineProps<{
     actions: PageAction[]

@@ -6,7 +6,7 @@
 
 ```vue
 <script lang="ts" setup>
-  import DataList from '@/components/ui/DataList.vue'
+  import DataList from '@/components/ui/list/DataList.vue'
 </script>
 
 <template>

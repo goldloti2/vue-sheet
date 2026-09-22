@@ -1,6 +1,6 @@
 import { onActivated, onDeactivated, onMounted, onUnmounted } from 'vue'
-import { confirm } from '@/composables/useConfirm'
-import { hasEarlierSteps } from '@/composables/useFlow'
+import { hasEarlierSteps } from '@/composables/navigation/useFlow'
+import { confirm } from '@/composables/shell/useConfirm'
 import router from '@/router'
 
 // 目前活著的表單各登記一個「有沒有改動」的 getter

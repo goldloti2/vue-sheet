@@ -8,7 +8,7 @@
 
 ```vue
 <script lang="ts" setup>
-  import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
+  import ConfirmDialog from '@/components/ui/dialog/ConfirmDialog.vue'
 </script>
 
 <template>

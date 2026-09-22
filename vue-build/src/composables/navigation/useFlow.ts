@@ -1,7 +1,7 @@
 import type { HistoryState, RouteLocationRaw } from 'vue-router'
 import { computed, shallowRef } from 'vue'
 import { isNavigationFailure } from 'vue-router'
-import { notify } from '@/composables/useNotify'
+import { notify } from '@/composables/shell/useNotify'
 import router, { leaveAfterAction } from '@/router'
 import { useTablesStore } from '@/stores/tables'
 

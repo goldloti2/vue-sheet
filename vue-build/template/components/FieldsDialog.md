@@ -8,7 +8,7 @@
 
 ```vue
 <script lang="ts" setup>
-  import FieldsDialog from '@/components/ui/FieldsDialog.vue'
+  import FieldsDialog from '@/components/ui/dialog/FieldsDialog.vue'
 </script>
 
 <template>

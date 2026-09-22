@@ -10,7 +10,7 @@ schema 的 `virtualColumns`（見 `table/schema.ts`）跟真實欄位一視同�
 
 ```vue
 <script lang="ts" setup>
-  import DataDetail from '@/components/ui/DataDetail.vue'
+  import DataDetail from '@/components/ui/record/DataDetail.vue'
 </script>
 
 <template>

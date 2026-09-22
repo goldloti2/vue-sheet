@@ -53,7 +53,7 @@ export function use__Table__Actions (options: __Table__ActionOptions = {}) {
 //     }),
 //   }]),
 //
-// 需要 import { runFlow, runStep } from '@/composables/useFlow' 和 router from '@/router'
+// 需要 import { runFlow, runStep } from '@/composables/navigation/useFlow' 和 router from '@/router'
 //
 // 只改幾個欄位的小動作用 useQuickEditAction，不用開整頁表單（見 template/README.md）：
 //

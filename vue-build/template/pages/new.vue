@@ -5,9 +5,9 @@
 
 <script lang="ts" setup>
   import type { __Table__Row } from '@/schema/__table__'
-  import DataForm from '@/components/ui/DataForm.vue'
-  import { useBottomActions } from '@/composables/useBottomActions'
-  import { useCreateForm } from '@/composables/useTableForm'
+  import DataForm from '@/components/ui/record/DataForm.vue'
+  import { useCreateForm } from '@/composables/form/useTableForm'
+  import { useBottomActions } from '@/composables/shell/useBottomActions'
   import { __table__Schema } from '@/schema/__table__'
 
   // 起始值依 schema 自動產生（全欄位 null），送出成功後回列表頁

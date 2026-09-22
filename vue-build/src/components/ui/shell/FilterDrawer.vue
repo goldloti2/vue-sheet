@@ -1,8 +1,8 @@
 <script lang="ts" setup>
-  import type { ColumnFilter, Filters } from '@/composables/useFilter'
+  import type { ColumnFilter, Filters } from '@/composables/data/useFilter'
   import type { AnyColumn, TableSchema } from '@/schema/types'
   import { computed } from 'vue'
-  import { filterableColumns, presentValues } from '@/composables/useFilter'
+  import { filterableColumns, presentValues } from '@/composables/data/useFilter'
 
   const props = defineProps<{
     schema: TableSchema

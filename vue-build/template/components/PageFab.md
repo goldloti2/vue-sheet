@@ -11,7 +11,7 @@
   import type { PageAction } from '@/composables/actions/useTableActions'
   import { mdiPlus } from '@mdi/js'
   import { useRouter } from 'vue-router'
-  import PageFab from '@/components/ui/PageFab.vue'
+  import PageFab from '@/components/ui/shell/PageFab.vue'
 
   const router = useRouter()
 

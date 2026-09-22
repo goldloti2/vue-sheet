@@ -1,8 +1,8 @@
-import type { SlotSetter } from '@/composables/useActionSlot'
-import type { Filters } from '@/composables/useFilter'
+import type { Filters } from '@/composables/data/useFilter'
+import type { SlotSetter } from '@/composables/shell/useActionSlot'
 import type { TableSchema } from '@/schema/types'
 import type { InjectionKey, Ref } from 'vue'
-import { registerSlot } from '@/composables/useActionSlot'
+import { registerSlot } from '@/composables/shell/useActionSlot'
 
 export interface AppBarSearch {
   query: Ref<string>

@@ -11,7 +11,7 @@
 ```vue
 <script lang="ts" setup>
   import { ref } from 'vue'
-  import TabView from '@/components/ui/TabView.vue'
+  import TabView from '@/components/ui/shell/TabView.vue'
 
   const tabs = ['選項1', '選項2']
   const selected = ref(tabs[0])

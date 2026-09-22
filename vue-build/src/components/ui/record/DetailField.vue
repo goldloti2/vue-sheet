@@ -1,6 +1,6 @@
 <script lang="ts" setup>
   import type { PageAction } from '@/composables/actions/useTableActions'
-  import { useRunAction } from '@/composables/useActionRunner'
+  import { useRunAction } from '@/composables/shell/useActionRunner'
 
   interface DetailFieldProps {
     label: string

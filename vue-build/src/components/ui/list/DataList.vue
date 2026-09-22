@@ -1,8 +1,8 @@
 <script lang="ts" setup>
   import { computed } from 'vue'
   import { RouterLink } from 'vue-router'
-  import ListField from '@/components/ui/ListField.vue'
-  import { useLongPress } from '@/composables/useLongPress'
+  import ListField from '@/components/ui/list/ListField.vue'
+  import { useLongPress } from '@/composables/list/useLongPress'
 
   interface DataListProps {
     title: string

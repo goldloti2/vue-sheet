@@ -9,7 +9,7 @@ import type { HistoryState, RouteLocationNormalized, RouteLocationRaw } from 'vu
 import { shallowRef } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
 import { routes } from 'vue-router/auto-routes'
-import { siblingDirection } from '@/composables/useListOrder'
+import { siblingDirection } from '@/composables/navigation/useListOrder'
 import { navItems } from '@/config/navigation'
 
 declare module 'vue-router' {

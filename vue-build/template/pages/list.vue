@@ -6,11 +6,11 @@
 <script lang="ts" setup>
   import type { __Table__Row } from '@/schema/__table__'
   import { computed } from 'vue'
-  import DataList from '@/components/ui/DataList.vue'
-  import PageFab from '@/components/ui/PageFab.vue'
+  import DataList from '@/components/ui/list/DataList.vue'
+  import PageFab from '@/components/ui/shell/PageFab.vue'
   import { use__Table__Actions } from '@/composables/actions/use__Table__Actions'
-  import { useListOrder } from '@/composables/useListOrder'
-  import { useSortedTableList } from '@/composables/useSortedTableList'
+  import { useSortedTableList } from '@/composables/data/useSortedTableList'
+  import { useListOrder } from '@/composables/navigation/useListOrder'
   import { __table__Schema } from '@/schema/__table__'
   import { formatField } from '@/schema/types'
 

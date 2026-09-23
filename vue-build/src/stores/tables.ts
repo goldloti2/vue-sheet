@@ -38,6 +38,8 @@ export const useTablesStore = defineStore('tables', () => {
   // 「要送什麼」的單一真相
   const pending = reactive(new Map<TableKey, Map<string, PendingOp>>())
   const flushing = shallowRef(false)
+  // 進行中的那一次推送，只給 flush 自己做去重用（畫面看 flushing）
+  let flushPromise: Promise<boolean> | null = null
   const flushError = shallowRef<string | null>(null)
   const activeFlow = shallowRef<FlowSnapshot | null>(null)
   // 有幾張表單正開著。不為零就不能同步，重抓會把改到一半的沖掉
@@ -260,7 +262,7 @@ export const useTablesStore = defineStore('tables', () => {
       : mutateTable(op.kind, table, { id, ...op.values }))
   }
 
-  // 逐筆送出，成功一筆移掉一筆；失敗不還原、不往外拋，錯誤記在 flushError
+  // 推送中又有人叫就共用同一個 promise，等到的是真正的結果（跟 load 的 pendingLoads 同一套）
   async function flush (): Promise<boolean> {
     if (activeFlow.value) {
       // 流程還沒跑完，推出去的會是半成品，而且推出去之後就回滾不了了
@@ -268,10 +270,20 @@ export const useTablesStore = defineStore('tables', () => {
       return false
     }
 
-    if (flushing.value) {
-      return !hasPending.value
+    if (flushPromise) {
+      return flushPromise
     }
 
+    flushPromise = sendQueue()
+    try {
+      return await flushPromise
+    } finally {
+      flushPromise = null
+    }
+  }
+
+  // 逐筆送出，成功一筆移掉一筆；失敗不還原、不往外拋，錯誤記在 flushError
+  async function sendQueue (): Promise<boolean> {
     flushing.value = true
     flushError.value = null
 

@@ -2,7 +2,7 @@
 
 右下角浮動按鈕。數量 ≤2 顆固定顯示，≥3 顆自動收合成 speed-dial（展開時有暗屏與文字標籤），不用自己判斷。`actions` 是空陣列時整個元件不顯示，不用另外包 `v-if`。
 
-`PageAction` 一律用 `onClick`，要導覽就在裡面自己 `router.push`（理由見 repo 根目錄 README 4.5）。同一種型別也給 `useAppBarActions()` 用，同一份動作定義可以任選要擺右下角還是右上角。
+`PageAction` 一律用 `onClick`，要導覽就在裡面自己 `router.push`（理由見 [schema.md](../schema.md)）。同一種型別也給 `useAppBarActions()` 用，同一份動作定義可以任選要擺右下角還是右上角。
 
 ## Usage
 

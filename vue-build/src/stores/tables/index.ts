@@ -16,7 +16,7 @@ interface HasId {
   id: string
 }
 
-// 流程存檔點：每張被碰到的表在改動前留一份原值（快取＋佇列），見 README 4.2
+// 流程存檔點：每張被碰到的表在改動前留一份原值（快取＋佇列），見 docs/store.md
 interface FlowSnapshot {
   rows: Map<TableKey, unknown[] | undefined>
   queue: Map<TableKey, TableQueue>
@@ -146,7 +146,7 @@ export const useTablesStore = defineStore('tables', () => {
     return queue.flush()
   }
 
-  // 開存檔點。一次只能一個：套疊會蓋掉外層的存檔點，所以直接拒絕（見 README 4.4）
+  // 開存檔點。一次只能一個：套疊會蓋掉外層的存檔點，所以直接拒絕（見 docs/architecture.md）
   function beginFlow (): void {
     if (activeFlow.value) {
       throw new Error('上一個流程還沒結束')

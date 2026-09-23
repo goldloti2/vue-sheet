@@ -2,7 +2,7 @@
 
 複製 → 改名 → 填空。這個資料夾**不在 `src/` 底下**，不會被 build／eslint／vue-tsc 掃到，所以裡面的檔案不用能編譯，也不會影響正式程式碼。
 
-> 這裡只寫「怎麼用範本」。框架本身的設計與內部運作見 repo 根目錄的 [README.md](../../README.md)。
+> 這裡只寫「怎麼用範本」。框架本身的設計與內部運作見 [前端文件索引](../README.md)。
 
 ## 佔位字串
 
@@ -69,7 +69,7 @@
    }
    ```
 
-3. **`mock/__table__-test.csv`** — 新建。第一列是 Sheet 表頭（中文），要跟 schema 的 `sheetHeader`／`label` 對得起來，並且包含 `idColumn` 那一欄。
+3. **`mock/__table__-test.csv`** — 新建。第一列是 Sheet 表頭（對外名稱），要跟 schema 的 `sheetHeader`／`label` 對得起來，並且包含 `idColumn` 那一欄。
 
 4. **`src/config/navigation.ts`** — 要進導覽列才加：
    ```ts
@@ -80,28 +80,17 @@
 
 先寫 `__Table__Row` 介面，再宣告 `__table__Schema: TableSchema<__Table__Row>`——這樣欄位 `key`、`labelColumn`、`detailOrder`、`defaultSort` 打錯字會直接紅字，`type` 跟介面的值型別對不上也會抓，虛擬欄位 `value` 的 `row` 也不用轉型。介面裡要自己補 store 會掛上去的東西：虛擬欄位的 `readonly xxx`，還有每個 ref 欄位對應的 `readonly $欄位key?: 對方Row`（`value` 裡要讀父表才需要）。
 
+完整的欄位清單不在這裡：每個欄位的意思寫在 [`src/schema/types.ts`](../src/schema/types.ts) 的型別上。常用的幾個：
+
 | 欄位 | 用途 |
 | --- | --- |
-| `sheetName` | Google Sheet 分頁的實際名稱，也是打 API 時 `table=` 的值 |
-| `idColumn` | 這張表的 ID 欄，填 Sheet 的**實際表頭文字** |
-| `labelColumn` | 用哪一欄稱呼一列（欄位 key，真實或虛擬都行），可省略。別的表 ref 到這裡、選擇器清單、`row.$label`（`__Table__Row` extends `RowBase` 就有型別）都顯示它；省略就是 id |
-| `columns[].key` | 程式裡用的英文欄位名 |
-| `columns[].label` | 顯示用的中文標籤 |
-| `columns[].sheetHeader` | Sheet 的實際表頭；跟 `label` 同值時可省略 |
-| `columns[].type` | `text` / `number` / `date` / `select` / `ref` |
-| `columns[].options` | 只有 `type: 'select'` 要填，該欄位的可選值 |
-| `columns[].allowCustom` | 只有 `type: 'select'` 有，可省略。開了 `options` 就只是建議，表單裡打別的字也直接當值、不驗證 |
-| `columns[].suggestFromData` | 只有 `allowCustom` 的欄位有意義，可省略。開了建議清單會接上這張表資料裡用過、`options` 沒有的值（次數多的在前） |
-| `columns[].refTable` | 只有 `type: 'ref'` 要填，指向哪張表（`schemas` 的 key） |
-| `columns[].onDelete` | 只有 `type: 'ref'` 有，可省略。`'cascade'`＝對方那筆被刪時這筆也跟著刪；省略就留著 |
-| `columns[].default` | 新增表單的初始值，可省略。值或函式（`() => new Date()`），函式在打開表單時才求值 |
-| `columns[].required` / `min` / `max` | 內建的驗證約束，可省略。`min`／`max` 只有 number 有 |
-| `columns[].validate` | 自己的規則 `(value, row) => 錯誤訊息 \| null`，可省略。內建檢查過了、而且有值時才叫；`value` 跟 `type` 同型別、`row` 是整列（跨欄位比較直接讀） |
-| `columns[].searchable` | 開了才進搜尋（`text`／`ref`）或篩選抽屜（`select`／`number`／`date`），預設關。虛擬欄位也能標 |
-| `virtualColumns` | 不在 Sheet 上、讀的時候才算的欄位，可省略。每個 `{ key, label, type, value: row => 值 }`，`type` 跟真實欄位一樣、決定 `value` 的回傳型別。store 會把它掛成 row 上的 getter，`row.key` 直接讀，排序、分組、顯示都跟真實欄位一樣。父表用 `row.$欄位key`、子表用 `row.$子表_欄位key`（都是 store 自動掛的，`__Table__Row` 裡宣告過型別才看得到） |
-| `defaultSort` | 列表頁預設排序，多筆依序當 tiebreaker。可省略 |
-| `detailOrder` | 詳細頁欄位順序。可省略，省略就沿用 `columns` 順序 |
-| `formOrder` | 表單頁欄位順序。可省略，跟 `detailOrder` 分開設定 |
+| `sheetName`、`idColumn`、`newId` | 對應哪個 Sheet 分頁、ID 欄的實際表頭、怎麼發新 id（`prefixedId('TPL')`） |
+| `columns[]` | Sheet 上真的有的欄位：`key`／`label`／`type`，加上該型別專屬的設定（`options`、`refTable`…） |
+| `labelColumn` | 用哪一欄稱呼一列；別的表 ref 到這裡就顯示它 |
+| `virtualColumns[]` | 算出來的欄位，多一個 `value: row => 值` |
+| `defaultSort`、`detailOrder`、`formOrder` | 列表排序、詳細頁順序、表單順序 |
+
+設計上為什麼是這樣（虛擬欄位、跨表關聯、驗證的分工）見 [docs/schema.md](../docs/schema.md)。
 
 ### 跨表關聯
 
@@ -111,23 +100,7 @@
 
 ## 2. UI 元件
 
-`components/` 底下每個元件一份，內容是「最小可用寫法 + 全部 props」。需要哪個就翻哪個，複製 Usage 區塊貼進頁面再往上加。
-
-| 元件 | 用途 |
-| --- | --- |
-| `DataList` | 卡片式列表的單列（含長按多選） |
-| `GroupedList` | 多層可收合分組 |
-| `DataTable` | 表格式列表／詳細頁內嵌子表格 |
-| `DataDetail` | 整頁詳細欄位渲染（含 loading/error） |
-| `DetailField` | 單一欄位顯示 |
-| `DataForm` | 依型別自動選輸入元件的表單 |
-| `ListField` | `DataList` 內部的兩列排版（單獨用得到才碰） |
-| `PageFab` | 右下角浮動按鈕 |
-| `RecordNav` | detail 頁左右兩側的上/下一筆箭頭 |
-| `TabView` | 頁籤 + 內容區（切換時依頁籤順序左右滑動） |
-| `AppDialog` | 對話框外殼 |
-| `ConfirmDialog` | 是/否確認框 |
-| `FieldsDialog` | 「問幾個欄位」對話框（通常透過 `askFields()` 用，不直接擺） |
+每個元件的用法（最小可用寫法 + 全部 props + 注意事項）在 [docs/components/](../docs/components/)，一個元件一份；有哪些元件、各自負責什麼見 [docs/architecture.md](../docs/architecture.md) 的模組結構。
 
 `AppShell` 是 App 層級的外殼，`App.vue` 用一次就好，不會在頁面裡重複使用，所以沒有範本。它自帶同步鈕、確認框、問欄位對話框與 snackbar，頁面不用擺這些。
 
@@ -153,7 +126,7 @@ const data = useSearch(query, useFilter(filters, allRows, __table__Schema), __ta
 
 表單頁不用自己組那兩顆按鈕——`useCreateForm`／`useEditForm` 回傳現成的 `actions`，照 `pages/new.vue`、`pages/edit.vue` 的寫法接上去就好。「有改動要不要放棄」的確認也不用管：兩個 composable 會登記到 `useLeaveGuard`，不管是按取消、返回鍵還是切導覽列都會先問。
 
-好幾個步驟要一氣呵成（新增完直接進 detail、接著再新增另一張表）的話，用 `runFlow` + `runStep` 串起來，寫法見 `table/use__Table__Actions.ts` 末尾的註解，設計說明見 README 4.4。
+好幾個步驟要一氣呵成（新增完直接進 detail、接著再新增另一張表）的話，用 `runFlow` + `runStep` 串起來，寫法見 `table/use__Table__Actions.ts` 末尾的註解，設計說明見 [docs/architecture.md](../docs/architecture.md)。
 
 只想改一兩個欄位、不值得開整頁表單的動作（改狀態、補日期），用 `useQuickEditAction`：多選模式下出現，開一個小對話框問那幾欄，確定後選取的每一筆都改成同一個值。只選一筆時對話框顯示那筆的現值，否則用 `defaults`：
 

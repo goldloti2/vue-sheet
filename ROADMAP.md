@@ -12,7 +12,7 @@
 - Vue 3 + TypeScript + Vuetify，unplugin-vue-router 檔案式路由，Pinia
 - `AppShell`：頂部 App Bar（標題來自 `route.meta.title`）+ 底部導覽列 + 側邊欄空殼
 - App Bar 左側圖示依路由自動切換漢堡選單／返回箭頭
-- 頁面前進/後退轉場動畫，方向依「導覽列順序 → 回到頂層 → 同路由換 id 依列表順序 → 瀏覽器歷史前後」四層判定（見 README 八）
+- 頁面前進/後退轉場動畫，方向依「導覽列順序 → 回到頂層 → 同路由換 id 依列表順序 → 瀏覽器歷史前後」四層判定（見 [vue-build/docs/ui.md](vue-build/docs/ui.md)）
 - 底部導覽列切換分頁用 `replace`，內頁不會堆進歷史
 - `<KeepAlive :max="50">` 以 `route.fullPath` 為 key，保留列表的展開與捲動狀態；同時讓「同路由換 id」能觸發轉場動畫
 
@@ -37,7 +37,7 @@
 - 連帶刪除：ref 欄位標 `onDelete: 'cascade'`，父列被刪時 `store.removeMany` 順著關聯圖把子列也刪掉（多層遞迴，走同一條 `patch`＋`enqueue`）；`ensureLoaded` 會把 cascade 的子表一起載
 
 ### 資料存取
-- `stores/tables.ts`：每張表一份全 App 共用的快取，同一張表不會重複打 API
+- `stores/tables/`：每張表一份全 App 共用的快取，同一張表不會重複打 API
 - `useTableList` / `useSortedTableList` / `useTableRow` 都讀同一份
 - 寫入走 store 的 `create` / `update` / `remove` / `removeMany`：改快取並進佇列，呼叫端不用手動 refresh
 - 待寫入佇列 `pending`（含合併規則）與手動推送；四個寫入 action 是同步的，只動快取與佇列
@@ -46,7 +46,7 @@
 - 跨表算出來的值靠共用快取的 reactivity 自動重算，不需要跨表失效機制
 
 ### 累積寫入
-改動先累積在前端，由使用者按「推送」才一次寫進 Sheet。設計與實作見 [README 4.2](README.md#42-資料流讀取與寫入)。
+改動先累積在前端，由使用者按「推送」才一次寫進 Sheet。設計與實作見 [vue-build/docs/store.md](vue-build/docs/store.md)。
 - 佇列 `pending`、合併規則、`flush`、`hasPending` / `flushing` / `flushError`
 - 四個寫入 action 變成同步的，只動快取與佇列
 - 流程存檔點 `beginFlow` / `commitFlow` / `rollbackFlow`（給連續動作用；流程進行中 `flush` 會被擋下）
@@ -86,12 +86,12 @@
 ### 表單與多選
 - `useCreateForm` / `useEditForm` 收掉新增與編輯的重複邏輯（起始值、載入、送出、導覽、錯誤狀態）
 - 新增表單的預設值三層：schema 的 `default` → `useNewAction` 經 `history.state` 帶來的 → `useCreateForm` 的參數
-- 前端驗證：`schema/validation.ts` 的 `validateRow`（內建 `required`／`min`／`max`／`select` 選項，其他規則由欄位的 `validate(value, row)` 自訂）一份，form 層與 `askFields` 送出前逐欄提示、store 的 `create`／`update` 寫入前再擋一次（拋錯、不動快取）；後端只做結構完整性，分工見 [README 4.5](README.md#45-schema-的角色)
+- 前端驗證：`schema/validation.ts` 的 `validateRow`（內建 `required`／`min`／`max`／`select` 選項，其他規則由欄位的 `validate(value, row)` 自訂）一份，form 層與 `askFields` 送出前逐欄提示、store 的 `create`／`update` 寫入前再擋一次（拋錯、不動快取）；後端只做結構完整性，分工見 [vue-build/docs/schema.md](vue-build/docs/schema.md)
 - `useMultiSelect` + `useLongPress`：長按進入多選，選取狀態由「有沒有選取任何一筆」推導
 - 批次刪除走動作的 `confirm`
 
 ### 連續動作
-設計與實作見 [README 4.4](README.md#44-完成動作後的導覽)。
+設計與實作見 [vue-build/docs/architecture.md](vue-build/docs/architecture.md)。
 - 流程存檔點 `beginFlow` / `commitFlow` / `rollbackFlow`：把一段流程的快取與佇列改動一次還原；套疊直接拋錯，流程進行中 `flush` 會被擋下
 - `useFlow.ts`：`runFlow`（外殼：存檔點 + commit / rollback）、`runStep`（開表單等送出）、`resumeStep`（表單交棒）、`FlowCancelled`、`hasEarlierSteps`
 - `router.afterEach` 中止等待中的步驟（reject）並回滾；`useCreateForm`／`useEditForm` 送出成功後先問 `resumeStep`
@@ -113,8 +113,9 @@
 - 純記憶體，重整頁面回到 CSV 原始內容
 - `services/appScript.ts` 是對後端唯一的出入口，上線時只要換掉這兩個函式的主體、刪掉 `mock/`
 
-### 範本
-- `template/`：新增一張表所需的全套檔案 + 每個 UI 元件的用法說明
+### 文件與範本
+- 根目錄 `README.md` 是索引；跨兩端的介面在 `docs/api.md`，前端的設計在 `vue-build/docs/`（`architecture` / `schema` / `store` / `ui` + `components/` 每個元件一份）
+- `vue-build/template/`：新增一張表所需的全套檔案
 
 ---
 
@@ -124,7 +125,7 @@
 - Apps Script 的 `doGet`/`doPost` 入口與泛用 CRUD 引擎
 - Schema.gs、SheetUtils.gs（header 對應、row array ↔ object；ID 改由前端產生，後端不發）
 - Validation.gs：只做安全性與結構完整性（id 不重複、目標存在、表名與欄位名在 schema 內），不做合法性驗證
-- Hooks 機制（見 README 4.7）
+- Hooks 機制（見 [docs/api.md](docs/api.md)）
 - 前端 `appScript.ts` 從假後端換成真的 fetch
 
 ### 後端 API 介面（已定案，還沒實作）
@@ -149,7 +150,10 @@
 > 註：每分鐘 60 次寫入是 Sheets REST API 的配額，用 Apps Script 內建的 `SpreadsheetApp` 並不適用。批次要省的是**每次 Web App 請求的 script 冷啟成本（約 0.5～2 秒）**，不是配額。
 
 ### 資料一致性
-- 樂觀鎖定：`updatedAt` 欄位與衝突提示都還沒做
+- **推送前比對檔案的 modifiedTime**（取代原本 `updatedAt` 欄位的想法，設計已定、等後端）：Sheets 沒有逐列的修改時間，維護 `updatedAt` 要後端戳章加 `onEdit` 觸發器；改成用整個檔案的 `modifiedTime`（`DriveApp.getFileById(id).getLastUpdated()`），粗糙（任何分頁、連格式變更都算）但夠用
+  - `fetchTable` 的回應帶 `modifiedTime`，store 記成 `knownModifiedTime`；`mutateTable` 的 payload 帶 `since`，**由後端**在 `LockService` 鎖裡跟當下的值比對再寫，不一致就回 `{ success: false, error: 'modified' }` 什麼都不寫，一致就寫入並回新的 `modifiedTime`
+  - 衝突時前端停止推送、保留佇列、跳提示，兩條出路：「放棄未推送的變更並重抓」或「強制推送」（payload 不帶 `since`；注意 `update` 送的是整列，會蓋掉那一列的手動修改）
+  - **不做**「把佇列重新套用到新資料上」——跟佇列持久化是同一種成本
 
 ### UI 功能
 - 排序的操作介面（目前只有 schema 的 `defaultSort`，使用者不能自己改）
@@ -159,18 +163,22 @@
   - 這張表單可能本身就是某條流程的一步（例如「新增父表接著新增子表」的第二步），`runFlow` 不能套疊，而且 `runStep` 在流程中會用 `replace`，把目前這張表單頁換掉
   - 完成後要回到原本那張表單（`back`），不是像流程一樣往前走
   - 等真的常用到再做；現在的替代路徑是先去父表新增、再回來選
-- 圖片欄位與上傳（存 Google Drive）
+- **`image` 欄位型別**（設計已定）：一格一個字串，依內容判斷來源——`<svg…` 是行內 SVG、`http(s)://` 是網址、其餘當 Google Drive 檔案 id（貼分享連結也收，從 `/d/<id>/` 或 `?id=` 取出）。統一用 `imageSrc(value)` 轉成 `<img src>`：Drive 走 `https://drive.google.com/thumbnail?id=<id>&sz=w<px>`（沿用瀏覽器的 Google 登入，不用後端、沒有 CORS），SVG 轉 `data:image/svg+xml,`。**一律走 `<img>` 不用 `v-html`**——當成圖片載入的 SVG 不能執行 script、綁事件或抓外部資源。顯示：`DetailField` 加一個分支、`DataList` 多一個可選的 `image` prop 在最左邊放縮圖；表單就是純文字欄位。不進搜尋與篩選。上傳到 Drive 是另一件事，還沒討論
+- **`time` 欄位型別**：還沒設計。要先決定值的形狀（只有時間的 `Date`？分鐘數？`"HH:mm"` 字串？）與 Sheet 來回轉換、用哪個輸入元件（Vuetify 4 沒有 `v-time-input`）、要不要像 `date` 一樣進篩選、以及要不要另外有日期＋時間的型別
+- **通用頁面**（設計已定，最大的一件）：`src/pages/[table]/` 四個通用頁讀 `schemas[route.params.table]`，新增一張表變成「寫一個 schema + 註冊一行」。客製分三層：子表清單寫進 schema 的 `detailTables`、只有這張表要的東西掛 `detailExtra` 元件、連版型都不同才 eject（複製通用頁）。要先修 `useListOrder`（見下）、`AppShell` 標題要能由頁面指定；`template/` 屆時併進 `vue-build/docs/templates/`
+- `useListOrder` 的 `orders` Map 只以表名為 key、永不清除：同一張表有兩個列表頁（通用頁 + eject、或 TabView 兩個面板）時會互相蓋掉。通用頁與 TabView 面板都卡這一項
 - 總覽頁範本（`DataDashboardTemplate`）：保留了位置但沒有具體需求
 - `TabView` 放多個獨立面板（例如兩張表的列表當成一組頁籤）目前只有內容層可用，動作層會壞掉。根源是兩個面板一旦都被看過就同時掛著（`v-window` 用 `v-show` 切換），而 FAB 與 App Bar 動作都假設同時只有一個頁面活著：
   - `useAppBarActions` 是單一 setter，後掛載的會蓋掉前面的，切頁籤也不會重新註冊
   - `PageFab` 靠 `onActivated`/`onDeactivated` 決定要不要 teleport，那是 `<KeepAlive>` 的 hook，`v-show` 切換不會觸發，於是兩顆 FAB 一起掛在 body 上
   - `useListOrder` 沒有 active 判斷，兩個面板都會把自己的順序發布到同一個 key、互相蓋掉，detail 頁的上/下一筆會跟著錯亂
-  - 修法已定，等真的要寫這種頁面時再做：`TabView` 每個 `v-window-item` 裡包一層內部小元件 `TabViewPanel`，`provide` 一個 `computed(() => model === tab)`（provide 以元件為單位，要這一層才能每個頁籤各一份）；新增 `panelActiveKey`，`registerActions`、`PageFab`、`useListOrder` 各 `inject(panelActiveKey, ref(true))`，`isActive` 改成 `KeepAlive 狀態 && panel`、兩者都 watch。不在頁籤裡就是 `true`，現有頁面零改動。KeepAlive 巢狀是對的：頁面被快取時 Vue 對整棵子樹叫 `onDeactivated`。動的是 `TabView.vue`、`useActionSlot.ts`、`PageFab.vue`、`useListOrder.ts` 加一個放 key 的小檔，四五十行；文件補在 `TabView.md`，不另加頁面範本
+  - 修法已定，等真的要寫這種頁面時再做：`TabView` 每個 `v-window-item` 裡包一層內部小元件 `TabViewPanel`，`provide` 一個 `computed(() => model === tab)`（provide 以元件為單位，要這一層才能每個頁籤各一份）；新增 `panelActiveKey`，`registerActions`、`PageFab`、`useListOrder` 各 `inject(panelActiveKey, ref(true))`，`isActive` 改成 `KeepAlive 狀態 && panel`、兩者都 watch。不在頁籤裡就是 `true`，現有頁面零改動。KeepAlive 巢狀是對的：頁面被快取時 Vue 對整棵子樹叫 `onDeactivated`。動的是 `TabView.vue`、`useActionSlot.ts`、`PageFab.vue`、`useListOrder.ts` 加一個放 key 的小檔，四五十行；文件補在 `vue-build/docs/components/TabView.md`，不另加頁面範本
+  - **多表篩選**（設計已定，跟上面那條一起做）：每張表各自一份 `Filters`、同時生效，抽屜上方多一排表的 chip 決定現在編哪一張的條件；搜尋字串仍然全頁共用一份。註冊介面改成 `useAppBarSearch(query, { tables: [{ schema, filters, rows }, …], current })`，單表頁傳一個元素、行為完全不變。`hasActiveFilter` 掃所有表，「清除」只清當前那張、← 關閉搜尋清全部。約 40 行，本身不依賴上面的 active 訊號
   - **不同頁籤不同 FAB**：頁籤＝篩選的頁現在就做得到，頁面自己 `computed(() => 目前頁籤 === 'A' ? actionsA.value : actionsB.value)` 餵給 `PageFab`——FAB 是頁面掛的，頁面知道現在哪個頁籤。上面的修法解的是「面板自己掛自己的 FAB／動作」那種，兩者不衝突
 
 ### PWA 與離線
 - manifest.json、Service Worker 都還沒建立（`vite-plugin-pwa` 未安裝）
-- App 名稱、圖示都還沒決定
+- App 圖示還沒決定（名稱在 `src/config/app.ts`）
 - 離線寫入佇列：明確決定不做，之後有需求再說
 
 ### 桌面版

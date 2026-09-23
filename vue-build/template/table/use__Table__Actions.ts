@@ -40,7 +40,7 @@ export function use__Table__Actions (options: __Table__ActionOptions = {}) {
   }
 }
 
-// 連續動作：幾個步驟串成一段 async、包在 runFlow 裡，跟其他動作一樣從這裡取（見 README 4.4）。
+// 連續動作：幾個步驟串成一段 async、包在 runFlow 裡，跟其他動作一樣從這裡取（見 docs/architecture.md）。
 // 例：新增完直接進那筆的 detail。要用的話在上面的回傳物件多加一個 key：
 //
 //   newThenView: computed<PageAction[]>(() => [{

@@ -9,15 +9,22 @@ export interface RowBase {
 
 // 每種欄位型別只在這裡定義一次：值的型別 + 這種型別專屬的設定。真實與虛擬欄位都從這張表推導
 interface ColumnTypes {
+  /** 一般文字 */
   text: { value: string | null }
+  /** 數字；min／max 同時是表單輸入框的範圍與驗證的上下限 */
   number: { value: number | null, extra: { min?: number, max?: number } }
+  /** 日期（只有日期，沒有時間） */
   date: { value: Date | null }
-  // 外鍵欄位（見文件 4.2 節一對多關聯慣例）；refTable 對應 schema/index.ts 的 schemas 裡的 key。
-  // 顯示時用對方的 $label（對方 schema 的 labelColumn），store 會把對方那一列掛成 row.$欄位key。
-  // onDelete: 'cascade' 表示對方那一列被刪時，指向它的這些列也一起刪；不標就留著（ref 指向不存在的 id）
+  /**
+   * 外鍵，值是對方的 id（見 docs/schema.md 的一對多關聯）。
+   * refTable 是對方在 schemas 裡的 key；顯示時一律用對方的 $label，store 會把對方那一列掛成 row.$欄位key。
+   * onDelete: 'cascade' 表示對方那一列被刪時、指向它的這些列也一起刪；不標就留著（ref 指向不存在的 id）
+   */
   ref: { value: string | null, extra: { refTable: string, onDelete?: 'cascade' } }
-  // 清單類欄位：只能是 options 裡的其中一個值；allowCustom 開了就變成建議清單，打別的也收；
-  // suggestFromData 再開就把資料裡用過的值也列進建議（options 在前）
+  /**
+   * 清單：預設只能選 options 裡的值。
+   * allowCustom 開了 options 就只是建議、打別的字也收；再開 suggestFromData，建議會接上這張表資料裡用過的值（options 在前）
+   */
   select: { value: string | null, extra: { options: string[], allowCustom?: boolean, suggestFromData?: boolean } }
 }
 
@@ -40,29 +47,35 @@ export type RowKey<Row extends object> = ColumnKey<Row, unknown>
 // 一個欄位最基本的資訊：key、label、型別、型別專屬設定。真實與虛擬欄位都疊在這上面。
 // 帶 Row 時 key 只能是 Row 裡型別相符的欄位（type: 'number' 只能綁 number | null 的欄位）
 export type ColumnBase<Row extends object = AnyRow, T extends ColumnType = ColumnType> = {
+  /** 程式裡用的欄位名（Row 介面上的那個） */
   key: ColumnKey<Row, ColumnValue<T>>
+  /** 顯示用的標籤，表單、詳細頁、表格表頭都用它 */
   label: string
+  /** 欄位型別，決定值的型別、輸入元件與顯示格式 */
   type: T
-  // 開了才進搜尋／篩選：text 與 ref 是搜尋列的比對對象，其他型別是篩選（還沒做）。預設關
+  /** 開了才進搜尋（text／ref 比對文字）或篩選抽屜（select／number／date 用值），預設關 */
   searchable?: boolean
 } & ColumnExtra<T>
 
 // 真實欄位：Sheet 上有的，多了表頭對應與表單設定
 export type SchemaColumn<Row extends object = AnyRow> = {
   [T in ColumnType]: ColumnBase<Row, T> & {
-    // 省略時預設跟 label 同值（見《GoogleSheet後端App-通用架構》文件 6.6 節）
+    /** Sheet 上的實際表頭文字；省略時跟 label 同值 */
     sheetHeader?: string
+    /** 不能留空。空字串與 null 都算空 */
     required?: boolean
+    /** 新增表單的初始值；函式型的在打開表單那一刻才求值 */
     default?: ColumnDefault<ColumnValue<T>>
-    // 設計者自訂的規則：內建檢查過了、而且有值時才叫，回錯誤訊息或 null。
+    /** 自訂規則：內建檢查過了、而且有值時才叫，回錯誤訊息或 null */
     validate?: (value: NonNullable<ColumnValue<T>>, row: Row) => string | null
   }
 }[ColumnType]
 
-// 虛擬欄位：不在 Sheet 上、讀的時候才算。store 會把它掛成 row 上的 getter，讀起來跟真實欄位一樣（見 README 4.5）。
+// 虛擬欄位：不在 Sheet 上、讀的時候才算。store 會把它掛成 row 上的 getter，讀起來跟真實欄位一樣（見 docs/schema.md）。
 // 父表走 row.$欄位key、子表走 row.$子表_欄位key，都是 store 掛好的，value 直接讀
 export type VirtualColumn<Row extends object = AnyRow> = {
   [T in ColumnType]: ColumnBase<Row, T> & {
+    /** 怎麼算出來。父列讀 row.$欄位key、子列讀 row.$子表_欄位key，都是 store 掛好的 */
     value: (row: Row) => ColumnValue<T>
   }
 }[ColumnType]
@@ -71,28 +84,30 @@ export type VirtualColumn<Row extends object = AnyRow> = {
 export type AnyColumn<Row extends object = AnyRow> = SchemaColumn<Row> | VirtualColumn<Row>
 
 export interface SortSpec<Row extends object = AnyRow> {
+  /** 依哪一欄排，真實或虛擬欄位都行 */
   key: RowKey<Row>
   direction: 'asc' | 'desc'
 }
 
 // 各表宣告成 TableSchema<XxxRow>，欄位 key 與 value 的 row 就有型別；框架端一律用不帶參數的 TableSchema 接
 export interface TableSchema<Row extends object = AnyRow> {
-  // 對應 Google Sheet 分頁的實際名稱，也是打 API 時 table= 的值
+  /** 對應 Google Sheet 分頁的實際名稱，也是打 API 時 table= 的值 */
   sheetName: string
-  // 這張表的 ID 欄（sheetHeader 值）。系統欄位，不放進 columns（見文件 6.5 節）
+  /** 這張表的 ID 欄，填 Sheet 上的實際表頭文字。系統欄位，不放進 columns */
   idColumn: string
-  // 用哪一欄稱呼一列（欄位 key，真實或虛擬都行），store 據此掛 row.$label；別的表 ref 到這裡就顯示它。省略就是 id
+  /** 用哪一欄稱呼一列（真實或虛擬欄位都行），store 據此掛 row.$label；別的表 ref 到這裡就顯示它。省略就是 id */
   labelColumn?: RowKey<Row>
-  // 怎麼發一筆新 id，由各表自己決定。常見的前綴式用 prefixedId('TPL')
+  /** 怎麼發一筆新 id，由各表自己決定；常見的前綴式用 prefixedId('TPL') */
   newId: () => string
+  /** Sheet 上真的有的欄位，順序同時是表單與詳細頁的預設順序 */
   columns: SchemaColumn<Row>[]
-  // 算出來的欄位，不進 coerceRow / serializeRow / 表單；顯示、排序、分組都跟真實欄位一樣用
+  /** 算出來的欄位，不進 coerceRow / serializeRow / 表單；顯示、排序、分組都跟真實欄位一樣用 */
   virtualColumns?: VirtualColumn<Row>[]
-  // detail 頁的顯示順序（欄位 key 陣列）。省略時沿用 columns 的順序
+  /** 詳細頁的欄位順序；省略就沿用 columns 的順序。沒列到的欄位不顯示 */
   detailOrder?: RowKey<Row>[]
-  // 表單頁的欄位順序（欄位 key 陣列）。省略時沿用 columns 的順序；
+  /** 表單頁的欄位順序；省略就沿用 columns 的順序 */
   formOrder?: RowKey<Row>[]
-  // 列表頁預設排序，多筆依序當 tiebreaker。省略/空陣列 = 維持原始（row number）順序
+  /** 列表頁的預設排序，多筆依序當 tiebreaker；省略或空陣列＝維持 Sheet 上的原始順序 */
   defaultSort?: SortSpec<Row>[]
 }
 

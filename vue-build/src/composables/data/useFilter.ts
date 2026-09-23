@@ -39,7 +39,7 @@ export interface PresentValues {
   hasBlank: boolean
 }
 
-// 一個 select 欄位在 rows 裡實際出現過哪些值。篩選抽屜的 chip 與 suggestFromData 的建議清單都從這裡拿，排法才一致
+// 一個 select 欄位在 rows 裡實際出現過哪些值。篩選抽屜的選項與 suggestFromData 的建議清單都從這裡拿，排法才一致
 export function presentValues (rows: readonly object[], column: AnyColumn): PresentValues {
   const counts = new Map<string, number>()
   let hasBlank = false

@@ -5,7 +5,7 @@
   interface DetailFieldProps {
     label: string
     value: string
-    // 這一欄的動作：右邊出現圖示，整格都能點（見 README 八）
+    // 這一欄的動作：右邊出現圖示，整格都能點（見 docs/ui.md）
     action?: PageAction
   }
 

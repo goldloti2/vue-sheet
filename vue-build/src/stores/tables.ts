@@ -3,7 +3,7 @@ import type { Relation } from '@/schema/relations'
 import type { TableSchema } from '@/schema/types'
 import type { ComputedRef } from 'vue'
 import { defineStore } from 'pinia'
-import { computed, reactive, shallowRef } from 'vue'
+import { computed, reactive, shallowReactive, shallowRef } from 'vue'
 import { schemas } from '@/schema'
 import { cascadeRelations, childRelations } from '@/schema/relations'
 import { rowLabel, serializeRow, sortRows } from '@/schema/types'
@@ -32,7 +32,7 @@ interface FlowSnapshot {
 
 export const useTablesStore = defineStore('tables', () => {
   // 畫面的單一真相。已送出的與還沒送出的混在一起，畫面不需要分辨
-  const rows = reactive<Partial<Record<TableKey, unknown[]>>>({})
+  const rows = shallowReactive<Partial<Record<TableKey, unknown[]>>>({})
   const loading = reactive<Partial<Record<TableKey, boolean>>>({})
   const error = reactive<Partial<Record<TableKey, string | null>>>({})
   // 「要送什麼」的單一真相

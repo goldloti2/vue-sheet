@@ -200,7 +200,7 @@ store.removeMany(table, ids)     // 從快取移除多筆
 
 **這四個都是同步的**——它們只動快取與待寫入佇列，不碰網路。真正送出去是 `flush()` 的事，由使用者按 App Bar 上的推送鈕觸發。
 
-- `rows` 是**畫面**的單一真相。已送出的與還沒送出的混在一起，畫面不需要分辨一筆送出去了沒
+- `rows` 是**畫面**的單一真相。已送出的與還沒送出的混在一起，畫面不需要分辨一筆送出去了沒。它是 `shallowReactive`：`create`／`update`／`remove` 一律整條陣列換掉、不就地改某一列，所以不需要把每一列都包成 proxy。反過來說，繞過 store 直接改 `store.rows` 裡某一列的欄位不會觸發畫面更新——寫入一律走上面四個 action
 - `pending` 是**要送什麼**的單一真相。定位鍵是 (表, id)，`values` 在進佇列的當下就用 `serializeRow` 轉成要送出去的形狀（sheet 表頭當 key、值是字串），`flush` 拿了就送
 - 同一筆的多次操作在**寫入當下**就合併掉，不是留到 flush 才算：`update` + `update` 併成一次、`create` + `update` 併進那個 `create`、`create` + `delete` 整組移除（根本不用送）、`update` + `delete` 只留 `delete`
 - 表單一律送整列（不做最小差集），所以 `update` 的 `values` 就是整列——payload 大一點，但省掉在表單裡比對原始值的複雜度

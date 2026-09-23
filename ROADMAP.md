@@ -165,13 +165,13 @@
   - 等真的常用到再做；現在的替代路徑是先去父表新增、再回來選
 - **`image` 欄位型別**（設計已定）：一格一個字串，依內容判斷來源——`<svg…` 是行內 SVG、`http(s)://` 是網址、其餘當 Google Drive 檔案 id（貼分享連結也收，從 `/d/<id>/` 或 `?id=` 取出）。統一用 `imageSrc(value)` 轉成 `<img src>`：Drive 走 `https://drive.google.com/thumbnail?id=<id>&sz=w<px>`（沿用瀏覽器的 Google 登入，不用後端、沒有 CORS），SVG 轉 `data:image/svg+xml,`。**一律走 `<img>` 不用 `v-html`**——當成圖片載入的 SVG 不能執行 script、綁事件或抓外部資源。顯示：`DetailField` 加一個分支、`DataList` 多一個可選的 `image` prop 在最左邊放縮圖；表單就是純文字欄位。不進搜尋與篩選。上傳到 Drive 是另一件事，還沒討論
 - **`time` 欄位型別**：還沒設計。要先決定值的形狀（只有時間的 `Date`？分鐘數？`"HH:mm"` 字串？）與 Sheet 來回轉換、用哪個輸入元件（Vuetify 4 沒有 `v-time-input`）、要不要像 `date` 一樣進篩選、以及要不要另外有日期＋時間的型別
-- **通用頁面**（設計已定，最大的一件）：`src/pages/[table]/` 四個通用頁讀 `schemas[route.params.table]`，新增一張表變成「寫一個 schema + 註冊一行」。客製分三層：子表清單寫進 schema 的 `detailTables`、只有這張表要的東西掛 `detailExtra` 元件、連版型都不同才 eject（複製通用頁）。要先修 `useListOrder`（見下）、`AppShell` 標題要能由頁面指定；`template/` 屆時併進 `vue-build/docs/templates/`
-- `useListOrder` 的 `orders` Map 只以表名為 key、永不清除：同一張表有兩個列表頁（通用頁 + eject、或 TabView 兩個面板）時會互相蓋掉。通用頁與 TabView 面板都卡這一項
+- **通用頁面**（設計已定，最大的一件）：`src/pages/[table]/` 四個通用頁讀 `schemas[route.params.table]`，新增一張表變成「寫一個 schema + 註冊一行」。客製分三層：子表清單寫進 schema 的 `detailTables`、只有這張表要的東西掛 `detailExtra` 元件、連版型都不同才 eject（複製通用頁）。`AppShell` 標題要能由頁面指定（`usePageTitle`）；`template/` 屆時併進 `vue-build/docs/templates/`
+- `useListOrder` 的順序是全 App 一份、以表名為 key 且永不清除（detail 頁要在列表離場後才讀，所以不能清）。寫入端已經擋掉被 KeepAlive 收起來的頁面，但 TabView 面板還需要 active 訊號才能判斷「哪個面板的順序算數」——併在下面那條一起做
 - 總覽頁範本（`DataDashboardTemplate`）：保留了位置但沒有具體需求
 - `TabView` 放多個獨立面板（例如兩張表的列表當成一組頁籤）目前只有內容層可用，動作層會壞掉。根源是兩個面板一旦都被看過就同時掛著（`v-window` 用 `v-show` 切換），而 FAB 與 App Bar 動作都假設同時只有一個頁面活著：
   - `useAppBarActions` 是單一 setter，後掛載的會蓋掉前面的，切頁籤也不會重新註冊
   - `PageFab` 靠 `onActivated`/`onDeactivated` 決定要不要 teleport，那是 `<KeepAlive>` 的 hook，`v-show` 切換不會觸發，於是兩顆 FAB 一起掛在 body 上
-  - `useListOrder` 沒有 active 判斷，兩個面板都會把自己的順序發布到同一個 key、互相蓋掉，detail 頁的上/下一筆會跟著錯亂
+  - `useListOrder` 只擋得掉被 KeepAlive 收起來的頁面，擋不掉同時掛著的兩個面板：兩邊都會把自己的順序發布到同一個 key、互相蓋掉，detail 頁的上/下一筆會跟著錯亂
   - 修法已定，等真的要寫這種頁面時再做：`TabView` 每個 `v-window-item` 裡包一層內部小元件 `TabViewPanel`，`provide` 一個 `computed(() => model === tab)`（provide 以元件為單位，要這一層才能每個頁籤各一份）；新增 `panelActiveKey`，`registerActions`、`PageFab`、`useListOrder` 各 `inject(panelActiveKey, ref(true))`，`isActive` 改成 `KeepAlive 狀態 && panel`、兩者都 watch。不在頁籤裡就是 `true`，現有頁面零改動。KeepAlive 巢狀是對的：頁面被快取時 Vue 對整棵子樹叫 `onDeactivated`。動的是 `TabView.vue`、`useActionSlot.ts`、`PageFab.vue`、`useListOrder.ts` 加一個放 key 的小檔，四五十行；文件補在 `vue-build/docs/components/TabView.md`，不另加頁面範本
   - **多表篩選**（設計已定，跟上面那條一起做）：每張表各自一份 `Filters`、同時生效，抽屜上方多一排表的 chip 決定現在編哪一張的條件；搜尋字串仍然全頁共用一份。註冊介面改成 `useAppBarSearch(query, { tables: [{ schema, filters, rows }, …], current })`，單表頁傳一個元素、行為完全不變。`hasActiveFilter` 掃所有表，「清除」只清當前那張、← 關閉搜尋清全部。約 40 行，本身不依賴上面的 active 訊號
   - **不同頁籤不同 FAB**：頁籤＝篩選的頁現在就做得到，頁面自己 `computed(() => 目前頁籤 === 'A' ? actionsA.value : actionsB.value)` 餵給 `PageFab`——FAB 是頁面掛的，頁面知道現在哪個頁籤。上面的修法解的是「面板自己掛自己的 FAB／動作」那種，兩者不衝突

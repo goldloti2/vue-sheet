@@ -1,14 +1,26 @@
 import type { TableKey } from '@/schema'
 import type { ComputedRef, MaybeRefOrGetter } from 'vue'
-import { computed, reactive, toValue, watchEffect } from 'vue'
+import { computed, onActivated, onDeactivated, reactive, shallowRef, toValue, watchEffect } from 'vue'
 import { useRouter } from 'vue-router'
 
 // 列表頁把「畫面上實際看到的順序」發布出來，detail頁靠它算前後鄰居。
 const orders = reactive(new Map<TableKey, string[]>())
 
 export function useListOrder (table: TableKey, ids: MaybeRefOrGetter<string[]>): void {
+  // 被 KeepAlive 收起來的列表仍然全速運轉，不擋的話它會蓋掉當前那個列表發布的順序
+  const active = shallowRef(true)
+  onActivated(() => {
+    active.value = true
+  })
+  onDeactivated(() => {
+    active.value = false
+  })
+
+  // 只停止更新、不清掉：detail 頁是在列表離場之後才來讀的
   watchEffect(() => {
-    orders.set(table, [...toValue(ids)])
+    if (active.value) {
+      orders.set(table, [...toValue(ids)])
+    }
   })
 }
 

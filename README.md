@@ -151,8 +151,10 @@ src/
       useTableActions.ts        PageAction 型別 + 通用動作 builder
                                 （useNewAction/useEditAction/useDeleteAction/useBulkDeleteAction/useQuickEditAction
                                  + 欄位動作 useGoToRefAction/useOpenUrlAction/useSetFieldAction）
-  stores/
-    tables.ts                 每張表一份共用快取 + 寫入用的 CRUD action（見 4.2）
+  stores/tables/
+    index.ts                  每張表一份共用快取 + 寫入用的 CRUD action、流程存檔點（見 4.2）
+    queue.ts                  還沒推送的操作佇列與 flush
+    rowGetters.ts             掛在 row 上的 getter（虛擬欄位、$label、跨表的 $欄位key／$子表_欄位key）
   services/
     appScript.ts              對後端唯一的出入口：fetchTable / mutateTable
     types.ts                  API 合約型別（SheetAction / ApiResponse）
@@ -184,7 +186,7 @@ src/
 
 ```
 頁面 → useTableList/useSortedTableList/useTableRow
-     → stores/tables.ts（有快取就直接給，沒有才抓）
+     → stores/tables（有快取就直接給，沒有才抓）
      → services/appScript.ts fetchTable
      → 後端回原始字串 → coerceRow 依 schema 轉型別 → 存進快取
 ```

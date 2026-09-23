@@ -1,6 +1,7 @@
 <script lang="ts" setup>
   import type { PageAction } from '@/composables/actions/useTableActions'
   import type { AppBarSearch } from '@/composables/shell/useAppBarSearch'
+  import type { AppBarTabs } from '@/composables/shell/useAppBarTabs'
   import { mdiArrowLeft, mdiDotsVertical, mdiFilterVariant, mdiMagnify, mdiRefresh } from '@mdi/js'
   import { computed, onBeforeUnmount, onMounted, provide, shallowRef, watch } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
@@ -11,6 +12,7 @@
   import { provideActionRunner } from '@/composables/shell/useActionRunner'
   import { appBarActionsKey } from '@/composables/shell/useAppBarActions'
   import { appBarSearchKey } from '@/composables/shell/useAppBarSearch'
+  import { appBarTabsKey } from '@/composables/shell/useAppBarTabs'
   import { confirmFields, fieldsDialog } from '@/composables/shell/useAskFields'
   import { bottomActionsKey } from '@/composables/shell/useBottomActions'
   import { acceptConfirm, confirmDialog } from '@/composables/shell/useConfirm'
@@ -49,6 +51,12 @@
   const bottomActions = shallowRef<PageAction[]>([])
   provide(bottomActionsKey, actions => {
     bottomActions.value = actions
+  })
+
+  // 頁籤列（TabView 登記的）掛在 App Bar 底下，所以不會跟著內容捲走
+  const tabs = shallowRef<AppBarTabs | null>(null)
+  provide(appBarTabsKey, value => {
+    tabs.value = value
   })
 
   // 頁面登記了搜尋才有放大鏡；按下去 App Bar 換成輸入框。query 是頁面的 ref，關掉時清空
@@ -206,6 +214,13 @@
           <v-icon :icon="mdiRefresh" />
         </v-badge>
       </v-btn>
+    </template>
+
+    <!-- 頁籤跟著 App Bar 固定在最上；搜尋模式下也留著，因為搜尋與篩選是跨頁籤的 -->
+    <template v-if="tabs" #extension>
+      <v-tabs v-model="tabs.current.value" align-tabs="center" grow>
+        <v-tab v-for="tab in tabs.tabs" :key="tab" :value="tab">{{ tab }}</v-tab>
+      </v-tabs>
     </template>
   </v-app-bar>
 

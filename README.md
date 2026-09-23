@@ -104,7 +104,7 @@ src/
                                 右側動作按鈕來自 useAppBarActions()
       PageFab.vue               右下角浮動按鈕
       FilterDrawer.vue          右側篩選抽屜，欄位來自 schema 裡 searchable 的 select/number/date
-      TabView.vue               頁籤 + 內容區，切換時依頁籤順序左右滑動
+      TabView.vue               頁籤 + 內容區；頁籤列登記給 AppShell（固定在 App Bar 底下）
     dialog/
       AppDialog.vue             對話框外殼
       ConfirmDialog.vue         是/否確認框，建立在 AppDialog 上
@@ -134,6 +134,7 @@ src/
       useActionSlot.ts          把動作註冊到 AppShell 某一塊的共用機制（含 KeepAlive 防護）
       useAppBarActions.ts       註冊到 App Bar 右側
       useAppBarSearch.ts        登記頁面的搜尋 query，App Bar 才出現放大鏡（見八）
+      useAppBarTabs.ts          登記頁籤列，畫在 App Bar 底下的 extension（TabView 內部用）
       useBottomActions.ts       註冊到螢幕最底端，暫時取代導覽列（表單頁用）
       useOverlay.ts             overlayOpenKey：有東西蓋整頁（篩選抽屜）時通知 PageFab 讓開
       useActionRunner.ts        動作的執行（confirm 先問、錯誤進 snackbar），由 AppShell 提供

@@ -21,6 +21,18 @@
 
 ---
 
+## 0. 初次設定
+
+拿這個框架開新專案時先改這幾處：
+
+| 檔案 | 改什麼 |
+| --- | --- |
+| `src/config/app.ts` | `appName`：App 名稱，沒指定 `route.meta.title` 的頁面用它當標題 |
+| `index.html` | `<title>` 寫同一個名字（靜態 HTML 讀不到 TS，只能各寫一次）；`lang` 依介面語言 |
+| `src/config/navigation.ts` | 導覽列項目，隨表增減（見下面第 1 節） |
+
+---
+
 ## 1. 新增一張表
 
 ### 要複製的檔案

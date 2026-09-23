@@ -165,7 +165,9 @@ src/
     validation.ts             依 schema 的約束檢查一整列（唯一的合法性驗證來源）
     relations.ts              掃 schema 的 ref 欄位自動算出的關聯圖
     index.ts                  代稱 → Schema 對照表，匯出 TableKey
-  config/navigation.ts        導覽項目設定
+  config/
+    navigation.ts             導覽項目設定
+    app.ts                    App 名稱（沒指定 route.meta.title 的頁面用它當標題）
   router/index.ts             路由實例 + 轉場方向判定、leaveAfterAction / pushWithDefaults（見 4.4、八）
   pages/                      檔案即路由
     表名/index.vue              → /表名          列表

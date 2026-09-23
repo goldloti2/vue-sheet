@@ -16,6 +16,7 @@
   import { acceptConfirm, confirmDialog } from '@/composables/shell/useConfirm'
   import { notice, notify } from '@/composables/shell/useNotify'
   import { overlayOpenKey } from '@/composables/shell/useOverlay'
+  import { appName } from '@/config/app'
   import { navigationCount } from '@/router'
   import { useTablesStore } from '@/stores/tables'
 
@@ -37,7 +38,7 @@
   const route = useRoute()
   const router = useRouter()
 
-  const title = computed(() => route.meta.title ?? 'AAAA')
+  const title = computed(() => route.meta.title ?? appName)
 
   const appBarActions = shallowRef<PageAction[]>([])
   provide(appBarActionsKey, actions => {

@@ -1,6 +1,7 @@
 import type { TableKey } from '@/schema'
 import type { Relation } from '@/schema/relations'
 import type { TableSchema } from '@/schema/types'
+import type { ComputedRef } from 'vue'
 import { defineStore } from 'pinia'
 import { computed, reactive, shallowRef } from 'vue'
 import { schemas } from '@/schema'
@@ -10,6 +11,9 @@ import { validateRow } from '@/schema/validation'
 import { fetchTable, mutateTable } from '@/services/appScript'
 
 const pendingLoads = new Map<TableKey, Promise<void>>()
+
+// 沒有子列時共用同一個空陣列，getter 的回傳值身分才穩定
+const NO_ROWS: unknown[] = []
 
 interface HasId {
   id: string
@@ -97,10 +101,44 @@ export const useTablesStore = defineStore('tables', () => {
     ])
   }
 
-  // 沿著一條關聯找指向這一列的子列，照子表的 defaultSort 排。子表還沒載就是空的，載進來後讀它的地方會自己重算
+  // 每條關聯的索引只建一次；重算與否由 computed 自己判斷（依賴的是 rows[子表]）
+  const childIndexes = new Map<string, ComputedRef<Map<string, unknown[]>>>()
+
+  // 一條關聯一份索引：父 id → 指向它的子列，照子表的 defaultSort 排好。建立一次，之後靠 computed 自己失效
+  function childIndex (relation: Relation): ComputedRef<Map<string, unknown[]>> {
+    const key = `${relation.childTable}.${relation.column}`
+    const existing = childIndexes.get(key)
+    if (existing) {
+      return existing
+    }
+
+    const index = computed(() => {
+      const grouped = new Map<string, unknown[]>()
+      // 整張子表先排一次，分組後每組自然是對的順序
+      for (const row of sortRows(rows[relation.childTable] ?? [], schemas[relation.childTable])) {
+        const parentId = (row as Record<string, unknown>)[relation.column]
+        if (typeof parentId !== 'string') {
+          continue
+        }
+
+        const siblings = grouped.get(parentId)
+        if (siblings) {
+          siblings.push(row)
+        } else {
+          grouped.set(parentId, [row])
+        }
+      }
+      return grouped
+    })
+
+    childIndexes.set(key, index)
+    return index
+  }
+
+  // 沿著一條關聯找指向這一列的子列。子表還沒載就是空的，載進來後讀它的地方會自己重算。
+  // 回傳的是索引裡那一份，不要就地改它（sort / push 會污染索引）
   function relatedRows (relation: Relation, parentId: string): unknown[] {
-    const matching = (rows[relation.childTable] ?? []).filter(row => (row as Record<string, unknown>)[relation.column] === parentId)
-    return sortRows(matching, schemas[relation.childTable])
+    return childIndex(relation).value.get(parentId) ?? NO_ROWS
   }
 
   function defineGetter (row: object, key: string, get: () => unknown): void {

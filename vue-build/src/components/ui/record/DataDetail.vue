@@ -3,12 +3,14 @@
   import type { TableSchema } from '@/schema/types'
   import { computed } from 'vue'
   import DetailField from '@/components/ui/record/DetailField.vue'
+  import { imageSrc } from '@/schema/image'
   import { allColumns, formatColumnValue } from '@/schema/types'
 
   interface Field {
     key: string
     label: string
     value: string
+    image?: string | null
     action?: PageAction
   }
 
@@ -32,6 +34,7 @@
       key: column.key,
       label: column.label,
       value: formatColumnValue(row, column),
+      image: column.type === 'image' ? imageSrc((row as Record<string, unknown>)[column.key]) : null,
       action: props.fieldActions?.[column.key]?.value[0],
     }))
 
@@ -58,6 +61,7 @@
         v-for="field in fields"
         :key="field.key"
         :action="field.action"
+        :image="field.image"
         :label="field.label"
         :value="field.value"
       />

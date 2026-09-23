@@ -33,6 +33,7 @@
 | `topRight` | `string?` | 右上 |
 | `bottomLeft` | `string?` | 左下 |
 | `bottomRight` | `string?` | 右下 |
+| `image` | `string \| null?` | 最左邊的 48×48 縮圖。傳 `imageSrc(row.欄位)`（`schema/image.ts`）轉好的 src，沒給就不顯示 |
 | `to` | `string?` | 有給才是連結；沒給就是純顯示的一列 |
 | `selectable` | `boolean?` | 預設 `false`。開了才綁長按監聽、才會禁止文字選取與拖曳 |
 | `selectMode` | `boolean?` | 目前在不在多選模式 |

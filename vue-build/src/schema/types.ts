@@ -15,6 +15,8 @@ interface ColumnTypes {
   number: { value: number | null, extra: { min?: number, max?: number } }
   /** 日期（只有日期，沒有時間） */
   date: { value: Date | null }
+  /** 圖片：一格一張，值是行內 SVG、圖片網址、或 Google Drive 的檔案 id／分享連結（見 schema/image.ts） */
+  image: { value: string | null }
   /**
    * 外鍵，值是對方的 id（見 docs/schema.md 的一對多關聯）。
    * refTable 是對方在 schemas 裡的 key；顯示時一律用對方的 $label，store 會把對方那一列掛成 row.$欄位key。

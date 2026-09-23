@@ -17,7 +17,7 @@
 - `<KeepAlive :max="50">` 以 `route.fullPath` 為 key，保留列表的展開與捲動狀態；同時讓「同路由換 id」能觸發轉場動畫
 
 ### Schema 型別系統
-- `SchemaColumn` / `TableSchema` 型別，`type` 支援 `text`／`number`／`date`／`ref`／`select`
+- `SchemaColumn` / `TableSchema` 型別，`type` 支援 `text`／`number`／`date`／`ref`／`select`／`image`
 - `coerceRow`（後端字串 → 前端型別）與 `serializeRow`（反向）
 - `formatColumnValue` / `formatField` 顯示格式化
 - `columnValues`（組送出用 payload）、`emptyRow`（新增表單起始值，套用欄位的 `default`）
@@ -26,6 +26,7 @@
 - `virtualColumns`：不在 Sheet 上、讀的時候才算的欄位，來源可以是自己這列、父列（`row.$欄位key`）或子列（`row.$子表_欄位key`）。store 掛成 row 上的 getter，顯示、排序、分組都跟真實欄位一樣；兩種欄位共用 `ColumnTypes`／`ColumnBase` 型別骨架
 - `labelColumn`：一列怎麼稱呼（欄位 key，省略就是 id），store 掛成 `row.$label`
 - `TableSchema<Row>`：各表宣告時帶自己的 Row 介面，欄位 key 與 `type` 對著它檢查，虛擬欄位 `value` 的 `row` 有型別；框架端用不帶參數的 `TableSchema`
+- `image` 欄位：一格一張，值是行內 SVG、圖片網址、或 Google Drive 的檔案 id／分享連結，由 `schema/image.ts` 的 `imageSrc()` 依內容判斷後轉成 `<img src>`（Drive 走 thumbnail 端點、沿用瀏覽器的 Google 登入；SVG 轉 `data:` URI，當成圖片載入就不能執行 script）。詳細頁自動顯示，列表縮圖由頁面傳 `DataList` 的 `image` prop，表單是純文字欄位；不進搜尋與篩選。上傳到 Drive 還沒做
 - `select` 的 `allowCustom`：`options` 只當建議清單，表單變 `v-combobox`、打別的字也收、驗證跳過選項檢查；資料形狀還是一個字串，顯示與篩選不用知道差別。再開 `suggestFromData`，建議清單接上資料裡用過的值（`options` 在前，多出來的依次數再依字串；跟篩選抽屜共用 `presentValues`）
 
 ### 跨表關聯
@@ -163,7 +164,6 @@
   - 這張表單可能本身就是某條流程的一步（例如「新增父表接著新增子表」的第二步），`runFlow` 不能套疊，而且 `runStep` 在流程中會用 `replace`，把目前這張表單頁換掉
   - 完成後要回到原本那張表單（`back`），不是像流程一樣往前走
   - 等真的常用到再做；現在的替代路徑是先去父表新增、再回來選
-- **`image` 欄位型別**（設計已定）：一格一個字串，依內容判斷來源——`<svg…` 是行內 SVG、`http(s)://` 是網址、其餘當 Google Drive 檔案 id（貼分享連結也收，從 `/d/<id>/` 或 `?id=` 取出）。統一用 `imageSrc(value)` 轉成 `<img src>`：Drive 走 `https://drive.google.com/thumbnail?id=<id>&sz=w<px>`（沿用瀏覽器的 Google 登入，不用後端、沒有 CORS），SVG 轉 `data:image/svg+xml,`。**一律走 `<img>` 不用 `v-html`**——當成圖片載入的 SVG 不能執行 script、綁事件或抓外部資源。顯示：`DetailField` 加一個分支、`DataList` 多一個可選的 `image` prop 在最左邊放縮圖；表單就是純文字欄位。不進搜尋與篩選。上傳到 Drive 是另一件事，還沒討論
 - **`time` 欄位型別**：還沒設計。要先決定值的形狀（只有時間的 `Date`？分鐘數？`"HH:mm"` 字串？）與 Sheet 來回轉換、用哪個輸入元件（Vuetify 4 沒有 `v-time-input`）、要不要像 `date` 一樣進篩選、以及要不要另外有日期＋時間的型別
 - **通用頁面**（設計已定，最大的一件）：`src/pages/[table]/` 四個通用頁讀 `schemas[route.params.table]`，新增一張表變成「寫一個 schema + 註冊一行」。客製分三層：子表清單寫進 schema 的 `detailTables`、只有這張表要的東西掛 `detailExtra` 元件、連版型都不同才 eject（複製通用頁）。`AppShell` 標題要能由頁面指定（`usePageTitle`）；`template/` 屆時併進 `vue-build/docs/templates/`
 - `useListOrder` 的順序是全 App 一份、以表名為 key 且永不清除（detail 頁要在列表離場後才讀，所以不能清）。寫入端已經擋掉被 KeepAlive 收起來的頁面，但 TabView 面板還需要 active 訊號才能判斷「哪個面板的順序算數」——併在下面那條一起做

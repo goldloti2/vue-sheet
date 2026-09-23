@@ -20,4 +20,5 @@
 | --- | --- | --- |
 | `label` | `string` | **必填**，左側標籤 |
 | `value` | `string` | **必填**，已格式化好的字串 |
+| `image` | `string \| null?` | 有給就顯示圖片而不是 `value` 的文字（`DataDetail` 對 `image` 欄位自動帶入） |
 | `action` | `PageAction?` | 有給就整格可點，右邊顯示圖示 |

@@ -70,7 +70,25 @@ export const orderSchema: TableSchema<OrderRow> = {
 
 虛擬欄位除了不能編輯，其他都跟真實欄位一樣：顯示、排序、分組、`defaultSort`、`searchable` 都能用。因為它跟 `columns` 分開放，`coerceRow`／`serializeRow`／表單完全不用知道它存在。
 
-型別有 `text`／`number`／`date`／`select`／`ref` 五種，每種有自己的專屬設定（`number` 的 `min`／`max`、`select` 的 `options`、`ref` 的 `refTable`…）。完整清單見 [`types.ts`](../src/schema/types.ts)。
+型別有 `text`／`number`／`date`／`select`／`ref`／`image` 六種，每種有自己的專屬設定（`number` 的 `min`／`max`、`select` 的 `options`、`ref` 的 `refTable`…）。完整清單見 [`types.ts`](../src/schema/types.ts)。
+
+### image 欄位
+
+一格一張圖，值仍然是一個字串，**來源看內容決定**：
+
+| 值長這樣 | 當成 |
+| --- | --- |
+| `<svg …` | 行內 SVG |
+| `https://drive.google.com/…/d/<id>/…` 或 `?id=<id>` | Drive 分享連結，取出 id |
+| 其他 `http(s)://…` | 圖片網址 |
+| 其餘 | Drive 檔案 id |
+
+顯示時一律用 `imageSrc(value)`（`schema/image.ts`）轉成 `<img src>`：Drive 走 `https://drive.google.com/thumbnail?id=<id>&sz=w<寬>`（沿用瀏覽器已登入的 Google 帳號，不用後端、沒有 CORS），SVG 轉成 `data:image/svg+xml,`。
+
+- **詳細頁自動顯示圖片**（`DataDetail` → `DetailField`），不用多做什麼
+- **列表縮圖要頁面自己給**：`DataList` 的 `image` prop 傳 `imageSrc(row.photo)`，沒傳就不顯示
+- **表單就是純文字欄位**：貼網址、Drive 連結或整段 SVG。上傳到 Drive 還沒做
+- **不進搜尋與篩選**
 
 ---
 

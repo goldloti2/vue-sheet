@@ -5,6 +5,8 @@
   interface DetailFieldProps {
     label: string
     value: string
+    // image 欄位轉好的 <img src>；有值就顯示圖片而不是文字
+    image?: string | null
     // 這一欄的動作：右邊出現圖示，整格都能點（見 docs/ui.md）
     action?: PageAction
   }
@@ -29,6 +31,8 @@
       <v-icon :icon="action.icon" size="18" />
     </button>
 
+    <img v-else-if="image" alt="" class="detail-field__image" :src="image">
+
     <span v-else class="detail-field__value text-body-large">{{ value }}</span>
   </div>
 </template>
@@ -50,6 +54,13 @@
 
 .detail-field__value {
   text-align: left;
+}
+
+.detail-field__image {
+  justify-self: start;
+  max-width: 100%;
+  max-height: 160px;
+  border-radius: 4px;
 }
 
 .detail-field__action {

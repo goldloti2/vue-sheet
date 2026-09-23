@@ -9,6 +9,8 @@
     topRight?: string
     bottomLeft?: string
     bottomRight?: string
+    // 轉好的 <img src>（用 schema/image.ts 的 imageSrc）；有給才顯示縮圖
+    image?: string | null
     to?: string
     selectable?: boolean
     selectMode?: boolean
@@ -63,6 +65,7 @@
       <ListField
         :bottom-left="bottomLeft"
         :bottom-right="bottomRight"
+        :image="image"
         :select-mode="selectMode"
         :selected="selected"
         :title="title"
@@ -81,6 +84,7 @@
     <ListField
       :bottom-left="bottomLeft"
       :bottom-right="bottomRight"
+      :image="image"
       :select-mode="selectMode"
       :selected="selected"
       :title="title"

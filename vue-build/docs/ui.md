@@ -80,6 +80,7 @@
 - **`icon` 一律要給**——底部動作列雖然只顯示文字，但形狀統一，同一個動作搬到別的位置不用補東西
 - **內建 builder**（新增／編輯／刪除／批次刪除／ref 前往／開網址）的 `label` 與 `icon` 都有預設，要換就傳 `ActionLook`（`{ label?, icon? }`）覆寫。自訂的動作沒有預設，在各表的 `use表名Actions.ts` 裡宣告時自己給
 - **欄位動作不是內建的**：ref 的「前往對方」跟開網址、改成今天一樣是 builder（`useGoToRefAction`／`useOpenUrlAction`／`useSetFieldAction`），要就列進去、不要就不列——沒有「空陣列代表內建」這種第三態
+- **一次只有一個頁面的動作算數**：被 `<KeepAlive>` 收起來的頁面、以及 `TabView` 裡不是當前頁籤的面板，動作與 FAB 都會自動讓開（見 [TabView.md](components/TabView.md)），頁面自己不用判斷
 - **需要確認的動作只要宣告 `confirm: { title, text }`**，不用自己擺 `ConfirmDialog`：`AppShell` 提供的 `runAction` 會先 `await confirm()`，說好才跑 `onClick`；`onClick` 拋錯一律進 snackbar
 
 ---

@@ -66,6 +66,7 @@
 - 詳細：`DataDetail`（自帶 loading/error/找不到資料，虛擬欄位自動顯示）、`DetailField`
 - 表單：`DataForm`（依 `column.type` 自動選輸入元件）
 - 其他：`PageFab`、`TabView`、`RecordNav`、`AppDialog`、`ConfirmDialog`、`FieldsDialog`（只顯示幾欄的 `DataForm`）
+- `TabView` 的頁籤列登記給 `AppShell` 畫在 App Bar 的 extension，所以固定在最上面；每個頁籤外面包一層 `TabViewPanel`，`provide` 一份「我是不是當前頁籤」（`panelActiveKey`）。看過的面板會一直掛著（`v-window` 用 `v-show` 切），而 `PageFab`、`registerSlot`（App Bar／底部動作）、`useListOrder` 的「活著」判斷都是 `KeepAlive 狀態 && 當前面板`，所以一個頁籤放一整張表的列表、各自掛自己的 FAB 與動作是可以的。不在 `TabView` 裡就一律算當前，現有頁面零改動。動作那兩個 watch 刻意分成 `pre`（讓場的清）與 `post`（進場的設），同一輪切換時順序才不會反過來變成空的
 
 ### 搜尋與篩選
 - 欄位開 `searchable: true` 才進搜尋或篩選（預設關），真實與虛擬欄位都行：`text`／`ref` 是搜尋列的比對對象，`select`／`number`／`date`／`duration` 是篩選抽屜的欄位
@@ -167,15 +168,9 @@
   - 完成後要回到原本那張表單（`back`），不是像流程一樣往前走
   - 等真的常用到再做；現在的替代路徑是先去父表新增、再回來選
 - **通用頁面**（設計已定，最大的一件）：`src/pages/[table]/` 四個通用頁讀 `schemas[route.params.table]`，新增一張表變成「寫一個 schema + 註冊一行」。客製分三層：子表清單寫進 schema 的 `detailTables`、只有這張表要的東西掛 `detailExtra` 元件、連版型都不同才 eject（複製通用頁）。`AppShell` 標題要能由頁面指定（`usePageTitle`）；`template/` 屆時併進 `vue-build/docs/templates/`
-- `useListOrder` 的順序是全 App 一份、以表名為 key 且永不清除（detail 頁要在列表離場後才讀，所以不能清）。寫入端已經擋掉被 KeepAlive 收起來的頁面，但 TabView 面板還需要 active 訊號才能判斷「哪個面板的順序算數」——併在下面那條一起做
 - 總覽頁範本（`DataDashboardTemplate`）：保留了位置但沒有具體需求
-- `TabView` 放多個獨立面板（例如兩張表的列表當成一組頁籤）目前只有內容層可用，動作層會壞掉。根源是兩個面板一旦都被看過就同時掛著（`v-window` 用 `v-show` 切換），而 FAB 與 App Bar 動作都假設同時只有一個頁面活著：
-  - `useAppBarActions` 是單一 setter，後掛載的會蓋掉前面的，切頁籤也不會重新註冊
-  - `PageFab` 靠 `onActivated`/`onDeactivated` 決定要不要 teleport，那是 `<KeepAlive>` 的 hook，`v-show` 切換不會觸發，於是兩顆 FAB 一起掛在 body 上
-  - `useListOrder` 只擋得掉被 KeepAlive 收起來的頁面，擋不掉同時掛著的兩個面板：兩邊都會把自己的順序發布到同一個 key、互相蓋掉，detail 頁的上/下一筆會跟著錯亂
-  - 修法已定，等真的要寫這種頁面時再做：`TabView` 每個 `v-window-item` 裡包一層內部小元件 `TabViewPanel`，`provide` 一個 `computed(() => model === tab)`（provide 以元件為單位，要這一層才能每個頁籤各一份）；新增 `panelActiveKey`，`registerActions`、`PageFab`、`useListOrder` 各 `inject(panelActiveKey, ref(true))`，`isActive` 改成 `KeepAlive 狀態 && panel`、兩者都 watch。不在頁籤裡就是 `true`，現有頁面零改動。KeepAlive 巢狀是對的：頁面被快取時 Vue 對整棵子樹叫 `onDeactivated`。動的是 `TabView.vue`、`useActionSlot.ts`、`PageFab.vue`、`useListOrder.ts` 加一個放 key 的小檔，四五十行；文件補在 `vue-build/docs/components/TabView.md`，不另加頁面範本
-  - **多表篩選**（設計已定，跟上面那條一起做）：每張表各自一份 `Filters`、同時生效，抽屜上方多一排表的 chip 決定現在編哪一張的條件；搜尋字串仍然全頁共用一份。註冊介面改成 `useAppBarSearch(query, { tables: [{ schema, filters, rows }, …], current })`，單表頁傳一個元素、行為完全不變。`hasActiveFilter` 掃所有表，「清除」只清當前那張、← 關閉搜尋清全部。約 40 行，本身不依賴上面的 active 訊號
-  - **不同頁籤不同 FAB**：頁籤＝篩選的頁現在就做得到，頁面自己 `computed(() => 目前頁籤 === 'A' ? actionsA.value : actionsB.value)` 餵給 `PageFab`——FAB 是頁面掛的，頁面知道現在哪個頁籤。上面的修法解的是「面板自己掛自己的 FAB／動作」那種，兩者不衝突
+- **多表篩選**（設計已定）：每張表各自一份 `Filters`、同時生效，抽屜上方多一排表的 chip 決定現在編哪一張的條件；搜尋字串仍然全頁共用一份。註冊介面改成 `useAppBarSearch(query, { tables: [{ schema, filters, rows }, …], current })`，單表頁傳一個元素、行為完全不變。`hasActiveFilter` 掃所有表，「清除」只清當前那張、← 關閉搜尋清全部
+- **多選要能離開**（多表篩選之後做）：目前長按選取的狀態是整頁一份，切頁籤時還留著上一個頁籤選的東西，操作上不直覺——每個頁籤的選取應該各自獨立，換頁籤就清空。同時多選模式要有明確的出口：進多選時 App Bar 右上出現「取消」動作（現在只能一筆筆點掉直到空了才會自動離開）
 
 ### PWA 與離線
 - manifest.json、Service Worker 都還沒建立（`vite-plugin-pwa` 未安裝）

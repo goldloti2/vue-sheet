@@ -6,6 +6,8 @@
 
 每個頁籤都會被渲染成獨立的面板，看過的會留在 DOM 裡（`v-show` 隱藏），所以各自保有捲動位置與展開狀態。內容不必同構——頁籤只是容器，各放各的。
 
+**面板知道自己是不是當前頁籤**：這個元件在每個頁籤外面包一層 `TabViewPanel`，`provide` 一份「現在輪到我沒」。`PageFab`、`useAppBarActions`／`useBottomActions`、`useListOrder` 都會讀它，所以面板裡直接放整個列表（含自己的 FAB、App Bar 動作）是可以的，不是當前頁籤的那些不會掛出去。不在 `TabView` 裡的頁面一律算當前，現有頁面零改動。
+
 常見用法是依某個 `select` 欄位篩選列表，選項可以直接讀該欄位的 `options`，不用另外維護一份重複的清單（取 `options` 前要先用 `column?.type === 'select'` 縮小型別，這個判斷不能省）。
 
 ## Usage
@@ -46,7 +48,8 @@
 
 - 只要頁籤列、不要內容區的話，直接用 Vuetify 的 `v-tabs`，不用這個元件（自己擺的 `v-tabs` 會跟著內容捲動）
 - 一個畫面同時掛兩個 `TabView` 會互相蓋掉頁籤列（App Bar 的 extension 只有一份）
-- ⚠️ **每個頁籤放不同的表（例如兩張表的列表）目前只有內容層能用**。看過的面板會一直掛著，而 `PageFab` 與 `useAppBarActions` 都假設同時只有一個頁面活著，所以會出現兩顆疊在一起的 FAB、App Bar 動作被蓋掉。修法見 ROADMAP，還沒做
+- **每個頁籤放不同的表**（例如兩張表的列表）是支援的：面板各自掛自己的 FAB 與 App Bar 動作，搜尋與篩選則由頁面登記一次、每張表各一份條件（見 [ui.md](../ui.md#篩選)）
+- **同一個頁籤裡的內容仍然共用一組動作**。「不同頁籤不同 FAB」若頁籤只是同一張表的篩選（面板沒有分開），就由頁面自己 `computed(() => 目前頁籤 === 'A' ? actionsA : actionsB)` 餵給 `PageFab`
 - 鍵盤操作是焦點停在頁籤列時用方向鍵（`v-tabs` 底層的 `VSlideGroup` 提供）
 - `v-window` 的兩個 prop 是刻意關掉的，改之前先看清楚：
   - `:show-arrows="false"` — 預設值是 `undefined`，而判斷式是 `showArrows !== false`，所以不明確關掉就會在內容上疊一層左右箭頭按鈕

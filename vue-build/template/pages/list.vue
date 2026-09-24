@@ -25,7 +25,7 @@
   // 要搜尋列與篩選的話（哪些欄位能搜、能篩看 schema 的 searchable）：上面的 data 改名成 allRows，再
   //   const query = ref('')
   //   const filters = ref<Filters>({})
-  //   useAppBarSearch(query, { schema: __table__Schema, filters, rows: allRows })
+  //   useAppBarSearch(query, { tables: [{ schema: __table__Schema, filters, rows: allRows }] })
   //   const data = useSearch(query, useFilter(filters, allRows, __table__Schema), __table__Schema)
 
   useListOrder('__table__', computed(() => data.value.map(row => row.id)))

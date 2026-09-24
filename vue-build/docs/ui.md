@@ -107,11 +107,11 @@ const data = useSearch(query, rows, schema)
 
 ## 篩選
 
-登記時多給 `{ schema, filters, rows }`，輸入框內最右側就多一顆篩選鈕（有條件生效時主色），按下去從右側滑出抽屜。
+登記時多給 `{ tables: [{ schema, filters, rows }] }`，輸入框內最右側就多一顆篩選鈕（有條件生效時主色），按下去從右側滑出抽屜。
 
 ```ts
 const filters = ref<Filters>({})
-useAppBarSearch(query, { schema, filters, rows: allRows })
+useAppBarSearch(query, { tables: [{ schema, filters, rows: allRows }] })
 const data = useSearch(query, useFilter(filters, allRows, schema), schema)
 ```
 
@@ -130,6 +130,26 @@ const data = useSearch(query, useFilter(filters, allRows, schema), schema)
 | **第二層** | 點一欄進去填值：select 是一列一項的 checkbox（「(空白)」排最後）、number／date／duration 是兩格範圍。← 回第一層 |
 
 關掉抽屜也會回到第一層。抽屜開著時 `PageFab` 會讓開——它的 z-index 本來就在 layout 之上，靠 `useOverlay` 的 `overlayOpenKey` 通知。
+
+### 一頁好幾張表
+
+頁籤各接一張表時（見 [TabView.md](components/TabView.md)），`tables` 給多個元素：
+
+```ts
+useAppBarSearch(query, {
+  tables: [
+    { schema: parentSchema, filters: parentFilters, rows: allParents },
+    { schema: childSchema, filters: childFilters, rows: allChildren },
+  ],
+  current: selectedTab,
+})
+```
+
+- **每張表各自一份 `Filters`、同時生效**：各面板拿自己那份餵 `useFilter`，切頁籤不會把條件帶過去
+- **搜尋字串全頁共用一份**，所以打一次字每個面板都跟著過濾
+- **第一層上方多一排表的 chip**（標籤是 `schema.sheetName`）決定現在編哪一張；只有一張表就不顯示
+- **`current` 是頁面的頁籤 `v-model`**（值對得上 `sheetName`），抽屜打開時先停在那張表，使用者還是可以自己切；關掉抽屜就忘掉，下次打開重新跟著頁籤
+- **篩選鈕的主色標記掃所有表**；「清除」只清當前那張，要全部清掉就按 ←（關閉搜尋）
 
 ---
 

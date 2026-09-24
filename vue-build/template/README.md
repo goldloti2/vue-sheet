@@ -118,11 +118,11 @@
 ```ts
 const query = ref('')
 const filters = ref<Filters>({})
-useAppBarSearch(query, { schema: __table__Schema, filters, rows: allRows })   // 放大鏡 + 搜尋欄內的篩選鈕
+useAppBarSearch(query, { tables: [{ schema: __table__Schema, filters, rows: allRows }] })   // 放大鏡 + 搜尋欄內的篩選鈕
 const data = useSearch(query, useFilter(filters, allRows, __table__Schema), __table__Schema)   // 之後 v-for / useListOrder 都用 data
 ```
 
-只要搜尋不要篩選就省掉 `filters` 跟第二個參數。有頁籤的頁先篩、再搜、再依頁籤切，兩者都跨所有頁籤。抽屜是兩層的：第一層列可篩選的欄位（順序照 `detailOrder`，有條件的欄位底下用小字顯示篩什麼），點一欄進第二層填值。select 只列資料裡出現過的值。
+只要搜尋不要篩選就省掉 `filters` 跟第二個參數。有頁籤的頁先篩、再搜、再依頁籤切，兩者都跨所有頁籤；頁籤各接一張表時 `tables` 放多個元素，每張表各自一份條件（見 [ui.md](../docs/ui.md#一頁好幾張表)）。抽屜是兩層的：第一層列可篩選的欄位（順序照 `detailOrder`，有條件的欄位底下用小字顯示篩什麼），點一欄進第二層填值。select 只列資料裡出現過的值。
 
 表單頁不用自己組那兩顆按鈕——`useCreateForm`／`useEditForm` 回傳現成的 `actions`，照 `pages/new.vue`、`pages/edit.vue` 的寫法接上去就好。「有改動要不要放棄」的確認也不用管：兩個 composable 會登記到 `useLeaveGuard`，不管是按取消、返回鍵還是切導覽列都會先問。
 

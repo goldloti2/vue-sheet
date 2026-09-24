@@ -1,29 +1,46 @@
 <script lang="ts" setup>
   import type { ColumnFilter, Filters } from '@/composables/data/useFilter'
-  import type { AnyColumn, TableSchema } from '@/schema/types'
+  import type { SearchTable } from '@/composables/shell/useAppBarSearch'
+  import type { AnyColumn } from '@/schema/types'
   import { mdiChevronLeft, mdiChevronRight, mdiCircle } from '@mdi/js'
   import { computed, shallowRef, watch } from 'vue'
   import { filterableColumns, presentValues } from '@/composables/data/useFilter'
   import { formatDate } from '@/schema/types'
 
   const props = defineProps<{
-    schema: TableSchema
-    // 還沒過濾的整表，select 只列裡面出現過的值
-    rows: readonly object[]
+    // 每張表各自一份條件、同時生效；上方的表選單只決定現在編哪一張
+    tables: SearchTable[]
+    // 頁面的頁籤，沒被使用者換過就跟著它
+    current?: string
   }>()
 
   const open = defineModel<boolean>('open', { required: true })
-  // 改了就即時生效，沒有套用鈕。每次都給新物件，讀它的 computed 才會重算
-  const filters = defineModel<Filters>({ required: true })
 
-  const columns = computed(() => filterableColumns(props.schema))
+  // 使用者在抽屜裡點的表；關起來就忘掉，下次打開重新跟著 current
+  const picked = shallowRef<string | null>(null)
+
+  const table = computed(() => props.tables.find(item => item.schema.sheetName === (picked.value ?? props.current)) ?? props.tables[0])
+
+  // 改了就即時生效，沒有套用鈕。每次都給新物件，讀它的 computed 才會重算
+  const filters = computed<Filters>(() => table.value?.filters.value ?? {})
+  const columns = computed(() => table.value ? filterableColumns(table.value.schema) : [])
 
   // 第二層正在編哪一欄；null 就是第一層的欄位清單。關起來回到第一層
   const editing = shallowRef<AnyColumn | null>(null)
   watch(open, value => {
     if (!value) {
       editing.value = null
+      picked.value = null
     }
+  })
+
+  // 換表就回到欄位清單：第二層那一欄是上一張表的
+  const tableName = computed({
+    get: () => table.value?.schema.sheetName ?? '',
+    set: value => {
+      picked.value = value
+      editing.value = null
+    },
   })
 
   // select 多一個「空白」選項，對應值是 null
@@ -36,7 +53,7 @@
 
   // 只列資料裡出現過的值（options 順序在前、多出來的接後面）；有空的才給「(空白)」，放最後
   function selectItems (column: AnyColumn): SelectItem[] {
-    const { known, extra, hasBlank } = presentValues(props.rows, column)
+    const { known, extra, hasBlank } = presentValues(table.value?.rows.value ?? [], column)
     const items = [...known, ...extra].map(value => ({ title: value, value }))
     if (hasBlank) {
       items.push({ title: '(空白)', value: BLANK })
@@ -49,7 +66,9 @@
   }
 
   function patch (key: string, change: ColumnFilter) {
-    filters.value = { ...filters.value, [key]: { ...filters.value[key], ...change } }
+    if (table.value) {
+      table.value.filters.value = { ...filters.value, [key]: { ...filters.value[key], ...change } }
+    }
   }
 
   function toggleValue (column: AnyColumn, value: string) {
@@ -125,8 +144,11 @@
     return rangeText(String(min), String(max))
   }
 
+  // 只清現在這張表的；要全部清掉就關掉搜尋（App Bar 的 ←）
   function clear () {
-    filters.value = {}
+    if (table.value) {
+      table.value.filters.value = {}
+    }
   }
 </script>
 
@@ -137,6 +159,23 @@
       <v-toolbar density="compact" flat title="篩選">
         <v-btn text="清除" variant="text" @click="clear" />
       </v-toolbar>
+
+      <!-- 多張表才需要選；每張表的條件是分開的，同時生效 -->
+      <v-chip-group
+        v-if="tables.length > 1"
+        v-model="tableName"
+        class="px-3 pt-0"
+        mandatory
+        selected-class="text-primary"
+      >
+        <v-chip
+          v-for="item in tables"
+          :key="item.schema.sheetName"
+          size="small"
+          :text="item.schema.sheetName"
+          :value="item.schema.sheetName"
+        />
+      </v-chip-group>
 
       <v-list v-if="columns.length > 0" density="compact" lines="two">
         <v-list-item

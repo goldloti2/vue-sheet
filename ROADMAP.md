@@ -72,8 +72,9 @@
 - 欄位開 `searchable: true` 才進搜尋或篩選（預設關），真實與虛擬欄位都行：`text`／`ref` 是搜尋列的比對對象，`select`／`number`／`date`／`duration` 是篩選抽屜的欄位
 - `useSearch(query, rows, schema)`：純函數式，每列的可搜尋文字（searchable 欄位的顯示文字接起來、小寫）只跟 rows 一起重算，敲字只做 `includes`；query 依空白切詞、雙引號包起來的當一個詞，每個詞都要命中（AND）
 - `useFilter(filters, rows, schema)`：`Filters = { 欄位key: { values?, min?, max? } }`，select 用 `values`（`null` 是空白）、number／date 共用 `min`／`max`；欄位之間 AND、`values` 之間 OR；設了範圍而值是空的列排除、select 只有勾了空白才留
-- **query 與 filters 都屬於頁面**：`useAppBarSearch(query, { schema, filters, rows }?)` 登記後 App Bar 才出現放大鏡，按下去整條換成輸入框；給了 filter 就在輸入框內最右多一顆篩選鈕（有條件生效時主色），開右側抽屜 `FilterDrawer`，改了即時生效。← 關閉清掉 query 與篩選、換頁自動收起、回到還帶著 query 或篩選的頁面自動重開；抽屜開著時 `PageFab` 讓開（`useOverlay` 的 `overlayOpenKey`）。頁面串法 `rows → useFilter → useSearch → 頁籤切`，跨所有頁籤；多面板的頁把同一組 query／filters 傳進每個面板各自過濾，不需要「哪個面板是當前」的訊號
-- 抽屜：欄位順序照 `detailOrder`（沒排的接在後面）；select 是等寬 grid 的 chip，一列幾顆由最長選項的估計寬度決定，只列 rows 裡出現過的值（照 `options` 順序、`options` 沒有的排最後、有空的列才有「(空白)」）；number 兩格最小／最大、date 兩格從／到
+- **query 與 filters 都屬於頁面**：`useAppBarSearch(query, { tables, current? }?)` 登記後 App Bar 才出現放大鏡，按下去整條換成輸入框；給了 tables 就在輸入框內最右多一顆篩選鈕（有條件生效時主色），開右側抽屜 `FilterDrawer`，改了即時生效。← 關閉清掉 query 與所有表的篩選、換頁自動收起、回到還帶著 query 或篩選的頁面自動重開；抽屜開著時 `PageFab` 讓開（`useOverlay` 的 `overlayOpenKey`）。頁面串法 `rows → useFilter → useSearch → 頁籤切`，跨所有頁籤
+- **一頁可以有好幾張表的條件**：`tables: [{ schema, filters, rows }, …]` 每張表各自一份 `Filters`、同時生效（頁籤各接一張表時，每個面板各用自己那份過濾）；query 則是全頁共用一份。抽屜第一層上方多一排表的 chip 決定現在編哪一張，`current`（頁面的頁籤 v-model，值對得上 `sheetName`）決定打開時停在哪張，使用者仍可自己切。「清除」只清當前那張，← 關閉搜尋才是全部清掉。單表頁 `tables` 給一個元素，看不到 chip、行為跟以前一樣
+- 抽屜分兩層：第一層是可篩選欄位的清單（順序照 `detailOrder`、沒排的接在後面），有條件的欄位名稱底下用小字顯示現在篩什麼、右側一個主色圓點；第二層是單一欄位的值——select 是一列一項的 checkbox（只列 rows 裡出現過的值，照 `options` 順序、`options` 沒有的排最後、有空的才有「(空白)」並排在最後），number／date／duration 是兩格範圍
 - 只為搜尋存在的虛擬欄位（例如父表把所有子列的名字接起來）照常寫、標 `searchable`，不排進 `detailOrder` 就不會顯示
 
 ### 動作系統
@@ -169,7 +170,6 @@
   - 等真的常用到再做；現在的替代路徑是先去父表新增、再回來選
 - **通用頁面**（設計已定，最大的一件）：`src/pages/[table]/` 四個通用頁讀 `schemas[route.params.table]`，新增一張表變成「寫一個 schema + 註冊一行」。客製分三層：子表清單寫進 schema 的 `detailTables`、只有這張表要的東西掛 `detailExtra` 元件、連版型都不同才 eject（複製通用頁）。`AppShell` 標題要能由頁面指定（`usePageTitle`）；`template/` 屆時併進 `vue-build/docs/templates/`
 - 總覽頁範本（`DataDashboardTemplate`）：保留了位置但沒有具體需求
-- **多表篩選**（設計已定）：每張表各自一份 `Filters`、同時生效，抽屜上方多一排表的 chip 決定現在編哪一張的條件；搜尋字串仍然全頁共用一份。註冊介面改成 `useAppBarSearch(query, { tables: [{ schema, filters, rows }, …], current })`，單表頁傳一個元素、行為完全不變。`hasActiveFilter` 掃所有表，「清除」只清當前那張、← 關閉搜尋清全部
 - **多選要能離開**（多表篩選之後做）：目前長按選取的狀態是整頁一份，切頁籤時還留著上一個頁籤選的東西，操作上不直覺——每個頁籤的選取應該各自獨立，換頁籤就清空。同時多選模式要有明確的出口：進多選時 App Bar 右上出現「取消」動作（現在只能一筆筆點掉直到空了才會自動離開）
 
 ### PWA 與離線

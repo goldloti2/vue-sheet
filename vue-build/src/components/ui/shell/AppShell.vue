@@ -66,24 +66,27 @@
   })
   const searchOpen = shallowRef(false)
 
+  // 一頁可以有好幾張表的條件（頁籤各接一張），任一張有條件就算篩選中
+  const filterTables = computed(() => search.value?.filter?.tables ?? [])
+  const filterActive = computed(() => filterTables.value.some(table => hasActiveFilter(table.filters.value)))
+
   // 換頁就收起來；回到還帶著 query 或篩選的頁面（KeepAlive）就重新打開，讓列表跟搜尋欄一致
   watch(search, value => {
-    searchOpen.value = value !== null && (value.query.value !== '' || hasActiveFilter(value.filter?.filters.value ?? {}))
+    searchOpen.value = value !== null && (value.query.value !== '' || filterActive.value)
     filterOpen.value = false
   })
 
   // 篩選收在搜尋欄裡：右側那顆鈕開右側抽屜，有條件生效時鈕變主色。抽屜開著時 FAB 讓開
   const filterOpen = shallowRef(false)
   provide(overlayOpenKey, filterOpen)
-  const filterActive = computed(() => hasActiveFilter(search.value?.filter?.filters.value ?? {}))
 
-  // 關閉搜尋＝清掉 query 與篩選、收起抽屜，列表回到全部
+  // 關閉搜尋＝清掉 query 與所有表的篩選、收起抽屜，列表回到全部
   function closeSearch () {
     if (search.value) {
       search.value.query.value = ''
-      if (search.value.filter) {
-        search.value.filter.filters.value = {}
-      }
+    }
+    for (const table of filterTables.value) {
+      table.filters.value = {}
     }
     filterOpen.value = false
     searchOpen.value = false
@@ -152,7 +155,7 @@
         variant="solo"
         @update:model-value="(value) => search && (search.query.value = value ?? '')"
       >
-        <template v-if="search.filter" #append-inner>
+        <template v-if="filterTables.length > 0" #append-inner>
           <v-btn
             aria-label="篩選"
             :color="filterActive ? 'primary' : undefined"
@@ -243,11 +246,10 @@
   />
 
   <FilterDrawer
-    v-if="search?.filter"
-    v-model="search.filter.filters.value"
+    v-if="filterTables.length > 0"
     v-model:open="filterOpen"
-    :rows="search.filter.rows.value"
-    :schema="search.filter.schema"
+    :current="search?.filter?.current?.value"
+    :tables="filterTables"
   />
 
   <v-snackbar v-model="notice.open" :color="notice.color">{{ notice.text }}</v-snackbar>

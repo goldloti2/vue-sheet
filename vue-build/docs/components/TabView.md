@@ -8,6 +8,15 @@
 
 **面板知道自己是不是當前頁籤**：這個元件在每個頁籤外面包一層 `TabViewPanel`，`provide` 一份「現在輪到我沒」。`PageFab`、`useAppBarActions`／`useBottomActions`、`useListOrder` 都會讀它，所以面板裡直接放整個列表（含自己的 FAB、App Bar 動作）是可以的，不是當前頁籤的那些不會掛出去。不在 `TabView` 裡的頁面一律算當前，現有頁面零改動。
 
+**要用哪一個訊號**：兩個都來自頁面的頁籤 `v-model`，差別在問題不同——
+
+| 你的程式在哪 | 用什麼 | 問的是 |
+| --- | --- | --- |
+| 掛在某個面板裡（元件、或面板內元件呼叫的 composable） | `usePanelActive()` | 「**我**是不是當前面板」 |
+| 在面板外面（頁面層的 composable、`TabView` 外的東西） | `useCurrentTab()` | 「現在選的是哪個頁籤」 |
+
+同一條規則不要同時接兩個：面板外的東西 `inject` 不到面板，面板裡的東西也不知道自己叫什麼頁籤，所以照位置挑一個就好。`useMultiSelect` 是頁面層，走 `useCurrentTab()`。
+
 常見用法是依某個 `select` 欄位篩選列表，選項可以直接讀該欄位的 `options`，不用另外維護一份重複的清單（取 `options` 前要先用 `column?.type === 'select'` 縮小型別，這個判斷不能省）。
 
 ## Usage

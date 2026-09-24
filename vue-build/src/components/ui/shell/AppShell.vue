@@ -12,7 +12,7 @@
   import { provideActionRunner } from '@/composables/shell/useActionRunner'
   import { appBarActionsKey } from '@/composables/shell/useAppBarActions'
   import { appBarSearchKey } from '@/composables/shell/useAppBarSearch'
-  import { appBarTabsKey } from '@/composables/shell/useAppBarTabs'
+  import { appBarTabsKey, currentTabKey } from '@/composables/shell/useAppBarTabs'
   import { confirmFields, fieldsDialog } from '@/composables/shell/useAskFields'
   import { bottomActionsKey } from '@/composables/shell/useBottomActions'
   import { acceptConfirm, confirmDialog } from '@/composables/shell/useConfirm'
@@ -58,6 +58,9 @@
   provide(appBarTabsKey, value => {
     tabs.value = value
   })
+
+  // 頁面與面板都在底下，靠這個知道使用者換頁籤了（例如多選要跟著取消）
+  provide(currentTabKey, computed(() => tabs.value?.current.value ?? null))
 
   // 頁面登記了搜尋才有放大鏡；按下去 App Bar 換成輸入框。query 是頁面的 ref，關掉時清空
   const search = shallowRef<AppBarSearch | null>(null)

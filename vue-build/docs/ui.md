@@ -63,6 +63,8 @@
 - **卡片式為主**（適合瀏覽），也支援表格式（適合比對、多選）
 - **用 `<KeepAlive>` 保留展開與捲動狀態**，注意事項見 [architecture.md](architecture.md#keepalive-的規則)
 - **長按進入多選模式**：選取狀態一有內容就自動進入、清空就自動離開，不另外存一個 boolean
+- **多選的出口是 App Bar 右上的「取消」**：`useMultiSelect()` 回傳現成的 `cancel`（多選模式才有內容），排在其他動作之後、同步鈕左邊：`useAppBarActions(() => [...bulkDelete.value, ...cancelSelect.value])`
+- **離開就取消選取**：換頁（列表是 KeepAlive 的，靠 `onDeactivated`）與換頁籤都會清空，頁面不用做任何事。頁籤的訊號來自 `TabView` 登記給 `AppShell` 的那份（`useCurrentTab()`），所以同一張表的頁籤、各自一張表的面板走的是同一條路
 - **頁籤列固定在 App Bar 底下**（`TabView` 登記給 `AppShell` 的 extension），不跟著內容捲動
 
 ---

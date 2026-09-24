@@ -14,9 +14,10 @@
   import { __table__Schema } from '@/schema/__table__'
   import { formatField } from '@/schema/types'
 
-  // 有多選的話補上 selectedIds 與 onDone，並把 bulkDelete 註冊到 app-bar：
+  // 有多選的話補上 selectedIds 與 onDone，並把 bulkDelete 跟「取消」一起註冊到 app-bar（取消排最後＝同步鈕左邊）：
+  //   const { active: selectMode, cancel: cancelSelect, clear: clearSelection, enter: enterSelect, isSelected, selectedIds, toggle: toggleSelect } = useMultiSelect()
   //   const { new: newActions, bulkDelete } = use__Table__Actions({ selectedIds, onDone: clearSelection })
-  //   useAppBarActions(() => bulkDelete.value)
+  //   useAppBarActions(() => [...bulkDelete.value, ...cancelSelect.value])
   // defaults 也可省略；要讓新增表單依當下頁面狀態預填時傳 getter
   const { new: newActions } = use__Table__Actions()
 

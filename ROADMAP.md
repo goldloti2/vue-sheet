@@ -93,6 +93,8 @@
 - 新增表單的預設值三層：schema 的 `default` → `useNewAction` 經 `history.state` 帶來的 → `useCreateForm` 的參數
 - 前端驗證：`schema/validation.ts` 的 `validateRow`（內建 `required`／`min`／`max`／`select` 選項，其他規則由欄位的 `validate(value, row)` 自訂）一份，form 層與 `askFields` 送出前逐欄提示、store 的 `create`／`update` 寫入前再擋一次（拋錯、不動快取）；後端只做結構完整性，分工見 [vue-build/docs/schema.md](vue-build/docs/schema.md)
 - `useMultiSelect` + `useLongPress`：長按進入多選，選取狀態由「有沒有選取任何一筆」推導
+- 多選的出口：`useMultiSelect` 回傳一個現成的「取消」`PageAction`（多選中才有內容），頁面把它排在其他動作之後註冊到 App Bar，位置就在同步鈕左邊
+- 離開就取消選取：`onDeactivated`（KeepAlive 的列表換頁時）與 `useCurrentTab()`（換頁籤時）自動清，頁面零設定。頁籤訊號取自 `TabView` 登記給 `AppShell` 的那份，頁面層與面板層讀到同一個，所以兩種頁籤形狀不用各寫一套
 - 批次刪除走動作的 `confirm`
 
 ### 連續動作
@@ -170,7 +172,6 @@
   - 等真的常用到再做；現在的替代路徑是先去父表新增、再回來選
 - **通用頁面**（設計已定，最大的一件）：`src/pages/[table]/` 四個通用頁讀 `schemas[route.params.table]`，新增一張表變成「寫一個 schema + 註冊一行」。客製分三層：子表清單寫進 schema 的 `detailTables`、只有這張表要的東西掛 `detailExtra` 元件、連版型都不同才 eject（複製通用頁）。`AppShell` 標題要能由頁面指定（`usePageTitle`）；`template/` 屆時併進 `vue-build/docs/templates/`
 - 總覽頁範本（`DataDashboardTemplate`）：保留了位置但沒有具體需求
-- **多選要能離開**（多表篩選之後做）：目前長按選取的狀態是整頁一份，切頁籤時還留著上一個頁籤選的東西，操作上不直覺——每個頁籤的選取應該各自獨立，換頁籤就清空。同時多選模式要有明確的出口：進多選時 App Bar 右上出現「取消」動作（現在只能一筆筆點掉直到空了才會自動離開）
 
 ### PWA 與離線
 - manifest.json、Service Worker 都還沒建立（`vite-plugin-pwa` 未安裝）

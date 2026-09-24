@@ -119,6 +119,16 @@
         @update:model-value="(value) => setFieldValue(column, value)"
       />
 
+      <!-- 時長可以超過 24 小時，原生的 type="time" 塞不下，所以是一般文字框 -->
+      <v-text-field
+        v-else-if="column.type === 'duration'"
+        :error-messages="errorFor(column)"
+        :label="column.label"
+        :model-value="textValue(column)"
+        placeholder="時:分:秒"
+        @update:model-value="(value) => setTextValue(column, value)"
+      />
+
       <!-- allowCustom：options 只是建議，打了清單外的字也直接當值 -->
       <v-combobox
         v-else-if="column.type === 'select' && column.allowCustom"

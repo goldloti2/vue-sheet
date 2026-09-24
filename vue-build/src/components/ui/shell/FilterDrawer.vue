@@ -72,6 +72,11 @@
     return value instanceof Date ? value : null
   }
 
+  function durationBound (column: AnyColumn, edge: 'min' | 'max'): string | null {
+    const value = filters.value[column.key]?.[edge]
+    return typeof value === 'string' ? value : null
+  }
+
   function isActive (column: AnyColumn): boolean {
     const filter = filters.value[column.key]
     return (filter?.values?.length ?? 0) > 0 || filter?.min != null || filter?.max != null
@@ -97,6 +102,10 @@
     if (filter.values && filter.values.length > 0) {
       const text = filter.values.map(value => value ?? '(空白)').join('、')
       return text.length <= SUMMARY_MAX ? text : `${text.slice(0, SUMMARY_MAX)}…共 ${filter.values.length} 項`
+    }
+
+    if (column.type === 'duration') {
+      return rangeText(durationBound(column, 'min') ?? '', durationBound(column, 'max') ?? '')
     }
 
     if (column.type === 'date') {
@@ -187,6 +196,28 @@
           label="最大"
           :model-value="numberBound(editing, 'max')"
           @update:model-value="(value) => editing && patch(editing.key, { max: value })"
+        />
+      </v-container>
+
+      <v-container v-else-if="editing.type === 'duration'" class="d-flex ga-2">
+        <v-text-field
+          clearable
+          density="compact"
+          hide-details
+          label="最短"
+          :model-value="durationBound(editing, 'min')"
+          placeholder="時:分:秒"
+          @update:model-value="(value) => editing && patch(editing.key, { min: value || null })"
+        />
+
+        <v-text-field
+          clearable
+          density="compact"
+          hide-details
+          label="最長"
+          :model-value="durationBound(editing, 'max')"
+          placeholder="時:分:秒"
+          @update:model-value="(value) => editing && patch(editing.key, { max: value || null })"
         />
       </v-container>
 

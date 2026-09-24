@@ -113,7 +113,7 @@
 | `useBottomActions()` | 螢幕最底端，**暫時取代導覽列**；表單的取消／送出用這個，離開頁面自動還原 |
 | `DataDetail` 的 `fieldActions` | detail 頁某一欄的右邊，一欄一個、整格可點；ref 前往、開網址、改成今天都是這種 |
 
-列表頁要搜尋列與篩選的話四行：query 與 filters 都是頁面的 ref，登記給 App Bar，再用它們過濾。哪些欄位能搜、能篩由 schema 的 `searchable` 決定（`text`／`ref` 進搜尋，`select`／`number`／`date` 進篩選抽屜）：
+列表頁要搜尋列與篩選的話四行：query 與 filters 都是頁面的 ref，登記給 App Bar，再用它們過濾。哪些欄位能搜、能篩由 schema 的 `searchable` 決定（`text`／`ref` 進搜尋，`select`／`number`／`date`／`duration` 進篩選抽屜）：
 
 ```ts
 const query = ref('')

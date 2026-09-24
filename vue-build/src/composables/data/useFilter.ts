@@ -1,14 +1,15 @@
 import type { AnyColumn, TableSchema } from '@/schema/types'
 import type { ComputedRef, MaybeRefOrGetter } from 'vue'
 import { computed, toValue } from 'vue'
-import { allColumns } from '@/schema/types'
+import { allColumns, durationSeconds } from '@/schema/types'
 import { isEmpty } from '@/schema/validation'
 
 // 一欄的篩選條件：select 用 values（null 代表「空白」那個選項），number / date 用 min / max。空的就是不篩
 export interface ColumnFilter {
   values?: (string | null)[]
-  min?: number | Date | null
-  max?: number | Date | null
+  // number 是數字、date 是 Date、duration 是 "時:分:秒" 字串
+  min?: number | Date | string | null
+  max?: number | Date | string | null
 }
 
 // 欄位 key → 條件；沒列的欄位不篩
@@ -16,7 +17,7 @@ export type Filters = Record<string, ColumnFilter>
 
 // 搜尋列比 text / ref，其他開了 searchable 的型別歸篩選
 export function isFilterable (column: AnyColumn): boolean {
-  return column.searchable === true && ['select', 'number', 'date'].includes(column.type)
+  return column.searchable === true && ['date', 'duration', 'number', 'select'].includes(column.type)
 }
 
 // 抽屜裡的順序跟 detail 頁一樣（detailOrder）；沒排進 detailOrder 的接在後面，不像 detail 那樣藏起來
@@ -79,9 +80,13 @@ export function selectKey (value: unknown): string | null {
   return isEmpty(value) ? null : String(value)
 }
 
+// 範圍比較一律換算成數字：Date 用毫秒、時長用秒
 function toNumber (value: unknown): number | null {
   if (value instanceof Date) {
     return value.getTime()
+  }
+  if (typeof value === 'string') {
+    return durationSeconds(value)
   }
   return typeof value === 'number' ? value : null
 }

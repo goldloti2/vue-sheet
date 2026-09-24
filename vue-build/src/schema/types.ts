@@ -15,6 +15,8 @@ interface ColumnTypes {
   number: { value: number | null, extra: { min?: number, max?: number } }
   /** 日期（只有日期，沒有時間） */
   date: { value: Date | null }
+  /** 時間長度，值是 "時:分:秒" 字串（分秒兩位數，時數不設上限，例如 "30:15:00"） */
+  duration: { value: string | null }
   /** 圖片：一格一張，值是行內 SVG、圖片網址、或 Google Drive 的檔案 id／分享連結（見 schema/image.ts） */
   image: { value: string | null }
   /**
@@ -55,7 +57,7 @@ export type ColumnBase<Row extends object = AnyRow, T extends ColumnType = Colum
   label: string
   /** 欄位型別，決定值的型別、輸入元件與顯示格式 */
   type: T
-  /** 開了才進搜尋（text／ref 比對文字）或篩選抽屜（select／number／date 用值），預設關 */
+  /** 開了才進搜尋（text／ref 比對文字）或篩選抽屜（select／number／date／duration 用值），預設關 */
   searchable?: boolean
 } & ColumnExtra<T>
 
@@ -117,6 +119,21 @@ function columnHeader (column: SchemaColumn): string {
   return column.sheetHeader ?? column.label
 }
 
+// 時長的容錯：H:mm 與 H:mm:ss，時數不限，秒省略就是 00。分秒超過 59 或格式不對就當空的
+function parseDuration (raw: string): string | null {
+  const parts = /^(\d+):([0-5]\d)(?::([0-5]\d))?$/.exec(raw.trim())
+  return parts ? `${Number(parts[1])}:${parts[2]}:${parts[3] ?? '00'}` : null
+}
+
+// "時:分:秒" 換算成秒，給排序與篩選的範圍比較用
+export function durationSeconds (value: unknown): number | null {
+  if (typeof value !== 'string') {
+    return null
+  }
+  const parts = /^(\d+):([0-5]\d):([0-5]\d)$/.exec(value)
+  return parts ? Number(parts[1]) * 3600 + Number(parts[2]) * 60 + Number(parts[3]) : null
+}
+
 function coerceValue (raw: string, type: ColumnType): string | number | Date | null {
   if (raw === '') {
     return null
@@ -130,6 +147,9 @@ function coerceValue (raw: string, type: ColumnType): string | number | Date | n
     case 'date': {
       const parsed = new Date(raw)
       return Number.isNaN(parsed.getTime()) ? null : parsed
+    }
+    case 'duration': {
+      return parseDuration(raw)
     }
     default: {
       return raw
@@ -258,6 +278,12 @@ function compareValues (a: unknown, b: unknown): number {
   }
   if (typeof a === 'number' && typeof b === 'number') {
     return a - b
+  }
+  // 時長是 "時:分:秒" 字串，照字典序會把 "9:30:00" 排到 "10:00:00" 後面
+  const secondsA = durationSeconds(a)
+  const secondsB = durationSeconds(b)
+  if (secondsA !== null && secondsB !== null) {
+    return secondsA - secondsB
   }
   return String(a).localeCompare(String(b))
 }

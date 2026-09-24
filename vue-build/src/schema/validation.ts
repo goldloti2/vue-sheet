@@ -21,6 +21,10 @@ function columnError (value: unknown, column: SchemaColumn, row: object): string
     }
   }
 
+  if (column.type === 'duration' && !/^\d+:[0-5]\d:[0-5]\d$/.test(String(value))) {
+    return `${column.label}要是「時:分:秒」的長度，例如 1:30:00`
+  }
+
   if (column.type === 'select' && !column.allowCustom && !column.options.includes(String(value))) {
     return `${column.label}不是有效的選項`
   }

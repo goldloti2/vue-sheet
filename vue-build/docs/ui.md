@@ -115,9 +115,9 @@ const data = useSearch(query, useFilter(filters, allRows, schema), schema)
 ```
 
 - **改了即時生效**，沒有套用鈕；← 關閉搜尋時篩選一起清掉
-- **篩選的對象是 `searchable: true` 的 `select`／`number`／`date`**（`text`／`ref` 歸搜尋，兩邊用同一個開關）
+- **篩選的對象是 `searchable: true` 的 `select`／`number`／`date`／`duration`**（`text`／`ref` 歸搜尋，兩邊用同一個開關）
 - **欄位之間 AND、同一欄的多選之間 OR**
-- **範圍條件**（number／date）只填一邊就是單邊限制；值是空的列會被排除
+- **範圍條件**（number／date／duration）只填一邊就是單邊限制；值是空的列會被排除。時長換算成秒來比
 - **select 多一個「(空白)」**，勾了才留空值的列
 - **選項只列 `rows`（未過濾整表）裡出現過的值**，資料變了選項跟著變
 
@@ -126,7 +126,7 @@ const data = useSearch(query, useFilter(filters, allRows, schema), schema)
 | | 內容 |
 | --- | --- |
 | **第一層** | 可篩選欄位的清單（順序照 `detailOrder`）。有條件的欄位名稱底下用小字顯示現在篩什麼（`≥ 100`、`100 ～ 500`、`2026/01/01 ～`；select 是選到的值串起來，太長就截斷加「…共 X 項」），右側點一個主色圓點。「清除」在這一層，清掉整張表的條件 |
-| **第二層** | 點一欄進去填值：select 是一列一項的 checkbox（「(空白)」排最後）、number／date 是兩格範圍。← 回第一層 |
+| **第二層** | 點一欄進去填值：select 是一列一項的 checkbox（「(空白)」排最後）、number／date／duration 是兩格範圍。← 回第一層 |
 
 關掉抽屜也會回到第一層。抽屜開著時 `PageFab` 會讓開——它的 z-index 本來就在 layout 之上，靠 `useOverlay` 的 `overlayOpenKey` 通知。
 

@@ -70,7 +70,15 @@ export const orderSchema: TableSchema<OrderRow> = {
 
 虛擬欄位除了不能編輯，其他都跟真實欄位一樣：顯示、排序、分組、`defaultSort`、`searchable` 都能用。因為它跟 `columns` 分開放，`coerceRow`／`serializeRow`／表單完全不用知道它存在。
 
-型別有 `text`／`number`／`date`／`select`／`ref`／`image` 六種，每種有自己的專屬設定（`number` 的 `min`／`max`、`select` 的 `options`、`ref` 的 `refTable`…）。完整清單見 [`types.ts`](../src/schema/types.ts)。
+型別有 `text`／`number`／`date`／`duration`／`select`／`ref`／`image` 七種，每種有自己的專屬設定（`number` 的 `min`／`max`、`select` 的 `options`、`ref` 的 `refTable`…）。完整清單見 [`types.ts`](../src/schema/types.ts)。
+
+### duration
+
+- **`duration` 是一段長度、不是時間點**：值是 `"時:分:秒"` 字串（分秒各兩位、**時數不設上限**），`2:30:00` 是兩個半小時、`30:15:45` 也合法。Sheet 上就是 `2:30:00`，打開來看得懂
+- 讀進來時容忍 `H:mm`（秒補 `00`）與 `H:mm:ss`；分或秒超過 59、格式不對就當空的
+- 表單是一般文字框（原生的 `type="time"` 塞不下超過 24 小時），填錯格式會被驗證擋下來
+- 排序與篩選都換算成秒再比，所以 `9:30:00` 不會排到 `10:00:00` 後面；篩選是**範圍**（最短／最長）
+- 🔲 **沒有「幾點幾分」的型別**。真的需要時間點再加一個，`duration` 不要拿來兼差——它沒有上限、也沒有上午下午的概念
 
 ### image 欄位
 

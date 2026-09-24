@@ -13,7 +13,7 @@ interface ColumnTypes {
   text: { value: string | null }
   /** 數字；min／max 同時是表單輸入框的範圍與驗證的上下限 */
   number: { value: number | null, extra: { min?: number, max?: number } }
-  /** 日期（只有日期，沒有時間） */
+  /** 日期（只有日期，沒有時間；讀進來時會歸零到當天午夜） */
   date: { value: Date | null }
   /** 時間長度，值是 "時:分:秒" 字串（分秒兩位數，時數不設上限，例如 "30:15:00"） */
   duration: { value: string | null }
@@ -146,7 +146,12 @@ function coerceValue (raw: string, type: ColumnType): string | number | Date | n
     }
     case 'date': {
       const parsed = new Date(raw)
-      return Number.isNaN(parsed.getTime()) ? null : parsed
+      if (Number.isNaN(parsed.getTime())) {
+        return null
+      }
+      // 歸零到當天午夜：儲存格手動帶了時間的話，看起來一樣的兩列不該排序或篩選得不一樣
+      parsed.setHours(0, 0, 0, 0)
+      return parsed
     }
     case 'duration': {
       return parseDuration(raw)

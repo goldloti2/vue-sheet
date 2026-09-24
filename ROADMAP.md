@@ -27,6 +27,7 @@
 - `labelColumn`：一列怎麼稱呼（欄位 key，省略就是 id），store 掛成 `row.$label`
 - `TableSchema<Row>`：各表宣告時帶自己的 Row 介面，欄位 key 與 `type` 對著它檢查，虛擬欄位 `value` 的 `row` 有型別；框架端用不帶參數的 `TableSchema`
 - `duration` 欄位：一段長度（不是時間點），值是 `"時:分:秒"` 字串、時數不設上限（`30:15:45` 合法），Sheet 上就是 `2:30:00`；讀進來容忍 `H:mm`（秒補 00）與 `H:mm:ss`。表單是一般文字框（原生 `type="time"` 塞不下超過 24 小時），排序與篩選都換算成秒再比（篩選是最短／最長的範圍）。🔲 「幾點幾分」的時間點型別還沒有，需要再加
+- `date` 讀進來時歸零到當天午夜：Sheet 上手動加了時間也不會讓看起來一樣的兩列排序或篩選不一樣
 - `image` 欄位：一格一張，值是行內 SVG、圖片網址、或 Google Drive 的檔案 id／分享連結，由 `schema/image.ts` 的 `imageSrc()` 依內容判斷後轉成 `<img src>`（Drive 走 thumbnail 端點、沿用瀏覽器的 Google 登入；SVG 轉 `data:` URI，當成圖片載入就不能執行 script）。詳細頁自動顯示，列表縮圖由頁面傳 `DataList` 的 `image` prop，表單是純文字欄位；不進搜尋與篩選。上傳到 Drive 還沒做
 - `select` 的 `allowCustom`：`options` 只當建議清單，表單變 `v-combobox`、打別的字也收、驗證跳過選項檢查；資料形狀還是一個字串，顯示與篩選不用知道差別。再開 `suggestFromData`，建議清單接上資料裡用過的值（`options` 在前，多出來的依次數再依字串；跟篩選抽屜共用 `presentValues`）
 

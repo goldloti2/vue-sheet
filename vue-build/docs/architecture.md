@@ -33,6 +33,7 @@ src/
     dialog/            AppDialog、ConfirmDialog、FieldsDialog
     list/              DataList、ListField、GroupedList、DataTable
     record/            DataDetail、DetailField、DataForm、RecordNav
+    page/              整頁的版型：PageState（載入中／失敗／找不到）、FormPage
   composables/
     data/              讀資料：useTableList、useSortedTableList、useTableRow、useSearch、useFilter
     form/              表單頁：useTableForm、useLeaveGuard、useSyncHold

@@ -65,6 +65,8 @@
 - 列表：`DataList`（卡片式單列，含長按多選）、`ListField`、`GroupedList`（多層可收合分組）、`DataTable`（表格式，也用於 detail 頁內嵌子表格；`columns` 可指虛擬欄位）
 - 詳細：`DataDetail`（自帶 loading/error/找不到資料，虛擬欄位自動顯示）、`DetailField`
 - 表單：`DataForm`（依 `column.type` 自動選輸入元件）
+- 整頁版型：`PageState`（載入中／載入失敗／找不到資料，全 App 唯一一份，資料到手才畫 slot）、`FormPage`（新增／編輯頁，內部包 `PageState`，另外處理送出失敗）
+- 狀態只在兩個地方出現：產生它的 composable，和畫它的 `page/` 那層版型。`DataList`／`DataForm` 這些內容元件不碰 loading／error（`DataDetail` 還自帶一份，等 `DetailPage` 時搬走）
 - 其他：`PageFab`、`TabView`、`RecordNav`、`AppDialog`、`ConfirmDialog`、`FieldsDialog`（只顯示幾欄的 `DataForm`）
 - `TabView` 的頁籤列登記給 `AppShell` 畫在 App Bar 的 extension，所以固定在最上面；每個頁籤外面包一層 `TabViewPanel`，`provide` 一份「我是不是當前頁籤」（`panelActiveKey`）。看過的面板會一直掛著（`v-window` 用 `v-show` 切），而 `PageFab`、`registerSlot`（App Bar／底部動作）、`useListOrder` 的「活著」判斷都是 `KeepAlive 狀態 && 當前面板`，所以一個頁籤放一整張表的列表、各自掛自己的 FAB 與動作是可以的。不在 `TabView` 裡就一律算當前，現有頁面零改動。動作那兩個 watch 刻意分成 `pre`（讓場的清）與 `post`（進場的設），同一輪切換時順序才不會反過來變成空的
 
@@ -89,7 +91,7 @@
 - `PageFab` 依數量自動在固定顯示與 speed-dial 之間切換
 
 ### 表單與多選
-- `useCreateForm` / `useEditForm` 收掉新增與編輯的重複邏輯（起始值、載入、送出、導覽、錯誤狀態）
+- `useCreateForm` / `useEditForm` 收掉新增與編輯的重複邏輯（起始值、載入、送出、導覽、錯誤狀態），取消／送出也由它們自己掛上底部動作列，頁面只剩「這是哪張表」
 - 新增表單的預設值三層：schema 的 `default` → `useNewAction` 經 `history.state` 帶來的 → `useCreateForm` 的參數
 - 前端驗證：`schema/validation.ts` 的 `validateRow`（內建 `required`／`min`／`max`／`select` 選項，其他規則由欄位的 `validate(value, row)` 自訂）一份，form 層與 `askFields` 送出前逐欄提示、store 的 `create`／`update` 寫入前再擋一次（拋錯、不動快取）；後端只做結構完整性，分工見 [vue-build/docs/schema.md](vue-build/docs/schema.md)
 - `useMultiSelect` + `useLongPress`：長按進入多選，選取狀態由「有沒有選取任何一筆」推導
@@ -171,6 +173,7 @@
   - 完成後要回到原本那張表單（`back`），不是像流程一樣往前走
   - 等真的常用到再做；現在的替代路徑是先去父表新增、再回來選
 - **通用頁面**（設計已定，最大的一件）：`src/pages/[table]/` 四個通用頁讀 `schemas[route.params.table]`，新增一張表變成「寫一個 schema + 註冊一行」。客製分三層：子表清單寫進 schema 的 `detailTables`、只有這張表要的東西掛 `detailExtra` 元件、連版型都不同才 eject（複製通用頁）。`AppShell` 標題要能由頁面指定（`usePageTitle`）；`template/` 屆時併進 `vue-build/docs/templates/`
+- **視圖設定讓頁面覆寫**（等真的有第二種視圖需求再做，排在通用頁面之後）：`detailOrder`／`formOrder`／`defaultSort` 現在只有 schema 一份，同一張表在不同頁面沒辦法有不同的排法與欄位集（AppSheet 是把這些掛在 view 上，所以一張表能有多個 view）。做法是 schema 那份當**預設**、頁面用選用 prop 覆寫（`DataDetail`／`DataForm` 各加一個 `order`、排序走 `useSortedTableList` 的參數），不是搬到頁面去——通用頁面靠 route 決定表、編譯期不知道 Row 型別，預設值一定要留在 schema。頁面端自己寫仍然有型別檢查（`RowKey<XxxRow>[]` 是 exported 的），元件內部那層本來就是 `TableSchema<any>`。順帶要決定篩選抽屜的欄位順序（`useFilter` 也讀 `detailOrder`）跟著誰
 - 總覽頁範本（`DataDashboardTemplate`）：保留了位置但沒有具體需求
 
 ### PWA 與離線

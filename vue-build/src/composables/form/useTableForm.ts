@@ -9,6 +9,7 @@ import { useTableRow } from '@/composables/data/useTableRow'
 import { useLeaveGuard } from '@/composables/form/useLeaveGuard'
 import { useSyncHold } from '@/composables/form/useSyncHold'
 import { resumeStep } from '@/composables/navigation/useFlow'
+import { useBottomActions } from '@/composables/shell/useBottomActions'
 import { leaveAfterAction, navigationDefaults } from '@/router'
 import { columnValues, emptyRow } from '@/schema/types'
 import { validateRow } from '@/schema/validation'
@@ -46,14 +47,15 @@ function finish (row: object, fallback: RouteLocationRaw): void {
   }
 }
 
-// 底部動作列用的取消／送出。取消不自己問，離開頁面的確認統一由 useLeaveGuard 處理
+// 取消／送出直接掛上底部動作列（表單頁一律如此，頁面不用自己接）。
+// 取消不自己問，離開頁面的確認統一由 useLeaveGuard 處理
 function formActions (
   submitLabel: string,
   submitIcon: string,
   submit: () => Promise<void>,
   leave: () => void,
 ): ComputedRef<PageAction[]> {
-  return computed(() => [
+  const actions = computed<PageAction[]>(() => [
     {
       key: 'cancel',
       label: '取消',
@@ -67,6 +69,9 @@ function formActions (
       onClick: submit,
     },
   ])
+
+  useBottomActions(() => actions.value)
+  return actions
 }
 
 function useValidation (schema: TableSchema, row: () => object | null) {

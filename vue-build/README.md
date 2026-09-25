@@ -54,7 +54,7 @@ npx eslint src && npx vue-tsc --build --force   # 提交前跑這兩個
 
 ```
 src/
-  components/ui/   共用元件庫，依用途分成 shell / dialog / list / record（用法見 docs/components/）
+  components/ui/   共用元件庫，依用途分成 shell / dialog / list / record / page（用法見 docs/components/）
   composables/     依用途分成 data / form / shell / navigation / list / actions
   stores/tables/   每張表一份共用快取 + 寫入佇列 + row 上的 getter
   services/        對後端唯一的出入口；mock/ 是假後端，正式後端接上後整個刪掉

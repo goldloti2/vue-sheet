@@ -110,7 +110,7 @@
 | --- | --- |
 | `PageFab`（元件） | 右下角浮動按鈕，主要動作 |
 | `useAppBarActions()` | App Bar 右側，次要動作；超過兩個自動收成 ⋮ |
-| `useBottomActions()` | 螢幕最底端，**暫時取代導覽列**；表單的取消／送出用這個，離開頁面自動還原 |
+| `useBottomActions()` | 螢幕最底端，**暫時取代導覽列**，離開頁面自動還原；表單的取消／送出已經由 `useCreateForm`／`useEditForm` 登記好 |
 | `DataDetail` 的 `fieldActions` | detail 頁某一欄的右邊，一欄一個、整格可點；ref 前往、開網址、改成今天都是這種 |
 
 列表頁要搜尋列與篩選的話四行：query 與 filters 都是頁面的 ref，登記給 App Bar，再用它們過濾。哪些欄位能搜、能篩由 schema 的 `searchable` 決定（`text`／`ref` 進搜尋，`select`／`number`／`date`／`duration` 進篩選抽屜）：
@@ -124,7 +124,7 @@ const data = useSearch(query, useFilter(filters, allRows, __table__Schema), __ta
 
 只要搜尋不要篩選就省掉 `filters` 跟第二個參數。有頁籤的頁先篩、再搜、再依頁籤切，兩者都跨所有頁籤；頁籤各接一張表時 `tables` 放多個元素，每張表各自一份條件（見 [ui.md](../docs/ui.md#一頁好幾張表)）。抽屜是兩層的：第一層列可篩選的欄位（順序照 `detailOrder`，有條件的欄位底下用小字顯示篩什麼），點一欄進第二層填值。select 只列資料裡出現過的值。
 
-表單頁不用自己組那兩顆按鈕——`useCreateForm`／`useEditForm` 回傳現成的 `actions`，照 `pages/new.vue`、`pages/edit.vue` 的寫法接上去就好。「有改動要不要放棄」的確認也不用管：兩個 composable 會登記到 `useLeaveGuard`，不管是按取消、返回鍵還是切導覽列都會先問。
+表單頁幾乎不用寫東西：`useCreateForm`／`useEditForm` 準備好 `form` 與錯誤狀態、把取消／送出掛上底部動作列，版型（載入中／載入失敗／找不到資料／表單／送出錯誤）交給 `FormPage`，所以 `pages/new.vue`、`pages/edit.vue` 兩份範本各只有幾行。「有改動要不要放棄」的確認也不用管：兩個 composable 會登記到 `useLeaveGuard`，不管是按取消、返回鍵還是切導覽列都會先問。
 
 好幾個步驟要一氣呵成（新增完直接進 detail、接著再新增另一張表）的話，用 `runFlow` + `runStep` 串起來，寫法見 `table/use__Table__Actions.ts` 末尾的註解，設計說明見 [docs/architecture.md](../docs/architecture.md)。
 

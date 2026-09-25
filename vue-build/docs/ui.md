@@ -75,7 +75,7 @@
 | --- | --- | --- |
 | 右下角 FAB | `<PageFab :actions="...">` | 主要動作。≤2 顆固定顯示，≥3 顆收合成 speed-dial |
 | App Bar 右側 | `useAppBarActions()` | 次要動作。≤2 顆直接顯示，≥3 顆收成「⋮」下拉 |
-| 螢幕最底端 | `useBottomActions()` | 表單的取消／送出，暫時取代底部導覽列，離開頁面自動還原 |
+| 螢幕最底端 | `useBottomActions()` | 暫時取代底部導覽列，離開頁面自動還原。表單的取消／送出不用自己接，`useCreateForm`／`useEditForm` 會登記 |
 | 詳細頁的單一欄位 | `DataDetail` 的 `fieldActions` | 該欄的動作，右邊出現圖示、整格可點 |
 
 - **四處共用同一種 `PageAction`**：`{ key, label, icon, onClick, confirm? }`。頁面自己決定用哪幾個、放哪裡

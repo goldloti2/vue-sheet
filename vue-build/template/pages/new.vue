@@ -5,22 +5,14 @@
 
 <script lang="ts" setup>
   import type { __Table__Row } from '@/schema/__table__'
-  import DataForm from '@/components/ui/record/DataForm.vue'
+  import FormPage from '@/components/ui/page/FormPage.vue'
   import { useCreateForm } from '@/composables/form/useTableForm'
-  import { useBottomActions } from '@/composables/shell/useBottomActions'
   import { __table__Schema } from '@/schema/__table__'
 
-  // 起始值依 schema 自動產生（全欄位 null），送出成功後回列表頁
-  const { form, fieldErrors, error, actions } = useCreateForm<__Table__Row>('__table__', __table__Schema)
-  useBottomActions(() => actions.value)
+  // 起始值依 schema 自動產生（全欄位 null），取消／送出自動掛上底部動作列，送出成功後回列表頁
+  const { form, fieldErrors, error } = useCreateForm<__Table__Row>('__table__', __table__Schema)
 </script>
 
 <template>
-  <div>
-    <DataForm v-model="form" :errors="fieldErrors" :schema="__table__Schema" />
-
-    <v-container v-if="error">
-      <v-alert :text="error" type="error" />
-    </v-container>
-  </div>
+  <FormPage v-model="form" :error="error" :errors="fieldErrors" :schema="__table__Schema" />
 </template>

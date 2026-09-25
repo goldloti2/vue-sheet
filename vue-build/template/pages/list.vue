@@ -7,6 +7,7 @@
   import type { __Table__Row } from '@/schema/__table__'
   import { computed } from 'vue'
   import DataList from '@/components/ui/list/DataList.vue'
+  import PageState from '@/components/ui/page/PageState.vue'
   import PageFab from '@/components/ui/shell/PageFab.vue'
   import { use__Table__Actions } from '@/composables/actions/use__Table__Actions'
   import { useSortedTableList } from '@/composables/data/useSortedTableList'
@@ -35,11 +36,8 @@
 <template>
   <div>
     <v-container>
-      <v-progress-linear v-if="loading" indeterminate />
-
-      <v-alert v-else-if="error" :text="error" type="error" />
-
-      <template v-if="!error">
+      <!-- 載入中與載入失敗由 PageState 顯示，列表只管有資料的時候 -->
+      <PageState :error="error" :loading="loading" spinner="linear">
         <DataList
           v-for="row in data"
           :key="row.id"
@@ -48,7 +46,7 @@
           :to="`/__table__/${row.id}`"
           :top-right="formatField(row, __table__Schema, 'date')"
         />
-      </template>
+      </PageState>
     </v-container>
 
     <PageFab :actions="newActions" />

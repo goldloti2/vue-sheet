@@ -38,10 +38,23 @@ export function useMultiSelect () {
   // 換頁籤也算離開。頁籤是 TabView 登記給 AppShell 的，所以頁面層跟面板層都讀得到同一份
   watch(useCurrentTab(), clear)
 
+  // 每一列多選時需要的物件都綁一起，給 DataList 用 v-bind 一次接上（列表元件與分組列表都同一份）
+  function itemProps (id: string) {
+    return {
+      selectable: true,
+      selectMode: active.value,
+      selected: isSelected(id),
+      onLongpress: () => enter(id),
+      onToggle: () => toggle(id),
+    }
+  }
+
   // 多選模式的出口，放進 App Bar 動作；沒選東西時是空的，不佔位子
   const cancel = computed<PageAction[]>(() => active.value
     ? [{ key: 'cancel-select', label: '取消', icon: actionIcons.cancel, onClick: clear }]
     : [])
 
-  return { active, cancel, clear, count, enter, isSelected, selectedIds, toggle }
+  return { active, cancel, clear, count, enter, isSelected, itemProps, selectedIds, toggle }
 }
+
+export type MultiSelect = ReturnType<typeof useMultiSelect>

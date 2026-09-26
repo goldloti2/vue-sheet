@@ -16,9 +16,7 @@
 
   const props = defineProps<{
     schema: TableSchema
-    row: object | null
-    loading: boolean
-    error: string | null
+    row: object
     // 欄位 key → 動作；每欄只用第一個。沒列的欄位就沒有動作，ref 的前往也要自己列（useGoToRefAction）
     fieldActions?: FieldActions
   }>()
@@ -26,9 +24,6 @@
   // 真實與虛擬欄位一視同仁，照 detailOrder 排
   const fields = computed<Field[]>(() => {
     const row = props.row
-    if (!row) {
-      return []
-    }
 
     const fieldList: Field[] = allColumns(props.schema).map(column => ({
       key: column.key,
@@ -50,21 +45,13 @@
 
 <template>
   <v-container>
-    <v-progress-circular v-if="loading" indeterminate />
-
-    <v-alert v-else-if="error" :text="error" type="error" />
-
-    <v-alert v-else-if="!row" text="找不到這筆資料" type="warning" />
-
-    <template v-else>
-      <DetailField
-        v-for="field in fields"
-        :key="field.key"
-        :action="field.action"
-        :image="field.image"
-        :label="field.label"
-        :value="field.value"
-      />
-    </template>
+    <DetailField
+      v-for="field in fields"
+      :key="field.key"
+      :action="field.action"
+      :image="field.image"
+      :label="field.label"
+      :value="field.value"
+    />
   </v-container>
 </template>

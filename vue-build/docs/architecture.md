@@ -33,7 +33,7 @@ src/
     dialog/            AppDialog、ConfirmDialog、FieldsDialog
     list/              DataList、ListField、GroupedList、DataTable
     record/            DataDetail、DetailField、DataForm、RecordNav
-    page/              整頁的版型：PageState（載入中／失敗／找不到）、FormPage
+    page/              整頁的版型：PageState（載入中／失敗／找不到）、FormPage、DetailPage
   composables/
     data/              讀資料：useTableList、useSortedTableList、useTableRow、useSearch、useFilter
     form/              表單頁：useTableForm、useLeaveGuard、useSyncHold
@@ -42,6 +42,7 @@ src/
                        useNotify、useConfirm、useAskFields
     navigation/        路由接力：useRouteId、useListOrder、useFlow
     list/              列表互動：useMultiSelect、useLongPress
+    page/              頁面的資料層：useRecordPage
     actions/           useTableActions：PageAction 型別 + 通用動作 builder
   stores/tables/       共用快取、待推送佇列、row 上的 getter（見 store.md）
   services/            appScript.ts 是對後端唯一的出入口；mock/ 是假後端，上線後整個刪掉

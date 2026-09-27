@@ -1,6 +1,8 @@
 # DataList
 
-卡片式列表的**單一列**，四個角落各一個欄位。自己不做迴圈，外面用 `v-for` 或包在 `GroupedList` 的 slot 裡。給了 `to` 整列就是連結。
+卡片式列表的**單一列**，四個角落各一個欄位。自己不做迴圈：列表頁放在 [ListPage](ListPage.md) 的 slot 裡（迴圈與分組都由它處理），其他地方用 `v-for` 或包在 `GroupedList` 的 slot 裡。給了 `to` 整列就是連結。
+
+多選的四個 prop 不用一個個接——`v-bind` 上 `ListPage` slot 給的 `props`（或自己組時用 `selection.itemProps(row.id)`），`selectable`／`selectMode`／`selected` 與長按、點選事件會一次綁好。
 
 ## Usage
 

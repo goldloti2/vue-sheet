@@ -73,7 +73,7 @@ src/
 - **快取變了就讓它變**。資料真的被刪掉時，離開中的頁面顯示「找不到這筆資料」是正確的
 - **「每次進場都該重算」的東西放 `onActivated`**，因為同一個網址共用同一份實例、`setup` 不會重跑。兩種表單都在 `onActivated` 重建表單並清掉錯誤：新增頁的網址固定（不重建會停在上次的內容、也讀不到新的預設值），編輯頁「離開再回到同一筆」也是同一份實例（不重置的話上次沒存的輸入會留著，很容易被誤存）
 - **Teleport 出去的浮動 UI 自己管進出場**（`PageFab`、`RecordNav` 送到 `body`），用 `onActivated`／`onDeactivated`，否則離開的頁面會把按鈕留在畫面上
-- **列表載入中不要用 `v-if` 把列表整個換掉**。`v-if="loading"` / `v-else` 會在每次背景重新整理時卸載重建，`GroupedList` 的展開狀態就沒了。改用 `v-progress-linear v-if="loading"` 搭配獨立的 `v-if="!error"`
+- **列表載入中不要用 `v-if` 把列表整個換掉**。`v-if="loading"` / `v-else` 會在每次背景重新整理（同步鈕會重抓所有已載入的表）時卸載重建，`GroupedList` 的展開狀態就沒了。用 `PageState` 的 `spinner="linear"` 就對了——它把長條加在內容上面而不是取代內容
 
 會有這些規則，是因為**離開中的頁面是全速運轉的**，理由見文末的設計取捨。
 
@@ -157,12 +157,16 @@ if (values) {
 
 不管套到哪張表都是同一套範本，差別只在開了哪些功能。實際檔案見 [template/](../template/)。
 
-| 型態 | 範本 | 內容 | 可選功能 |
+骨架不在範本裡，而在 `components/ui/page/` 的版型元件與 `composables/page/` 的資料層——**範本只是把它們接起來的那十幾行**，所以每個頁面檔留下的都是這張表專屬的東西（哪些欄位、哪些動作）。
+
+| 型態 | 範本 | 資料層 + 版型 | 頁面自己寫什麼 |
 | --- | --- | --- | --- |
-| **列表**（list） | `pages/list.vue` | 卡片式（適合瀏覽）或表格式（適合比對、多選），排序依 `defaultSort` | 分組、頁籤篩選、多選、搜尋與篩選（見 [ui.md](ui.md)） |
-| **詳細**（detail） | `pages/detail.vue` | 單筆所有欄位（含虛擬欄位），順序依 `detailOrder` | 內嵌關聯子表格、編輯／刪除入口 |
-| **表單**（form） | `pages/new.vue`、`pages/edit.vue` | 依欄位型別自動選輸入元件，順序依 `formOrder` | 新增與編輯共用同一套版面 |
-| **總覽**（dashboard） | 🔲 還沒有 | 彙整多筆／跨表的聚合數字 | 目前沒有具體需求，保留位置 |
+| **列表**（list） | `pages/list.vue` | `useListPage` + `ListPage` | 每列四個角、要不要多選、FAB 放什麼；分組給 `groups`（`GroupedList`），頁籤自己包 `TabView` |
+| **詳細**（detail） | `pages/detail.vue` | `useRecordPage` + `DetailPage` | 欄位動作、slot 裡的子表格或說明 |
+| **表單**（form） | `pages/new.vue`、`pages/edit.vue` | `useCreateForm`／`useEditForm` + `FormPage` | 幾乎不用寫，欄位與順序都在 schema |
+| **總覽**（dashboard） | 🔲 還沒有 | — | 目前沒有具體需求，保留位置 |
+
+版面真的不一樣（表格式、混合版面）就不套版型元件，資料層仍然共用；那時要自己 `useListOrder` 發布畫面上的順序。四種頁面的載入中／失敗／找不到都由 `PageState` 一份處理。
 
 `detailOrder` 跟 `formOrder` 故意分開，因為兩邊需求不一定相同。
 
@@ -171,7 +175,7 @@ if (values) {
 ## 設計取捨
 
 **為什麼 KeepAlive 的 key 要帶完整網址**
-不帶的話，同一個路由換 id（`/表名/A` → `/表名/B`）對 Vue 而言是同一個元件、同一個 vnode，會就地更新而不觸發 `<transition>`，翻上／下一筆就完全沒有動畫。代價是 KeepAlive 從「每個元件一份」變成「每個網址一份」，所以要配 `max` 收斂；連續翻超過 50 筆不回列表的話，列表頁會被擠掉、展開與捲動狀態就沒了。
+不帶的話，同一個路由換 id（`/表名/A` → `/表名/B`）對 Vue 而言是同一個元件、同一個 vnode，會就地更新而不觸發 `<transition>`，翻上／下一筆就完全沒有動畫。代價是 KeepAlive 從「每個元件一份」變成「每個網址一份」，所以要配 `max` 收斂；連續翻超過 50 筆不回列表的話，列表頁會被擠掉、展開狀態就沒了。
 
 **為什麼離開中的頁面還在運轉**
 KeepAlive 的 `deactivate` 只搬 DOM，不會暫停元件的 effect；而 `onDeactivated` 是 post-render，比 pre-flush 的 `watch` 還晚。所以在整段離場動畫期間，舊頁面仍然會對外部變化重新計算、重新渲染——而外面的世界已經換頁了。這是「返回時閃一下錯誤內容」這一整類問題的唯一根源，上面那五條規則都是為它而存在。流進離開中頁面的東西只有兩種：路由參數（讀一次就固定）與共用快取（讓它變）。

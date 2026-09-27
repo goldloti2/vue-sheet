@@ -43,7 +43,8 @@
 | prop | 型別 | 說明 |
 | --- | --- | --- |
 | `table` | `TableKey` | **必填**，發布列表順序用 |
-| `rows` | `Row[]` | **必填**，已經篩選、搜尋過的那些＝畫面上的順序 |
+| `rows` | `Row[]?` | 已經篩選、搜尋過的那些＝畫面上的順序。跟 `groups` 二選一 |
+| `groups` | `RowGroup<Row>[]?` | 分組後的結果（`groupRows` 的回傳），內部改用 `GroupedList` 渲染 |
 | `loading` | `boolean?` | 載入中（長條進度列） |
 | `error` | `string \| null?` | 載入失敗的訊息 |
 | `selection` | `MultiSelect?` | 給了才綁長按多選（`useListPage` 的 `selection`） |
@@ -55,8 +56,25 @@
 | --- | --- | --- |
 | `default` | `{ row, props }` | 每一列。`props` 是多選要綁的那一包（`selectable`／`selectMode`／`selected`／長按與點選事件），`v-bind` 到 `DataList` 上就好；沒給 `selection` 時是空物件 |
 
+## 分組與頁籤
+
+分組給 `groups`（`rows` 就不用給），列的 slot 寫法完全一樣：
+
+```vue
+<TabView v-model="selectedStatus" :tabs="statusTabs">
+  <template #default="{ tab }">
+    <ListPage :error="error" :fab="newActions" :groups="groupedFor(tab)" :loading="loading" :selection="selection" table="__table__">
+      <template #default="{ row, props: itemProps }">
+        <DataList v-bind="itemProps" :title="row.$label" :to="`/__table__/${row.id}`" />
+      </template>
+    </ListPage>
+  </template>
+</TabView>
+```
+
+**一個頁籤一個 `ListPage`**：每個面板各自算自己的狀態、FAB 與列表順序，只有當前面板那份會生效（靠 `TabViewPanel` 的訊號），所以頁面不用知道「現在是哪個頁籤」。發布順序時會先 `flattenGroups`，跟畫面上的先後一致。
+
 ## 備註
 
-- **版面不一樣就不要用這個元件**：分組（`GroupedList`）、頁籤分面板、表格式（`DataTable`）這些請直接在頁面裡組，資料層仍然用 `useListPage`——批次列表就是這樣（頁籤 + 年月分組）
-- **那種頁面要自己發布順序**：`useListOrder(table, computed(() => 畫面上的順序))`，因為只有頁面知道分組與頁籤之後實際的排列
+- **版面真的不一樣才自己組**：表格式（`DataTable`）、總覽頁那種混合版面用不到這個元件，資料層仍然可以用 `useListPage`；那時要自己 `useListOrder(table, computed(() => 畫面上的順序))`，因為只有頁面知道實際排列
 - 空列表就是空的，不會顯示「找不到資料」——那是單筆頁面的狀態（見 [PageState](PageState.md)）

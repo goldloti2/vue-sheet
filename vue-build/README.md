@@ -47,6 +47,7 @@ npx eslint src && npx vue-tsc --build --force   # 提交前跑這兩個
 | **佇列**（`pending`） | 還沒寫回 Sheet 的改動。按推送才真的送出去 |
 | **推送**（flush） | 把佇列送到後端 |
 | **同步**（`refresh`） | 推送 + 重抓所有已載入的表，就是 App Bar 最右邊那顆鈕 |
+| **版型**（page layout） | `components/ui/page/` 的元件（`ListPage`／`DetailPage`／`FormPage`／`PageState`），包掉一種頁面共通的骨架，頁面只填這張表專屬的部分 |
 | **動作**（`PageAction`） | 一顆按鈕的定義，可以擺在 FAB、App Bar、底部或某個欄位旁 |
 | **流程**（flow） | 好幾個步驟一氣呵成的動作，中途取消會整條還原 |
 
@@ -55,7 +56,7 @@ npx eslint src && npx vue-tsc --build --force   # 提交前跑這兩個
 ```
 src/
   components/ui/   共用元件庫，依用途分成 shell / dialog / list / record / page（用法見 docs/components/）
-  composables/     依用途分成 data / form / shell / navigation / list / actions
+  composables/     依用途分成 data / form / shell / navigation / list / actions / page
   stores/tables/   每張表一份共用快取 + 寫入佇列 + row 上的 getter
   services/        對後端唯一的出入口；mock/ 是假後端，正式後端接上後整個刪掉
   schema/          每張表的欄位定義，加上型別、驗證、關聯圖

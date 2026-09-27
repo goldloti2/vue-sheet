@@ -14,7 +14,7 @@
 - App Bar 左側圖示依路由自動切換漢堡選單／返回箭頭
 - 頁面前進/後退轉場動畫，方向依「導覽列順序 → 回到頂層 → 同路由換 id 依列表順序 → 瀏覽器歷史前後」四層判定（見 [vue-build/docs/ui.md](vue-build/docs/ui.md)）
 - 底部導覽列切換分頁用 `replace`，內頁不會堆進歷史
-- `<KeepAlive :max="50">` 以 `route.fullPath` 為 key，保留列表的展開與捲動狀態；同時讓「同路由換 id」能觸發轉場動畫
+- `<KeepAlive :max="50">` 以 `route.fullPath` 為 key，保留列表的展開狀態與頁面裡的其他元件狀態；同時讓「同路由換 id」能觸發轉場動畫。**視窗的捲動位置不在它的範圍內**（見未完成的「捲動位置還原」）
 
 ### Schema 型別系統
 - `SchemaColumn` / `TableSchema` 型別，`type` 支援 `text`／`number`／`date`／`duration`／`ref`／`select`／`image`
@@ -65,7 +65,7 @@
 - 列表：`DataList`（卡片式單列，含長按多選）、`ListField`、`GroupedList`（多層可收合分組）、`DataTable`（表格式，也用於 detail 頁內嵌子表格；`columns` 可指虛擬欄位）
 - 詳細：`DataDetail`（欄位區，虛擬欄位自動顯示）、`DetailField`
 - 表單：`DataForm`（依 `column.type` 自動選輸入元件）
-- 整頁版型：`PageState`（載入中／載入失敗／找不到資料，全 App 唯一一份，資料到手才畫 slot）、`FormPage`（新增／編輯頁，內部包 `PageState`，另外處理送出失敗）、`DetailPage`（詳細頁：欄位區 + 左右滑動換筆 + 上下筆箭頭 + FAB）、`ListPage`（列表頁：逐列渲染 + FAB + 發布列表順序）。兩個都是泛型元件，slot 的 `row` 帶著呼叫端的 Row 型別
+- 整頁版型：`PageState`（載入中／載入失敗／找不到資料，全 App 唯一一份，資料到手才畫 slot）、`FormPage`（新增／編輯頁，內部包 `PageState`，另外處理送出失敗）、`DetailPage`（詳細頁：欄位區 + 左右滑動換筆 + 上下筆箭頭 + FAB）、`ListPage`（列表頁：逐列渲染或 `groups` 交給 `GroupedList` + FAB + 發布列表順序，分組時先 `flattenGroups`）。兩個都是泛型元件，slot 的 `row` 帶著呼叫端的 Row 型別
 - 狀態只在兩個地方出現：產生它的 composable，和畫它的 `page/` 那層版型。`DataList`／`DataForm`／`DataDetail` 這些內容元件都不碰 loading／error
 - 其他：`PageFab`、`TabView`、`RecordNav`、`AppDialog`、`ConfirmDialog`、`FieldsDialog`（只顯示幾欄的 `DataForm`）
 - `TabView` 的頁籤列登記給 `AppShell` 畫在 App Bar 的 extension，所以固定在最上面；每個頁籤外面包一層 `TabViewPanel`，`provide` 一份「我是不是當前頁籤」（`panelActiveKey`）。看過的面板會一直掛著（`v-window` 用 `v-show` 切），而 `PageFab`、`registerSlot`（App Bar／底部動作）、`useListOrder` 的「活著」判斷都是 `KeepAlive 狀態 && 當前面板`，所以一個頁籤放一整張表的列表、各自掛自己的 FAB 與動作是可以的。不在 `TabView` 裡就一律算當前，現有頁面零改動。動作那兩個 watch 刻意分成 `pre`（讓場的清）與 `post`（進場的設），同一輪切換時順序才不會反過來變成空的
@@ -95,6 +95,7 @@
 - 新增表單的預設值三層：schema 的 `default` → `useNewAction` 經 `history.state` 帶來的 → `useCreateForm` 的參數
 - 前端驗證：`schema/validation.ts` 的 `validateRow`（內建 `required`／`min`／`max`／`select` 選項，其他規則由欄位的 `validate(value, row)` 自訂）一份，form 層與 `askFields` 送出前逐欄提示、store 的 `create`／`update` 寫入前再擋一次（拋錯、不動快取）；後端只做結構完整性，分工見 [vue-build/docs/schema.md](vue-build/docs/schema.md)
 - `useMultiSelect` + `useLongPress`：長按進入多選，選取狀態由「有沒有選取任何一筆」推導；`itemProps(id)` 是每列要綁的那一包（`selectable`／`selectMode`／`selected`／長按與點選），列表元件與分組列表共用同一份
+- 分組或分頁籤的列表也走 `ListPage`：一個頁籤一個 `ListPage`，各自算狀態、FAB 與列表順序，靠面板訊號決定哪份生效，頁面不用知道當前是哪個頁籤
 - 列表頁的資料層 `useListPage(table, schema)`：整表 → 篩選 → 搜尋（順手登記 App Bar 的放大鏡）＋ 多選，一次回傳；一頁接好幾張表時傳 `search: false`，改由頁面自己登記
 - 多選的出口：`useMultiSelect` 回傳一個現成的「取消」`PageAction`（多選中才有內容），頁面把它排在其他動作之後註冊到 App Bar，位置就在同步鈕左邊
 - 離開就取消選取：`onDeactivated`（KeepAlive 的列表換頁時）與 `useCurrentTab()`（換頁籤時）自動清，頁面零設定。頁籤訊號取自 `TabView` 登記給 `AppShell` 的那份，頁面層與面板層讀到同一個，所以兩種頁籤形狀不用各寫一套
@@ -176,7 +177,7 @@
 - **通用頁面**（設計已定，最大的一件）：`src/pages/[table]/` 四個通用頁讀 `schemas[route.params.table]`，新增一張表變成「寫一個 schema + 註冊一行」。客製分三層：子表清單寫進 schema 的 `detailTables`、只有這張表要的東西掛 `detailExtra` 元件、連版型都不同才 eject（複製通用頁）。`AppShell` 標題要能由頁面指定（`usePageTitle`）；`template/` 屆時併進 `vue-build/docs/templates/`
 - **視圖設定讓頁面覆寫**（等真的有第二種視圖需求再做，排在通用頁面之後）：`detailOrder`／`formOrder`／`defaultSort` 現在只有 schema 一份，同一張表在不同頁面沒辦法有不同的排法與欄位集（AppSheet 是把這些掛在 view 上，所以一張表能有多個 view）。做法是 schema 那份當**預設**、頁面用選用 prop 覆寫（`DataDetail`／`DataForm` 各加一個 `order`、排序走 `useSortedTableList` 的參數），不是搬到頁面去——通用頁面靠 route 決定表、編譯期不知道 Row 型別，預設值一定要留在 schema。頁面端自己寫仍然有型別檢查（`RowKey<XxxRow>[]` 是 exported 的），元件內部那層本來就是 `TableSchema<any>`。順帶要決定篩選抽屜的欄位順序（`useFilter` 也讀 `detailOrder`）跟著誰
 - **薄頁面之後的兩個決定**（主體已完成，見「共用元件庫」）：四種頁面的樣板都抽成「`composables/page/` 資料層 + `components/ui/page/` 版型」了，頁面檔只剩「這是哪張表、有哪些動作」。剩下要決定的是：(1) `template/` 的四份頁面範本還要不要留成真的檔案，還是改成 md 的程式區塊；(2) 要不要再往前做路由驅動的通用頁（`pages/[table]/`，加一張表連頁面檔都不用複製）——那一步的代價與取捨見底下的通用頁面條目
-- **`ListPage` 接受 `groups`**（設計已定）：分組的列表（批次列表那種）目前用不到 `ListPage`，只因為內容是 `GroupedList`，於是狀態階梯、FAB、發布順序全都在頁面裡手寫。做法是多一個 `groups` prop 與 `rows` 二選一，有 `groups` 就內部渲染 `GroupedList`、順序取 `flattenGroups(groups)`。除了少掉十幾行，更重要的是頁面不用再自己記得「用當前頁籤的分組結果」發布順序——每個面板各一個 `ListPage`、各自發布，由面板訊號決定哪份算數。`GroupedList` 與 `TabView` 本身不動（純呈現元件，裡面沒有資料層可抽）。「頁籤＝某個 select 欄位的 options」那三行要不要包成 `tabsFromColumn(schema, key)`，等第二個頁面要用再說
+- **捲動位置還原**：router 沒有 `scrollBehavior`，`<KeepAlive>` 也只保留元件狀態、不含視窗的捲動位置，所以列表捲到一半離開再回來會停在別的地方。做法有兩條：router 的 `scrollBehavior(to, from, savedPosition)`，或頁面在 `onDeactivated` 記下位置、`onActivated` 還原——都要等進場轉場結束才能設，不然會被動畫中的 `transform` 影響。真的常捲很長的列表再做
 - 總覽頁範本（`DataDashboardTemplate`）：保留了位置但沒有具體需求
 
 ### PWA 與離線

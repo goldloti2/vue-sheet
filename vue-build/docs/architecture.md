@@ -67,13 +67,15 @@ src/
 
 ## KeepAlive 的規則
 
-列表頁與 detail 頁都被 `<KeepAlive :max="50">` 快取，key 是 `route.fullPath`。由此而來的五條規則：
+列表頁與 detail 頁都被 `<KeepAlive :max="50">` 快取，key 是 `route.fullPath`。由此而來的六條規則：
 
 - **`[id]` 頁面一律用 `useRouteId()`**，不要自己 `watch` `route.params.id`。一個實例終其一生只對應一個網址，路由參數對它而言是常數；跟著路由走的話離開中的頁面會讀到目的地的 id（拿掉 `:key` 的話 `useRouteId()` 會在開發模式印警告）
 - **快取變了就讓它變**。資料真的被刪掉時，離開中的頁面顯示「找不到這筆資料」是正確的
 - **「每次進場都該重算」的東西放 `onActivated`**，因為同一個網址共用同一份實例、`setup` 不會重跑。兩種表單都在 `onActivated` 重建表單並清掉錯誤：新增頁的網址固定（不重建會停在上次的內容、也讀不到新的預設值），編輯頁「離開再回到同一筆」也是同一份實例（不重置的話上次沒存的輸入會留著，很容易被誤存）
 - **Teleport 出去的浮動 UI 自己管進出場**（`PageFab`、`RecordNav` 送到 `body`），用 `onActivated`／`onDeactivated`，否則離開的頁面會把按鈕留在畫面上
 - **列表載入中不要用 `v-if` 把列表整個換掉**。`v-if="loading"` / `v-else` 會在每次背景重新整理（同步鈕會重抓所有已載入的表）時卸載重建，`GroupedList` 的展開狀態就沒了。用 `PageState` 的 `spinner="linear"` 就對了——它把長條加在內容上面而不是取代內容
+
+- **捲動位置不是元件狀態**，KeepAlive 管不到（它保留的是元件，視窗的捲動在元件外面）。router 自己記一份 `fullPath → scrollY`：`beforeEach` 存、`scrollBehavior` 還原，上限也是 50 筆。返回鍵優先用瀏覽器記的 `savedPosition`，沒看過的頁面回到頂端
 
 會有這些規則，是因為**離開中的頁面是全速運轉的**，理由見文末的設計取捨。
 

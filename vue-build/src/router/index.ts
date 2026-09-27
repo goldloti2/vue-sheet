@@ -18,9 +18,34 @@ declare module 'vue-router' {
   }
 }
 
+// 每個網址最後停在哪裡。跟 KeepAlive 是同一件事的兩半：元件狀態歸 KeepAlive（也是以 fullPath 為 key），
+// 視窗的捲動位置不是元件狀態，所以記在這裡。上限跟 KeepAlive 的 max 一樣，滿了先丟最舊的
+const scrollPositions = new Map<string, number>()
+const MAX_SCROLL_POSITIONS = 50
+
+function rememberScroll (fullPath: string): void {
+  // 先刪再加，順序才會反映「最近用過」
+  scrollPositions.delete(fullPath)
+  scrollPositions.set(fullPath, window.scrollY)
+
+  const oldest = scrollPositions.keys().next().value
+  if (scrollPositions.size > MAX_SCROLL_POSITIONS && oldest !== undefined) {
+    scrollPositions.delete(oldest)
+  }
+}
+
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes,
+  // 回到看過的頁面就回到原本的位置（返回鍵有瀏覽器自己記的，優先用），沒看過的一律從頂端開始
+  scrollBehavior (to, _from, savedPosition) {
+    return { top: savedPosition?.top ?? scrollPositions.get(to.fullPath) ?? 0 }
+  },
+})
+
+// 離場前記下來。這時畫面還沒換，window.scrollY 仍然是離開中那一頁的
+router.beforeEach((_to, from) => {
+  rememberScroll(from.fullPath)
 })
 
 // 這次瀏覽在 App 裡面總共導覽過幾次；第一次載入（不管是首頁還是直接貼網址）算 1。

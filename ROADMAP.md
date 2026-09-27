@@ -56,11 +56,11 @@
 - 流程存檔點 `beginFlow` / `commitFlow` / `rollbackFlow`（給連續動作用；流程進行中 `flush` 會被擋下）
 - App Bar 最右側的同步鈕（`refresh()` ＝ 推送 + 重抓所有已載入的表）+ 未推送圓點標記（失敗轉紅）+ `beforeunload` 攔截
 - 表單開著的時候同步鈕停用（`useSyncHold` 持有 `holdSync()`，`canSync` 判斷）
-- flush 失敗保持「未推送」狀態並用 snackbar 報錯，讓使用者重按。因為 id 由前端發，整批重送是安全的——刻意**不做**「記錄哪幾筆成功了」的逐筆補償邏輯
+- flush 失敗保持「未推送」狀態並用 snackbar 報錯，讓使用者重按。因為 id 由前端發，整批重送是安全的（所以沒有逐筆補償，見「決定不做」）
 - **重抓前一定先 flush**，沒清乾淨就不重抓；沒有「只重抓一張表」的 API
 - 跨表寫入順序無所謂。Sheet 沒有外鍵約束，後端也不做合法性驗證，所以父表子表誰先寫都不會壞
 - 目前 `flush` 是逐筆送 N 次請求，通用 batch 端點等接真後端時一起做（見「後端 API 介面」）
-- 決定不做：**佇列持久化**。佇列只在記憶體，重整／當機／分頁被系統殺掉就會丟掉未推送的變更（`beforeunload` 只擋得住主動關分頁）。單人使用、推送就是一顆鈕，不值得。哪天要做的話：存 `localStorage`（`values` 進佇列時就已序列化，直接 `JSON.stringify`）、流程期間暫停寫入（磁碟上停在流程開始前的樣子，被殺掉再開等於自動回滾）；唯一貴的是開機後要把佇列重新疊回從後端抓來的 `rows`，需要一個部分欄位版的 `coerceRow`
+- 佇列只在記憶體、不寫進 `localStorage`（決定不做的理由與代價見「決定不做」）
 
 ### 共用元件庫
 - 列表：`DataList`（卡片式單列，含長按多選）、`ListField`、`GroupedList`（多層可收合分組）、`DataTable`（表格式，也用於 detail 頁內嵌子表格；`columns` 可指虛擬欄位）
@@ -110,10 +110,7 @@
 - 第一步 `push`、之後 `replace`
 - 離開前先問：`useLeaveGuard` 的 `router.beforeEach`，返回鍵／導覽列／改網址／底部取消全走同一條；第二步之後一律問，否則看表單有沒有改動
 - 範本 `table/use__Table__Actions.ts` 末尾有寫法示範；專案端的第一條流程見 production 分支的 PROJECT-ROADMAP
-- 決定不做：
-  - **返回＝回到上一步**（而不是整條取消）。代價是三件事加起來等於一個多頁精靈：每步改 `push` 且結束後要清歷史；存檔點要從一格變一疊（每步單獨收回）；上一步的表單要帶著使用者上次填的值重開。等真有三步以上、常態要回頭改的流程再說
-  - **編輯表單的預設值通道**：`useEditForm` 不讀 `navigationDefaults()`，所以編輯表單可以當流程的一步，但沒辦法把上一步的結果預先填進去。目前想不到需要的情境
-  - **進度指示**（第 1 步／共 2 步）：步驟頂多兩三步，每一步是完整的一頁、App Bar 上有自己的標題
+- 三件刻意不做的（返回＝回到上一步、編輯表單的預設值通道、進度指示）見「決定不做」
 
 ### 路由
 - `useRouteId()`：路由參數讀一次就固定（靠 `route.fullPath` 當 key 成立），離場動畫期間不會被目的地的 id 汙染。拿掉 key 時開發模式會警告
@@ -165,7 +162,7 @@
 - **推送前比對檔案的 modifiedTime**（取代原本 `updatedAt` 欄位的想法，設計已定、等後端）：Sheets 沒有逐列的修改時間，維護 `updatedAt` 要後端戳章加 `onEdit` 觸發器；改成用整個檔案的 `modifiedTime`（`DriveApp.getFileById(id).getLastUpdated()`），粗糙（任何分頁、連格式變更都算）但夠用
   - `fetchTable` 的回應帶 `modifiedTime`，store 記成 `knownModifiedTime`；`mutateTable` 的 payload 帶 `since`，**由後端**在 `LockService` 鎖裡跟當下的值比對再寫，不一致就回 `{ success: false, error: 'modified' }` 什麼都不寫，一致就寫入並回新的 `modifiedTime`
   - 衝突時前端停止推送、保留佇列、跳提示，兩條出路：「放棄未推送的變更並重抓」或「強制推送」（payload 不帶 `since`；注意 `update` 送的是整列，會蓋掉那一列的手動修改）
-  - **不做**「把佇列重新套用到新資料上」——跟佇列持久化是同一種成本
+  - 衝突時不把佇列重新套用到新資料上（見「決定不做」）
 
 ### UI 功能
 - 排序的操作介面（目前只有 schema 的 `defaultSort`，使用者不能自己改）
@@ -175,16 +172,14 @@
   - 這張表單可能本身就是某條流程的一步（例如「新增父表接著新增子表」的第二步），`runFlow` 不能套疊，而且 `runStep` 在流程中會用 `replace`，把目前這張表單頁換掉
   - 完成後要回到原本那張表單（`back`），不是像流程一樣往前走
   - 等真的常用到再做；現在的替代路徑是先去父表新增、再回來選
-- **通用頁面**（設計已定，最大的一件）：`src/pages/[table]/` 四個通用頁讀 `schemas[route.params.table]`，新增一張表變成「寫一個 schema + 註冊一行」。客製分三層：子表清單寫進 schema 的 `detailTables`、只有這張表要的東西掛 `detailExtra` 元件、連版型都不同才 eject（複製通用頁）。`AppShell` 標題要能由頁面指定（`usePageTitle`）；`template/` 屆時併進 `vue-build/docs/templates/`
-- **視圖設定讓頁面覆寫**（等真的有第二種視圖需求再做，排在通用頁面之後）：`detailOrder`／`formOrder`／`defaultSort` 現在只有 schema 一份，同一張表在不同頁面沒辦法有不同的排法與欄位集（AppSheet 是把這些掛在 view 上，所以一張表能有多個 view）。做法是 schema 那份當**預設**、頁面用選用 prop 覆寫（`DataDetail`／`DataForm` 各加一個 `order`、排序走 `useSortedTableList` 的參數），不是搬到頁面去——通用頁面靠 route 決定表、編譯期不知道 Row 型別，預設值一定要留在 schema。頁面端自己寫仍然有型別檢查（`RowKey<XxxRow>[]` 是 exported 的），元件內部那層本來就是 `TableSchema<any>`。順帶要決定篩選抽屜的欄位順序（`useFilter` 也讀 `detailOrder`）跟著誰
-- **薄頁面之後的兩個決定**（主體已完成，見「共用元件庫」）：四種頁面的樣板都抽成「`composables/page/` 資料層 + `components/ui/page/` 版型」了，頁面檔只剩「這是哪張表、有哪些動作」。剩下要決定的是：(1) `template/` 的四份頁面範本還要不要留成真的檔案，還是改成 md 的程式區塊；(2) 要不要再往前做路由驅動的通用頁（`pages/[table]/`，加一張表連頁面檔都不用複製）——那一步的代價與取捨見底下的通用頁面條目
-- **捲動位置還原**：router 沒有 `scrollBehavior`，`<KeepAlive>` 也只保留元件狀態、不含視窗的捲動位置，所以列表捲到一半離開再回來會停在別的地方。做法有兩條：router 的 `scrollBehavior(to, from, savedPosition)`，或頁面在 `onDeactivated` 記下位置、`onActivated` 還原——都要等進場轉場結束才能設，不然會被動畫中的 `transform` 影響。真的常捲很長的列表再做
+- **schema 要不要拆成 `fields.ts` / `view.ts`**（評估過，先不做）：能乾淨切的只有表這一層——`fields.ts` 放 Row 介面、`sheetName`／`idColumn`／`newId`／`labelColumn`／`columns`／`virtualColumns`，`view.ts` 放 `detailOrder`／`formOrder`／`defaultSort`，`index.ts` 組起來。切在欄位內部（型別／必填 vs 標籤／可搜尋）已否決，那會逼每個 key 寫兩次。現在 view 那半只有三個欄位，拆完是一個五行的檔加一個 import，不划算。回頭重看的時機：view 那半長到 15～20 行，或哪張表需要兩種視圖（跟下一條一起做）
+- **視圖設定讓頁面覆寫**（等真的有第二種視圖需求再做）：`detailOrder`／`formOrder`／`defaultSort` 現在只有 schema 一份，同一張表在不同頁面沒辦法有不同的排法與欄位集（AppSheet 是把這些掛在 view 上，所以一張表能有多個 view）。做法是 schema 那份當**預設**、頁面用選用 prop 覆寫（`DataDetail`／`DataForm` 各加一個 `order`、排序走 `useSortedTableList` 的參數），不是搬到頁面去——沒指定的頁面要有東西可用，預設值一定要留在 schema。頁面端自己寫仍然有型別檢查（`RowKey<XxxRow>[]` 是 exported 的），元件內部那層本來就是 `TableSchema<any>`。順帶要決定篩選抽屜的欄位順序（`useFilter` 也讀 `detailOrder`）跟著誰
+- **`template/` 的頁面範本要留成什麼形式**（薄頁面之後唯一剩的決定）：四份範本現在各只有十幾行，而且與 `docs/components/` 的 Usage 區塊高度重疊。選項是留成真的 `.vue` 檔（可以直接複製、但看不出哪裡要改）或改成 md 的程式區塊（能寫說明、但要手動貼）。連帶要決定 `template/` 整個要不要併進 `vue-build/docs/templates/`
 - 總覽頁範本（`DataDashboardTemplate`）：保留了位置但沒有具體需求
 
 ### PWA 與離線
 - manifest.json、Service Worker 都還沒建立（`vite-plugin-pwa` 未安裝）
 - App 圖示還沒決定（名稱在 `src/config/app.ts`）
-- 離線寫入佇列：明確決定不做，之後有需求再說
 
 ### 桌面版
 - 桌面版導覽 UI 待定：要不要改成側邊欄常駐、底部導覽列要不要在桌面隱藏，等要做桌面體驗時再決定
@@ -193,6 +188,22 @@
 - 前端靜態託管（Vercel / Cloudflare Pages，注意 SPA fallback）
 - 後端 Apps Script 部署與存取權限設定
 - API 配額用量監控
+
+---
+
+## 決定不做
+
+評估過、決定不走的路。留著是為了不用重複討論；每條都附「什麼情況該回頭重看」。只是延後（有觸發條件、時候到了就做）的仍然留在未完成。
+
+- **路由驅動的通用頁**（`src/pages/[table]/` 四個通用頁讀 `schemas[route.params.table]`，加一張表只要寫 schema + 註冊一行）。當初的動機是「四個頁面檔幾乎一模一樣」，而薄頁面已經把那些樣板抽進版型元件了，頁面檔剩下的每一行都在講「這是哪張表、有哪些動作」。再往前一步只換到「連四個小檔都不用複製」（那本來就是 `template/` 的職責），代價卻是：頁面層失去 Row 型別（版型元件的泛型 slot 就白做了）、eject 的粒度變成整個表的資料夾（靜態路由段會蓋掉動態段）、schema 開始長 UI 設定（`listFields`／`detailTables`）。**回頭重看**：表多到十幾張、而且大多長得一樣
+- **佇列持久化**。佇列只在記憶體，重整／當機／分頁被系統殺掉就會丟掉未推送的變更（`beforeunload` 只擋得住主動關分頁）。單人使用、推送就是一顆鈕，不值得。要做的話：存 `localStorage`（`values` 進佇列時就已序列化，直接 `JSON.stringify`）、流程期間暫停寫入（磁碟上停在流程開始前的樣子，被殺掉再開等於自動回滾）；唯一貴的是開機後要把佇列重新疊回從後端抓來的 `rows`，需要一個部分欄位版的 `coerceRow`。**回頭重看**：真的丟過一次未推送的變更
+- **離線寫入佇列**（離線時照常操作、連上線再送）。跟上一條是同一個成本結構，而且多了「離線期間看到的資料可能已經過期」的問題。**回頭重看**：真的常在沒網路的地方用
+- **推送失敗的逐筆補償**（記錄哪幾筆成功了、只重送失敗的）。因為 id 由前端發、`create` 定義成冪等，整批重送本來就是安全的
+- **把佇列重新套用到新資料上**（衝突時保留未推送的改動、疊到重抓回來的資料）。跟佇列持久化是同一種成本；衝突時的兩條出路（放棄重抓／強制推送）夠用
+- **連續動作的三件**：
+  - **返回＝回到上一步**（而不是整條取消）。代價是三件事加起來等於一個多頁精靈：每步改 `push` 且結束後要清歷史；存檔點要從一格變一疊（每步單獨收回）；上一步的表單要帶著使用者上次填的值重開。**回頭重看**：真有三步以上、常態要回頭改的流程
+  - **編輯表單的預設值通道**：`useEditForm` 不讀 `navigationDefaults()`，所以編輯表單可以當流程的一步，但沒辦法把上一步的結果預先填進去。目前想不到需要的情境
+  - **進度指示**（第 1 步／共 2 步）：步驟頂多兩三步，每一步是完整的一頁、App Bar 上有自己的標題
 
 ---
 

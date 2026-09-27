@@ -6,7 +6,7 @@
     // 載入完了但沒東西可顯示（單筆的頁面用，列表空著就是空著）
     empty?: boolean
     emptyText?: string
-    // 列表用長條貼在內容上緣，單筆用置中的圓圈
+    // 列表用長條貼在內容上緣（內容留著），單筆用置中的圓圈（取代內容）
     spinner?: 'circular' | 'linear'
   }>(), {
     error: null,
@@ -16,9 +16,7 @@
 </script>
 
 <template>
-  <v-progress-linear v-if="loading && spinner === 'linear'" indeterminate />
-
-  <v-container v-else-if="loading">
+  <v-container v-if="loading && spinner === 'circular'">
     <v-progress-circular indeterminate />
   </v-container>
 
@@ -30,5 +28,10 @@
     <v-alert :text="emptyText" type="warning" />
   </v-container>
 
-  <slot v-else />
+  <template v-else>
+    <!-- 重新整理時列表要留在畫面上：卸載重建會弄丟分組的展開狀態與捲動位置 -->
+    <v-progress-linear v-if="loading" indeterminate />
+
+    <slot />
+  </template>
 </template>

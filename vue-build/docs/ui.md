@@ -43,7 +43,7 @@
 | **FAB** | `PageFab` | 右下角浮動按鈕，主要動作 |
 | **底部導覽列** | `config/navigation.ts` | 切換主要頁面 |
 | **底部動作列** | `useBottomActions()` | 表單頁時**暫時取代**底部導覽列 |
-| **snackbar** | `notify()` | 底部一閃即逝的訊息，全 App 一則 |
+| **snackbar** | `notify()` | 底部一閃即逝的訊息，全 App 一則。`notify('已推送')`、`notify('推送失敗', 'error')`（第二個參數是 Vuetify 的 color） |
 | **上下一筆箭頭** | `RecordNav` | 詳細頁左右兩側，浮在內容上 |
 
 對話框（`ConfirmDialog`、`FieldsDialog`）與這些位置無關，一律蓋在畫面中央。

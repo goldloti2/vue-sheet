@@ -1,4 +1,6 @@
-<!-- 複製到 src/pages/__table__/[id]/edit.vue -->
+<!-- 複製到 src/pages/__table__/[id]/edit.vue
+     版型見 docs/components/FormPage.md；欄位怎麼變成輸入元件見 DataForm.md；
+     「有改動要不要放棄」由 useLeaveGuard 處理，見 docs/architecture.md -->
 <route lang="json5">
 { meta: { title: '編輯範本' } }
 </route>

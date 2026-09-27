@@ -2,7 +2,7 @@
 
 「問幾個欄位」對話框，建立在 `AppDialog` 上：內容是只顯示 `keys` 那幾欄的 `DataForm`，自己帶取消／確定按鈕。
 
-> **通常不直接用**——叫 `askFields()` 就好（見 `README.md` 的「問幾個欄位」），`AppShell` 已經掛了一個實例，promise 會在按確定或取消時 resolve。這個元件只在需要自己管狀態的特殊情況才直接擺。
+> **通常不直接用**——叫 `askFields()` 就好（見 [architecture.md](../architecture.md#快速編輯對話框)），`AppShell` 已經掛了一個實例，promise 會在按確定或取消時 resolve。這個元件只在需要自己管狀態的特殊情況才直接擺。
 
 ## Usage
 

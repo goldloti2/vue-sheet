@@ -1,4 +1,6 @@
-<!-- 複製到 src/pages/__table__/index.vue -->
+<!-- 複製到 src/pages/__table__/index.vue
+     版型與每列能放什麼見 docs/components/ListPage.md 與 DataList.md；
+     搜尋、篩選、多選、分組與頁籤見 docs/ui.md -->
 <route lang="json5">
 { meta: { title: '範本' } }
 </route>

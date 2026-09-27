@@ -1,4 +1,6 @@
-<!-- 複製到 src/pages/__table__/[id]/index.vue -->
+<!-- 複製到 src/pages/__table__/[id]/index.vue
+     版型（上下筆、FAB、slot 放子表格）見 docs/components/DetailPage.md；
+     欄位怎麼顯示、欄位動作見 docs/components/DataDetail.md -->
 <route lang="json5">
 { meta: { title: '範本詳細' } }
 </route>

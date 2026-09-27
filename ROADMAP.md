@@ -124,7 +124,7 @@
 
 ### 文件與範本
 - 根目錄 `README.md` 是索引；跨兩端的介面在 `docs/api.md`，前端的設計在 `vue-build/docs/`（`architecture` / `schema` / `store` / `ui` + `components/` 每個元件一份）
-- `vue-build/template/`：新增一張表所需的全套檔案
+- `vue-build/template/`：新增一張表所需的全套檔案，**留成真的檔案**（複製整份比從程式區塊裡挑好用，而且 `main` 分支上它是唯一的頁面範例）。裡面只留最小骨架＋每個檔開頭一段「該看哪份文件」；選項目錄與說明一律回 docs，不留第二份會漂移的副本
 
 ---
 
@@ -174,7 +174,6 @@
   - 等真的常用到再做；現在的替代路徑是先去父表新增、再回來選
 - **schema 要不要拆成 `fields.ts` / `view.ts`**（評估過，先不做）：能乾淨切的只有表這一層——`fields.ts` 放 Row 介面、`sheetName`／`idColumn`／`newId`／`labelColumn`／`columns`／`virtualColumns`，`view.ts` 放 `detailOrder`／`formOrder`／`defaultSort`，`index.ts` 組起來。切在欄位內部（型別／必填 vs 標籤／可搜尋）已否決，那會逼每個 key 寫兩次。現在 view 那半只有三個欄位，拆完是一個五行的檔加一個 import，不划算。回頭重看的時機：view 那半長到 15～20 行，或哪張表需要兩種視圖（跟下一條一起做）
 - **視圖設定讓頁面覆寫**（等真的有第二種視圖需求再做）：`detailOrder`／`formOrder`／`defaultSort` 現在只有 schema 一份，同一張表在不同頁面沒辦法有不同的排法與欄位集（AppSheet 是把這些掛在 view 上，所以一張表能有多個 view）。做法是 schema 那份當**預設**、頁面用選用 prop 覆寫（`DataDetail`／`DataForm` 各加一個 `order`、排序走 `useSortedTableList` 的參數），不是搬到頁面去——沒指定的頁面要有東西可用，預設值一定要留在 schema。頁面端自己寫仍然有型別檢查（`RowKey<XxxRow>[]` 是 exported 的），元件內部那層本來就是 `TableSchema<any>`。順帶要決定篩選抽屜的欄位順序（`useFilter` 也讀 `detailOrder`）跟著誰
-- **`template/` 的頁面範本要留成什麼形式**（薄頁面之後唯一剩的決定）：四份範本現在各只有十幾行，而且與 `docs/components/` 的 Usage 區塊高度重疊。選項是留成真的 `.vue` 檔（可以直接複製、但看不出哪裡要改）或改成 md 的程式區塊（能寫說明、但要手動貼）。連帶要決定 `template/` 整個要不要併進 `vue-build/docs/templates/`
 - 總覽頁範本（`DataDashboardTemplate`）：保留了位置但沒有具體需求
 
 ### PWA 與離線

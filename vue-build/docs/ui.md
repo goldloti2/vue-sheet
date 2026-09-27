@@ -91,12 +91,15 @@
 
 頁面登記後 App Bar 才出現放大鏡，按下去整條 App Bar 換成「←＋輸入框」（淺灰藥丸形），標題與動作先讓位。
 
+**列表頁不用自己接**——`useListPage(table, schema)` 內部就登記好了，回傳的 `rows` 已經是篩選＋搜尋過的。下面是它做的事，自己組版面時照這樣串：
+
 ```ts
 const query = ref('')
 useAppBarSearch(query)
 const data = useSearch(query, rows, schema)
 ```
 
+- **有登記才有放大鏡**，所以實務上只有列表頁有。詳細頁與表單頁刻意不放：App Bar 的搜尋代表「這一頁的主體是一份清單」，詳細頁裡的子表要找東西，請去那張表的列表頁
 - **`query` 是頁面的 ref**，`AppShell` 只負責讓使用者打字進去；過濾是頁面自己做的
 - **比對 `searchable: true` 的 `text`／`ref` 欄位**（真實與虛擬都行，ref 比的是父列的名字）
 - **分詞**：依空白切詞、雙引號包起來的當一個詞，每個詞都要命中（AND）
@@ -109,13 +112,15 @@ const data = useSearch(query, rows, schema)
 
 ## 篩選
 
-登記時多給 `{ tables: [{ schema, filters, rows }] }`，輸入框內最右側就多一顆篩選鈕（有條件生效時主色），按下去從右側滑出抽屜。
+登記時多給 `{ tables: [{ schema, filters, rows }] }`，輸入框內最右側就多一顆篩選鈕（有條件生效時主色），按下去從右側滑出抽屜。一樣，`useListPage` 已經連篩選一起登記好，這是它內部的樣子：
 
 ```ts
 const filters = ref<Filters>({})
 useAppBarSearch(query, { tables: [{ schema, filters, rows: allRows }] })
 const data = useSearch(query, useFilter(filters, allRows, schema), schema)
 ```
+
+順序是固定的：**整表 → `useFilter` → `useSearch` → 畫面**。篩選抽屜的選項要看整表（`allRows`）才列得出「資料裡出現過哪些值」，所以它吃的是還沒過濾的那份；搜尋放最外層最便宜（敲字只重跑 `includes`）。
 
 - **改了即時生效**，沒有套用鈕；← 關閉搜尋時篩選一起清掉
 - **篩選的對象是 `searchable: true` 的 `select`／`number`／`date`／`duration`**（`text`／`ref` 歸搜尋，兩邊用同一個開關）
@@ -135,7 +140,7 @@ const data = useSearch(query, useFilter(filters, allRows, schema), schema)
 
 ### 一頁好幾張表
 
-頁籤各接一張表時（見 [TabView.md](components/TabView.md)），`tables` 給多個元素：
+頁籤各接一張表時（見 [TabView.md](components/TabView.md)），對每張表傳 `{ search: false }` 關掉 `useListPage` 的自動登記，改由頁面登記一次、`tables` 給多個元素：
 
 ```ts
 useAppBarSearch(query, {

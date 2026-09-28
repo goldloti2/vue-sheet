@@ -63,7 +63,7 @@
 - 佇列只在記憶體、不寫進 `localStorage`（決定不做的理由與代價見「決定不做」）
 
 ### 共用元件庫
-- 列表：`DataList`（卡片式單列，含長按多選）、`ListField`、`GroupedList`（多層可收合分組）、`DataTable`（表格式，也用於 detail 頁內嵌子表格；`columns` 可指虛擬欄位）
+- 列表：`DataList`（卡片式單列，含長按多選）、`ListField`、`CountLabel`（名稱 + 筆數的小標籤，分組標題與子表區塊共用）、`GroupedList`（多層可收合分組，標題帶筆數）、`DataTable`（表格式，也用於 detail 頁內嵌子表格；`columns` 可指虛擬欄位）
 - 詳細：`DataDetail`（欄位區，虛擬欄位自動顯示）、`DetailField`
 - 表單：`DataForm`（依 `column.type` 自動選輸入元件）
 - 整頁版型：`PageState`（載入中／載入失敗／找不到資料，全 App 唯一一份，資料到手才畫 slot）、`FormPage`（新增／編輯頁，內部包 `PageState`，另外處理送出失敗）、`DetailPage`（詳細頁：欄位區 + 左右滑動換筆 + 上下筆箭頭 + FAB）、`ListPage`（列表頁：逐列渲染卡片、`#rows` slot 整批給表格、或 `groups` 交給 `GroupedList`，加上 FAB 與發布列表順序，分組時先 `flattenGroups`）、`ChildList`（詳細頁裡的子表區塊：標題帶筆數、顯示上限、空狀態，右下角一列「展開」與頁面給的動作）。這些都是泛型元件，slot 的 `row` 帶著呼叫端的 Row 型別

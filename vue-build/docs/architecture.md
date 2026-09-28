@@ -31,7 +31,7 @@ src/
   components/ui/     共用元件庫，用法見 docs/components/
     shell/             AppShell、PageFab、FilterDrawer、TabView
     dialog/            AppDialog、ConfirmDialog、FieldsDialog
-    list/              DataList、ListField、GroupedList、DataTable
+    list/              DataList、ListField、GroupedList、DataTable、CountLabel
     record/            DataDetail、DetailField、DataForm、RecordNav
     page/              整頁的版型：PageState（載入中／失敗／找不到）、FormPage、DetailPage、ListPage、ChildList
   composables/

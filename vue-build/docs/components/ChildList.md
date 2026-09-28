@@ -34,7 +34,7 @@ const { new: newChild } = use__Table__Actions({ defaults: () => ({ __parent__: i
 
 | prop | 型別 | 說明 |
 | --- | --- | --- |
-| `title` | `string` | **必填**，區塊小標題。後面會自動接上筆數（`品項 (7)`） |
+| `title` | `string` | **必填**，區塊小標題。筆數用 [CountLabel](CountLabel.md) 接在後面 |
 | `rows` | `readonly Row[]` | **必填**，全部子列（父列上的 `$子表_欄位key` getter，已照子表的 `defaultSort` 排好）。超過 `limit` 的只是沒顯示，不是沒傳進來——筆數也是照這個算 |
 | `limit` | `number?` | 預設 5，最多先顯示幾列；`0` 就是全部列完 |
 | `to` | `string?` | 「展開」要去的頁面。給了就一直顯示那顆鈕，不管有沒有超過 `limit`（位置固定，使用者不用猜今天有沒有） |
@@ -63,7 +63,7 @@ const { new: newChild } = use__Table__Actions({ defaults: () => ({ __parent__: i
 
 ## 備註
 
-- **有幾筆看標題**（`品項 (7)`），所以「展開」不用寫筆數，也不用因為有沒有超過 `limit` 而出現或消失
+- **有幾筆看標題旁的小標籤**，所以「展開」不用寫筆數，也不用因為有沒有超過 `limit` 而出現或消失
 - **不想要「展開」就別給 `to`**：子列本來就只有兩三筆的關聯不用專門開一頁
 - **沒有搜尋**：`useAppBarSearch` 只由 `useListPage` 登記，子表頁的資料來自父列的 getter，所以那一頁沒有放大鏡。子列多到需要搜尋時，正解是去那張子表自己的列表頁
 - **不做多選**：批次操作在子表的列表頁做

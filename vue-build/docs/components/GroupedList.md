@@ -1,6 +1,6 @@
 # GroupedList
 
-多層可收合分組。分組資料用 `groupRows(rows, levels)` 算好再傳進來，元件本身不管怎麼分。`levels` 由外到內，每層要 `sortKey`（排序用）與 `label`（顯示用）兩個函式——分開是刻意的，直接拿顯示字串排序會出錯。
+多層可收合分組，每層標題後面用 [CountLabel](CountLabel.md) 標出底下有幾筆。分組資料用 `groupRows(rows, levels)` 算好再傳進來，元件本身不管怎麼分。`levels` 由外到內，每層要 `sortKey`（排序用）與 `label`（顯示用）兩個函式——分開是刻意的，直接拿顯示字串排序會出錯。
 
 **列表頁通常不直接用它**：[ListPage](ListPage.md) 的 `groups` prop 就是把分組交給它渲染，順便把載入狀態、FAB 與列表順序（會先 `flattenGroups`）一起處理好。直接用的場合是詳細頁的 slot、對話框那種不是整頁列表的地方。
 

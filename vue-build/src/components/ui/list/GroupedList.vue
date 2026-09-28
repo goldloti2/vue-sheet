@@ -1,5 +1,6 @@
 <script generic="Row extends { id: string }" lang="ts" setup>
   import type { RowGroup } from '@/schema/types'
+  import CountLabel from '@/components/ui/list/CountLabel.vue'
 
   const props = withDefaults(defineProps<{
     groups: RowGroup<Row>[]
@@ -24,7 +25,11 @@
     <template v-for="group in props.groups" :key="`${props.path}/${group.label}`">
       <v-list-group v-if="'subgroups' in group" :value="`${props.path}/${group.label}`">
         <template #activator="{ props: activatorProps }">
-          <v-list-item v-bind="activatorProps" class="bg-surface-light" :title="`${group.label} (${countRows(group)})`" />
+          <v-list-item v-bind="activatorProps" class="bg-surface-light">
+            <template #title>
+              <CountLabel :count="countRows(group)" :label="group.label" />
+            </template>
+          </v-list-item>
         </template>
 
         <GroupedList :groups="group.subgroups" :path="`${props.path}/${group.label}`">
@@ -35,7 +40,9 @@
       </v-list-group>
 
       <template v-else>
-        <v-list-subheader class="bg-surface-light">{{ group.label }} ({{ group.rows.length }})</v-list-subheader>
+        <v-list-subheader class="bg-surface-light">
+          <CountLabel :count="group.rows.length" :label="group.label" />
+        </v-list-subheader>
 
         <template v-for="row in group.rows" :key="row.id">
           <slot :row="row" />

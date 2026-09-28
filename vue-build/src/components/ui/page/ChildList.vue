@@ -1,6 +1,7 @@
 <script lang="ts" setup generic="Row extends { id: string }">
   import type { PageAction } from '@/composables/actions/useTableActions'
   import { computed } from 'vue'
+  import CountLabel from '@/components/ui/list/CountLabel.vue'
   import { useRunAction } from '@/composables/shell/useActionRunner'
 
   const props = withDefaults(defineProps<{
@@ -27,7 +28,9 @@
 
 <template>
   <v-container>
-    <div class="text-title-medium font-weight-bold mb-2">{{ title }} ({{ rows.length }})</div>
+    <div class="text-title-medium font-weight-bold mb-2">
+      <CountLabel :count="rows.length" :label="title" />
+    </div>
 
     <slot v-if="rows.length > 0" :rows="shown" />
 

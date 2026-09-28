@@ -10,8 +10,10 @@
   import { useSiblingNav } from '@/composables/navigation/useListOrder'
 
   defineSlots<{
-    // 資料到手才渲染，所以 row 一定不是 null
+    // 這張表額外要放的東西，擺在欄位下面。兩個 slot 都是資料到手才渲染，所以 row 一定不是 null
     default?: (props: { row: Row }) => unknown
+    // 同上，但擺在欄位上面（子表才是主體、欄位只是附註的頁面用）
+    top?: (props: { row: Row }) => unknown
   }>()
 
   const props = defineProps<{
@@ -36,9 +38,11 @@
     <PageState :empty="!row" :error="error" :loading="loading">
       <!-- PageState 已經擋掉 null 了，這層只是讓型別看得出來 -->
       <template v-if="row">
+        <slot name="top" :row="row" />
+
         <DataDetail :field-actions="fieldActions" :row="row" :schema="schema" />
 
-        <!-- 這張表額外要放的東西：子表格、說明、圖表… -->
+        <!-- 這張表額外要放的東西：子表、說明、圖表… -->
         <slot :row="row" />
       </template>
     </PageState>

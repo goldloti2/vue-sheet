@@ -53,6 +53,7 @@
 | `pages/detail.vue` | `src/pages/__table__/[id]/index.vue` | 詳細頁 → `/__table__/:id` |
 | `pages/new.vue` | `src/pages/__table__/new.vue` | 新增表單 → `/__table__/new` |
 | `pages/edit.vue` | `src/pages/__table__/[id]/edit.vue` | 編輯表單 → `/__table__/:id/edit` |
+| `pages/child-list.vue` | `src/pages/__parent__/[id]/__table__.vue` | **選用**：父表詳細頁裡子表區塊的「展開」目的地 → `/__parent__/:id/__table__`。一條父子關聯一份 |
 
 > 路由是檔案式的（unplugin-vue-router），放進 `pages/` 就自動生效，不用維護路由表。
 > 注意：同一個 `:id` 一律用 `[id]/index.vue` + `[id]/edit.vue` 的**資料夾**寫法，不要用 `[id].vue`。

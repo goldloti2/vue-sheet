@@ -33,7 +33,7 @@
 | **App Bar** | `AppShell` | 頂部固定那條。標題來自 `route.meta.title`，沒有就用 `config/app.ts` 的 App 名稱 |
 | **左側圖示** | `AppShell` | 有 App 內上一頁就是返回箭頭，否則是漢堡選單 |
 | **App Bar 動作** | `useAppBarActions()` | 右側的圖示鈕，≥3 顆收成「⋮」 |
-| **搜尋鈕／搜尋列** | `useAppBarSearch()` | 按放大鏡後整條 App Bar 換成輸入框 |
+| **搜尋鈕／搜尋列** | `useAppBarSearch()` | 按放大鏡後整條 App Bar 換成輸入框。它是獨立的一顆，不會被收進「⋮」；多選時整顆讓位 |
 | **篩選鈕** | 同上 | 在搜尋輸入框內最右側 |
 | **同步鈕** | `AppShell` | 永遠在最右邊，不屬於任何頁面 |
 | **頁籤列** | `TabView` | 掛在 App Bar 底下的 extension，不跟著內容捲動 |
@@ -63,7 +63,8 @@
 - **卡片式為主**（適合瀏覽），也支援表格式（適合比對欄位）：`ListPage` 的 `#rows` slot 整批交給 `DataTable`。表格沒有多選——要批次操作就用卡片
 - **用 `<KeepAlive>` 保留展開狀態**（`GroupedList` 的收合、多選、搜尋字串…），注意事項見 [architecture.md](architecture.md#keepalive-的規則)。捲動位置不是元件狀態，由 router 另外記（回到看過的頁面會回到原本的位置，新頁面從頂端開始）
 - **長按進入多選模式**：選取狀態一有內容就自動進入、清空就自動離開，不另外存一個 boolean
-- **多選的出口是 App Bar 右上的「取消」**：`useMultiSelect()` 回傳現成的 `cancel`（多選模式才有內容），排在其他動作之後、同步鈕左邊：`useAppBarActions(() => [...bulkDelete.value, ...cancelSelect.value])`
+- **多選的出口是 App Bar 右上的「取消」**：`useMultiSelect()` 自己登記「怎麼退出」，按鈕的樣子跟位置由 `AppShell` 決定（跟放大鏡一樣）。它固定在同步鈕左邊，而且**不會被收進「⋮」**——收進去就等於沒有出口
+- **多選時搜尋鈕先讓位**：那個狀態下畫面上該有的是對選取項目的動作，不是找東西。`AppShell` 靠「有沒有登記取消」判斷現在是不是多選
 - **離開就取消選取**：換頁（列表是 KeepAlive 的，靠 `onDeactivated`）與換頁籤都會清空，頁面不用做任何事。頁籤的訊號來自 `TabView` 登記給 `AppShell` 的那份（`useCurrentTab()`），所以同一張表的頁籤、各自一張表的面板走的是同一條路
 - **頁籤列固定在 App Bar 底下**（`TabView` 登記給 `AppShell` 的 extension），不跟著內容捲動
 
@@ -74,7 +75,7 @@
 | 位置 | 怎麼註冊 | 用途 |
 | --- | --- | --- |
 | 右下角 FAB | `<PageFab :actions="...">` | 主要動作。≤2 顆固定顯示，≥3 顆收合成 speed-dial |
-| App Bar 右側 | `useAppBarActions()` | 次要動作。≤2 顆直接顯示，≥3 顆收成「⋮」下拉 |
+| App Bar 右側 | `useAppBarActions()` | 次要動作。≤2 顆直接顯示，≥3 顆收成「⋮」下拉。多選的「取消」是例外，永遠在外面、在同步鈕左邊（`useMultiSelect` 自己登記） |
 | 螢幕最底端 | `useBottomActions()` | 暫時取代底部導覽列，離開頁面自動還原。表單的取消／送出不用自己接，`useCreateForm`／`useEditForm` 會登記 |
 | 詳細頁的單一欄位 | `DataDetail` 的 `fieldActions` | 該欄的動作，右邊出現圖示、整格可點 |
 

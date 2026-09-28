@@ -16,7 +16,7 @@
     selectedIds: selection.selectedIds,
     onDone: selection.clear,
   })
-  useAppBarActions(() => [...bulkDelete.value, ...selection.cancel.value])
+  useAppBarActions(() => bulkDelete.value)
 </script>
 
 <template>

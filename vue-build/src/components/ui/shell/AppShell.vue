@@ -2,7 +2,7 @@
   import type { PageAction } from '@/composables/actions/useTableActions'
   import type { AppBarSearch } from '@/composables/shell/useAppBarSearch'
   import type { AppBarTabs } from '@/composables/shell/useAppBarTabs'
-  import { mdiArrowLeft, mdiDotsVertical, mdiFilterVariant, mdiMagnify, mdiRefresh } from '@mdi/js'
+  import { mdiArrowLeft, mdiClose, mdiDotsVertical, mdiFilterVariant, mdiMagnify, mdiRefresh } from '@mdi/js'
   import { computed, onBeforeUnmount, onMounted, provide, shallowRef, watch } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
   import ConfirmDialog from '@/components/ui/dialog/ConfirmDialog.vue'
@@ -10,7 +10,7 @@
   import FilterDrawer from '@/components/ui/shell/FilterDrawer.vue'
   import { hasActiveFilter } from '@/composables/data/useFilter'
   import { provideActionRunner } from '@/composables/shell/useActionRunner'
-  import { appBarActionsKey } from '@/composables/shell/useAppBarActions'
+  import { appBarActionsKey, appBarSelectionKey } from '@/composables/shell/useAppBarActions'
   import { appBarSearchKey } from '@/composables/shell/useAppBarSearch'
   import { appBarTabsKey, currentTabKey } from '@/composables/shell/useAppBarTabs'
   import { confirmFields, fieldsDialog } from '@/composables/shell/useAskFields'
@@ -51,6 +51,12 @@
   const bottomActions = shallowRef<PageAction[]>([])
   provide(bottomActionsKey, actions => {
     bottomActions.value = actions
+  })
+
+  // 多選模式的出口。不是 null 就代表頁面正在多選，搜尋那些鈕先讓位（見 template）
+  const cancelSelect = shallowRef<(() => void) | null>(null)
+  provide(appBarSelectionKey, cancel => {
+    cancelSelect.value = cancel
   })
 
   // 頁籤列（TabView 登記的）掛在 App Bar 底下，所以不會跟著內容捲走
@@ -177,7 +183,8 @@
     </template>
 
     <template v-if="!(searchOpen && search)" #append>
-      <v-btn v-if="search" aria-label="搜尋" :icon="mdiMagnify" @click="searchOpen = true" />
+      <!-- 多選模式讓位：那時畫面上要的是對選取項目的動作，搜尋這些先收起來 -->
+      <v-btn v-if="search && !cancelSelect" aria-label="搜尋" :icon="mdiMagnify" @click="searchOpen = true" />
 
       <template v-if="appBarActions.length <= 2">
         <v-btn
@@ -205,9 +212,13 @@
         </v-list>
       </v-menu>
 
+      <!-- 多選的出口釘在選單外面，收進去就找不到了 -->
+      <v-btn v-if="cancelSelect" aria-label="取消" :icon="mdiClose" @click="cancelSelect()" />
+
       <v-btn
         aria-label="同步"
         :disabled="!store.canSync"
+        icon
         :loading="syncing"
         @click="sync"
       >

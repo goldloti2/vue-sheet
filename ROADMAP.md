@@ -100,7 +100,7 @@
 - `useMultiSelect` + `useLongPress`：長按進入多選，選取狀態由「有沒有選取任何一筆」推導；`itemProps(id)` 是每列要綁的那一包（`selectable`／`selectMode`／`selected`／長按與點選），列表元件與分組列表共用同一份
 - 分組或分頁籤的列表也走 `ListPage`：一個頁籤一個 `ListPage`，各自算狀態、FAB 與列表順序，靠面板訊號決定哪份生效，頁面不用知道當前是哪個頁籤
 - 列表頁的資料層 `useListPage(table, schema)`：整表 → 篩選 → 搜尋（順手登記 App Bar 的放大鏡）＋ 多選，一次回傳；一頁接好幾張表時傳 `search: false`，改由頁面自己登記
-- 多選的出口：`useMultiSelect` 回傳一個現成的「取消」`PageAction`（多選中才有內容），頁面把它排在其他動作之後註冊到 App Bar，位置就在同步鈕左邊
+- 多選的出口：`useMultiSelect` 把「怎麼退出」登記到 `appBarSelectionKey`（只給一個函式，按鈕長怎樣歸 `AppShell`，跟放大鏡同一種分工），頁面零設定。那顆鈕釘在同步鈕左邊、**不收進「⋮」**（收進去就沒有明顯出口），而且「有沒有登記」就是「現在是不是多選模式」——多選時搜尋鈕先讓位，把空間留給對選取項目的動作
 - 離開就取消選取：`onDeactivated`（KeepAlive 的列表換頁時）與 `useCurrentTab()`（換頁籤時）自動清，頁面零設定。頁籤訊號取自 `TabView` 登記給 `AppShell` 的那份，頁面層與面板層讀到同一個，所以兩種頁籤形狀不用各寫一套
 - 批次刪除走動作的 `confirm`
 

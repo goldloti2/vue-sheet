@@ -1,6 +1,5 @@
-import type { PageAction } from '@/composables/actions/useTableActions'
 import { computed, onDeactivated, shallowRef, watch } from 'vue'
-import { actionIcons } from '@/composables/actions/useTableActions'
+import { useAppBarSelection } from '@/composables/shell/useAppBarActions'
 import { useCurrentTab } from '@/composables/shell/useAppBarTabs'
 
 // 多選狀態：selectMode 直接由「有沒有選取任何一筆」推導，不另外存一個 boolean
@@ -49,12 +48,10 @@ export function useMultiSelect () {
     }
   }
 
-  // 多選模式的出口，放進 App Bar 動作；沒選東西時是空的，不佔位子
-  const cancel = computed<PageAction[]>(() => active.value
-    ? [{ key: 'cancel-select', label: '取消', icon: actionIcons.cancel, onClick: clear }]
-    : [])
+  // 多選模式的出口。只交出「怎麼退出」，按鈕長怎樣是 AppShell 的事
+  useAppBarSelection(() => active.value ? clear : null)
 
-  return { active, cancel, clear, count, enter, isSelected, itemProps, selectedIds, toggle }
+  return { active, clear, count, enter, isSelected, itemProps, selectedIds, toggle }
 }
 
 export type MultiSelect = ReturnType<typeof useMultiSelect>

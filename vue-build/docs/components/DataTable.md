@@ -1,6 +1,6 @@
 # DataTable
 
-表格式列表。也用在 detail 頁內嵌的關聯子表格（一對多同頁顯示），兩種用途同一個元件。`columns` 可以混用真實欄位與 schema `virtualColumns` 的 key，顯示順序照 `columns` 陣列。每列各自算的東西（例如小計）寫成那張表的虛擬欄位，這裡直接用 key 指。
+表格式列表。整頁的列表放進 [ListPage](ListPage.md) 的 `#rows` slot（它一次給整批），也用在 detail 頁內嵌的關聯子表格（一對多同頁顯示），兩種用途同一個元件。`columns` 可以混用真實欄位與 schema `virtualColumns` 的 key，顯示順序照 `columns` 陣列。每列各自算的東西（例如小計）寫成那張表的虛擬欄位，這裡直接用 key 指。
 
 ## Usage
 

@@ -27,6 +27,8 @@
   defineSlots<{
     // props 是每一列的多選綁定，直接 v-bind 到 DataList 上
     default?: (slotProps: { row: Row, props: object }) => unknown
+    // 整批一次給（表格式列表用）。有這個 slot 就不走上面那個，也沒有多選綁定
+    rows?: (slotProps: { rows: Row[] }) => unknown
   }>()
 
   // 畫面上實際的順序，detail 頁的上/下一筆靠它。分組的話攤平才是真正的先後
@@ -43,6 +45,8 @@
             <slot :props="selection?.itemProps(row.id) ?? {}" :row="row" />
           </template>
         </GroupedList>
+
+        <slot v-else-if="$slots.rows" name="rows" :rows="rows ?? []" />
 
         <template v-for="row in rows" v-else :key="row.id">
           <slot :props="selection?.itemProps(row.id) ?? {}" :row="row" />

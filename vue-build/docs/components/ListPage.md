@@ -57,6 +57,19 @@
 | slot | scope | 說明 |
 | --- | --- | --- |
 | `default` | `{ row, props }` | 每一列。`props` 是多選要綁的那一包（`selectable`／`selectMode`／`selected`／長按與點選事件），`v-bind` 到 `DataList` 上就好；沒給 `selection` 時是空物件 |
+| `rows` | `{ rows }` | 整批一次給，表格式列表用。有這個 slot 就不走 `default`，也沒有多選綁定（`DataTable` 本來就沒有多選） |
+
+### 表格式
+
+```vue
+<ListPage :error="error" :fab="newActions" :loading="loading" :rows="rows" table="__table__">
+  <template #rows="{ rows: list }">
+    <DataTable :columns="['name', 'amount']" :row-to="(row) => `/__table__/${row.id}`" :rows="list" :schema="__table__Schema" />
+  </template>
+</ListPage>
+```
+
+卡片適合瀏覽、表格適合比對欄位，兩者的載入狀態、FAB、列表順序都一樣由這個元件處理。分組（`groups`）只支援卡片。
 
 ## 分組與頁籤
 
@@ -78,5 +91,5 @@
 
 ## 備註
 
-- **版面真的不一樣才自己組**：表格式（`DataTable`）、總覽頁那種混合版面用不到這個元件，資料層仍然可以用 `useListPage`；那時要自己 `useListOrder(table, computed(() => 畫面上的順序))`，因為只有頁面知道實際排列
+- **版面真的不一樣才自己組**：總覽頁那種混合版面用不到這個元件，資料層仍然可以用 `useListPage`；那時要自己 `useListOrder(table, computed(() => 畫面上的順序))`，因為只有頁面知道實際排列
 - 空列表就是空的，不會顯示「找不到資料」——那是單筆頁面的狀態（見 [PageState](PageState.md)）

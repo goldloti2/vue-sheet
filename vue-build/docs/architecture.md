@@ -163,7 +163,7 @@ if (values) {
 
 | 型態 | 範本 | 資料層 + 版型 | 頁面自己寫什麼 |
 | --- | --- | --- | --- |
-| **列表**（list） | `pages/list.vue` | `useListPage` + `ListPage` | 每列四個角、要不要多選、FAB 放什麼；分組給 `groups`（`GroupedList`），頁籤自己包 `TabView` |
+| **列表**（list） | `pages/list.vue` | `useListPage` + `ListPage` | 每列四個角、要不要多選、FAB 放什麼；分組給 `groups`（`GroupedList`）、表格走 `#rows` slot（`DataTable`），頁籤自己包 `TabView` |
 | **詳細**（detail） | `pages/detail.vue` | `useRecordPage` + `DetailPage` | 欄位動作、slot 裡的子表格或說明 |
 | **表單**（form） | `pages/new.vue`、`pages/edit.vue` | `useCreateForm`／`useEditForm` + `FormPage` | 幾乎不用寫，欄位與順序都在 schema |
 | **總覽**（dashboard） | 🔲 還沒有 | — | 目前沒有具體需求，保留位置 |

@@ -60,7 +60,7 @@
 
 ## 列表
 
-- **卡片式為主**（適合瀏覽），也支援表格式（適合比對、多選）
+- **卡片式為主**（適合瀏覽），也支援表格式（適合比對欄位）：`ListPage` 的 `#rows` slot 整批交給 `DataTable`。表格沒有多選——要批次操作就用卡片
 - **用 `<KeepAlive>` 保留展開狀態**（`GroupedList` 的收合、多選、搜尋字串…），注意事項見 [architecture.md](architecture.md#keepalive-的規則)。捲動位置不是元件狀態，由 router 另外記（回到看過的頁面會回到原本的位置，新頁面從頂端開始）
 - **長按進入多選模式**：選取狀態一有內容就自動進入、清空就自動離開，不另外存一個 boolean
 - **多選的出口是 App Bar 右上的「取消」**：`useMultiSelect()` 回傳現成的 `cancel`（多選模式才有內容），排在其他動作之後、同步鈕左邊：`useAppBarActions(() => [...bulkDelete.value, ...cancelSelect.value])`

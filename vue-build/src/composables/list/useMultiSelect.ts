@@ -1,6 +1,6 @@
 import { computed, onDeactivated, shallowRef, watch } from 'vue'
-import { useAppBarSelection } from '@/composables/shell/useAppBarActions'
 import { useCurrentTab } from '@/composables/shell/useAppBarTabs'
+import { useAppBarSelection } from '@/composables/shell/useShellActions'
 
 // 多選狀態：selectMode 直接由「有沒有選取任何一筆」推導，不另外存一個 boolean
 export function useMultiSelect () {

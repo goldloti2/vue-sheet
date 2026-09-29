@@ -1,8 +1,7 @@
 import type { PageAction } from '@/composables/actions/useTableActions'
 import type { InjectionKey } from 'vue'
 import { inject, provide } from 'vue'
-import { confirm } from '@/composables/shell/useConfirm'
-import { notify } from '@/composables/shell/useNotify'
+import { confirm, notify } from '@/composables/shell/useDialogs'
 
 // 執行動作的單一入口：有 confirm 先問，錯誤統一用 snackbar 報，頁面不用自己管
 export const runActionKey: InjectionKey<(action: PageAction) => void> = Symbol('runAction')

@@ -4,7 +4,7 @@ import type { TableSchema } from '@/schema/types'
 import { ref } from 'vue'
 import { useFilter } from '@/composables/data/useFilter'
 import { useSearch } from '@/composables/data/useSearch'
-import { useSortedTableList } from '@/composables/data/useSortedTableList'
+import { useSortedTableList } from '@/composables/data/useTable'
 import { useMultiSelect } from '@/composables/list/useMultiSelect'
 import { useAppBarSearch } from '@/composables/shell/useAppBarSearch'
 

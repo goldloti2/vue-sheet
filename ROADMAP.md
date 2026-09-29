@@ -42,10 +42,10 @@
 
 ### 資料存取
 - `stores/tables/`：每張表一份全 App 共用的快取，同一張表不會重複打 API
-- `useTableList` / `useSortedTableList` / `useTableRow` 都讀同一份
+- `useTableList` / `useSortedTableList` / `useTableRow`（同一個 `data/useTable.ts`）都讀同一份
 - 寫入走 store 的 `create` / `update` / `remove` / `removeMany`：改快取並進佇列，呼叫端不用手動 refresh
 - 待寫入佇列 `pending`（含合併規則）與手動推送；四個寫入 action 是同步的，只動快取與佇列
-- `useNotify`：全 App 一則 snackbar 訊息，由 `AppShell` 渲染
+- `notify()`：全 App 一則 snackbar 訊息，由 `AppShell` 渲染（跟 `confirm()` 一起放在 `shell/useDialogs.ts`）
 - 新增的 id 由前端發：`newId` 是 schema 上的必填函式，格式由各表決定（`prefixedId('TPL')` 是現成的前綴式）。後端收到已存在的 id 就當作重送、回傳既有那筆
 - 跨表算出來的值靠共用快取的 reactivity 自動重算，不需要跨表失效機制
 

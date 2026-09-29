@@ -11,7 +11,7 @@
   import ListPage from '@/components/ui/page/ListPage.vue'
   import { use__Table__Actions } from '@/composables/actions/use__Table__Actions'
   import { useListPage } from '@/composables/page/useListPage'
-  import { useAppBarActions } from '@/composables/shell/useAppBarActions'
+  import { useAppBarActions } from '@/composables/shell/useShellActions'
   import { __table__Schema } from '@/schema/__table__'
   import { formatField } from '@/schema/types'
 

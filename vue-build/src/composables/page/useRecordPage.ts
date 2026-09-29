@@ -1,5 +1,5 @@
 import type { TableKey } from '@/schema'
-import { useTableRow } from '@/composables/data/useTableRow'
+import { useTableRow } from '@/composables/data/useTable'
 import { useRouteId } from '@/composables/navigation/useRouteId'
 
 // 詳細頁要的東西：網址上的 id + 那一筆。回傳的四樣直接餵給 DetailPage，

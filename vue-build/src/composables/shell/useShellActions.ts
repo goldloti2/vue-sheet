@@ -3,11 +3,20 @@ import type { ActionSlotSetter, SlotSetter } from '@/composables/shell/useAction
 import type { InjectionKey } from 'vue'
 import { registerActions, registerSlot } from '@/composables/shell/useActionSlot'
 
+// AppShell 上放動作的幾個位置。登記的東西跟著頁面生滅（見 useActionSlot）
+
 export const appBarActionsKey: InjectionKey<ActionSlotSetter> = Symbol('appBarActions')
 
 // App Bar 右側的動作。數量多的話 AppShell 會自動收成下拉選單，這裡不用管
 export function useAppBarActions (source: () => PageAction[]): void {
   registerActions(appBarActionsKey, source)
+}
+
+export const bottomActionsKey: InjectionKey<ActionSlotSetter> = Symbol('bottomActions')
+
+// 螢幕最底端的動作列。註冊了就暫時取代導覽列，離開頁面自動還原
+export function useBottomActions (source: () => PageAction[]): void {
+  registerActions(bottomActionsKey, source)
 }
 
 export const appBarSelectionKey: InjectionKey<SlotSetter<(() => void) | null>> = Symbol('appBarSelection')

@@ -1,10 +1,10 @@
 <script lang="ts" setup>
   import type { PageAction } from '@/composables/actions/useTableActions'
   import { mdiClose, mdiDotsVertical } from '@mdi/js'
-  import { computed, inject, onActivated, onDeactivated, ref, shallowRef } from 'vue'
+  import { computed, onActivated, onDeactivated, shallowRef } from 'vue'
   import { useLayout } from 'vuetify'
   import { useRunAction } from '@/composables/shell/useActionRunner'
-  import { overlayOpenKey } from '@/composables/shell/useOverlay'
+  import { useOverlayOpen } from '@/composables/shell/useOverlay'
   import { usePanelActive } from '@/composables/shell/usePanelActive'
 
   defineProps<{
@@ -19,7 +19,7 @@
   const open = shallowRef(false)
 
   // 篩選抽屜這種蓋整頁的東西開著時先讓開，FAB 的 z-index 本來就在 layout 之上
-  const overlayOpen = inject(overlayOpenKey, ref(false))
+  const overlayOpen = useOverlayOpen()
 
   // 被 KeepAlive 收起來、或所在的頁籤面板不是當前的，都不掛出去，免得兩顆 FAB 疊在一起
   const cached = shallowRef(true)

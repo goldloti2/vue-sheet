@@ -1,7 +1,9 @@
-import { shallowReactive, watch } from 'vue'
+import { reactive, shallowReactive, watch } from 'vue'
 import router from '@/router'
 
-// 全 App 一個是／否確認框，由 AppShell 渲染；promise 在按確定／取消時 resolve
+// 全 App 各一份的小東西，由 AppShell 掛一個實例：是／否確認框與 snackbar。
+// 不走 provide/inject 是因為它們跟頁面的生滅無關，隨時都能叫（動作裡、composable 裡都行）
+
 export const confirmDialog = shallowReactive({
   open: false,
   title: '',
@@ -45,3 +47,16 @@ watch(() => confirmDialog.open, open => {
 router.afterEach(() => {
   settle(false)
 })
+
+// 一則短訊息，由 AppShell 渲染成 snackbar
+export const notice = reactive({
+  open: false,
+  text: '',
+  color: undefined as string | undefined,
+})
+
+export function notify (text: string, color?: string): void {
+  notice.text = text
+  notice.color = color
+  notice.open = true
+}

@@ -3,7 +3,7 @@
   import type { SchemaColumn, TableSchema } from '@/schema/types'
   import { computed } from 'vue'
   import { presentValues } from '@/composables/data/useFilter'
-  import { useTableList } from '@/composables/data/useTableList'
+  import { useTableList } from '@/composables/data/useTable'
   import { schemas } from '@/schema'
   import { sortRows } from '@/schema/types'
 

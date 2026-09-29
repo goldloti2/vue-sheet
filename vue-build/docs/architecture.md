@@ -35,11 +35,11 @@ src/
     record/            DataDetail、DetailField、DataForm、RecordNav
     page/              整頁的版型：PageState（載入中／失敗／找不到）、FormPage、DetailPage、ListPage、ChildList
   composables/
-    data/              讀資料：useTableList、useSortedTableList、useTableRow、useSearch、useFilter
+    data/              讀資料：useTable（整表／排序過／單筆）、useSearch、useFilter
     form/              表單頁：useTableForm、useLeaveGuard、useSyncHold
-    shell/             跟 AppShell 溝通：useActionSlot、useAppBarActions、useAppBarSearch、
-                       useAppBarTabs、useBottomActions、useOverlay、useActionRunner、
-                       useNotify、useConfirm、useAskFields
+    shell/             跟 AppShell 溝通：useActionSlot（登記機制）、useShellActions（App Bar／
+                       底部／多選出口）、useAppBarSearch、useAppBarTabs、usePanelActive、
+                       useOverlay、useActionRunner、useDialogs（confirm／notify）、useAskFields
     navigation/        路由接力：useRouteId、useListOrder、useFlow
     list/              列表互動：useMultiSelect、useLongPress
     page/              頁面的資料層：useRecordPage、useListPage

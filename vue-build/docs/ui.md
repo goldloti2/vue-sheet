@@ -38,8 +38,8 @@
 | **同步鈕** | `AppShell` | 永遠在最右邊，不屬於任何頁面 |
 | **頁籤列** | `TabView` | 掛在 App Bar 底下的 extension，不跟著內容捲動 |
 | **內容區** | `pages/*.vue` | 換頁時左右滑動的就是這一塊 |
-| **側邊欄** | `AppShell` | 左側滑出，目前是空殼 |
-| **篩選抽屜** | `FilterDrawer` | 右側滑出，兩層 |
+| **側邊欄** | `AppShell` | 左側滑出，目前是空殼。蓋在 App Bar 之上 |
+| **篩選抽屜** | `FilterDrawer` | 右側滑出，兩層。蓋在 App Bar 之上 |
 | **FAB** | `PageFab` | 右下角浮動按鈕，主要動作 |
 | **底部導覽列** | `config/navigation.ts` | 切換主要頁面 |
 | **底部動作列** | `useBottomActions()` | 表單頁時**暫時取代**底部導覽列 |
@@ -138,6 +138,8 @@ const data = useSearch(query, useFilter(filters, allRows, schema), schema)
 | **第二層** | 點一欄進去填值：select 是一列一項的 checkbox（「(空白)」排最後）、number／date／duration 是兩格範圍。← 回第一層 |
 
 關掉抽屜也會回到第一層。抽屜開著時 `PageFab` 會讓開——它的 z-index 本來就在 layout 之上，靠 `useOverlay` 的 `overlayOpenKey` 通知。
+
+抽屜連同背後的遮罩蓋住整個畫面，**開著時 App Bar 上的東西都碰不到**（包括搜尋列與 ← 關閉），要先關掉抽屜才能操作別的。
 
 ### 一頁好幾張表
 

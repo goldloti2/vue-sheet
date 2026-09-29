@@ -77,7 +77,7 @@
 - 欄位開 `searchable: true` 才進搜尋或篩選（預設關），真實與虛擬欄位都行：`text`／`ref` 是搜尋列的比對對象，`select`／`number`／`date`／`duration` 是篩選抽屜的欄位
 - `useSearch(query, rows, schema)`：純函數式，每列的可搜尋文字（searchable 欄位的顯示文字接起來、小寫）只跟 rows 一起重算，敲字只做 `includes`；query 依空白切詞、雙引號包起來的當一個詞，每個詞都要命中（AND）
 - `useFilter(filters, rows, schema)`：`Filters = { 欄位key: { values?, min?, max? } }`，select 用 `values`（`null` 是空白）、number／date 共用 `min`／`max`；欄位之間 AND、`values` 之間 OR；設了範圍而值是空的列排除、select 只有勾了空白才留
-- **query 與 filters 都屬於頁面**：`useAppBarSearch(query, { tables, current? }?)` 登記後 App Bar 才出現放大鏡，按下去整條換成輸入框；給了 tables 就在輸入框內最右多一顆篩選鈕（有條件生效時主色），開右側抽屜 `FilterDrawer`，改了即時生效。← 關閉清掉 query 與所有表的篩選、換頁自動收起、回到還帶著 query 或篩選的頁面自動重開；抽屜開著時 `PageFab` 讓開（`useOverlay` 的 `overlayOpenKey`）。頁面串法 `rows → useFilter → useSearch → 頁籤切`，跨所有頁籤
+- **query 與 filters 都屬於頁面**：`useAppBarSearch(query, { tables, current? }?)` 登記後 App Bar 才出現放大鏡，按下去整條換成輸入框；給了 tables 就在輸入框內最右多一顆篩選鈕（有條件生效時主色），開右側抽屜 `FilterDrawer`，改了即時生效。← 關閉清掉 query 與所有表的篩選、換頁自動收起、回到還帶著 query 或篩選的頁面自動重開；抽屜開著時 `PageFab` 讓開（`useOverlay` 的 `overlayOpenKey`）。左右兩個抽屜都設 `order="-1"`，連 scrim 一起蓋在 App Bar 之上（Vuetify 的 layout 是 `z-index = 1000 + 層數×2 − 註冊順序×2`，越早註冊越上層，順序由 `order` 決定），所以抽屜開著時搜尋列與右上的鈕都碰不到。頁面串法 `rows → useFilter → useSearch → 頁籤切`，跨所有頁籤
 - **一頁可以有好幾張表的條件**：`tables: [{ schema, filters, rows }, …]` 每張表各自一份 `Filters`、同時生效（頁籤各接一張表時，每個面板各用自己那份過濾）；query 則是全頁共用一份。抽屜第一層上方多一排表的 chip 決定現在編哪一張，`current`（頁面的頁籤 v-model，值對得上 `sheetName`）決定打開時停在哪張，使用者仍可自己切。「清除」只清當前那張，← 關閉搜尋才是全部清掉。單表頁 `tables` 給一個元素，看不到 chip、行為跟以前一樣
 - 抽屜分兩層：第一層是可篩選欄位的清單（順序照 `detailOrder`、沒排的接在後面），有條件的欄位名稱底下用小字顯示現在篩什麼、右側一個主色圓點；第二層是單一欄位的值——select 是一列一項的 checkbox（只列 rows 裡出現過的值，照 `options` 順序、`options` 沒有的排最後、有空的才有「(空白)」並排在最後），number／date／duration 是兩格範圍
 - 只為搜尋存在的虛擬欄位（例如父表把所有子列的名字接起來）照常寫、標 `searchable`，不排進 `detailOrder` 就不會顯示
@@ -167,7 +167,21 @@
   - 衝突時不把佇列重新套用到新資料上（見「決定不做」）
 
 ### UI 功能
-- 排序的操作介面（目前只有 schema 的 `defaultSort`，使用者不能自己改）
+- **右側抽屜放第二種面板**（排序的前置工作；抽屜拉到最上層的部分已完成）：
+  - **不新增外殼元件**：`v-navigation-drawer` 直接留在 `AppShell` 的 template（左邊那個本來就在那），裡面 `v-if` 切 `FilterPanel` / `SortPanel`——共用的是同一個元素，不是同一個元件。評估過包一層 `ShellDrawer`，但兩個面板真正重疊的只有三、四個屬性（`location="end" temporary width="320" order="-1"`）跟上方那排表 chip，toolbar 的標題與右邊的鈕兩邊本來就不一樣，包起來是為了包而包
+  - 表 chip 那排移到抽屜裡、panel 上方，`picked` 歸 `AppShell`；順帶得到「從篩選切到排序還停在同一張表」。`FilterDrawer.vue` 因此變成 `FilterPanel.vue`（脫掉最外層 drawer 與 chip）
+  - `AppShell` 的 `filterOpen` 換成 `drawerMode: 'filter' | 'sort' | null`，`overlayOpenKey` 改成「任一抽屜開著」
+  - **互斥已經由版面保證**（抽屜蓋住 App Bar），不用寫邏輯去擋：搜尋展開時整條 App Bar 讓位、碰不到排序鈕；抽屜開著時右側被蓋住、碰不到搜尋與篩選。切模式一定會經過關閉狀態，所以 `FilterPanel` 靠 `watch(open)` 重置第二層的作法照舊有效，切模式時內容「就地換掉、不重播進場動畫」的問題也不存在
+- **排序的操作介面**（設計已定，目前只有 schema 的 `defaultSort`，使用者不能自己改）：
+  - 入口是 App Bar 上放大鏡右邊那個保留位置，非預設排序時圖示上主色（跟篩選的圓點同一個標準）
+  - 面板跟篩選**共用右側抽屜、一次只顯示一種**（見上一條）
+  - **單一欄位排序**：一列一欄，點一次選它、再點一次切換升降，最上面一項是「預設」（不顯示是哪一欄）。`schema.defaultSort` 仍然是 tiebreaker。多層排序 UI 在手機上沒人用，不做
+  - 跟篩選一致：**即時生效、沒有套用鈕**，表 chip 也吃同一排
+  - **非預設排序就關掉分組**，變成一條平的列表。頁面端 `:groups="isDefaultSort ? groupedFor(tab) : undefined"` 一行就好，`ListPage` 本來就會退回卡片模式，框架不用改
+  - 可排序的欄位由新旗標 `sortable` 決定（放 `ColumnBase`，跟 `searchable` 並列）——備註這種長文字沒必要排。旗標多到難管時再考慮整併成一個 `list?: { search, sort, filter }`
+  - 順手要修兩個型別的比較方式：`select` 該照 `options` 的宣告順序（現在走 `localeCompare`，「已出貨／待出貨」會照字典序排）、`ref` 該照對方的 `$label`（現在比的是 id）
+  - state 住 `useListPage` 回傳的 `sort`，同一張表跨頁籤共用一份；`sortRows` 要多一個覆寫參數（現在寫死讀 `schema.defaultSort`）。重整回預設，不做持久化（跟篩選同一個標準）
+  - 排序一改，`useListOrder` 發布的順序跟著改，detail 頁的上下一筆與左右滑動自動一致，不用另外處理
 - 關聯選擇器的 `allowCreate`：清單最上面一項「＋ 新增…」，開父表的新增表單、回來自動選上。看起來是 `runStep('/父表/new')`，但表單頁當「呼叫端」跟動作當呼叫端不一樣，四件事要先解：
   - 回來時 `useCreateForm` 的 `onActivated` 會把表單重置，使用者填到一半的東西會丟掉——要能分辨「從子步驟回來」和「重新進入」
   - 離開表單頁去開父表的新增會被 `useLeaveGuard` 攔下來問要不要放棄

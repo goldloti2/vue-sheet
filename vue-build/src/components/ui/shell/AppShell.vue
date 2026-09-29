@@ -78,6 +78,7 @@
   const filterActive = computed(() => filterTables.value.some(table => hasActiveFilter(table.filters.value)))
 
   // 換頁就收起來；回到還帶著 query 或篩選的頁面（KeepAlive）就重新打開，讓列表跟搜尋欄一致
+  // 抽屜也一起收：使用者可以在抽屜開著時按返回鍵換頁
   watch(search, value => {
     searchOpen.value = value !== null && (value.query.value !== '' || filterActive.value)
     filterOpen.value = false
@@ -87,7 +88,7 @@
   const filterOpen = shallowRef(false)
   provide(overlayOpenKey, filterOpen)
 
-  // 關閉搜尋＝清掉 query 與所有表的篩選、收起抽屜，列表回到全部
+  // 關閉搜尋＝清掉 query 與所有表的篩選，列表回到全部
   function closeSearch () {
     if (search.value) {
       search.value.query.value = ''
@@ -95,7 +96,6 @@
     for (const table of filterTables.value) {
       table.filters.value = {}
     }
-    filterOpen.value = false
     searchOpen.value = false
   }
 
@@ -266,7 +266,7 @@
 
   <v-snackbar v-model="notice.open" :color="notice.color">{{ notice.text }}</v-snackbar>
 
-  <v-navigation-drawer v-model="drawer" />
+  <v-navigation-drawer v-model="drawer" order="-1" />
 
   <v-main>
     <slot />

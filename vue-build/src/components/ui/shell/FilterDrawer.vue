@@ -153,7 +153,14 @@
 </script>
 
 <template>
-  <v-navigation-drawer v-model="open" location="end" temporary width="320">
+  <!-- order="-1" 讓抽屜蓋在 App Bar 之上：開著時搜尋列與右上的鈕都碰不到 -->
+  <v-navigation-drawer
+    v-model="open"
+    location="end"
+    order="-1"
+    temporary
+    width="320"
+  >
     <!-- 第一層：欄位清單，點一欄才進去填值 -->
     <template v-if="!editing">
       <v-toolbar density="compact" flat title="篩選">

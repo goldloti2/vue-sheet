@@ -15,7 +15,7 @@ detail 頁左右兩側的「上一筆／下一筆」箭頭。順序來自**列�
   import { computed } from 'vue'
   import { useListOrder } from '@/composables/navigation/useListOrder'
   import { useSortedTableList } from '@/composables/data/useTable'
-  import { __table__Schema } from '@/schema/__table__'
+  import { __table__Schema } from '@/schema/tables/__table__'
 
   const { data } = useSortedTableList<__Table__Row>('__table__', __table__Schema)
 

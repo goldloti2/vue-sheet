@@ -6,11 +6,11 @@
 </route>
 
 <script lang="ts" setup>
-  import type { __Table__Row } from '@/schema/__table__'
+  import type { __Table__Row } from '@/schema/tables/__table__'
   import FormPage from '@/components/ui/page/FormPage.vue'
   import { useEditForm } from '@/composables/form/useTableForm'
   import { useRouteId } from '@/composables/navigation/useRouteId'
-  import { __table__Schema } from '@/schema/__table__'
+  import { __table__Schema } from '@/schema/tables/__table__'
 
   // 載入中／載入失敗／找不到資料三種狀態由 FormPage 自己顯示
   const { form, fieldErrors, loading, loadError, error }

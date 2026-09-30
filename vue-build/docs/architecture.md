@@ -47,9 +47,10 @@ src/
     actions/           useTableActions：PageAction 型別 + 通用動作 builder
   stores/tables/       共用快取、待推送佇列、row 上的 getter（見 store.md）
   services/            appScript.ts 是對後端唯一的出入口；mock/ 是假後端，上線後整個刪掉
-  schema/              每張表的欄位定義，加上對 row 做事的純函數（見 schema.md）：
-                       types（型別、coerce／format）、sort、group、filter、validation、
-                       relations（關聯圖）、image、index（註冊表）
+  schema/              對 row 做事的純函數（見 schema.md）：types（型別、coerce／format）、
+                       sort、group、filter、validation、relations（關聯圖）、image、
+                       index（註冊表：代稱 → schema）
+    tables/            每張表的欄位定義，一張表一個檔
   config/              app.ts（App 名稱）、navigation.ts（導覽列項目）
   router/index.ts      路由實例、轉場方向判定、leaveAfterAction / pushWithDefaults
   pages/               檔案即路由

@@ -6,13 +6,13 @@
 </route>
 
 <script lang="ts" setup>
-  import type { __Table__Row } from '@/schema/__table__'
+  import type { __Table__Row } from '@/schema/tables/__table__'
   import DataList from '@/components/ui/list/DataList.vue'
   import ListPage from '@/components/ui/page/ListPage.vue'
   import { use__Table__Actions } from '@/composables/actions/use__Table__Actions'
   import { useListPage } from '@/composables/page/useListPage'
   import { useAppBarActions } from '@/composables/shell/useShellActions'
-  import { __table__Schema } from '@/schema/__table__'
+  import { __table__Schema } from '@/schema/tables/__table__'
   import { formatField } from '@/schema/types'
 
   // 整表 → 篩選 → 搜尋（放大鏡、篩選與排序鈕自動登記到 App Bar）+ 長按多選

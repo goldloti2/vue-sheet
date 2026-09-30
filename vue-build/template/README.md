@@ -47,7 +47,7 @@
 
 | 範本 | 複製到 | 說明 |
 | --- | --- | --- |
-| `table/schema.ts` | `src/schema/__table__.ts` | 欄位定義、排序、顯示順序 |
+| `table/schema.ts` | `src/schema/tables/__table__.ts` | 欄位定義、排序、顯示順序 |
 | `table/use__Table__Actions.ts` | `src/composables/actions/use__Table__Actions.ts` | 該表的新增／編輯／刪除動作集合 |
 | `pages/list.vue` | `src/pages/__table__/index.vue` | 列表頁 → `/__table__` |
 | `pages/detail.vue` | `src/pages/__table__/[id]/index.vue` | 詳細頁 → `/__table__/:id` |
@@ -62,7 +62,7 @@
 
 1. **`src/schema/index.ts`** — 註冊 schema，`TableKey` 會自動多一個值：
    ```ts
-   import { __table__Schema } from './__table__'
+   import { __table__Schema } from './tables/__table__'
 
    export const schemas = {
      __table__: __table__Schema,

@@ -5,7 +5,7 @@
 // 見 docs/architecture.md。
 import type { FieldActions, NewActionOptions } from '@/composables/actions/useTableActions'
 import type { TableKey } from '@/schema'
-import type { __Table__Row } from '@/schema/__table__'
+import type { __Table__Row } from '@/schema/tables/__table__'
 import type { Ref } from 'vue'
 import { computed } from 'vue'
 import { useBulkDeleteAction, useDeleteAction, useEditAction, useNewAction } from '@/composables/actions/useTableActions'

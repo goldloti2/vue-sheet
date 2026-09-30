@@ -8,12 +8,12 @@
 
 ```vue
 <script lang="ts" setup>
-  import type { __Table__Row } from '@/schema/__table__'
+  import type { __Table__Row } from '@/schema/tables/__table__'
   import DetailPage from '@/components/ui/page/DetailPage.vue'
   import { use__Table__Actions } from '@/composables/actions/use__Table__Actions'
   import { useRecordPage } from '@/composables/page/useRecordPage'
   import { useAppBarActions } from '@/composables/shell/useShellActions'
-  import { __table__Schema } from '@/schema/__table__'
+  import { __table__Schema } from '@/schema/tables/__table__'
 
   const { id, row, loading, error } = useRecordPage<__Table__Row>('__table__')
 

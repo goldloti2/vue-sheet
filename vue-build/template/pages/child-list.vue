@@ -6,12 +6,12 @@
 </route>
 
 <script lang="ts" setup>
-  import type { __Parent__Row } from '@/schema/__parent__'
+  import type { __Parent__Row } from '@/schema/tables/__parent__'
   import DataList from '@/components/ui/list/DataList.vue'
   import ListPage from '@/components/ui/page/ListPage.vue'
   import { use__Table__Actions } from '@/composables/actions/use__Table__Actions'
   import { useRecordPage } from '@/composables/page/useRecordPage'
-  import { __table__Schema } from '@/schema/__table__'
+  import { __table__Schema } from '@/schema/tables/__table__'
   import { formatField } from '@/schema/types'
 
   // 讀的是父表那一筆，子列走 store 掛好的 $子表_欄位key getter（照子表的 defaultSort 排）

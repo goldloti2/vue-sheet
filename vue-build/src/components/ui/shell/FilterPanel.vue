@@ -12,9 +12,9 @@
     tables: SearchTable[]
     // 頁面的頁籤，沒被使用者換過就跟著它
     current?: string
+    // 抽屜是 AppShell 的，這裡只用來在關起來時回到原狀
+    open: boolean
   }>()
-
-  const open = defineModel<boolean>('open', { required: true })
 
   // 使用者在抽屜裡點的表；關起來就忘掉，下次打開重新跟著 current
   const picked = shallowRef<string | null>(null)
@@ -27,7 +27,7 @@
 
   // 第二層正在編哪一欄；null 就是第一層的欄位清單。關起來回到第一層
   const editing = shallowRef<AnyColumn | null>(null)
-  watch(open, value => {
+  watch(() => props.open, value => {
     if (!value) {
       editing.value = null
       picked.value = null
@@ -153,141 +153,132 @@
 </script>
 
 <template>
-  <!-- order="-1" 讓抽屜蓋在 App Bar 之上：開著時搜尋列與右上的鈕都碰不到 -->
-  <v-navigation-drawer
-    v-model="open"
-    location="end"
-    order="-1"
-    temporary
-    width="320"
-  >
-    <!-- 第一層：欄位清單，點一欄才進去填值 -->
-    <template v-if="!editing">
-      <v-toolbar density="compact" flat title="篩選">
-        <v-btn text="清除" variant="text" @click="clear" />
-      </v-toolbar>
+  <!-- 第一層：欄位清單，點一欄才進去填值 -->
+  <template v-if="!editing">
+    <v-toolbar density="compact" flat title="篩選">
+      <v-btn text="清除" variant="text" @click="clear" />
+    </v-toolbar>
 
-      <!-- 多張表才需要選；每張表的條件是分開的，同時生效 -->
-      <v-chip-group
-        v-if="tables.length > 1"
-        v-model="tableName"
-        class="px-3 pt-0"
-        mandatory
-        selected-class="text-primary"
+    <!-- 多張表才需要選；每張表的條件是分開的，同時生效 -->
+    <v-chip-group
+      v-if="tables.length > 1"
+      v-model="tableName"
+      class="px-3 pt-0"
+      mandatory
+      selected-class="text-primary"
+    >
+      <v-chip
+        v-for="item in tables"
+        :key="item.schema.sheetName"
+        size="small"
+        :text="item.schema.sheetName"
+        :value="item.schema.sheetName"
+      />
+    </v-chip-group>
+
+    <v-list v-if="columns.length > 0" density="compact" lines="two">
+      <v-list-item
+        v-for="column in columns"
+        :key="column.key"
+        :subtitle="summary(column)"
+        :title="column.label"
+        @click="editing = column"
       >
-        <v-chip
-          v-for="item in tables"
-          :key="item.schema.sheetName"
-          size="small"
-          :text="item.schema.sheetName"
-          :value="item.schema.sheetName"
-        />
-      </v-chip-group>
-
-      <v-list v-if="columns.length > 0" density="compact" lines="two">
-        <v-list-item
-          v-for="column in columns"
-          :key="column.key"
-          :subtitle="summary(column)"
-          :title="column.label"
-          @click="editing = column"
-        >
-          <template #append>
-            <v-icon v-if="isActive(column)" color="primary" :icon="mdiCircle" size="10" />
-            <v-icon class="ml-2" :icon="mdiChevronRight" />
-          </template>
-        </v-list-item>
-      </v-list>
-
-      <v-container v-else class="text-medium-emphasis">這張表沒有可篩選的欄位</v-container>
-    </template>
-
-    <!-- 第二層：單一欄位的值，改了就即時生效 -->
-    <template v-else>
-      <v-toolbar density="compact" flat :title="editing.label">
-        <template #prepend>
-          <v-btn aria-label="返回欄位清單" :icon="mdiChevronLeft" variant="text" @click="editing = null" />
+        <template #append>
+          <v-icon v-if="isActive(column)" color="primary" :icon="mdiCircle" size="10" />
+          <v-icon class="ml-2" :icon="mdiChevronRight" />
         </template>
-      </v-toolbar>
+      </v-list-item>
+    </v-list>
 
-      <v-list v-if="editing.type === 'select'" density="compact">
-        <v-list-item
-          v-for="item in selectItems(editing)"
-          :key="item.value"
-          :title="item.title"
-          @click="toggleValue(editing, item.value)"
-        >
-          <template #prepend>
-            <v-checkbox-btn :model-value="selectedValues(editing).includes(item.value)" />
-          </template>
-        </v-list-item>
-      </v-list>
+    <v-container v-else class="text-medium-emphasis">這張表沒有可篩選的欄位</v-container>
+  </template>
 
-      <v-container v-else-if="editing.type === 'number'" class="d-flex ga-2">
-        <v-number-input
-          clearable
-          control-variant="hidden"
-          density="compact"
-          hide-details
-          label="最小"
-          :model-value="numberBound(editing, 'min')"
-          @update:model-value="(value) => editing && patch(editing.key, { min: value })"
-        />
+  <!-- 第二層：單一欄位的值，改了就即時生效 -->
+  <template v-else>
+    <v-toolbar density="compact" flat :title="editing.label">
+      <template #prepend>
+        <v-btn aria-label="返回欄位清單" :icon="mdiChevronLeft" variant="text" @click="editing = null" />
+      </template>
+    </v-toolbar>
 
-        <v-number-input
-          clearable
-          control-variant="hidden"
-          density="compact"
-          hide-details
-          label="最大"
-          :model-value="numberBound(editing, 'max')"
-          @update:model-value="(value) => editing && patch(editing.key, { max: value })"
-        />
-      </v-container>
+    <v-list v-if="editing.type === 'select'" density="compact">
+      <v-list-item
+        v-for="item in selectItems(editing)"
+        :key="item.value"
+        :title="item.title"
+        @click="toggleValue(editing, item.value)"
+      >
+        <template #prepend>
+          <v-checkbox-btn :model-value="selectedValues(editing).includes(item.value)" />
+        </template>
+      </v-list-item>
+    </v-list>
 
-      <v-container v-else-if="editing.type === 'duration'" class="d-flex ga-2">
-        <v-text-field
-          clearable
-          density="compact"
-          hide-details
-          label="最短"
-          :model-value="durationBound(editing, 'min')"
-          placeholder="時:分:秒"
-          @update:model-value="(value) => editing && patch(editing.key, { min: value || null })"
-        />
+    <v-container v-else-if="editing.type === 'number'" class="d-flex ga-2">
+      <v-number-input
+        clearable
+        control-variant="hidden"
+        density="compact"
+        hide-details
+        label="最小"
+        :model-value="numberBound(editing, 'min')"
+        @update:model-value="(value) => editing && patch(editing.key, { min: value })"
+      />
 
-        <v-text-field
-          clearable
-          density="compact"
-          hide-details
-          label="最長"
-          :model-value="durationBound(editing, 'max')"
-          placeholder="時:分:秒"
-          @update:model-value="(value) => editing && patch(editing.key, { max: value || null })"
-        />
-      </v-container>
+      <v-number-input
+        clearable
+        control-variant="hidden"
+        density="compact"
+        hide-details
+        label="最大"
+        :model-value="numberBound(editing, 'max')"
+        @update:model-value="(value) => editing && patch(editing.key, { max: value })"
+      />
+    </v-container>
 
-      <v-container v-else-if="editing.type === 'date'" class="d-flex flex-column ga-2">
-        <v-date-input
-          clearable
-          density="compact"
-          hide-details
-          input-format="yyyy/mm/dd"
-          label="從"
-          :model-value="dateBound(editing, 'min')"
-          @update:model-value="(value) => editing && patch(editing.key, { min: value })"
-        />
+    <v-container v-else-if="editing.type === 'duration'" class="d-flex ga-2">
+      <v-text-field
+        clearable
+        density="compact"
+        hide-details
+        label="最短"
+        :model-value="durationBound(editing, 'min')"
+        placeholder="時:分:秒"
+        @update:model-value="(value) => editing && patch(editing.key, { min: value || null })"
+      />
 
-        <v-date-input
-          clearable
-          density="compact"
-          hide-details
-          input-format="yyyy/mm/dd"
-          label="到"
-          :model-value="dateBound(editing, 'max')"
-          @update:model-value="(value) => editing && patch(editing.key, { max: value })"
-        />
-      </v-container>
-    </template>
-  </v-navigation-drawer>
+      <v-text-field
+        clearable
+        density="compact"
+        hide-details
+        label="最長"
+        :model-value="durationBound(editing, 'max')"
+        placeholder="時:分:秒"
+        @update:model-value="(value) => editing && patch(editing.key, { max: value || null })"
+      />
+    </v-container>
+
+    <v-container v-else-if="editing.type === 'date'" class="d-flex flex-column ga-2">
+      <v-date-input
+        clearable
+        density="compact"
+        hide-details
+        input-format="yyyy/mm/dd"
+        label="從"
+        :model-value="dateBound(editing, 'min')"
+        @update:model-value="(value) => editing && patch(editing.key, { min: value })"
+      />
+
+      <v-date-input
+        clearable
+        density="compact"
+        hide-details
+        input-format="yyyy/mm/dd"
+        label="到"
+        :model-value="dateBound(editing, 'max')"
+        @update:model-value="(value) => editing && patch(editing.key, { max: value })"
+      />
+    </v-container>
+  </template>
 </template>

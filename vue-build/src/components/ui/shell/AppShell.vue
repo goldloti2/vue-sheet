@@ -7,7 +7,7 @@
   import { useRoute, useRouter } from 'vue-router'
   import ConfirmDialog from '@/components/ui/dialog/ConfirmDialog.vue'
   import FieldsDialog from '@/components/ui/dialog/FieldsDialog.vue'
-  import FilterDrawer from '@/components/ui/shell/FilterDrawer.vue'
+  import FilterPanel from '@/components/ui/shell/FilterPanel.vue'
   import { hasActiveFilter } from '@/composables/data/useFilter'
   import { provideActionRunner } from '@/composables/shell/useActionRunner'
   import { appBarSearchKey } from '@/composables/shell/useAppBarSearch'
@@ -257,12 +257,21 @@
     @confirm="confirmFields"
   />
 
-  <FilterDrawer
+  <!-- 右側抽屜歸 AppShell，面板只放內容：之後排序面板也接在這裡，一次顯示一種 -->
+  <v-navigation-drawer
     v-if="filterTables.length > 0"
-    v-model:open="filterOpen"
-    :current="search?.filter?.current?.value"
-    :tables="filterTables"
-  />
+    v-model="filterOpen"
+    location="end"
+    order="-1"
+    temporary
+    width="320"
+  >
+    <FilterPanel
+      :current="search?.filter?.current?.value"
+      :open="filterOpen"
+      :tables="filterTables"
+    />
+  </v-navigation-drawer>
 
   <v-snackbar v-model="notice.open" :color="notice.color">{{ notice.text }}</v-snackbar>
 

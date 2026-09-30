@@ -39,7 +39,7 @@
 | **頁籤列** | `TabView` | 掛在 App Bar 底下的 extension，不跟著內容捲動 |
 | **內容區** | `pages/*.vue` | 換頁時左右滑動的就是這一塊 |
 | **側邊欄** | `AppShell` | 左側滑出，目前是空殼。蓋在 App Bar 之上 |
-| **篩選抽屜** | `FilterDrawer` | 右側滑出，兩層。蓋在 App Bar 之上 |
+| **篩選抽屜** | `AppShell` + `FilterPanel` | 右側滑出，兩層。蓋在 App Bar 之上。抽屜本身歸 `AppShell`，面板只放內容 |
 | **FAB** | `PageFab` | 右下角浮動按鈕，主要動作 |
 | **底部導覽列** | `config/navigation.ts` | 切換主要頁面 |
 | **底部動作列** | `useBottomActions()` | 表單頁時**暫時取代**底部導覽列 |

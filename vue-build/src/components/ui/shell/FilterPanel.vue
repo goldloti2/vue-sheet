@@ -4,6 +4,7 @@
   import type { AnyColumn } from '@/schema/types'
   import { mdiChevronLeft, mdiChevronRight, mdiCircle } from '@mdi/js'
   import { computed, shallowRef, watch } from 'vue'
+  import TableChips from '@/components/ui/shell/TableChips.vue'
   import { filterableColumns, presentValues } from '@/composables/data/useFilter'
   import { formatDate } from '@/schema/types'
 
@@ -159,22 +160,7 @@
       <v-btn text="清除" variant="text" @click="clear" />
     </v-toolbar>
 
-    <!-- 多張表才需要選；每張表的條件是分開的，同時生效 -->
-    <v-chip-group
-      v-if="tables.length > 1"
-      v-model="tableName"
-      class="px-3 pt-0"
-      mandatory
-      selected-class="text-primary"
-    >
-      <v-chip
-        v-for="item in tables"
-        :key="item.schema.sheetName"
-        size="small"
-        :text="item.schema.sheetName"
-        :value="item.schema.sheetName"
-      />
-    </v-chip-group>
+    <TableChips v-model="tableName" :tables="tables" />
 
     <v-list v-if="columns.length > 0" density="compact" lines="two">
       <v-list-item

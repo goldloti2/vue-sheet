@@ -1,6 +1,6 @@
 import type { Filters } from '@/composables/data/useFilter'
 import type { TableKey } from '@/schema'
-import type { TableSchema } from '@/schema/types'
+import type { SortSpec, TableSchema } from '@/schema/types'
 import type { Ref } from 'vue'
 import { ref } from 'vue'
 import { useFilter } from '@/composables/data/useFilter'
@@ -23,15 +23,17 @@ export function useListPage<Row extends { id: string }> (
   schema: TableSchema,
   options: ListPageOptions = {},
 ) {
-  const { data: allRows, loading, error } = useSortedTableList<Row>(table, schema)
+  // 使用者選的排序；null 就是 schema.defaultSort。單欄排序，defaultSort 永遠是 tiebreaker
+  const sort = ref<SortSpec | null>(null)
+  const { data: allRows, loading, error } = useSortedTableList<Row>(table, schema, () => sort.value ? [sort.value] : null)
 
   const query = options.query ?? ref('')
   const filters = ref<Filters>({})
   if (options.search !== false) {
-    useAppBarSearch(query, { tables: [{ schema, filters, rows: allRows }] })
+    useAppBarSearch(query, { tables: [{ schema, filters, rows: allRows, sort }] })
   }
 
   const rows = useSearch(query, useFilter(filters, allRows, schema), schema)
 
-  return { rows, allRows, loading, error, query, filters, selection: useMultiSelect() }
+  return { rows, allRows, loading, error, query, filters, sort, selection: useMultiSelect() }
 }

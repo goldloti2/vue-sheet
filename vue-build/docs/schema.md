@@ -31,8 +31,8 @@ export const orderSchema: TableSchema<OrderRow> = {
   labelColumn: 'title',         // 別的表 ref 到這裡時顯示哪一欄
   columns: [
     { key: 'title', label: '名稱', type: 'text', required: true, searchable: true },
-    { key: 'amount', label: '金額', type: 'number', min: 0, searchable: true },
-    { key: 'orderedAt', label: '下單日期', type: 'date' },
+    { key: 'amount', label: '金額', type: 'number', min: 0, searchable: true, sortable: true },
+    { key: 'orderedAt', label: '下單日期', type: 'date', sortable: true },
   ],
   virtualColumns: [
     { key: 'withTax', label: '含稅', type: 'number', value: row => row.amount === null ? null : row.amount * 1.05 },
@@ -68,7 +68,7 @@ export const orderSchema: TableSchema<OrderRow> = {
 - **真實欄位**（`columns`）：Sheet 上真的有的，可編輯
 - **虛擬欄位**（`virtualColumns`）：不存在 Sheet 上、讀的時候才算。來源可以是這一列自己（價格加手續費），也可以是子表（父表用第一筆子列的名字當標題、子表金額加總）
 
-虛擬欄位除了不能編輯，其他都跟真實欄位一樣：顯示、排序、分組、`defaultSort`、`searchable` 都能用。因為它跟 `columns` 分開放，`coerceRow`／`serializeRow`／表單完全不用知道它存在。
+虛擬欄位除了不能編輯，其他都跟真實欄位一樣：顯示、排序、分組、`defaultSort`、`searchable`、`sortable` 都能用。因為它跟 `columns` 分開放，`coerceRow`／`serializeRow`／表單完全不用知道它存在。
 
 型別有 `text`／`number`／`date`／`duration`／`select`／`ref`／`image` 七種，每種有自己的專屬設定（`number` 的 `min`／`max`、`select` 的 `options`、`ref` 的 `refTable`…）。完整清單見 [`types.ts`](../src/schema/types.ts)。
 

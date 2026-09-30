@@ -22,7 +22,7 @@
 - `coerceRow`（後端字串 → 前端型別）與 `serializeRow`（反向）
 - `formatColumnValue` / `formatField` 顯示格式化
 - `columnValues`（組送出用 payload）、`emptyRow`（新增表單起始值，套用欄位的 `default`）
-- `sortRows`（依 `defaultSort`）、`sortByKey`、`groupRows`（多層分組）、`flattenGroups`（把分組攤回畫面順序）
+- `sortRows(rows, schema, sort?)`（使用者選的排序在前、`defaultSort` 接在後面當 tiebreaker）、`sortableColumns`、`sortByKey`、`groupRows`（多層分組）、`flattenGroups`（把分組攤回畫面順序）
 - `detailOrder` / `formOrder` 分別控制詳細頁與表單頁的欄位順序
 - `virtualColumns`：不在 Sheet 上、讀的時候才算的欄位，來源可以是自己這列、父列（`row.$欄位key`）或子列（`row.$子表_欄位key`）。store 掛成 row 上的 getter，顯示、排序、分組都跟真實欄位一樣；兩種欄位共用 `ColumnTypes`／`ColumnBase` 型別骨架
 - `labelColumn`：一列怎麼稱呼（欄位 key，省略就是 id），store 掛成 `row.$label`
@@ -73,7 +73,7 @@
 - 其他：`PageFab`、`TabView`、`RecordNav`、`AppDialog`、`ConfirmDialog`、`FieldsDialog`（只顯示幾欄的 `DataForm`）
 - `TabView` 的頁籤列登記給 `AppShell` 畫在 App Bar 的 extension，所以固定在最上面；每個頁籤外面包一層 `TabViewPanel`，`provide` 一份「我是不是當前頁籤」（`panelActiveKey`）。看過的面板會一直掛著（`v-window` 用 `v-show` 切），而 `PageFab`、`registerSlot`（App Bar／底部動作）、`useListOrder` 的「活著」判斷都是 `KeepAlive 狀態 && 當前面板`，所以一個頁籤放一整張表的列表、各自掛自己的 FAB 與動作是可以的。不在 `TabView` 裡就一律算當前，現有頁面零改動。動作那兩個 watch 刻意分成 `pre`（讓場的清）與 `post`（進場的設），同一輪切換時順序才不會反過來變成空的
 
-### 搜尋與篩選
+### 搜尋、篩選與排序
 - 欄位開 `searchable: true` 才進搜尋或篩選（預設關），真實與虛擬欄位都行：`text`／`ref` 是搜尋列的比對對象，`select`／`number`／`date`／`duration` 是篩選抽屜的欄位
 - `useSearch(query, rows, schema)`：純函數式，每列的可搜尋文字（searchable 欄位的顯示文字接起來、小寫）只跟 rows 一起重算，敲字只做 `includes`；query 依空白切詞、雙引號包起來的當一個詞，每個詞都要命中（AND）
 - `useFilter(filters, rows, schema)`：`Filters = { 欄位key: { values?, min?, max? } }`，select 用 `values`（`null` 是空白）、number／date 共用 `min`／`max`；欄位之間 AND、`values` 之間 OR；設了範圍而值是空的列排除、select 只有勾了空白才留
@@ -81,6 +81,10 @@
 - **一頁可以有好幾張表的條件**：`tables: [{ schema, filters, rows }, …]` 每張表各自一份 `Filters`、同時生效（頁籤各接一張表時，每個面板各用自己那份過濾）；query 則是全頁共用一份。抽屜第一層上方多一排表的 chip 決定現在編哪一張，`current`（頁面的頁籤 v-model，值對得上 `sheetName`）決定打開時停在哪張，使用者仍可自己切。「清除」只清當前那張，← 關閉搜尋才是全部清掉。單表頁 `tables` 給一個元素，看不到 chip、行為跟以前一樣
 - 抽屜分兩層：第一層是可篩選欄位的清單（順序照 `detailOrder`、沒排的接在後面），有條件的欄位名稱底下用小字顯示現在篩什麼、右側一個主色圓點；第二層是單一欄位的值——select 是一列一項的 checkbox（只列 rows 裡出現過的值，照 `options` 順序、`options` 沒有的排最後、有空的才有「(空白)」並排在最後），number／date／duration 是兩格範圍
 - 只為搜尋存在的虛擬欄位（例如父表把所有子列的名字接起來）照常寫、標 `searchable`，不排進 `detailOrder` 就不會顯示
+- **排序**：欄位另外開 `sortable: true` 才進排序面板（跟 `searchable` 分開，備註這種長文字不用排；`image` 就算標了也不列）。`useListPage` 順手登記，所以列表頁零設定，App Bar 放大鏡右邊多一顆排序鈕（非預設排序時主色）。**一次只排一欄**：點一欄選它、再點同一欄換升降，`defaultSort` 永遠接在後面當 tiebreaker；最上面一項「預設」＝ 只照 `defaultSort` 排。即時生效、重整回預設（不持久化）
+- 排序面板 `SortPanel` 跟 `FilterPanel` **共用同一個右側抽屜**（`AppShell` 的 `drawerMode`），一次只顯示一種——抽屜蓋住 App Bar，要換另一種一定得先關掉，所以互斥不用寫邏輯擋；兩個面板上方的表 chip 是共用的 `TableChips`
+- 比較方式兩個型別是特例：`ref` 照對方的 `$label`（值是 id，照 id 排沒意義）、`select` 照 `options` 的宣告順序（狀態有先後，字典序不對），`options` 沒有的值排最後
+- **排序與分組二選一**，框架不介入：分組會把原本的順序壓成組內順序，所以頁面自己在 `sort` 不是 null 時把 `groups` 換成 `rows`（有分組的列表頁就是這樣）。排序一改，`ListPage` 發布的列表順序跟著改，詳細頁的上下一筆自動一致
 
 ### 動作系統
 - `PageAction` 型別（`{ key, label, icon, onClick, confirm? }`），FAB、App Bar、底部動作列、detail 欄位動作共用同一種描述；內建 builder 的 label／icon 可用 `ActionLook` 覆寫
@@ -99,7 +103,7 @@
 - 前端驗證：`schema/validation.ts` 的 `validateRow`（內建 `required`／`min`／`max`／`select` 選項，其他規則由欄位的 `validate(value, row)` 自訂）一份，form 層與 `askFields` 送出前逐欄提示、store 的 `create`／`update` 寫入前再擋一次（拋錯、不動快取）；後端只做結構完整性，分工見 [vue-build/docs/schema.md](vue-build/docs/schema.md)
 - `useMultiSelect` + `useLongPress`：長按進入多選，選取狀態由「有沒有選取任何一筆」推導；`itemProps(id)` 是每列要綁的那一包（`selectable`／`selectMode`／`selected`／長按與點選），列表元件與分組列表共用同一份
 - 分組或分頁籤的列表也走 `ListPage`：一個頁籤一個 `ListPage`，各自算狀態、FAB 與列表順序，靠面板訊號決定哪份生效，頁面不用知道當前是哪個頁籤
-- 列表頁的資料層 `useListPage(table, schema)`：整表 → 篩選 → 搜尋（順手登記 App Bar 的放大鏡）＋ 多選，一次回傳；一頁接好幾張表時傳 `search: false`，改由頁面自己登記，再傳 `query` 讓每張表共用同一條搜尋字串
+- 列表頁的資料層 `useListPage(table, schema)`：整表 → 排序 → 篩選 → 搜尋（順手登記 App Bar 的放大鏡與排序鈕）＋ 多選，一次回傳（含 `sort`，頁面用它決定還要不要分組）；一頁接好幾張表時傳 `search: false`，改由頁面自己登記，再傳 `query` 讓每張表共用同一條搜尋字串
 - 多選的出口：`useMultiSelect` 把「怎麼退出」登記到 `appBarSelectionKey`（只給一個函式，按鈕長怎樣歸 `AppShell`，跟放大鏡同一種分工），頁面零設定。那顆鈕釘在同步鈕左邊、**不收進「⋮」**（收進去就沒有明顯出口），而且「有沒有登記」就是「現在是不是多選模式」——多選時搜尋鈕先讓位，把空間留給對選取項目的動作
 - 離開就取消選取：`onDeactivated`（KeepAlive 的列表換頁時）與 `useCurrentTab()`（換頁籤時）自動清，頁面零設定。頁籤訊號取自 `TabView` 登記給 `AppShell` 的那份，頁面層與面板層讀到同一個，所以兩種頁籤形狀不用各寫一套
 - 批次刪除走動作的 `confirm`
@@ -167,21 +171,6 @@
   - 衝突時不把佇列重新套用到新資料上（見「決定不做」）
 
 ### UI 功能
-- **右側抽屜放第二種面板**（排序的前置工作；抽屜拉到最上層的部分已完成）：
-  - **不新增外殼元件**：`v-navigation-drawer` 直接留在 `AppShell` 的 template（左邊那個本來就在那），裡面 `v-if` 切 `FilterPanel` / `SortPanel`——共用的是同一個元素，不是同一個元件。評估過包一層 `ShellDrawer`，但兩個面板真正重疊的只有三、四個屬性（`location="end" temporary width="320" order="-1"`）跟上方那排表 chip，toolbar 的標題與右邊的鈕兩邊本來就不一樣，包起來是為了包而包
-  - **表 chip 留在面板裡**（原本想移到 `AppShell`，做的時候發現不行）：面板是兩層的，第一層與第二層各有自己的 toolbar，chip 夾在第一層的 toolbar 底下；`AppShell` 要插在中間就得開 slot，插在最上面又得知道面板在第幾層才能決定藏不藏。`SortPanel` 要用時把那十幾行抽成 `TableChips.vue` 兩邊共用就好，`picked` 各自留一份（抽屜關起來本來就會忘掉，切面板一定經過關閉，所以不共用也不會怎樣）
-  - `AppShell` 的 `filterOpen` 換成 `drawerMode: 'filter' | 'sort' | null`，`overlayOpenKey` 改成「任一抽屜開著」
-  - **互斥已經由版面保證**（抽屜蓋住 App Bar），不用寫邏輯去擋：搜尋展開時整條 App Bar 讓位、碰不到排序鈕；抽屜開著時右側被蓋住、碰不到搜尋與篩選。切模式一定會經過關閉狀態，所以 `FilterPanel` 靠 `watch(open)` 重置第二層的作法照舊有效，切模式時內容「就地換掉、不重播進場動畫」的問題也不存在
-- **排序的操作介面**（設計已定，目前只有 schema 的 `defaultSort`，使用者不能自己改）：
-  - 入口是 App Bar 上放大鏡右邊那個保留位置，非預設排序時圖示上主色（跟篩選的圓點同一個標準）
-  - 面板跟篩選**共用右側抽屜、一次只顯示一種**（見上一條）
-  - **單一欄位排序**：一列一欄，點一次選它、再點一次切換升降，最上面一項是「預設」（不顯示是哪一欄）。`schema.defaultSort` 仍然是 tiebreaker。多層排序 UI 在手機上沒人用，不做
-  - 跟篩選一致：**即時生效、沒有套用鈕**，表 chip 也吃同一排
-  - **非預設排序就關掉分組**，變成一條平的列表。頁面端 `:groups="isDefaultSort ? groupedFor(tab) : undefined"` 一行就好，`ListPage` 本來就會退回卡片模式，框架不用改
-  - 可排序的欄位由新旗標 `sortable` 決定（放 `ColumnBase`，跟 `searchable` 並列）——備註這種長文字沒必要排。旗標多到難管時再考慮整併成一個 `list?: { search, sort, filter }`
-  - 順手要修兩個型別的比較方式：`select` 該照 `options` 的宣告順序（現在走 `localeCompare`，「已出貨／待出貨」會照字典序排）、`ref` 該照對方的 `$label`（現在比的是 id）
-  - state 住 `useListPage` 回傳的 `sort`，同一張表跨頁籤共用一份；`sortRows` 要多一個覆寫參數（現在寫死讀 `schema.defaultSort`）。重整回預設，不做持久化（跟篩選同一個標準）
-  - 排序一改，`useListOrder` 發布的順序跟著改，detail 頁的上下一筆與左右滑動自動一致，不用另外處理
 - 關聯選擇器的 `allowCreate`：清單最上面一項「＋ 新增…」，開父表的新增表單、回來自動選上。看起來是 `runStep('/父表/new')`，但表單頁當「呼叫端」跟動作當呼叫端不一樣，四件事要先解：
   - 回來時 `useCreateForm` 的 `onActivated` 會把表單重置，使用者填到一半的東西會丟掉——要能分辨「從子步驟回來」和「重新進入」
   - 離開表單頁去開父表的新增會被 `useLeaveGuard` 攔下來問要不要放棄

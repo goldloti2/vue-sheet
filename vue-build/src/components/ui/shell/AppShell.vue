@@ -2,12 +2,13 @@
   import type { PageAction } from '@/composables/actions/useTableActions'
   import type { AppBarSearch } from '@/composables/shell/useAppBarSearch'
   import type { AppBarTabs } from '@/composables/shell/useAppBarTabs'
-  import { mdiArrowLeft, mdiClose, mdiDotsVertical, mdiFilterVariant, mdiMagnify, mdiRefresh } from '@mdi/js'
+  import { mdiArrowLeft, mdiClose, mdiDotsVertical, mdiFilterVariant, mdiMagnify, mdiRefresh, mdiSort } from '@mdi/js'
   import { computed, onBeforeUnmount, onMounted, provide, shallowRef, watch } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
   import ConfirmDialog from '@/components/ui/dialog/ConfirmDialog.vue'
   import FieldsDialog from '@/components/ui/dialog/FieldsDialog.vue'
   import FilterPanel from '@/components/ui/shell/FilterPanel.vue'
+  import SortPanel from '@/components/ui/shell/SortPanel.vue'
   import { hasActiveFilter } from '@/composables/data/useFilter'
   import { provideActionRunner } from '@/composables/shell/useActionRunner'
   import { appBarSearchKey } from '@/composables/shell/useAppBarSearch'
@@ -74,26 +75,50 @@
   const searchOpen = shallowRef(false)
 
   // 一頁可以有好幾張表的條件（頁籤各接一張），任一張有條件就算篩選中
-  const filterTables = computed(() => search.value?.filter?.tables ?? [])
-  const filterActive = computed(() => filterTables.value.some(table => hasActiveFilter(table.filters.value)))
+  const drawerTables = computed(() => search.value?.drawer?.tables ?? [])
+  const filterActive = computed(() => drawerTables.value.some(table => hasActiveFilter(table.filters.value)))
+
+  // 有給 sort 的表才有排序鈕；任一張不是預設排序就算排序中
+  const sortTables = computed(() => drawerTables.value.filter(table => table.sort))
+  const sortActive = computed(() => sortTables.value.some(table => table.sort?.value))
 
   // 換頁就收起來；回到還帶著 query 或篩選的頁面（KeepAlive）就重新打開，讓列表跟搜尋欄一致
   // 抽屜也一起收：使用者可以在抽屜開著時按返回鍵換頁
   watch(search, value => {
     searchOpen.value = value !== null && (value.query.value !== '' || filterActive.value)
-    filterOpen.value = false
+    drawerMode.value = null
   })
 
-  // 篩選收在搜尋欄裡：右側那顆鈕開右側抽屜，有條件生效時鈕變主色。抽屜開著時 FAB 讓開
-  const filterOpen = shallowRef(false)
-  provide(overlayOpenKey, filterOpen)
+  // 右側抽屜一次只放一種面板：篩選鈕在搜尋欄裡、排序鈕在 App Bar 上，兩顆各開各的
+  // 抽屜蓋住 App Bar，所以要換面板一定得先關掉，不用另外擋
+  const drawerMode = shallowRef<'filter' | 'sort' | null>(null)
+
+  // 關起來的那段時間抽屜還在滑出去，內容不能跟著消失或換掉，不然會看到另一個面板閃一下
+  const shownPanel = shallowRef<'filter' | 'sort'>('filter')
+  watch(drawerMode, mode => {
+    if (mode) {
+      shownPanel.value = mode
+    }
+  })
+
+  const drawerOpen = computed({
+    get: () => drawerMode.value !== null,
+    set: value => {
+      if (!value) {
+        drawerMode.value = null
+      }
+    },
+  })
+
+  // 抽屜開著時 FAB 讓開
+  provide(overlayOpenKey, drawerOpen)
 
   // 關閉搜尋＝清掉 query 與所有表的篩選，列表回到全部
   function closeSearch () {
     if (search.value) {
       search.value.query.value = ''
     }
-    for (const table of filterTables.value) {
+    for (const table of drawerTables.value) {
       table.filters.value = {}
     }
     searchOpen.value = false
@@ -162,14 +187,14 @@
         variant="solo"
         @update:model-value="(value) => search && (search.query.value = value ?? '')"
       >
-        <template v-if="filterTables.length > 0" #append-inner>
+        <template v-if="drawerTables.length > 0" #append-inner>
           <v-btn
             aria-label="篩選"
             :color="filterActive ? 'primary' : undefined"
             density="comfortable"
             :icon="mdiFilterVariant"
             variant="text"
-            @click="filterOpen = true"
+            @click="drawerMode = 'filter'"
           />
         </template>
       </v-text-field>
@@ -183,6 +208,14 @@
     <template v-if="!(searchOpen && search)" #append>
       <!-- 多選模式讓位：那時畫面上要的是對選取項目的動作，搜尋這些先收起來 -->
       <v-btn v-if="search && !cancelSelect" aria-label="搜尋" :icon="mdiMagnify" @click="searchOpen = true" />
+
+      <v-btn
+        v-if="sortTables.length > 0 && !cancelSelect"
+        aria-label="排序"
+        :color="sortActive ? 'primary' : undefined"
+        :icon="mdiSort"
+        @click="drawerMode = 'sort'"
+      />
 
       <template v-if="appBarActions.length <= 2">
         <v-btn
@@ -257,19 +290,27 @@
     @confirm="confirmFields"
   />
 
-  <!-- 右側抽屜歸 AppShell，面板只放內容：之後排序面板也接在這裡，一次顯示一種 -->
+  <!-- 右側抽屜歸 AppShell，面板只放內容，一次顯示一種 -->
   <v-navigation-drawer
-    v-if="filterTables.length > 0"
-    v-model="filterOpen"
+    v-if="drawerTables.length > 0"
+    v-model="drawerOpen"
     location="end"
     order="-1"
     temporary
     width="320"
   >
     <FilterPanel
-      :current="search?.filter?.current?.value"
-      :open="filterOpen"
-      :tables="filterTables"
+      v-if="shownPanel === 'filter'"
+      :current="search?.drawer?.current?.value"
+      :open="drawerMode === 'filter'"
+      :tables="drawerTables"
+    />
+
+    <SortPanel
+      v-else
+      :current="search?.drawer?.current?.value"
+      :open="drawerMode === 'sort'"
+      :tables="sortTables"
     />
   </v-navigation-drawer>
 

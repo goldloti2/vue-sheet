@@ -12,11 +12,11 @@
 
 ```
 ┌─────────────────────────────────┐
-│ ←   標題           🔍  ⋮   ⟳    │  App Bar
+│ ←   標題         🔍 ⇅  ⋮   ⟳    │  App Bar
 │ ─────── 頁籤列 ───────           │  extension（有 TabView 時才出現）
 ├─────────────────────────────────┤
 │                                 │
-│   內容區                        │  ← 側邊欄       篩選抽屜 →
+│   內容區                        │  ← 側邊欄  篩選／排序抽屜 →
 │   （pages/*.vue）               │
 │                                 │
 │                         ╭─────╮ │
@@ -35,11 +35,12 @@
 | **App Bar 動作** | `useAppBarActions()` | 右側的圖示鈕，≥3 顆收成「⋮」 |
 | **搜尋鈕／搜尋列** | `useAppBarSearch()` | 按放大鏡後整條 App Bar 換成輸入框。它是獨立的一顆，不會被收進「⋮」；多選時整顆讓位 |
 | **篩選鈕** | 同上 | 在搜尋輸入框內最右側 |
+| **排序鈕** | 同上 | 放大鏡右邊。表有給 `sort` 才出現；多選時跟搜尋一起讓位 |
 | **同步鈕** | `AppShell` | 永遠在最右邊，不屬於任何頁面 |
 | **頁籤列** | `TabView` | 掛在 App Bar 底下的 extension，不跟著內容捲動 |
 | **內容區** | `pages/*.vue` | 換頁時左右滑動的就是這一塊 |
 | **側邊欄** | `AppShell` | 左側滑出，目前是空殼。蓋在 App Bar 之上 |
-| **篩選抽屜** | `AppShell` + `FilterPanel` | 右側滑出，兩層。蓋在 App Bar 之上。抽屜本身歸 `AppShell`，面板只放內容 |
+| **篩選／排序抽屜** | `AppShell` + `FilterPanel`／`SortPanel` | 右側滑出（篩選是兩層）。蓋在 App Bar 之上。抽屜本身歸 `AppShell`，面板只放內容，一次顯示一種 |
 | **FAB** | `PageFab` | 右下角浮動按鈕，主要動作 |
 | **底部導覽列** | `config/navigation.ts` | 切換主要頁面 |
 | **底部動作列** | `useBottomActions()` | 表單頁時**暫時取代**底部導覽列 |
@@ -117,7 +118,7 @@ const data = useSearch(query, rows, schema)
 
 ```ts
 const filters = ref<Filters>({})
-useAppBarSearch(query, { tables: [{ schema, filters, rows: allRows }] })
+useAppBarSearch(query, { tables: [{ schema, filters, rows: allRows, sort }] })
 const data = useSearch(query, useFilter(filters, allRows, schema), schema)
 ```
 
@@ -139,7 +140,7 @@ const data = useSearch(query, useFilter(filters, allRows, schema), schema)
 
 關掉抽屜也會回到第一層。抽屜開著時 `PageFab` 會讓開——它的 z-index 本來就在 layout 之上，靠 `useOverlay` 的 `overlayOpenKey` 通知。
 
-抽屜連同背後的遮罩蓋住整個畫面，**開著時 App Bar 上的東西都碰不到**（包括搜尋列與 ← 關閉），要先關掉抽屜才能操作別的。
+抽屜連同背後的遮罩蓋住整個畫面，**開著時 App Bar 上的東西都碰不到**（包括搜尋列與 ← 關閉），要先關掉抽屜才能操作別的。右側抽屜是篩選與排序共用的，一次只顯示一種——因為要換另一種就得先關掉它，互斥不用另外寫邏輯擋。
 
 ### 一頁好幾張表
 
@@ -152,8 +153,8 @@ const children = useListPage<ChildRow>('child', childSchema, { search: false, qu
 
 useAppBarSearch(query, {
   tables: [
-    { schema: parentSchema, filters: parents.filters, rows: parents.allRows },
-    { schema: childSchema, filters: children.filters, rows: children.allRows },
+    { schema: parentSchema, filters: parents.filters, rows: parents.allRows, sort: parents.sort },
+    { schema: childSchema, filters: children.filters, rows: children.allRows, sort: children.sort },
   ],
   current: selectedTab,
 })
@@ -164,6 +165,36 @@ useAppBarSearch(query, {
 - **第一層上方多一排表的 chip**（標籤是 `schema.sheetName`）決定現在編哪一張；只有一張表就不顯示
 - **`current` 是頁面的頁籤 `v-model`**（值對得上 `sheetName`），抽屜打開時先停在那張表，使用者還是可以自己切；關掉抽屜就忘掉，下次打開重新跟著頁籤
 - **篩選鈕的主色標記掃所有表**；「清除」只清當前那張，要全部清掉就按 ←（關閉搜尋）
+- **排序面板用同一批表**（只列有給 `sort` 的），chip 也是同一排
+
+---
+
+## 排序
+
+欄位標 `sortable: true` 就會出現在排序面板裡，`useListPage` 已經把 `sort` 一起登記好，所以列表頁什麼都不用寫，App Bar 的放大鏡右邊就多一顆排序鈕（不是預設排序時主色）。按下去開的是**跟篩選同一個右側抽屜**。
+
+- **一次只排一欄**：點一欄選它、再點同一欄換升降，右側箭頭顯示現在的方向。多層排序刻意不做（手機上沒人用，而且 schema 的 `defaultSort` 已經在講「這張表本來的順序」）
+- **`schema.defaultSort` 永遠接在後面當 tiebreaker**，所以同分的列順序是穩定的
+- **「清除」回到 `defaultSort`**，位置與外觀跟篩選那顆一樣；沒選排序時清單上就沒有任何一列被標記
+- **改了即時生效**，沒有套用鈕
+- **重整回預設**，不做持久化（跟篩選同一個標準）
+- **`image` 不能排**，就算標了 `sortable` 也不會列出來
+
+比較方式大致是「照值排」，兩個型別例外：
+
+| 型別 | 照什麼排 |
+| --- | --- |
+| `ref` | 對方的 `$label`（值本身是 id，照 id 排沒意義） |
+| `select` | `options` 的宣告順序（狀態有先後，照字典序排不對）。`options` 沒有的值（`allowCustom` 打的）一律排最後 |
+| 其他 | 欄位值；`duration` 換算成秒、`date` 比時間、空值一律最後（不管升降） |
+
+**排序與分組是二選一的**：分組（`groupRows`）會把原本的順序壓成組內順序，所以使用者選了排序卻只看到每個月裡面重排，會很困惑。頁面自己判斷就好，框架不介入：
+
+```vue
+<ListPage :groups="sort ? undefined : groupedFor(tab)" :rows="sort ? rowsFor(tab) : undefined" … />
+```
+
+排序一改，`ListPage` 發布給 `useListOrder` 的順序跟著改，所以詳細頁的上下一筆與左右滑動自動跟畫面一致。
 
 ---
 

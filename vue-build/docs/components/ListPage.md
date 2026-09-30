@@ -4,7 +4,9 @@
 
 搭 `useListPage(table, schema)` 用：它負責整表 → 篩選 → 搜尋與長按多選，回傳的 `rows`／`loading`／`error`／`selection` 直接對應這裡的 prop。
 
-**搜尋是那個 composable 帶來的，不是這個元件**：`useListPage` 內部會呼叫 `useAppBarSearch`，所以用了它 App Bar 就有放大鏡與篩選鈕（欄位要標 `searchable`）。不想要、或一頁要接好幾張表時傳 `{ search: false }`，見 [ui.md](../ui.md#搜尋)。
+**搜尋與排序是那個 composable 帶來的，不是這個元件**：`useListPage` 內部會呼叫 `useAppBarSearch`，所以用了它 App Bar 就有放大鏡、篩選鈕與排序鈕（欄位要標 `searchable`／`sortable`）。不想要、或一頁要接好幾張表時傳 `{ search: false }`，見 [ui.md](../ui.md#搜尋)。
+
+**選了排序就別再分組**：回傳的 `sort` 不是 null 時把 `groups` 換成 `rows`，見 [ui.md 的排序](../ui.md#排序)。
 
 ## Usage
 

@@ -29,7 +29,7 @@
 ```
 src/
   components/ui/     共用元件庫，用法見 docs/components/
-    shell/             AppShell、PageFab、FilterPanel、TabView
+    shell/             AppShell、PageFab、FilterPanel、SortPanel、TableChips、TabView
     dialog/            AppDialog、ConfirmDialog、FieldsDialog
     list/              DataList、ListField、GroupedList、DataTable、CountLabel
     record/            DataDetail、DetailField、DataForm、RecordNav

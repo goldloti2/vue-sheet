@@ -59,6 +59,8 @@ export type ColumnBase<Row extends object = AnyRow, T extends ColumnType = Colum
   type: T
   /** 開了才進搜尋（text／ref 比對文字）或篩選抽屜（select／number／date／duration 用值），預設關 */
   searchable?: boolean
+  /** 開了才進排序面板（備註這種長文字就不用開），預設關。image 不支援 */
+  sortable?: boolean
 } & ColumnExtra<T>
 
 // 真實欄位：Sheet 上有的，多了表頭對應與表單設定
@@ -293,19 +295,40 @@ function compareValues (a: unknown, b: unknown): number {
   return String(a).localeCompare(String(b))
 }
 
-// 列表頁排序：照 schema.defaultSort 依序當 tiebreaker；沒設定就回傳原始順序（row number）
-export function sortRows<Row> (rows: readonly Row[], schema: TableSchema): Row[] {
-  const sortSpecs = schema.defaultSort ?? []
+// 排序用的值：ref 照對方的 $label（值本身是 id，照 id 排沒意義）、
+// select 照 options 的宣告順序（狀態有先後，照字典序排不對），options 沒有的值一律排在最後、彼此靠下一個 spec 分先後
+function sortValue (row: Record<string, unknown>, column: AnyColumn | undefined): unknown {
+  const value = row[column?.key ?? '']
+  if (column?.type === 'ref') {
+    return (row[`$${column.key}`] as { $label?: string } | undefined)?.$label ?? null
+  }
+  if (column?.type === 'select') {
+    if (value == null || value === '') {
+      return null
+    }
+    const index = column.options.indexOf(String(value))
+    return index === -1 ? column.options.length : index
+  }
+  return value
+}
+
+// 列表頁排序：sort 是使用者選的（`SortPanel`），schema.defaultSort 永遠接在後面當 tiebreaker。
+// 兩個都沒有就回傳原始順序（row number）
+export function sortRows<Row> (rows: readonly Row[], schema: TableSchema, sort?: SortSpec[] | null): Row[] {
+  const sortSpecs = [...sort ?? [], ...schema.defaultSort ?? []]
   if (sortSpecs.length === 0) {
     return [...rows]
   }
 
+  const columns = new Map(allColumns(schema).map(column => [column.key, column]))
+
   // eslint-disable-next-line unicorn/no-array-sort
   return [...rows].sort((rowA, rowB) => {
     for (const spec of sortSpecs) {
+      const column = columns.get(spec.key)
       const result = compareValues(
-        (rowA as Record<string, unknown>)[spec.key],
-        (rowB as Record<string, unknown>)[spec.key],
+        sortValue(rowA as Record<string, unknown>, column),
+        sortValue(rowB as Record<string, unknown>, column),
       )
       if (result !== 0) {
         return spec.direction === 'desc' ? -result : result
@@ -313,6 +336,23 @@ export function sortRows<Row> (rows: readonly Row[], schema: TableSchema): Row[]
     }
     return 0
   })
+}
+
+// 抽屜裡的欄位清單一律照 detail 頁的順序（detailOrder），沒排進去的接在後面——
+// 不像 detail 那樣藏起來，因為只為搜尋／排序存在的虛擬欄位本來就不會排進 detailOrder
+export function orderByDetail (columns: readonly AnyColumn[], schema: TableSchema): AnyColumn[] {
+  const order = schema.detailOrder ?? []
+  const rank = (column: AnyColumn) => {
+    const index = order.indexOf(column.key)
+    return index === -1 ? order.length : index
+  }
+  // eslint-disable-next-line unicorn/no-array-sort
+  return [...columns].sort((a, b) => rank(a) - rank(b))
+}
+
+// 排序面板列得出來的欄位。image 沒有合理的比較方式，就算標了 sortable 也不列
+export function sortableColumns (schema: TableSchema): AnyColumn[] {
+  return orderByDetail(allColumns(schema).filter(column => column.sortable === true && column.type !== 'image'), schema)
 }
 
 // 依單一鍵值排序，鍵值是 number 就數字比較，否則當字串比較（用於分組鍵，不吃 schema）

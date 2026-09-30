@@ -1,7 +1,7 @@
 import type { AnyColumn, TableSchema } from '@/schema/types'
 import type { ComputedRef, MaybeRefOrGetter } from 'vue'
 import { computed, toValue } from 'vue'
-import { allColumns, durationSeconds } from '@/schema/types'
+import { allColumns, durationSeconds, orderByDetail } from '@/schema/types'
 import { isEmpty } from '@/schema/validation'
 
 // 一欄的篩選條件：select 用 values（null 代表「空白」那個選項），number / date 用 min / max。空的就是不篩
@@ -20,16 +20,9 @@ export function isFilterable (column: AnyColumn): boolean {
   return column.searchable === true && ['date', 'duration', 'number', 'select'].includes(column.type)
 }
 
-// 抽屜裡的順序跟 detail 頁一樣（detailOrder）；沒排進 detailOrder 的接在後面，不像 detail 那樣藏起來
+// 抽屜裡的順序跟 detail 頁一樣（見 orderByDetail），排序面板也吃同一套
 export function filterableColumns (schema: TableSchema): AnyColumn[] {
-  const columns = allColumns(schema).filter(column => isFilterable(column))
-  const order = schema.detailOrder ?? []
-  const rank = (column: AnyColumn) => {
-    const index = order.indexOf(column.key)
-    return index === -1 ? order.length : index
-  }
-  // eslint-disable-next-line unicorn/no-array-sort
-  return [...columns].sort((a, b) => rank(a) - rank(b))
+  return orderByDetail(allColumns(schema).filter(column => isFilterable(column)), schema)
 }
 
 export interface PresentValues {

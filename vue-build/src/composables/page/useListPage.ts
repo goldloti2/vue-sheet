@@ -1,6 +1,7 @@
 import type { Filters } from '@/composables/data/useFilter'
 import type { TableKey } from '@/schema'
 import type { TableSchema } from '@/schema/types'
+import type { Ref } from 'vue'
 import { ref } from 'vue'
 import { useFilter } from '@/composables/data/useFilter'
 import { useSearch } from '@/composables/data/useSearch'
@@ -11,6 +12,8 @@ import { useAppBarSearch } from '@/composables/shell/useAppBarSearch'
 export interface ListPageOptions {
   // 一頁接好幾張表時關掉，改由頁面自己 useAppBarSearch 一次登記全部（見 docs/ui.md）
   search?: boolean
+  // 同上，每張表傳同一條進來，搜尋才會同時作用在每張表上。不給就自己生一條
+  query?: Ref<string>
 }
 
 // 列表頁的資料層：整表 → 篩選 → 搜尋，加上長按多選。
@@ -22,7 +25,7 @@ export function useListPage<Row extends { id: string }> (
 ) {
   const { data: allRows, loading, error } = useSortedTableList<Row>(table, schema)
 
-  const query = ref('')
+  const query = options.query ?? ref('')
   const filters = ref<Filters>({})
   if (options.search !== false) {
     useAppBarSearch(query, { tables: [{ schema, filters, rows: allRows }] })

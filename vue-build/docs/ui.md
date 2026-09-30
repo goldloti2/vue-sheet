@@ -143,13 +143,17 @@ const data = useSearch(query, useFilter(filters, allRows, schema), schema)
 
 ### 一頁好幾張表
 
-頁籤各接一張表時（見 [TabView.md](components/TabView.md)），對每張表傳 `{ search: false }` 關掉 `useListPage` 的自動登記，改由頁面登記一次、`tables` 給多個元素：
+頁籤各接一張表時（見 [TabView.md](components/TabView.md)），對每張表傳 `{ search: false }` 關掉 `useListPage` 的自動登記，改由頁面登記一次、`tables` 給多個元素。query 是全頁一條，所以自己開一個 ref、每張表都傳同一條進去（不傳的話每張表會各自生一條，只有登記的那張搜得到）：
 
 ```ts
+const query = ref('')
+const parents = useListPage<ParentRow>('parent', parentSchema, { search: false, query })
+const children = useListPage<ChildRow>('child', childSchema, { search: false, query })
+
 useAppBarSearch(query, {
   tables: [
-    { schema: parentSchema, filters: parentFilters, rows: allParents },
-    { schema: childSchema, filters: childFilters, rows: allChildren },
+    { schema: parentSchema, filters: parents.filters, rows: parents.allRows },
+    { schema: childSchema, filters: children.filters, rows: children.allRows },
   ],
   current: selectedTab,
 })

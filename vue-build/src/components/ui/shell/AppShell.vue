@@ -1,7 +1,7 @@
 <script lang="ts" setup>
   import type { PageAction } from '@/composables/actions/useTableActions'
-  import type { AppBarSearch } from '@/composables/shell/useAppBarSearch'
   import type { AppBarTabs } from '@/composables/shell/useAppBarTabs'
+  import type { ListControls } from '@/composables/shell/useListControls'
   import { mdiArrowLeft, mdiClose, mdiDotsVertical, mdiFilterVariant, mdiMagnify, mdiRefresh, mdiSort } from '@mdi/js'
   import { computed, onBeforeUnmount, onMounted, provide, shallowRef, watch } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
@@ -11,10 +11,10 @@
   import SortPanel from '@/components/ui/shell/SortPanel.vue'
   import { hasActiveFilter } from '@/composables/data/useFilter'
   import { provideActionRunner } from '@/composables/shell/useActionRunner'
-  import { appBarSearchKey } from '@/composables/shell/useAppBarSearch'
   import { appBarTabsKey, currentTabKey } from '@/composables/shell/useAppBarTabs'
   import { confirmFields, fieldsDialog } from '@/composables/shell/useAskFields'
   import { acceptConfirm, confirmDialog, notice, notify } from '@/composables/shell/useDialogs'
+  import { listControlsKey } from '@/composables/shell/useListControls'
   import { overlayOpenKey } from '@/composables/shell/useOverlay'
   import { appBarActionsKey, appBarSelectionKey, bottomActionsKey } from '@/composables/shell/useShellActions'
   import { appName } from '@/config/app'
@@ -68,14 +68,14 @@
   provide(currentTabKey, computed(() => tabs.value?.current.value ?? null))
 
   // 頁面登記了搜尋才有放大鏡；按下去 App Bar 換成輸入框。query 是頁面的 ref，關掉時清空
-  const search = shallowRef<AppBarSearch | null>(null)
-  provide(appBarSearchKey, value => {
-    search.value = value
+  const controls = shallowRef<ListControls | null>(null)
+  provide(listControlsKey, value => {
+    controls.value = value
   })
   const searchOpen = shallowRef(false)
 
   // 一頁可以有好幾張表的條件（頁籤各接一張），任一張有條件就算篩選中
-  const drawerTables = computed(() => search.value?.drawer?.tables ?? [])
+  const drawerTables = computed(() => controls.value?.drawer?.tables ?? [])
   const filterActive = computed(() => drawerTables.value.some(table => hasActiveFilter(table.filters.value)))
 
   // 有給 sort 的表才有排序鈕；任一張不是預設排序就算排序中
@@ -84,7 +84,7 @@
 
   // 換頁就收起來；回到還帶著 query 或篩選的頁面（KeepAlive）就重新打開，讓列表跟搜尋欄一致
   // 抽屜也一起收：使用者可以在抽屜開著時按返回鍵換頁
-  watch(search, value => {
+  watch(controls, value => {
     searchOpen.value = value !== null && (value.query.value !== '' || filterActive.value)
     drawerMode.value = null
   })
@@ -115,8 +115,8 @@
 
   // 關閉搜尋＝清掉 query 與所有表的篩選，列表回到全部
   function closeSearch () {
-    if (search.value) {
-      search.value.query.value = ''
+    if (controls.value) {
+      controls.value.query.value = ''
     }
     for (const table of drawerTables.value) {
       table.filters.value = {}
@@ -169,7 +169,7 @@
 <template>
   <v-app-bar>
     <!-- 搜尋模式：整條 App Bar 換成返回鍵 + 輸入框，標題與動作先讓位 -->
-    <template v-if="searchOpen && search">
+    <template v-if="searchOpen && controls">
       <v-app-bar-nav-icon aria-label="關閉搜尋" :icon="mdiArrowLeft" @click="closeSearch" />
 
       <!-- clearable 清空時給的是 null，收回成空字串 -->
@@ -181,11 +181,11 @@
         density="compact"
         flat
         hide-details
-        :model-value="search.query.value"
+        :model-value="controls.query.value"
         placeholder="搜尋"
         rounded="pill"
         variant="solo"
-        @update:model-value="(value) => search && (search.query.value = value ?? '')"
+        @update:model-value="(value) => controls && (controls.query.value = value ?? '')"
       >
         <template v-if="drawerTables.length > 0" #append-inner>
           <v-btn
@@ -205,9 +205,9 @@
       <v-app-bar-title>{{ title }}</v-app-bar-title>
     </template>
 
-    <template v-if="!(searchOpen && search)" #append>
+    <template v-if="!(searchOpen && controls)" #append>
       <!-- 多選模式讓位：那時畫面上要的是對選取項目的動作，搜尋這些先收起來 -->
-      <v-btn v-if="search && !cancelSelect" aria-label="搜尋" :icon="mdiMagnify" @click="searchOpen = true" />
+      <v-btn v-if="controls && !cancelSelect" aria-label="搜尋" :icon="mdiMagnify" @click="searchOpen = true" />
 
       <v-btn
         v-if="sortTables.length > 0 && !cancelSelect"
@@ -301,14 +301,14 @@
   >
     <FilterPanel
       v-if="shownPanel === 'filter'"
-      :current="search?.drawer?.current?.value"
+      :current="controls?.drawer?.current?.value"
       :open="drawerMode === 'filter'"
       :tables="drawerTables"
     />
 
     <SortPanel
       v-else
-      :current="search?.drawer?.current?.value"
+      :current="controls?.drawer?.current?.value"
       :open="drawerMode === 'sort'"
       :tables="sortTables"
     />

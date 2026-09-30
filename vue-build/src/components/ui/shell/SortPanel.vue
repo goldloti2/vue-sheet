@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-  import type { SearchTable } from '@/composables/shell/useAppBarSearch'
+  import type { ListTable } from '@/composables/shell/useListControls'
   import type { AnyColumn } from '@/schema/types'
   import { mdiArrowDown, mdiArrowUp } from '@mdi/js'
   import { computed, shallowRef, watch } from 'vue'
@@ -8,7 +8,7 @@
 
   const props = defineProps<{
     // 跟篩選面板同一批表；只列有給 sort 的那些
-    tables: SearchTable[]
+    tables: ListTable[]
     // 頁面的頁籤，沒被使用者換過就跟著它
     current?: string
     // 抽屜是 AppShell 的，這裡只用來在關起來時回到原狀

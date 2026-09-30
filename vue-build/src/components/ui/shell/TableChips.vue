@@ -1,8 +1,8 @@
 <script lang="ts" setup>
-  import type { SearchTable } from '@/composables/shell/useAppBarSearch'
+  import type { ListTable } from '@/composables/shell/useListControls'
 
   defineProps<{
-    tables: SearchTable[]
+    tables: ListTable[]
   }>()
 
   // 選中那張表的 sheetName

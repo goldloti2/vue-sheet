@@ -33,7 +33,7 @@
 | **App Bar** | `AppShell` | 頂部固定那條。標題來自 `route.meta.title`，沒有就用 `config/app.ts` 的 App 名稱 |
 | **左側圖示** | `AppShell` | 有 App 內上一頁就是返回箭頭，否則是漢堡選單 |
 | **App Bar 動作** | `useAppBarActions()` | 右側的圖示鈕，≥3 顆收成「⋮」 |
-| **搜尋鈕／搜尋列** | `useAppBarSearch()` | 按放大鏡後整條 App Bar 換成輸入框。它是獨立的一顆，不會被收進「⋮」；多選時整顆讓位 |
+| **搜尋鈕／搜尋列** | `useListControls()` | 按放大鏡後整條 App Bar 換成輸入框。它是獨立的一顆，不會被收進「⋮」；多選時整顆讓位 |
 | **篩選鈕** | 同上 | 在搜尋輸入框內最右側 |
 | **排序鈕** | 同上 | 放大鏡右邊。表有給 `sort` 才出現；多選時跟搜尋一起讓位 |
 | **同步鈕** | `AppShell` | 永遠在最右邊，不屬於任何頁面 |
@@ -97,7 +97,7 @@
 
 ```ts
 const query = ref('')
-useAppBarSearch(query)
+useListControls(query)
 const data = useSearch(query, rows, schema)
 ```
 
@@ -118,7 +118,7 @@ const data = useSearch(query, rows, schema)
 
 ```ts
 const filters = ref<Filters>({})
-useAppBarSearch(query, { tables: [{ schema, filters, rows: allRows, sort }] })
+useListControls(query, { tables: [{ schema, filters, rows: allRows, sort }] })
 const data = useSearch(query, useFilter(filters, allRows, schema), schema)
 ```
 
@@ -151,7 +151,7 @@ const query = ref('')
 const parents = useListPage<ParentRow>('parent', parentSchema, { search: false, query })
 const children = useListPage<ChildRow>('child', childSchema, { search: false, query })
 
-useAppBarSearch(query, {
+useListControls(query, {
   tables: [
     { schema: parentSchema, filters: parents.filters, rows: parents.allRows, sort: parents.sort },
     { schema: childSchema, filters: children.filters, rows: children.allRows, sort: children.sort },

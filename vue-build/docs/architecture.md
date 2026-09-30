@@ -38,7 +38,7 @@ src/
     data/              讀資料：useTable（整表／排序過／單筆）、useSearch、useFilter
     form/              表單頁：useTableForm、useLeaveGuard、useSyncHold
     shell/             跟 AppShell 溝通：useActionSlot（登記機制）、useShellActions（App Bar／
-                       底部／多選出口）、useAppBarSearch、useAppBarTabs、usePanelActive、
+                       底部／多選出口）、useListControls、useAppBarTabs、usePanelActive、
                        useOverlay、useActionRunner、useDialogs（confirm／notify）、useAskFields
     navigation/        路由接力：useRouteId、useListOrder、useFlow
     list/              列表互動：useMultiSelect、useLongPress

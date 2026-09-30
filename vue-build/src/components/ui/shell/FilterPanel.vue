@@ -1,6 +1,6 @@
 <script lang="ts" setup>
   import type { ColumnFilter, Filters } from '@/composables/data/useFilter'
-  import type { SearchTable } from '@/composables/shell/useAppBarSearch'
+  import type { ListTable } from '@/composables/shell/useListControls'
   import type { AnyColumn } from '@/schema/types'
   import { mdiChevronLeft, mdiChevronRight, mdiCircle } from '@mdi/js'
   import { computed, shallowRef, watch } from 'vue'
@@ -10,7 +10,7 @@
 
   const props = defineProps<{
     // 每張表各自一份條件、同時生效；上方的表選單只決定現在編哪一張
-    tables: SearchTable[]
+    tables: ListTable[]
     // 頁面的頁籤，沒被使用者換過就跟著它
     current?: string
     // 抽屜是 AppShell 的，這裡只用來在關起來時回到原狀

@@ -7,10 +7,10 @@ import { useFilter } from '@/composables/data/useFilter'
 import { useSearch } from '@/composables/data/useSearch'
 import { useSortedTableList } from '@/composables/data/useTable'
 import { useMultiSelect } from '@/composables/list/useMultiSelect'
-import { useAppBarSearch } from '@/composables/shell/useAppBarSearch'
+import { useListControls } from '@/composables/shell/useListControls'
 
 export interface ListPageOptions {
-  // 一頁接好幾張表時關掉，改由頁面自己 useAppBarSearch 一次登記全部（見 docs/ui.md）
+  // 一頁接好幾張表時關掉，改由頁面自己 useListControls 一次登記全部（見 docs/ui.md）
   search?: boolean
   // 同上，每張表傳同一條進來，搜尋才會同時作用在每張表上。不給就自己生一條
   query?: Ref<string>
@@ -30,7 +30,7 @@ export function useListPage<Row extends { id: string }> (
   const query = options.query ?? ref('')
   const filters = ref<Filters>({})
   if (options.search !== false) {
-    useAppBarSearch(query, { tables: [{ schema, filters, rows: allRows, sort }] })
+    useListControls(query, { tables: [{ schema, filters, rows: allRows, sort }] })
   }
 
   const rows = useSearch(query, useFilter(filters, allRows, schema), schema)

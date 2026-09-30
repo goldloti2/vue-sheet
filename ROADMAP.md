@@ -22,7 +22,8 @@
 - `coerceRow`（後端字串 → 前端型別）與 `serializeRow`（反向）
 - `formatColumnValue` / `formatField` 顯示格式化
 - `columnValues`（組送出用 payload）、`emptyRow`（新增表單起始值，套用欄位的 `default`）
-- `sortRows(rows, schema, sort?)`（使用者選的排序在前、`defaultSort` 接在後面當 tiebreaker）、`sortableColumns`、`sortByKey`、`groupRows`（多層分組）、`flattenGroups`（把分組攤回畫面順序）
+- `sortRows(rows, schema, sort?)`（使用者選的排序在前、`defaultSort` 接在後面當 tiebreaker）、`sortableColumns`、`sortByKey`（`schema/sort.ts`）；`groupRows`（多層分組）、`flattenGroups`（把分組攤回畫面順序）在 `schema/group.ts`
+- **`schema/` 放對 row 做事的純函數**（`types`／`sort`／`group`／`filter`／`validation`／`relations`／`image`），不碰 reactivity，所以 store、元件、composable 都能直接叫；`composables/data/` 只放反應式包裝（`useTable`／`useSearch`／`useFilter`）
 - `detailOrder` / `formOrder` 分別控制詳細頁與表單頁的欄位順序
 - `virtualColumns`：不在 Sheet 上、讀的時候才算的欄位，來源可以是自己這列、父列（`row.$欄位key`）或子列（`row.$子表_欄位key`）。store 掛成 row 上的 getter，顯示、排序、分組都跟真實欄位一樣；兩種欄位共用 `ColumnTypes`／`ColumnBase` 型別骨架
 - `labelColumn`：一列怎麼稱呼（欄位 key，省略就是 id），store 掛成 `row.$label`

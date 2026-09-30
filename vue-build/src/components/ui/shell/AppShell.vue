@@ -9,7 +9,6 @@
   import FieldsDialog from '@/components/ui/dialog/FieldsDialog.vue'
   import FilterPanel from '@/components/ui/shell/FilterPanel.vue'
   import SortPanel from '@/components/ui/shell/SortPanel.vue'
-  import { hasActiveFilter } from '@/composables/data/useFilter'
   import { provideActionRunner } from '@/composables/shell/useActionRunner'
   import { appBarTabsKey, currentTabKey } from '@/composables/shell/useAppBarTabs'
   import { confirmFields, fieldsDialog } from '@/composables/shell/useAskFields'
@@ -19,6 +18,7 @@
   import { appBarActionsKey, appBarSelectionKey, bottomActionsKey } from '@/composables/shell/useShellActions'
   import { appName } from '@/config/app'
   import { navigationCount } from '@/router'
+  import { hasActiveFilter } from '@/schema/filter'
   import { useTablesStore } from '@/stores/tables'
 
   export interface AppNavItem {

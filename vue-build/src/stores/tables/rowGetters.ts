@@ -5,7 +5,8 @@ import type { ComputedRef } from 'vue'
 import { computed } from 'vue'
 import { schemas } from '@/schema'
 import { childRelations } from '@/schema/relations'
-import { rowLabel, sortRows } from '@/schema/types'
+import { sortRows } from '@/schema/sort'
+import { rowLabel } from '@/schema/types'
 
 // 沒有子列時共用同一個空陣列，getter 的回傳值身分才穩定
 const NO_ROWS: unknown[] = []

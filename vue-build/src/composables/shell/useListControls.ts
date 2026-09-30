@@ -1,5 +1,5 @@
-import type { Filters } from '@/composables/data/useFilter'
 import type { SlotSetter } from '@/composables/shell/useActionSlot'
+import type { Filters } from '@/schema/filter'
 import type { SortSpec, TableSchema } from '@/schema/types'
 import type { InjectionKey, Ref } from 'vue'
 import { registerSlot } from '@/composables/shell/useActionSlot'

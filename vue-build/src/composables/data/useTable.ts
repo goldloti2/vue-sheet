@@ -2,7 +2,7 @@ import type { TableKey } from '@/schema'
 import type { SortSpec, TableSchema } from '@/schema/types'
 import type { MaybeRefOrGetter } from 'vue'
 import { computed, toValue, watchEffect } from 'vue'
-import { sortRows } from '@/schema/types'
+import { sortRows } from '@/schema/sort'
 import { useTablesStore } from '@/stores/tables'
 
 // 同一張表的三種讀法，都是同一份共用快取（store.rows），所以放同一個檔：

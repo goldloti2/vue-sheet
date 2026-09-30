@@ -2,13 +2,13 @@
   import type { PageAction } from '@/composables/actions/useTableActions'
   import type { MultiSelect } from '@/composables/list/useMultiSelect'
   import type { TableKey } from '@/schema'
-  import type { RowGroup } from '@/schema/types'
+  import type { RowGroup } from '@/schema/group'
   import { computed } from 'vue'
   import GroupedList from '@/components/ui/list/GroupedList.vue'
   import PageState from '@/components/ui/page/PageState.vue'
   import PageFab from '@/components/ui/shell/PageFab.vue'
   import { useListOrder } from '@/composables/navigation/useListOrder'
-  import { flattenGroups } from '@/schema/types'
+  import { flattenGroups } from '@/schema/group'
 
   const props = defineProps<{
     table: TableKey

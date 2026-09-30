@@ -15,7 +15,7 @@
   import { __table__Schema } from '@/schema/__table__'
   import { formatField } from '@/schema/types'
 
-  // 整表 → 篩選 → 搜尋（放大鏡與篩選鈕自動登記到 App Bar）+ 長按多選
+  // 整表 → 篩選 → 搜尋（放大鏡、篩選與排序鈕自動登記到 App Bar）+ 長按多選
   const { rows, loading, error, selection } = useListPage<__Table__Row>('__table__', __table__Schema)
 
   // 不要多選就不傳 selectedIds / onDone，也不用把 selection 交給 ListPage；

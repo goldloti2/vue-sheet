@@ -1,5 +1,5 @@
 <script generic="Row extends { id: string }" lang="ts" setup>
-  import type { RowGroup } from '@/schema/types'
+  import type { RowGroup } from '@/schema/group'
   import CountLabel from '@/components/ui/list/CountLabel.vue'
 
   const props = withDefaults(defineProps<{

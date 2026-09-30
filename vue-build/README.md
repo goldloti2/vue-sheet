@@ -59,7 +59,7 @@ src/
   composables/     依用途分成 data / form / shell / navigation / list / actions / page
   stores/tables/   每張表一份共用快取 + 寫入佇列 + row 上的 getter
   services/        對後端唯一的出入口；mock/ 是假後端，正式後端接上後整個刪掉
-  schema/          每張表的欄位定義，加上型別、驗證、關聯圖
+  schema/          每張表的欄位定義，加上對 row 做事的純函數（型別、排序、分組、篩選、驗證、關聯圖）
   config/          App 名稱與導覽列項目
   router/          路由實例與轉場方向判定
   pages/           檔案即路由

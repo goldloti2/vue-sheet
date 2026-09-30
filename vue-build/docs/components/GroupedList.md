@@ -10,10 +10,10 @@
 
 ```vue
 <script lang="ts" setup>
-  import type { GroupLevel } from '@/schema/types'
+  import type { GroupLevel } from '@/schema/group'
   import { computed } from 'vue'
   import GroupedList from '@/components/ui/list/GroupedList.vue'
-  import { groupRows } from '@/schema/types'
+  import { groupRows } from '@/schema/group'
 
   const groupLevels: GroupLevel<Row>[] = [
     {

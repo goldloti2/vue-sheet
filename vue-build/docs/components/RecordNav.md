@@ -26,6 +26,8 @@ detail 頁左右兩側的「上一筆／下一筆」箭頭。順序來自**列�
 有分組的話要發布攤平後的順序，`flattenGroups` 給的就是畫面上由上往下的順序：
 
 ```ts
+import { flattenGroups } from '@/schema/group'
+
 useListOrder('__table__', computed(() => flattenGroups(groupedData.value).map(row => row.id)))
 ```
 

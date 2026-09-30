@@ -218,6 +218,8 @@ select 兩個可選開關：
 
 前後端各自維護一份，不共用程式碼。欄位改動時兩邊要手動同步；等到真的常常對不起來，再考慮做產生器。
 
+`schema/` 底下除了各表的定義，還有一批**對 row 做事的純函數**：`types.ts`（型別、`coerceRow`／`formatColumnValue`）、`sort.ts`（`sortRows`／`sortableColumns`）、`group.ts`（`groupRows`／`flattenGroups`）、`filter.ts`（`Filters` 與比對）、`validation.ts`、`relations.ts`、`image.ts`。它們都不碰 reactivity，所以 store、元件、composable 都能直接叫；`composables/data/` 底下的 `useFilter`／`useTable` 只是把它們包成 computed。
+
 `schema/index.ts` 另外帶「代稱 → 實際分頁名稱」的對照：程式碼裡好打的英文代稱（`'order'`）不等於 Sheet 分頁的實際名稱（那是對外名稱，通常不是英文）。打 API 用的是 `sheetName`，兩者分開——換代稱不影響 API，換分頁名稱也不用到處改字串。
 
 ---

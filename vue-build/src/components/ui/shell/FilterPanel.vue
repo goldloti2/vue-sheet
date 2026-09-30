@@ -1,11 +1,11 @@
 <script lang="ts" setup>
-  import type { ColumnFilter, Filters } from '@/composables/data/useFilter'
   import type { ListTable } from '@/composables/shell/useListControls'
+  import type { ColumnFilter, Filters } from '@/schema/filter'
   import type { AnyColumn } from '@/schema/types'
   import { mdiChevronLeft, mdiChevronRight, mdiCircle } from '@mdi/js'
   import { computed, shallowRef, watch } from 'vue'
   import TableChips from '@/components/ui/shell/TableChips.vue'
-  import { filterableColumns, presentValues } from '@/composables/data/useFilter'
+  import { filterableColumns, presentValues } from '@/schema/filter'
   import { formatDate } from '@/schema/types'
 
   const props = defineProps<{

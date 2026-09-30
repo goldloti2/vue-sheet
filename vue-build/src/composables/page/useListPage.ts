@@ -1,5 +1,5 @@
-import type { Filters } from '@/composables/data/useFilter'
 import type { TableKey } from '@/schema'
+import type { Filters } from '@/schema/filter'
 import type { SortSpec, TableSchema } from '@/schema/types'
 import type { Ref } from 'vue'
 import { ref } from 'vue'

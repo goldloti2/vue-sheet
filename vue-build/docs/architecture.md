@@ -35,7 +35,8 @@ src/
     record/            DataDetail、DetailField、DataForm、RecordNav
     page/              整頁的版型：PageState（載入中／失敗／找不到）、FormPage、DetailPage、ListPage、ChildList
   composables/
-    data/              讀資料：useTable（整表／排序過／單筆）、useSearch、useFilter
+    data/              讀資料的反應式包裝：useTable（整表／排序過／單筆）、useSearch、useFilter
+                       （比對與排序本身是 schema/ 底下的純函數）
     form/              表單頁：useTableForm、useLeaveGuard、useSyncHold
     shell/             跟 AppShell 溝通：useActionSlot（登記機制）、useShellActions（App Bar／
                        底部／多選出口）、useListControls、useAppBarTabs、usePanelActive、
@@ -46,7 +47,9 @@ src/
     actions/           useTableActions：PageAction 型別 + 通用動作 builder
   stores/tables/       共用快取、待推送佇列、row 上的 getter（見 store.md）
   services/            appScript.ts 是對後端唯一的出入口；mock/ 是假後端，上線後整個刪掉
-  schema/              每張表的欄位定義、驗證、關聯圖（見 schema.md）
+  schema/              每張表的欄位定義，加上對 row 做事的純函數（見 schema.md）：
+                       types（型別、coerce／format）、sort、group、filter、validation、
+                       relations（關聯圖）、image、index（註冊表）
   config/              app.ts（App 名稱）、navigation.ts（導覽列項目）
   router/index.ts      路由實例、轉場方向判定、leaveAfterAction / pushWithDefaults
   pages/               檔案即路由

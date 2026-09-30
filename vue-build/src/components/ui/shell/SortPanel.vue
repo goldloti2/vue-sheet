@@ -4,7 +4,7 @@
   import { mdiArrowDown, mdiArrowUp } from '@mdi/js'
   import { computed, shallowRef, watch } from 'vue'
   import TableChips from '@/components/ui/shell/TableChips.vue'
-  import { sortableColumns } from '@/schema/types'
+  import { sortableColumns } from '@/schema/sort'
 
   const props = defineProps<{
     // 跟篩選面板同一批表；只列有給 sort 的那些

@@ -154,7 +154,7 @@ if (values) {
 - 內容就是 `DataForm` 加 `only` prop 只顯示那幾欄：輸入元件、驗證、錯誤顯示全部沿用。驗證只跑被問到的欄位，不然沒問到的必填欄位會被算成錯
 - **初始值三層**：`options.rows` 剛好一筆且那欄非空 → 現值；否則 `options.defaults[key]`（值或函式）；都沒有 → 空。**不套 schema 的 `default`**——那是新增表單的初始值，改現有資料時不該冒出來。多筆時不顯示現值，那是「填一次、全部改成同一個值」的用法
 - 通用的用法包成 `useQuickEditAction(table, keys, selectedIds, { label, icon, defaults, onDone })`：多選模式下出現，確定後對每個 id 各跑一次 `store.update`（不另開 op 種類，佇列的合併規則直接適用）
-- 只是要問是／否就用 `confirm(title, text): Promise<boolean>`，動作的 `confirm` 宣告與離開守衛都用它
+- 只是要問是／否就用 `confirm(title, text): Promise<boolean>`，動作的 `confirm` 宣告與離開守衛都用它；要給兩條以上的出路用 `choose(title, text, choices): Promise<string | null>`（同一個對話框實例，見 [ConfirmDialog.md](components/ConfirmDialog.md)）
 - 一次要問的欄位放在同一個對話框。連續動作是給「一步的結果決定下一步」用的，欄位之間沒有相依，拆開只是多按幾次確定
 
 ---

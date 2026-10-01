@@ -48,7 +48,10 @@ export const useTablesStore = defineStore('tables', () => {
       loading[table] = true
       error[table] = null
       try {
-        rows[table] = (await fetchTable<HasId>(table)).map(row => attachGetters(table, row))
+        const { rows: fetched, modifiedTime } = await fetchTable<HasId>(table)
+        rows[table] = fetched.map(row => attachGetters(table, row))
+        // 檔案層級的時間，每張表抓回來都是同一個值；推送時當 since 用
+        queue.knownModifiedTime.value = modifiedTime
       } catch (loadError) {
         error[table] = loadError instanceof Error ? loadError.message : String(loadError)
       } finally {
@@ -97,8 +100,8 @@ export const useTablesStore = defineStore('tables', () => {
   }
 
   // 推送 + 重抓所有已載入的表；推不出去就不重抓，否則會蓋掉未推送的變更
-  async function refresh (): Promise<boolean> {
-    if (!canSync.value || !await flush()) {
+  async function refresh (force = false): Promise<boolean> {
+    if (!canSync.value || !await flush(force)) {
       return false
     }
 
@@ -136,14 +139,25 @@ export const useTablesStore = defineStore('tables', () => {
     queue.enqueue(table, id, kind, values)
   }
 
-  async function flush (): Promise<boolean> {
+  async function flush (force = false): Promise<boolean> {
     if (activeFlow.value) {
       // 流程還沒跑完，推出去的會是半成品，而且推出去之後就回滾不了了
       queue.fail('流程進行中，無法推送')
       return false
     }
 
-    return queue.flush()
+    return queue.flush(force)
+  }
+
+  // 衝突的兩條出路之一：丟掉未推送的變更、重抓所有已載入的表（Sheet 上那份當真相）
+  async function discardAndReload (): Promise<void> {
+    queue.discard()
+    await Promise.all(Object.keys(rows).map(table => load(table as TableKey)))
+  }
+
+  // 另一條：不帶 since 再送一次，只蓋掉自己改過的那幾欄。成功後照常重抓
+  async function forcePush (): Promise<boolean> {
+    return refresh(true)
   }
 
   // 開存檔點。一次只能一個：套疊會蓋掉外層的存檔點，所以直接拒絕（見 docs/architecture.md）
@@ -262,11 +276,14 @@ export const useTablesStore = defineStore('tables', () => {
     hasPending: queue.hasPending,
     flushing: queue.flushing,
     flushError: queue.flushError,
+    conflict: queue.conflict,
     canSync,
     holdSync,
     ensureLoaded,
     refresh,
     flush,
+    discardAndReload,
+    forcePush,
     beginFlow,
     commitFlow,
     rollbackFlow,

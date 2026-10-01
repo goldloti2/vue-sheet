@@ -43,11 +43,12 @@
 
 **驗證**：分工見 [vue-build/docs/schema.md](../vue-build/docs/schema.md)——合法性只在前端做（form 層與 store 寫入層都接了同一個 `validateRow`），後端只做安全性與結構完整性。目的不是防外部攻擊（那已經靠 Google 帳號擋掉了），而是防自己送出壞資料。
 
-🔲 **多裝置同時編輯**（還沒做）：比對**整個試算表檔案**的 `modifiedTime`，不是逐筆的 `updatedAt`——Sheets 沒有逐列的修改時間，要維護就得後端戳章加 `onEdit` 觸發器。
+🔶 **多裝置同時編輯**：**前端已經做好、等後端實作**。比對**整個試算表檔案**的 `modifiedTime`，不是逐筆的 `updatedAt`——Sheets 沒有逐列的修改時間，要維護就得後端戳章加 `onEdit` 觸發器。
 
 - `fetchTable` 的回應帶 `modifiedTime`（`DriveApp.getFileById(id).getLastUpdated()`），前端記下來
 - batch 的 payload 帶 `since`，後端在 `LockService` 鎖裡跟當下的值比對再寫（跟全有全無同一把鎖）：不一致就回 `{ success: false, error: 'modified' }` 什麼都不寫，一致就寫入並回新的 `modifiedTime`
-- 粒度很粗（任何分頁、連格式變更都算），單人多裝置的情境夠用。前端的處置見 [ROADMAP](../ROADMAP.md) 資料一致性段
+- **`since` 沒帶就是強制推送**：不比對、直接寫。前端的「強制推送」就是這樣送的
+- 粒度很粗（任何分頁、連格式變更都算），單人多裝置的情境夠用。前端撞到衝突後的處置（保留佇列、兩條出路）見 [vue-build/docs/store.md](../vue-build/docs/store.md) 的推送那節
 
 > `id` 是每張表都有的系統欄位，由後端統一處理，個別 Schema 不列出。前端 `TableSchema` 比照辦理：用獨立的 `idColumn` 指出 ID 對應的表頭，不放進 `columns`；`coerceRow()` 固定把它轉成 row 物件的 `id`。
 

@@ -4,9 +4,10 @@
 //
 // 純記憶體：重整頁面就回到 CSV 的原始內容
 
-import type { BatchOperation } from '../types'
+import type { BatchOperation, TableData } from '../types'
 import type { TableKey } from '@/schema'
 import { schemas } from '@/schema'
+import { ConflictError } from '../types'
 import { parseCsv } from './csv'
 import { mockCsv } from './tables'
 
@@ -48,9 +49,23 @@ function asStrings (values: Record<string, unknown>): Record<string, string> {
   )
 }
 
+// 整個「檔案」的修改時間，對應真後端的 DriveApp.getFileById(id).getLastUpdated()
+let modifiedTime = new Date().toISOString()
+
 // 回傳複本，呼叫端改到的東西不會影響這裡存的狀態
-export function mockList (table: TableKey): Record<string, string>[] {
-  return tableRows(table).map(row => ({ ...row }))
+export function mockList (table: TableKey): TableData {
+  return { rows: tableRows(table).map(row => ({ ...row })), modifiedTime }
+}
+
+// 開發用：模擬「別人在 Sheet 上改了東西」，讓衝突那條路測得到。
+// 假後端是純記憶體的，同一個分頁不可能自己產生衝突，所以在 console 叫這個
+if (import.meta.env.DEV) {
+  Object.assign(globalThis, {
+    mockTouch: () => {
+      modifiedTime = new Date().toISOString()
+      return modifiedTime
+    },
+  })
 }
 
 function applyOperation (operation: BatchOperation): void {
@@ -82,8 +97,12 @@ function applyOperation (operation: BatchOperation): void {
 }
 
 // 一次推送的整批操作，全有全無：中途失敗就把動到的表還原，跟真後端在 LockService 裡的行為一致。
-// 不回傳資料列——前端快取在寫入當下就改好了，推送成功後本來就會重抓
-export function mockBatch (operations: readonly BatchOperation[]): void {
+// since 對不上就拋 ConflictError、什麼都不做（不給 since 是強制推送）。回傳寫入後的新 modifiedTime
+export function mockBatch (operations: readonly BatchOperation[], since?: string): string {
+  if (since !== undefined && since !== modifiedTime) {
+    throw new ConflictError()
+  }
+
   const backup = new Map<TableKey, Record<string, string>[]>()
   for (const operation of operations) {
     if (!backup.has(operation.table)) {
@@ -101,4 +120,7 @@ export function mockBatch (operations: readonly BatchOperation[]): void {
     }
     throw error
   }
+
+  modifiedTime = new Date().toISOString()
+  return modifiedTime
 }

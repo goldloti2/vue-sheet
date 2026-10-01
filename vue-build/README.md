@@ -45,7 +45,7 @@ npx eslint src && npx vue-tsc --build --force   # 提交前跑這兩個
 | **父表／子表**（parent / child） | 關聯的兩端。外鍵（`ref` 欄位）放在子表 |
 | **快取**（`store.rows`） | store 裡每張表一份、全 App 共用的資料。畫面只讀它 |
 | **佇列**（`pending`） | 還沒寫回 Sheet 的改動。按推送才真的送出去 |
-| **推送**（flush） | 把佇列送到後端 |
+| **推送**（flush） | 把整個佇列用一個請求送到後端，全有全無 |
 | **同步**（`refresh`） | 推送 + 重抓所有已載入的表，就是 App Bar 最右邊那顆鈕 |
 | **版型**（page layout） | `components/ui/page/` 的元件（`ListPage`／`DetailPage`／`FormPage`／`PageState`），包掉一種頁面共通的骨架，頁面只填這張表專屬的部分 |
 | **動作**（`PageAction`） | 一顆按鈕的定義，可以擺在 FAB、App Bar、底部或某個欄位旁 |

@@ -12,7 +12,7 @@
   import { provideActionRunner } from '@/composables/shell/useActionRunner'
   import { appBarTabsKey, currentTabKey } from '@/composables/shell/useAppBarTabs'
   import { confirmFields, fieldsDialog } from '@/composables/shell/useAskFields'
-  import { acceptConfirm, confirmDialog, notice, notify } from '@/composables/shell/useDialogs'
+  import { choose, confirmDialog, notice, notify, pickChoice } from '@/composables/shell/useDialogs'
   import { listControlsKey } from '@/composables/shell/useListControls'
   import { overlayOpenKey } from '@/composables/shell/useOverlay'
   import { appBarActionsKey, appBarSelectionKey, bottomActionsKey } from '@/composables/shell/useShellActions'
@@ -137,7 +137,24 @@
   async function sync () {
     syncing.value = true
     try {
-      if (!await store.refresh()) {
+      if (await store.refresh()) {
+        return
+      }
+
+      // Sheet 被別處改過：整批都沒寫，佇列還在，問使用者要走哪條路（關掉就什麼都不做）
+      if (!store.conflict) {
+        notify(store.flushError ?? '推送失敗，稍後再試', 'error')
+        return
+      }
+
+      const picked = await choose('Sheet已被別處修改', '要強制推送，還是重新抓取？', [
+        { key: 'discard', label: '放棄並重抓' },
+        { key: 'force', label: '強制推送', color: 'error' },
+      ])
+
+      if (picked === 'discard') {
+        await store.discardAndReload()
+      } else if (picked === 'force' && !await store.forcePush()) {
         notify(store.flushError ?? '推送失敗，稍後再試', 'error')
       }
     } finally {
@@ -274,9 +291,10 @@
 
   <ConfirmDialog
     v-model="confirmDialog.open"
+    :choices="confirmDialog.choices"
     :text="confirmDialog.text"
     :title="confirmDialog.title"
-    @confirm="acceptConfirm"
+    @choose="pickChoice"
   />
 
   <FieldsDialog

@@ -93,7 +93,7 @@
 - 通用 builder：`useNewAction` / `useEditAction` / `useDeleteAction` / `useBulkDeleteAction` / `useQuickEditAction`，一律回傳 `ComputedRef<PageAction[]>`
 - 欄位動作（`DataDetail` 的 `fieldActions`，一欄一個、整格可點）：`useGoToRefAction`（ref 前往對方）／`useOpenUrlAction`（開新分頁）／`useSetFieldAction`（立即改成某個值，可帶 confirm）
 - 需要確認的動作宣告 `confirm` 就好，`useActionRunner` 先 `await confirm()` 再跑，錯誤進 snackbar；頁面不用擺 `ConfirmDialog`
-- `confirm()` / `askFields()`：是／否與問幾個欄位的對話框，都是 module-level 狀態 + `AppShell` 掛一個實例 + promise；`useQuickEditAction` 用後者把選取的多筆改成同一個值（欄位由設計者定，只選一筆時顯示現值）
+- `confirm()` / `choose()` / `askFields()`：是／否、幾條出路（回傳按下去那顆的 key，取消是 `null`）、問幾個欄位；都是 module-level 狀態 + `AppShell` 掛一個實例 + promise，前兩個共用同一個 `ConfirmDialog`；`useQuickEditAction` 用後者把選取的多筆改成同一個值（欄位由設計者定，只選一筆時顯示現值）
 - 每張表的動作（含批次刪除）一律從 `use表名Actions(options)` 取，用不到的是空陣列
 - `useAppBarActions()` 用 provide/inject 把動作註冊到 App Bar，數量多自動收成下拉選單
 - `useBottomActions()` 把動作註冊到螢幕最底端，暫時取代導覽列（表單頁的取消／送出）；兩者共用 `useActionSlot` 的 KeepAlive 防護
@@ -156,7 +156,7 @@
 
 - **一個請求帶所有表的所有操作**。要省的是每次請求的 script 冷啟（0.5～2 秒），不是配額——每分鐘 60 次是 Sheets REST API 的限制，`SpreadsheetApp` 不適用（但若為了 RAW 寫入改走進階服務 Sheets API，那條配額就回來了）
 - **全有全無**：後端在 `LockService` 裡跑完整批，中途失敗什麼都不寫；前端保留佇列、使用者重按就是整批重送
-- **`update` 只送改過的那幾欄**，後端在鎖裡讀現值、合併、寫整列，所以同一列上沒動過的欄位保留 Sheet 上手改的值。送整列省不到呼叫（後端為了把 id 換成列號本來就要讀一次），卻會讓前端快取蓋掉手改的欄位
+- **`update` 只送進佇列的那幾欄**（表單是整列，快速編輯與欄位動作只有那一欄），後端在鎖裡讀現值、合併、寫整列，所以沒進過佇列的欄位保留 Sheet 上手改的值。送整列省不到呼叫（後端為了把 id 換成列號本來就要讀一次），卻會讓前端快取蓋掉手改的欄位
 - **不回傳資料列**：前端寫入當下就改好快取了，推送成功後本來就會重抓
 - 單筆的 `create`／`update`／`delete` 端點與 `bulkUpdate`／`bulkDelete` 都拿掉了——batch 涵蓋得了，前端也沒有地方會送
 - **ID 由前端產生**（`create` 的 payload 帶 id）。這讓重送變成冪等的：`create` 定義成「id 不存在就建、已存在就當作已完成」，整批重送是安全的，不需要記錄哪幾筆成功過。也讓待推送佇列可以直接用 `table + id` 當 key，因為不會出現「刪掉又新增同一個 id」
@@ -168,10 +168,11 @@
 - `bulkCreate`：等真的有匯入需求再說
 
 ### 資料一致性
-- **推送前比對檔案的 modifiedTime**（取代原本 `updatedAt` 欄位的想法，設計已定、等後端）：Sheets 沒有逐列的修改時間，維護 `updatedAt` 要後端戳章加 `onEdit` 觸發器；改成用整個檔案的 `modifiedTime`（`DriveApp.getFileById(id).getLastUpdated()`），粗糙（任何分頁、連格式變更都算）但夠用
+- **推送前比對檔案的 modifiedTime**（取代原本 `updatedAt` 欄位的想法；**前端已完成，等後端實作比對**）：Sheets 沒有逐列的修改時間，維護 `updatedAt` 要後端戳章加 `onEdit` 觸發器；改成用整個檔案的 `modifiedTime`（`DriveApp.getFileById(id).getLastUpdated()`），粗糙（任何分頁、連格式變更都算）但夠用
   - `fetchTable` 的回應帶 `modifiedTime`，store 記成 `knownModifiedTime`；batch 的 payload 帶 `since`，**由後端**在 `LockService` 鎖裡跟當下的值比對再寫，不一致就回 `{ success: false, error: 'modified' }` 什麼都不寫，一致就寫入並回新的 `modifiedTime`
-  - 衝突時前端停止推送、保留佇列、跳提示，兩條出路：「放棄未推送的變更並重抓」或「強制推送」（payload 不帶 `since`；`update` 只送改過的欄，所以蓋掉的也只有那幾欄）
+  - 衝突時前端保留佇列、立起 `store.conflict`，`AppShell` 用 `choose()` 問兩條出路：`discardAndReload()`（放棄未推送的變更並重抓）或 `forcePush()`（payload 不帶 `since`；蓋掉的只有進過佇列的那幾欄）。關掉對話框就什麼都不做，下次按同步再問
   - 衝突時不把佇列重新套用到新資料上（見「決定不做」）
+  - 假後端在 dev 模式掛了一個 `mockTouch()`（console 可叫），用來模擬「別人改了 Sheet」把衝突那條路測出來
 
 ### UI 功能
 - 關聯選擇器的 `allowCreate`：清單最上面一項「＋ 新增…」，開父表的新增表單、回來自動選上。看起來是 `runStep('/父表/new')`，但表單頁當「呼叫端」跟動作當呼叫端不一樣，四件事要先解：

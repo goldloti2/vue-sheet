@@ -103,7 +103,7 @@ const data = useSearch(query, rows, schema)
 
 - **有登記才有放大鏡**，所以實務上只有列表頁有。詳細頁與表單頁刻意不放：App Bar 的搜尋代表「這一頁的主體是一份清單」，詳細頁裡的子表要找東西，請去那張表的列表頁
 - **`query` 是頁面的 ref**，`AppShell` 只負責讓使用者打字進去；過濾是頁面自己做的
-- **比對 `searchable: true` 的 `text`／`ref` 欄位**（真實與虛擬都行，ref 比的是父列的名字）
+- **比對 `schema.searchable` 裡的 `text`／`ref` 欄位**（真實與虛擬都行，ref 比的是父列的名字）；同一份清單裡的其他型別歸篩選抽屜
 - **分詞**：依空白切詞、雙引號包起來的當一個詞，每個詞都要命中（AND）
 - **全部小寫比對**，不做全半形正規化
 - **效能**：每列的可搜尋文字只在 rows 變時重算，敲字只做 `includes`
@@ -125,7 +125,7 @@ const data = useSearch(query, useFilter(filters, allRows, schema), schema)
 順序是固定的：**整表 → `useFilter` → `useSearch` → 畫面**。篩選抽屜的選項要看整表（`allRows`）才列得出「資料裡出現過哪些值」，所以它吃的是還沒過濾的那份；搜尋放最外層最便宜（敲字只重跑 `includes`）。
 
 - **改了即時生效**，沒有套用鈕；← 關閉搜尋時篩選一起清掉
-- **篩選的對象是 `searchable: true` 的 `select`／`number`／`date`／`duration`**（`text`／`ref` 歸搜尋，兩邊用同一個開關）
+- **篩選的對象是 `schema.searchable` 裡的 `select`／`number`／`date`／`duration`**（`text`／`ref` 歸搜尋，兩邊共用同一份清單）
 - **欄位之間 AND、同一欄的多選之間 OR**
 - **範圍條件**（number／date／duration）只填一邊就是單邊限制；值是空的列會被排除。時長換算成秒來比
 - **select 多一個「(空白)」**，勾了才留空值的列
@@ -135,7 +135,7 @@ const data = useSearch(query, useFilter(filters, allRows, schema), schema)
 
 | | 內容 |
 | --- | --- |
-| **第一層** | 可篩選欄位的清單（順序照 `detailOrder`）。有條件的欄位名稱底下用小字顯示現在篩什麼（`≥ 100`、`100 ～ 500`、`2026/01/01 ～`；select 是選到的值串起來，太長就截斷加「…共 X 項」），右側點一個主色圓點。「清除」在這一層，清掉整張表的條件 |
+| **第一層** | 可篩選欄位的清單（順序就是 `schema.searchable` 的順序，跳過歸搜尋列的 `text`／`ref`）。有條件的欄位名稱底下用小字顯示現在篩什麼（`≥ 100`、`100 ～ 500`、`2026/01/01 ～`；select 是選到的值串起來，太長就截斷加「…共 X 項」），右側點一個主色圓點。「清除」在這一層，清掉整張表的條件 |
 | **第二層** | 點一欄進去填值：select 是一列一項的 checkbox（「(空白)」排最後）、number／date／duration 是兩格範圍。← 回第一層 |
 
 關掉抽屜也會回到第一層。抽屜開著時 `PageFab` 會讓開——它的 z-index 本來就在 layout 之上，靠 `useOverlay` 的 `overlayOpenKey` 通知。
@@ -171,14 +171,14 @@ useListControls(query, {
 
 ## 排序
 
-欄位標 `sortable: true` 就會出現在排序面板裡，`useListPage` 已經把 `sort` 一起登記好，所以列表頁什麼都不用寫，App Bar 的放大鏡右邊就多一顆排序鈕（不是預設排序時主色）。按下去開的是**跟篩選同一個右側抽屜**。
+列進 `schema.sortable` 的欄位就會出現在排序面板裡（**面板上的順序就是那份清單的順序**），`useListPage` 已經把 `sort` 一起登記好，所以列表頁什麼都不用寫，App Bar 的放大鏡右邊就多一顆排序鈕（不是預設排序時主色）。按下去開的是**跟篩選同一個右側抽屜**。
 
 - **一次只排一欄**：點一欄選它、再點同一欄換升降，右側箭頭顯示現在的方向。多層排序刻意不做（手機上沒人用，而且 schema 的 `defaultSort` 已經在講「這張表本來的順序」）
 - **`schema.defaultSort` 永遠接在後面當 tiebreaker**，所以同分的列順序是穩定的
 - **「清除」回到 `defaultSort`**，位置與外觀跟篩選那顆一樣；沒選排序時清單上就沒有任何一列被標記
 - **改了即時生效**，沒有套用鈕
 - **重整回預設**，不做持久化（跟篩選同一個標準）
-- **`image` 不能排**，就算標了 `sortable` 也不會列出來
+- **`image` 不能排**，列進 `sortable` 也會被跳過
 
 比較方式大致是「照值排」，兩個型別例外：
 

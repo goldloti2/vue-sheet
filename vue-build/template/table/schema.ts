@@ -22,14 +22,17 @@ export const __table__Schema: TableSchema<__Table__Row> = {
   // 怎麼發新 id，各表自己決定。prefixedId 是現成的前綴式（TPL-11eef1a8）
   newId: prefixedId('TPL'),
   columns: [
+    // 欄位只描述資料本身；「列表頁怎麼用它」寫在下面的清單裡
     // label 就是 Sheet 表頭文字；兩者不同時才另外加 sheetHeader: '實際表頭'
-    // searchable 開了才進搜尋列（text／ref）或篩選抽屜（select／number／date／duration），預設關
-    // sortable 開了才進排序面板，預設關（備註這種長文字就不用開）
-    { key: 'name', label: '名稱', type: 'text', required: true, searchable: true, sortable: true },
-    { key: 'amount', label: '金額', type: 'number', min: 0, sortable: true },
-    { key: 'date', label: '日期', type: 'date', sortable: true },
+    { key: 'name', label: '名稱', type: 'text', required: true },
+    { key: 'amount', label: '金額', type: 'number', min: 0 },
+    { key: 'date', label: '日期', type: 'date' },
   ],
   // 以下都可省略。順序類的省略就沿用 columns 的順序
+  // 能搜尋／篩選的欄位：text／ref 進搜尋列，其餘進篩選抽屜；順序就是抽屜第一層的順序
+  searchable: ['name', 'date', 'amount'],
+  // 能排序的欄位，順序就是排序面板的順序
+  sortable: ['date', 'amount'],
   defaultSort: [
     { key: 'date', direction: 'asc' },
   ],

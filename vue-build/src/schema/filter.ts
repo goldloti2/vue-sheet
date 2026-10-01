@@ -1,5 +1,5 @@
 import type { AnyColumn, TableSchema } from './types'
-import { allColumns, durationSeconds, orderByDetail } from './types'
+import { durationSeconds, listedColumns } from './types'
 import { isEmpty } from './validation'
 
 // 篩選：條件的形狀與純函數。反應式的包裝在 composables/data/useFilter.ts
@@ -15,14 +15,14 @@ export interface ColumnFilter {
 // 欄位 key → 條件；沒列的欄位不篩
 export type Filters = Record<string, ColumnFilter>
 
-// 搜尋列比 text / ref，其他開了 searchable 的型別歸篩選
+// schema.searchable 裡的欄位，搜尋列比 text / ref，其餘型別歸篩選抽屜
 export function isFilterable (column: AnyColumn): boolean {
-  return column.searchable === true && ['date', 'duration', 'number', 'select'].includes(column.type)
+  return ['date', 'duration', 'number', 'select'].includes(column.type)
 }
 
-// 抽屜裡的順序跟 detail 頁一樣（見 orderByDetail），排序面板也吃同一套
+// 抽屜第一層的欄位與順序：schema.searchable ，跳過歸搜尋列的那些
 export function filterableColumns (schema: TableSchema): AnyColumn[] {
-  return orderByDetail(allColumns(schema).filter(column => isFilterable(column)), schema)
+  return listedColumns(schema, schema.searchable).filter(column => isFilterable(column))
 }
 
 export interface PresentValues {

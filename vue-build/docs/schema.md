@@ -30,18 +30,21 @@ export const orderSchema: TableSchema<OrderRow> = {
   newId: prefixedId('ORD'),     // 怎麼發新 id
   labelColumn: 'title',         // 別的表 ref 到這裡時顯示哪一欄
   columns: [
-    { key: 'title', label: '名稱', type: 'text', required: true, searchable: true },
-    { key: 'amount', label: '金額', type: 'number', min: 0, searchable: true, sortable: true },
-    { key: 'orderedAt', label: '下單日期', type: 'date', sortable: true },
+    { key: 'title', label: '名稱', type: 'text', required: true },
+    { key: 'amount', label: '金額', type: 'number', min: 0 },
+    { key: 'orderedAt', label: '下單日期', type: 'date' },
   ],
   virtualColumns: [
     { key: 'withTax', label: '含稅', type: 'number', value: row => row.amount === null ? null : row.amount * 1.05 },
   ],
+  // 能搜尋／篩選與能排序的欄位，順序就是抽屜與排序面板上的順序
+  searchable: ['title', 'orderedAt', 'amount'],
+  sortable: ['orderedAt', 'amount'],
   defaultSort: [{ key: 'orderedAt', direction: 'desc' }],
 }
 ```
 
-寫成 `TableSchema<OrderRow>` 是為了讓 TS 幫忙對答案：`key`、`labelColumn`、`detailOrder`、`defaultSort` 只能填 Row 有的欄位名，`type` 要跟 Row 那個欄位的值型別相符，虛擬欄位 `value` 的 `row` 也直接是 `OrderRow`。
+寫成 `TableSchema<OrderRow>` 是為了讓 TS 幫忙對答案：`key`、`labelColumn`、`searchable`、`sortable`、`detailOrder`、`defaultSort` 只能填 Row 有的欄位名，`type` 要跟 Row 那個欄位的值型別相符，虛擬欄位 `value` 的 `row` 也直接是 `OrderRow`。
 
 最後在 `src/schema/index.ts` 註冊，`TableKey` 就自動多一個值。
 
@@ -68,7 +71,7 @@ export const orderSchema: TableSchema<OrderRow> = {
 - **真實欄位**（`columns`）：Sheet 上真的有的，可編輯
 - **虛擬欄位**（`virtualColumns`）：不存在 Sheet 上、讀的時候才算。來源可以是這一列自己（價格加手續費），也可以是子表（父表用第一筆子列的名字當標題、子表金額加總）
 
-虛擬欄位除了不能編輯，其他都跟真實欄位一樣：顯示、排序、分組、`defaultSort`、`searchable`、`sortable` 都能用。因為它跟 `columns` 分開放，`coerceRow`／`serializeRow`／表單完全不用知道它存在。
+虛擬欄位除了不能編輯，其他都跟真實欄位一樣：顯示、排序、分組，也照樣能列進 `searchable`／`sortable`／`defaultSort`／`detailOrder`。因為它跟 `columns` 分開放，`coerceRow`／`serializeRow`／表單完全不用知道它存在。
 
 型別有 `text`／`number`／`date`／`duration`／`select`／`ref`／`image` 七種，每種有自己的專屬設定（`number` 的 `min`／`max`、`select` 的 `options`、`ref` 的 `refTable`…）。完整清單見 [`types.ts`](../src/schema/types.ts)。
 
@@ -98,6 +101,21 @@ export const orderSchema: TableSchema<OrderRow> = {
 - **列表縮圖要頁面自己給**：`DataList` 的 `image` prop 傳 `imageSrc(row.photo)`，沒傳就不顯示
 - **表單就是純文字欄位**：貼網址、Drive 連結或整段 SVG。上傳到 Drive 還沒做
 - **不進搜尋與篩選**
+
+---
+
+## 欄位呈現與其順序
+
+哪些欄位會出現在各個畫面、以什麼順序，寫在表的層級，用 key 的清單表示：
+
+| 清單 | 決定什麼 |
+| --- | --- |
+| `searchable` | 哪些欄位進搜尋列（`text`／`ref`）或篩選抽屜（其餘型別）。**順序就是抽屜第一層的順序** |
+| `sortable` | 哪些欄位進排序面板（`image` 列了也會跳過）。**順序就是面板上的順序** |
+| `detailOrder`／`formOrder` | 詳細頁與表單頁的欄位順序，沒列到的欄位詳細頁不顯示 |
+| `defaultSort` | 列表的預設排序，多筆依序當 tiebreaker |
+
+四份都可省略，省略就是「沒有」（`detailOrder`／`formOrder` 例外，它們省略時沿用 `columns` 的順序）。key 打錯字 TS 會擋下來——型別是 `RowKey<Row>[]`，跟 Row 介面對答案。
 
 ---
 

@@ -57,10 +57,6 @@ export type ColumnBase<Row extends object = AnyRow, T extends ColumnType = Colum
   label: string
   /** 欄位型別，決定值的型別、輸入元件與顯示格式 */
   type: T
-  /** 開了才進搜尋（text／ref 比對文字）或篩選抽屜（select／number／date／duration 用值），預設關 */
-  searchable?: boolean
-  /** 開了才進排序面板（備註這種長文字就不用開），預設關。image 不支援 */
-  sortable?: boolean
 } & ColumnExtra<T>
 
 // 真實欄位：Sheet 上有的，多了表頭對應與表單設定
@@ -109,6 +105,10 @@ export interface TableSchema<Row extends object = AnyRow> {
   columns: SchemaColumn<Row>[]
   /** 算出來的欄位，不進 coerceRow / serializeRow / 表單；顯示、排序、分組都跟真實欄位一樣用 */
   virtualColumns?: VirtualColumn<Row>[]
+  /** 能搜尋或篩選的欄位（text／ref 進搜尋列，其餘進篩選抽屜）。順序就是抽屜第一層的順序 */
+  searchable?: RowKey<Row>[]
+  /** 能排序的欄位（image 不支援）。順序就是排序面板的順序 */
+  sortable?: RowKey<Row>[]
   /** 詳細頁的欄位順序；省略就沿用 columns 的順序。沒列到的欄位不顯示 */
   detailOrder?: RowKey<Row>[]
   /** 表單頁的欄位順序；省略就沿用 columns 的順序 */
@@ -228,6 +228,12 @@ export function findColumn (schema: TableSchema, key: string): AnyColumn | undef
   return allColumns(schema).find(column => column.key === key)
 }
 
+// searchable / sortable 是 key 的清單，順序就是面板上的順序；認不得的 key 靜靜跳過
+export function listedColumns (schema: TableSchema, keys: readonly string[] | undefined): AnyColumn[] {
+  const columns = new Map(allColumns(schema).map(column => [column.key, column]))
+  return (keys ?? []).map(key => columns.get(key)).filter(column => column !== undefined)
+}
+
 // 只知道欄位 key、還沒有 column 物件時用這個（例如列表頁只想挑幾個欄位顯示）
 export function formatField (row: object, schema: TableSchema, key: string): string {
   const column = findColumn(schema, key)
@@ -270,16 +276,4 @@ export function columnValues (row: object, schema: TableSchema): Record<string, 
     result[column.key] = (row as Record<string, unknown>)[column.key]
   }
   return result
-}
-
-// 抽屜裡的欄位清單一律照 detail 頁的順序（detailOrder），沒排進去的接在後面——
-// 不像 detail 那樣藏起來，因為只為搜尋／排序存在的虛擬欄位本來就不會排進 detailOrder
-export function orderByDetail (columns: readonly AnyColumn[], schema: TableSchema): AnyColumn[] {
-  const order = schema.detailOrder ?? []
-  const rank = (column: AnyColumn) => {
-    const index = order.indexOf(column.key)
-    return index === -1 ? order.length : index
-  }
-  // eslint-disable-next-line unicorn/no-array-sort
-  return [...columns].sort((a, b) => rank(a) - rank(b))
 }

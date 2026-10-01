@@ -87,7 +87,7 @@
 
 ### 先寫 Row 介面，再宣告 schema
 
-`TableSchema<__Table__Row>` 會拿介面去檢查：欄位 `key`、`labelColumn`、`detailOrder`、`defaultSort` 打錯字直接紅字，`type` 跟值的型別對不上也會抓，虛擬欄位 `value` 的 `row` 不用轉型。介面裡要自己補 store 會掛上去的東西——虛擬欄位的 `readonly xxx`，以及每個 ref 欄位的 `readonly $欄位key?: 對方Row`（`value` 裡要讀父列才需要）。
+`TableSchema<__Table__Row>` 會拿介面去檢查：欄位 `key`、`labelColumn`、`searchable`、`sortable`、`detailOrder`、`defaultSort` 打錯字直接紅字，`type` 跟值的型別對不上也會抓，虛擬欄位 `value` 的 `row` 不用轉型。介面裡要自己補 store 會掛上去的東西——虛擬欄位的 `readonly xxx`，以及每個 ref 欄位的 `readonly $欄位key?: 對方Row`（`value` 裡要讀父列才需要）。
 
 ---
 
@@ -98,6 +98,6 @@
 - **路由**：檔案即路由，不用註冊
 - **跨表關聯**：schema 欄位標 `{ type: 'ref', refTable: '另一張表' }` 就完成，兩邊的列自動掛 getter、關聯的表自動一起載
 - **表單**：欄位型別決定輸入元件，取消／送出與「要不要放棄」都由 `useCreateForm`／`useEditForm` 處理
-- **搜尋、篩選與排序**：`useListPage(table, schema)` 一行接好，放大鏡、篩選抽屜與排序鈕自動出現（欄位要標 `searchable`／`sortable`）
+- **搜尋、篩選與排序**：`useListPage(table, schema)` 一行接好，放大鏡、篩選抽屜與排序鈕自動出現（schema 的 `searchable`／`sortable` 清單決定有哪些欄位、什麼順序）
 - **載入中／載入失敗／找不到資料**：版型元件（`ListPage`／`DetailPage`／`FormPage`）內建
 - **確認框、問欄位對話框、snackbar**：`AppShell` 各掛一個實例，頁面直接叫 `confirm()`／`askFields()`／`notify()`

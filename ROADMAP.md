@@ -75,14 +75,15 @@
 - `TabView` 的頁籤列登記給 `AppShell` 畫在 App Bar 的 extension，所以固定在最上面；每個頁籤外面包一層 `TabViewPanel`，`provide` 一份「我是不是當前頁籤」（`panelActiveKey`）。看過的面板會一直掛著（`v-window` 用 `v-show` 切），而 `PageFab`、`registerSlot`（App Bar／底部動作）、`useListOrder` 的「活著」判斷都是 `KeepAlive 狀態 && 當前面板`，所以一個頁籤放一整張表的列表、各自掛自己的 FAB 與動作是可以的。不在 `TabView` 裡就一律算當前，現有頁面零改動。動作那兩個 watch 刻意分成 `pre`（讓場的清）與 `post`（進場的設），同一輪切換時順序才不會反過來變成空的
 
 ### 搜尋、篩選與排序
-- 欄位開 `searchable: true` 才進搜尋或篩選（預設關），真實與虛擬欄位都行：`text`／`ref` 是搜尋列的比對對象，`select`／`number`／`date`／`duration` 是篩選抽屜的欄位
+- **哪些欄位能搜尋、能排序是表層級的 key 清單**（`searchable: ['name', 'date', …]`／`sortable: [...]`，真實與虛擬欄位都能列），跟 `detailOrder`／`formOrder`／`defaultSort` 同一種形狀；欄位本身只描述資料（key／label／型別／必填／選項／驗證）。**清單的順序就是篩選抽屜與排序面板上的順序**，型別是 `RowKey<Row>[]`，打錯 key TS 會擋
+- `searchable` 一份清單管兩件事：`text`／`ref` 是搜尋列的比對對象，`select`／`number`／`date`／`duration` 是篩選抽屜的欄位
 - `useSearch(query, rows, schema)`：純函數式，每列的可搜尋文字（searchable 欄位的顯示文字接起來、小寫）只跟 rows 一起重算，敲字只做 `includes`；query 依空白切詞、雙引號包起來的當一個詞，每個詞都要命中（AND）
 - `useFilter(filters, rows, schema)`：`Filters = { 欄位key: { values?, min?, max? } }`，select 用 `values`（`null` 是空白）、number／date 共用 `min`／`max`；欄位之間 AND、`values` 之間 OR；設了範圍而值是空的列排除、select 只有勾了空白才留
 - **query 與 filters 都屬於頁面**：`useListControls(query, { tables, current? }?)` 登記後 App Bar 才出現放大鏡，按下去整條換成輸入框；給了 tables 就在輸入框內最右多一顆篩選鈕（有條件生效時主色），開右側抽屜（抽屜歸 `AppShell`，內容是 `FilterPanel`），改了即時生效。← 關閉清掉 query 與所有表的篩選、換頁自動收起、回到還帶著 query 或篩選的頁面自動重開；抽屜開著時 `PageFab` 讓開（`useOverlay` 的 `overlayOpenKey`）。左右兩個抽屜都設 `order="-1"`，連 scrim 一起蓋在 App Bar 之上（Vuetify 的 layout 是 `z-index = 1000 + 層數×2 − 註冊順序×2`，越早註冊越上層，順序由 `order` 決定），所以抽屜開著時搜尋列與右上的鈕都碰不到。頁面串法 `rows → useFilter → useSearch → 頁籤切`，跨所有頁籤
 - **一頁可以有好幾張表的條件**：`tables: [{ schema, filters, rows }, …]` 每張表各自一份 `Filters`、同時生效（頁籤各接一張表時，每個面板各用自己那份過濾）；query 則是全頁共用一份。抽屜第一層上方多一排表的 chip 決定現在編哪一張，`current`（頁面的頁籤 v-model，值對得上 `sheetName`）決定打開時停在哪張，使用者仍可自己切。「清除」只清當前那張，← 關閉搜尋才是全部清掉。單表頁 `tables` 給一個元素，看不到 chip、行為跟以前一樣
-- 抽屜分兩層：第一層是可篩選欄位的清單（順序照 `detailOrder`、沒排的接在後面），有條件的欄位名稱底下用小字顯示現在篩什麼、右側一個主色圓點；第二層是單一欄位的值——select 是一列一項的 checkbox（只列 rows 裡出現過的值，照 `options` 順序、`options` 沒有的排最後、有空的才有「(空白)」並排在最後），number／date／duration 是兩格範圍
-- 只為搜尋存在的虛擬欄位（例如父表把所有子列的名字接起來）照常寫、標 `searchable`，不排進 `detailOrder` 就不會顯示
-- **排序**：欄位另外開 `sortable: true` 才進排序面板（跟 `searchable` 分開，備註這種長文字不用排；`image` 就算標了也不列）。`useListPage` 順手登記，所以列表頁零設定，App Bar 放大鏡右邊多一顆排序鈕（非預設排序時主色）。**一次只排一欄**：點一欄選它、再點同一欄換升降，`defaultSort` 永遠接在後面當 tiebreaker；toolbar 的「清除」回到只照 `defaultSort` 排（位置與外觀跟篩選那顆一樣）。即時生效、重整回預設（不持久化）
+- 抽屜分兩層：第一層是可篩選欄位的清單（順序就是 `searchable` 清單的順序，跳過歸搜尋列的 `text`／`ref`），有條件的欄位名稱底下用小字顯示現在篩什麼、右側一個主色圓點；第二層是單一欄位的值——select 是一列一項的 checkbox（只列 rows 裡出現過的值，照 `options` 順序、`options` 沒有的排最後、有空的才有「(空白)」並排在最後），number／date／duration 是兩格範圍
+- 只為搜尋存在的虛擬欄位（例如父表把所有子列的名字接起來）照常宣告、列進 `searchable`，不排進 `detailOrder` 就不會顯示
+- **排序**：列進 `sortable` 的欄位才出現在排序面板，順序就是清單的順序（跟 `searchable` 分開兩份，備註這種長文字不用排；`image` 列了也會跳過）。`useListPage` 順手登記，所以列表頁零設定，App Bar 放大鏡右邊多一顆排序鈕（非預設排序時主色）。**一次只排一欄**：點一欄選它、再點同一欄換升降，`defaultSort` 永遠接在後面當 tiebreaker；toolbar 的「清除」回到只照 `defaultSort` 排（位置與外觀跟篩選那顆一樣）。即時生效、重整回預設（不持久化）
 - 排序面板 `SortPanel` 跟 `FilterPanel` **共用同一個右側抽屜**（`AppShell` 的 `drawerMode`），一次只顯示一種——抽屜蓋住 App Bar，要換另一種一定得先關掉，所以互斥不用寫邏輯擋；兩個面板上方的表 chip 是共用的 `TableChips`
 - 比較方式兩個型別是特例：`ref` 照對方的 `$label`（值是 id，照 id 排沒意義）、`select` 照 `options` 的宣告順序（狀態有先後，字典序不對），`options` 沒有的值排最後
 - **排序與分組二選一**，框架不介入：分組會把原本的順序壓成組內順序，所以頁面自己在 `sort` 不是 null 時把 `groups` 換成 `rows`（有分組的列表頁就是這樣）。排序一改，`ListPage` 發布的列表順序跟著改，詳細頁的上下一筆自動一致
@@ -179,7 +180,7 @@
   - 完成後要回到原本那張表單（`back`），不是像流程一樣往前走
   - 等真的常用到再做；現在的替代路徑是先去父表新增、再回來選
 - **schema 要不要拆成 `fields.ts` / `view.ts`**（評估過，先不做）：能乾淨切的只有表這一層——`fields.ts` 放 Row 介面、`sheetName`／`idColumn`／`newId`／`labelColumn`／`columns`／`virtualColumns`，`view.ts` 放 `detailOrder`／`formOrder`／`defaultSort`，`index.ts` 組起來。切在欄位內部（型別／必填 vs 標籤／可搜尋）已否決，那會逼每個 key 寫兩次。現在 view 那半只有三個欄位，拆完是一個五行的檔加一個 import，不划算。回頭重看的時機：view 那半長到 15～20 行，或哪張表需要兩種視圖（跟下一條一起做）
-- **視圖設定讓頁面覆寫**（等真的有第二種視圖需求再做）：`detailOrder`／`formOrder`／`defaultSort` 現在只有 schema 一份，同一張表在不同頁面沒辦法有不同的排法與欄位集（AppSheet 是把這些掛在 view 上，所以一張表能有多個 view）。做法是 schema 那份當**預設**、頁面用選用 prop 覆寫（`DataDetail`／`DataForm` 各加一個 `order`、排序走 `useSortedTableList` 的參數），不是搬到頁面去——沒指定的頁面要有東西可用，預設值一定要留在 schema。頁面端自己寫仍然有型別檢查（`RowKey<XxxRow>[]` 是 exported 的），元件內部那層本來就是 `TableSchema<any>`。順帶要決定篩選抽屜的欄位順序（`useFilter` 也讀 `detailOrder`）跟著誰
+- **視圖設定讓頁面覆寫**（等真的有第二種視圖需求再做）：`detailOrder`／`formOrder`／`defaultSort` 現在只有 schema 一份，同一張表在不同頁面沒辦法有不同的排法與欄位集（AppSheet 是把這些掛在 view 上，所以一張表能有多個 view）。做法是 schema 那份當**預設**、頁面用選用 prop 覆寫（`DataDetail`／`DataForm` 各加一個 `order`、排序走 `useSortedTableList` 的參數），不是搬到頁面去——沒指定的頁面要有東西可用，預設值一定要留在 schema。頁面端自己寫仍然有型別檢查（`RowKey<XxxRow>[]` 是 exported 的），元件內部那層本來就是 `TableSchema<any>`。（篩選抽屜與排序面板的順序已經不必跟著誰了——它們有自己的 `searchable`／`sortable` 清單）
 - 總覽頁範本（`DataDashboardTemplate`）：保留了位置但沒有具體需求
 
 ### PWA 與離線

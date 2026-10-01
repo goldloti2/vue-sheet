@@ -1,5 +1,5 @@
 import type { AnyColumn, SortSpec, TableSchema } from './types'
-import { allColumns, durationSeconds, orderByDetail } from './types'
+import { allColumns, durationSeconds, listedColumns } from './types'
 
 // 排序：純函數，對一批 row 做事。反應式的包裝在 composables/data/useTable.ts
 
@@ -69,9 +69,9 @@ export function sortRows<Row> (rows: readonly Row[], schema: TableSchema, sort?:
   })
 }
 
-// 排序面板列得出來的欄位。image 沒有合理的比較方式，就算標了 sortable 也不列
+// 排序面板的欄位與順序：schema.sortable 怎麼寫就怎麼排。image 沒有合理的比較方式，列了也跳過
 export function sortableColumns (schema: TableSchema): AnyColumn[] {
-  return orderByDetail(allColumns(schema).filter(column => column.sortable === true && column.type !== 'image'), schema)
+  return listedColumns(schema, schema.sortable).filter(column => column.type !== 'image')
 }
 
 // 依單一鍵值排序，鍵值是 number 就數字比較，否則當字串比較（用於分組鍵，不吃 schema）

@@ -10,16 +10,19 @@
 
 ## CRUD API 設計決策
 
-> 🔶 **部分實作。** 這一節是跟「還不存在的後端」之間的約定。目前只有 `services/mock/` 的假後端：action 名稱與「回傳異動到的那筆」的形狀已經照這裡實作，但 HTTP 那一層（doGet/doPost、`{ success }` 信封、`VITE_APPS_SCRIPT_URL`）都還沒接上——`services/types.ts` 的 `ApiResponse` 型別已定義但還沒有人使用。
+> 🔶 **部分實作。** 這一節是跟「還不存在的後端」之間的約定。目前只有 `services/mock/` 的假後端：讀整張表與寫入的 batch（含全有全無）已經照這裡實作，但 HTTP 那一層（doGet/doPost、`{ success }` 信封、`VITE_APPS_SCRIPT_URL`）都還沒接上——`services/types.ts` 的 `ApiResponse` 型別已定義但還沒有人使用。
 
 ---
 
 ## 請求與回應
 
-- 讀取走 `doGet` + query string，寫入走 `doPost` + JSON body，body 帶 `action` 欄位。這是 Apps Script 只有 doGet/doPost 兩種入口所決定的，不是可選項
-- action：`create`、`update`、`delete`（假後端另有 `bulkUpdate`，但前端的佇列一律逐筆送，快速編輯與批次刪除都拆成多個單筆操作，目前沒有人叫它）。完整介面與之後的 batch 端點見 ROADMAP「後端 API 介面」
+- 讀取走 `doGet` + query string，寫入走 `doPost` + JSON body。這是 Apps Script 只有 doGet/doPost 兩種入口所決定的，不是可選項
+- **寫入只有一個 batch 端點**：body 帶 `operations: [{ table, kind, id, values? }, …]`，`kind` 是 `create`／`update`／`delete`。一個請求帶所有表的所有操作——要省的是每次請求的 script 冷啟（0.5～2 秒），不是配額
+- **全有全無**：後端在 `LockService` 鎖裡跑完整批，中途失敗就什麼都不寫。前端保留佇列，使用者重按就是整批重送（`create` 定義成冪等的，所以安全）
+- **不回傳資料列**：前端寫入當下就改好自己的快取了，推送成功後本來就會重抓整表。完整介面見 ROADMAP「後端 API 介面」
+- **`update` 的 `values` 只有改過的那幾欄**，後端在鎖裡讀現值、合併、寫整列，所以同一列上沒動過的欄位保留 Sheet 上手改的值
 - payload 裡的欄位值**由前端轉成 sheet 的形狀**（表頭當 key、值是字串）再送出，後端拿到什麼就寫什麼，不自己做型別轉換
-- 保留字：`table`、`id`、`action` 不能拿來當篩選欄位名稱
+- 保留字：`table`、`id`、`kind` 不能拿來當欄位名稱
 - 回應統一包裝成 `{ success: true, data }` 或 `{ success: false, error: { message } }`
 - **重要限制**：Apps Script Web App 無法自由設定 HTTP status code（幾乎都回 200），前端一律看 body 的 `success` 判斷成敗，不看 status
 - 錯誤只回一句 `message`，不分類 error code（單人使用，看得懂就好）
@@ -43,7 +46,7 @@
 🔲 **多裝置同時編輯**（還沒做）：比對**整個試算表檔案**的 `modifiedTime`，不是逐筆的 `updatedAt`——Sheets 沒有逐列的修改時間，要維護就得後端戳章加 `onEdit` 觸發器。
 
 - `fetchTable` 的回應帶 `modifiedTime`（`DriveApp.getFileById(id).getLastUpdated()`），前端記下來
-- `mutateTable` 的 payload 帶 `since`，後端在 `LockService` 鎖裡跟當下的值比對再寫：不一致就回 `{ success: false, error: 'modified' }` 什麼都不寫，一致就寫入並回新的 `modifiedTime`
+- batch 的 payload 帶 `since`，後端在 `LockService` 鎖裡跟當下的值比對再寫（跟全有全無同一把鎖）：不一致就回 `{ success: false, error: 'modified' }` 什麼都不寫，一致就寫入並回新的 `modifiedTime`
 - 粒度很粗（任何分頁、連格式變更都算），單人多裝置的情境夠用。前端的處置見 [ROADMAP](../ROADMAP.md) 資料一致性段
 
 > `id` 是每張表都有的系統欄位，由後端統一處理，個別 Schema 不列出。前端 `TableSchema` 比照辦理：用獨立的 `idColumn` 指出 ID 對應的表頭，不放進 `columns`；`coerceRow()` 固定把它轉成 row 物件的 `id`。

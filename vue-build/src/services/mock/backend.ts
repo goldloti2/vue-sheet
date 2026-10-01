@@ -4,7 +4,7 @@
 //
 // 純記憶體：重整頁面就回到 CSV 的原始內容
 
-import type { SheetAction } from '../types'
+import type { BatchOperation } from '../types'
 import type { TableKey } from '@/schema'
 import { schemas } from '@/schema'
 import { parseCsv } from './csv'
@@ -48,70 +48,57 @@ function asStrings (values: Record<string, unknown>): Record<string, string> {
   )
 }
 
-function requireString (payload: Record<string, unknown>, key: string): string {
-  const value = payload[key]
-  if (typeof value !== 'string') {
-    throw new TypeError(`payload.${key} must be a string`)
-  }
-  return value
-}
-
 // 回傳複本，呼叫端改到的東西不會影響這裡存的狀態
 export function mockList (table: TableKey): Record<string, string>[] {
   return tableRows(table).map(row => ({ ...row }))
 }
 
-// 回傳這次異動到的 row（bulkUpdate 是多筆），跟真後端一樣是還沒轉型別的原始字串
-export function mockMutate (
-  action: SheetAction,
-  table: TableKey,
-  payload: Record<string, unknown>,
-): Record<string, string> | Record<string, string>[] {
+function applyOperation (operation: BatchOperation): void {
+  const { table, id } = operation
   const rows = tableRows(table)
+  const values = asStrings(operation.values ?? {})
 
-  switch (action) {
+  switch (operation.kind) {
     case 'create': {
-      // id 由呼叫端帶進來。已經存在就當作這次是重送、不重複建立，直接回傳既有那筆
-      const { id: _id, ...values } = payload
-      const id = requireString(payload, 'id')
-      const existing = rows.find(row => row[idColumnOf(table)] === id)
-      if (existing) {
-        return { ...existing }
+      // id 由呼叫端帶進來。已經存在就當作這次是重送、不重複建立
+      if (rows.some(row => row[idColumnOf(table)] === id)) {
+        return
       }
-
-      const row = { [idColumnOf(table)]: id, ...asStrings(values) }
-      rows.push(row)
-      return { ...row }
+      rows.push({ [idColumnOf(table)]: id, ...values })
+      return
     }
 
     case 'update': {
-      // id 只用來定位，不寫進欄位
-      const { id: _id, ...values } = payload
-      const index = rowIndexOf(table, requireString(payload, 'id'))
-      rows[index] = { ...rows[index], ...asStrings(values) }
-      return { ...rows[index] }
+      // 只有改過的欄位會進來，其餘保持原狀（真後端是在鎖裡讀現值再合併，見 docs/store.md）
+      const index = rowIndexOf(table, id)
+      rows[index] = { ...rows[index], ...values }
+      return
     }
 
     case 'delete': {
-      const index = rowIndexOf(table, requireString(payload, 'id'))
-      const [removed] = rows.splice(index, 1)
-      return { ...removed }
+      rows.splice(rowIndexOf(table, id), 1)
     }
+  }
+}
 
-    case 'bulkUpdate': {
-      // { ids: [...], data: {...} }：對多筆套用同一組欄位更新
-      const ids = payload.ids
-      if (!Array.isArray(ids)) {
-        throw new TypeError('payload.ids must be an array')
-      }
-      const data = (payload.data ?? {}) as Record<string, unknown>
-      const patch = asStrings(data)
-
-      return ids.map(id => {
-        const index = rowIndexOf(table, String(id))
-        rows[index] = { ...rows[index], ...patch }
-        return { ...rows[index] }
-      })
+// 一次推送的整批操作，全有全無：中途失敗就把動到的表還原，跟真後端在 LockService 裡的行為一致。
+// 不回傳資料列——前端快取在寫入當下就改好了，推送成功後本來就會重抓
+export function mockBatch (operations: readonly BatchOperation[]): void {
+  const backup = new Map<TableKey, Record<string, string>[]>()
+  for (const operation of operations) {
+    if (!backup.has(operation.table)) {
+      backup.set(operation.table, tableRows(operation.table).map(row => ({ ...row })))
     }
+  }
+
+  try {
+    for (const operation of operations) {
+      applyOperation(operation)
+    }
+  } catch (error) {
+    for (const [table, rows] of backup) {
+      tables.set(table, rows)
+    }
+    throw error
   }
 }

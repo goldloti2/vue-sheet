@@ -32,7 +32,7 @@ const { row, loading, error } = useTableRow<OrderRow>('order', id)              
 
 ## 寫入
 
-一律走 store 的四個 action，**不要在頁面或元件裡直接呼叫 `mutateTable`**：
+一律走 store 的四個 action，**不要在頁面或元件裡直接呼叫 `mutateBatch`**：
 
 ```ts
 store.create(table, values)      // 回傳新建那筆（id 當場發），並 push 進快取
@@ -76,9 +76,19 @@ store.removeMany(table, ids)     // 從快取移除多筆
 
 ## 推送與同步
 
-**推送**（`flush()`）逐筆送出佇列，成功一筆就移掉一筆。
+**推送**（`flush()`）把整個佇列攤平成一串操作，**跨所有表共用一個請求**。
 
-- **失敗不還原**：已經送出的就是送出了，剩下的留在佇列裡等使用者再按一次
+```ts
+mutateBatch([
+  { table: 'order', kind: 'update', id: 'ORD-1', values: { 下單日期: '2026/10/01' } },
+  { table: 'child', kind: 'create', id: 'CHD-9', values: { … } },
+  { table: 'child', kind: 'delete', id: 'CHD-3' },
+])
+```
+
+- **全有全無**：後端在鎖裡跑完整批，中途失敗就什麼都不寫。成功才清空佇列，失敗佇列原封不動，使用者再按一次就是整批重送——因為 id 由前端發、`create` 定義成冪等的，重送是安全的
+- **`update` 只送改過的那幾欄**（`enqueue` 把同一筆的多次編輯合併成「改過欄位的聯集」）。後端在鎖裡讀現值、合併、寫整列，所以**同一列上沒動過的欄位保留 Sheet 上手改的值**。這是唯一一層保護——衝突檢查用的是檔案層級的 `modifiedTime`，粗到分不出是哪一欄被改
+- **不回傳資料列**：寫入當下前端快取就改好了，而推送成功後 `refresh()` 本來就會重抓
 - **不往外拋**，錯誤記在 `store.flushError`，回傳這一次成不成功
 - **推送中又被呼叫就共用同一個 promise**（跟 `load()` 一樣），兩邊等到同一個結果
 

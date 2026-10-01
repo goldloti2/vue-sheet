@@ -1,6 +1,7 @@
 import type { TableKey } from '@/schema'
+import type { BatchOperation } from '@/services/appScript'
 import { computed, reactive, shallowRef } from 'vue'
-import { mutateTable } from '@/services/appScript'
+import { mutateBatch } from '@/services/appScript'
 
 export interface PendingOp {
   kind: 'create' | 'update' | 'delete'
@@ -58,10 +59,17 @@ export function createQueue () {
     })
   }
 
-  async function send (table: TableKey, id: string, op: PendingOp): Promise<void> {
-    await (op.kind === 'delete'
-      ? mutateTable('delete', table, { id })
-      : mutateTable(op.kind, table, { id, ...op.values }))
+  // 整個佇列攤平成一串操作，順序照加入的先後（Map 保序）。跨表共用一個請求
+  function toOperations (): BatchOperation[] {
+    const operations: BatchOperation[] = []
+    for (const [table, queue] of pending) {
+      for (const [id, op] of queue) {
+        operations.push(op.kind === 'delete'
+          ? { table, kind: 'delete', id }
+          : { table, kind: op.kind, id, values: op.values })
+      }
+    }
+    return operations
   }
 
   // 推送中又有人叫就共用同一個 promise，等到的是真正的結果（跟 load 的 pendingLoads 同一套）
@@ -78,17 +86,17 @@ export function createQueue () {
     }
   }
 
-  // 逐筆送出，成功一筆移掉一筆；失敗不還原、不往外拋，錯誤記在 flushError
+  // 一個請求送出整批，全有全無：成功才清空佇列，失敗原封不動留著讓使用者重按
+  // 失敗不往外拋，錯誤記在 flushError
   async function sendQueue (): Promise<boolean> {
     flushing.value = true
     flushError.value = null
 
     try {
-      for (const [table, queue] of pending) {
-        for (const [id, op] of queue) {
-          await send(table, id, op)
-          queue.delete(id)
-        }
+      const operations = toOperations()
+      if (operations.length > 0) {
+        await mutateBatch(operations)
+        pending.clear()
       }
       return true
     } catch (error) {

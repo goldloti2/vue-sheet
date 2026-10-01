@@ -5,13 +5,13 @@
 // 依 types.ts 的 ApiResponse 拆信封），然後刪掉整個 mock/ 資料夾就完成上線，
 // 這個檔案以外的程式碼都不用動。
 
-import type { SheetAction } from './types'
+import type { BatchOperation } from './types'
 import type { TableKey } from '@/schema'
 import { schemas } from '@/schema'
 import { coerceRow } from '@/schema/types'
-import { mockList, mockMutate } from './mock/backend'
+import { mockBatch, mockList } from './mock/backend'
 
-export type { ApiResponse, SheetAction } from './types'
+export type { ApiResponse, BatchOperation, SheetAction } from './types'
 
 // GET：list/get，回傳整張表
 // 後端給的是原始字串，回傳前照 schema 轉成該有的型別（見文件 6.1 節）
@@ -20,16 +20,9 @@ export async function fetchTable<Row> (table: TableKey): Promise<Row[]> {
   return rows.map(row => coerceRow<Row>(row, schemas[table]))
 }
 
-// POST：create/update/delete/bulkUpdate，body 帶 action 欄位
-export async function mutateTable<T> (
-  action: SheetAction,
-  table: TableKey,
-  payload: Record<string, unknown>,
-): Promise<T> {
-  const result = mockMutate(action, table, payload)
-  const schema = schemas[table]
-
-  return (Array.isArray(result)
-    ? result.map(row => coerceRow(row, schema))
-    : coerceRow(result, schema)) as T
+// POST：一次送出整批操作。
+// 全有全無：後端在鎖裡跑完整批，中途失敗就拋錯讓前端保留佇列重送。
+// 不回傳資料列——寫入當下前端快取就改好了，推送成功後本來就會重抓
+export async function mutateBatch (operations: readonly BatchOperation[]): Promise<void> {
+  mockBatch(operations)
 }

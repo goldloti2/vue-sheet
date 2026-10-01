@@ -60,7 +60,7 @@
 - flush 失敗保持「未推送」狀態並用 snackbar 報錯，讓使用者重按。因為 id 由前端發，整批重送是安全的（所以沒有逐筆補償，見「決定不做」）
 - **重抓前一定先 flush**，沒清乾淨就不重抓；沒有「只重抓一張表」的 API
 - 跨表寫入順序無所謂。Sheet 沒有外鍵約束，後端也不做合法性驗證，所以父表子表誰先寫都不會壞
-- 目前 `flush` 是逐筆送 N 次請求，通用 batch 端點等接真後端時一起做（見「後端 API 介面」）
+- `flush` 把整個佇列（跨所有表）攤平成一串 operations，**一個請求送完、全有全無**：成功才清空佇列，失敗原封不動讓使用者重按（見「後端 API 介面」）
 - 佇列只在記憶體、不寫進 `localStorage`（決定不做的理由與代價見「決定不做」）
 
 ### 共用元件庫
@@ -126,7 +126,7 @@
 - `useListOrder` / `useSiblingNav`：列表頁發布畫面上的實際順序，detail 頁據此翻上/下一筆（箭頭 + 手勢），切換用 `replace`
 
 ### 假後端
-- `services/mock/`：記憶體資料表 + 可運作的 create/update/delete/bulkUpdate，跟真 Sheet 一樣只存原始字串
+- `services/mock/`：記憶體資料表 + 可運作的 batch（create／update／delete，全有全無），跟真 Sheet 一樣只存原始字串
 - 純記憶體，重整頁面回到 CSV 原始內容
 - `services/appScript.ts` 是對後端唯一的出入口，上線時只要換掉這兩個函式的主體、刪掉 `mock/`
 
@@ -145,31 +145,32 @@
 - Hooks 機制（見 [docs/api.md](docs/api.md)）
 - 前端 `appScript.ts` 從假後端換成真的 fetch
 
-### 後端 API 介面（已定案，還沒實作）
+### 後端 API 介面（已定案，後端還沒實作）
 
-五個動作，單筆與批次成對：
+兩個端點：讀是整張表，寫是**一個 batch**。
 
-| 動作 | payload | 回傳 |
+| | payload | 回傳 |
 | --- | --- | --- |
-| `create` | `{ id, ...values }` | 新建那筆 |
-| `update` | `{ id, ...values }` | 更新後那筆 |
-| `delete` | `{ id }` | `{ id }` |
-| `bulkUpdate` | `{ ids, data }` | 更新後的多筆 |
-| `bulkDelete` | `{ ids }` | `{ ids }` |
+| 讀（GET） | `table` | 整張表的原始字串 row |
+| 寫（POST） | `operations: [{ table, kind, id, values? }, …]`，`kind` 是 `create`／`update`／`delete` | 成功與否（不回傳資料列） |
 
+- **一個請求帶所有表的所有操作**。要省的是每次請求的 script 冷啟（0.5～2 秒），不是配額——每分鐘 60 次是 Sheets REST API 的限制，`SpreadsheetApp` 不適用（但若為了 RAW 寫入改走進階服務 Sheets API，那條配額就回來了）
+- **全有全無**：後端在 `LockService` 裡跑完整批，中途失敗什麼都不寫；前端保留佇列、使用者重按就是整批重送
+- **`update` 只送改過的那幾欄**，後端在鎖裡讀現值、合併、寫整列，所以同一列上沒動過的欄位保留 Sheet 上手改的值。送整列省不到呼叫（後端為了把 id 換成列號本來就要讀一次），卻會讓前端快取蓋掉手改的欄位
+- **不回傳資料列**：前端寫入當下就改好快取了，推送成功後本來就會重抓
+- 單筆的 `create`／`update`／`delete` 端點與 `bulkUpdate`／`bulkDelete` 都拿掉了——batch 涵蓋得了，前端也沒有地方會送
 - **ID 由前端產生**（`create` 的 payload 帶 id）。這讓重送變成冪等的：`create` 定義成「id 不存在就建、已存在就當作已完成」，整批重送是安全的，不需要記錄哪幾筆成功過。也讓待推送佇列可以直接用 `table + id` 當 key，因為不會出現「刪掉又新增同一個 id」
 - 後端仍然要擋重複 id——Sheet 可以手動打開來改，不能假設 id 只由前端產生
-- `bulkUpdate { ids, data }` 的語意是「多筆的指定欄位改成同一個值」。後端可以直接落到一次 `sheet.getRangeList([...]).setValue(...)`
-- 前端目前只送 `create`／`update`／`delete`：佇列是逐筆的，快速編輯與批次刪除都拆成多個單筆操作進佇列（合併規則才適用）。`bulkUpdate`／`bulkDelete` 留在介面裡，等 batch 端點定下來再看要不要保留
+- 佇列是逐筆的，快速編輯與批次刪除都拆成多個單筆操作進佇列（合併規則才適用），送出時才攤平成一串 operations
+- `SpreadsheetApp` 的寫入能力：單格、連續多格同值（`getRange('A2:D2').setValue(v)`）、連續多格不同值（`setValues`，維度要完全相符）、不連續同值（`getRangeList([...]).setValue(v)`）都是一次呼叫；**只有「不連續、各自不同值」沒有**（`RangeList` 沒有 `setValues`），要迴圈寫、或改用進階服務 Sheets API 的 `Values.batchUpdate`
+- 後端實作的三條規則：**一張表讀一次 used range**（順便拿到舊值供合併）、**讀寫不交錯**（任何讀取會強制 flush 前面的寫入）、**刪列由下往上**（否則索引位移）
+- 🔲 **要先實測**：`setValue` 會把字串當成「使用者打字」解析（`=` 開頭變公式、像日期的字串變日期、前導零可能掉）。`SpreadsheetApp` 沒有 RAW 模式，Sheets API 的 `valueInputOption: 'RAW'` 有——這個結果決定要不要為了寫入掛進階服務
 - `bulkCreate`：等真的有匯入需求再說
-- **累積寫入需要通用 batch 端點**（一次請求帶多個操作）。因為佇列裡每筆的值都不同，`bulkUpdate { ids, data }` 涵蓋不了，硬拆成 N 次 `update` 就失去批次的意義
-
-> 註：每分鐘 60 次寫入是 Sheets REST API 的配額，用 Apps Script 內建的 `SpreadsheetApp` 並不適用。批次要省的是**每次 Web App 請求的 script 冷啟成本（約 0.5～2 秒）**，不是配額。
 
 ### 資料一致性
 - **推送前比對檔案的 modifiedTime**（取代原本 `updatedAt` 欄位的想法，設計已定、等後端）：Sheets 沒有逐列的修改時間，維護 `updatedAt` 要後端戳章加 `onEdit` 觸發器；改成用整個檔案的 `modifiedTime`（`DriveApp.getFileById(id).getLastUpdated()`），粗糙（任何分頁、連格式變更都算）但夠用
-  - `fetchTable` 的回應帶 `modifiedTime`，store 記成 `knownModifiedTime`；`mutateTable` 的 payload 帶 `since`，**由後端**在 `LockService` 鎖裡跟當下的值比對再寫，不一致就回 `{ success: false, error: 'modified' }` 什麼都不寫，一致就寫入並回新的 `modifiedTime`
-  - 衝突時前端停止推送、保留佇列、跳提示，兩條出路：「放棄未推送的變更並重抓」或「強制推送」（payload 不帶 `since`；注意 `update` 送的是整列，會蓋掉那一列的手動修改）
+  - `fetchTable` 的回應帶 `modifiedTime`，store 記成 `knownModifiedTime`；batch 的 payload 帶 `since`，**由後端**在 `LockService` 鎖裡跟當下的值比對再寫，不一致就回 `{ success: false, error: 'modified' }` 什麼都不寫，一致就寫入並回新的 `modifiedTime`
+  - 衝突時前端停止推送、保留佇列、跳提示，兩條出路：「放棄未推送的變更並重抓」或「強制推送」（payload 不帶 `since`；`update` 只送改過的欄，所以蓋掉的也只有那幾欄）
   - 衝突時不把佇列重新套用到新資料上（見「決定不做」）
 
 ### UI 功能
@@ -204,7 +205,7 @@
 - **路由驅動的通用頁**（`src/pages/[table]/` 四個通用頁讀 `schemas[route.params.table]`，加一張表只要寫 schema + 註冊一行）。當初的動機是「四個頁面檔幾乎一模一樣」，而薄頁面已經把那些樣板抽進版型元件了，頁面檔剩下的每一行都在講「這是哪張表、有哪些動作」。再往前一步只換到「連四個小檔都不用複製」（那本來就是 `template/` 的職責），代價卻是：頁面層失去 Row 型別（版型元件的泛型 slot 就白做了）、eject 的粒度變成整個表的資料夾（靜態路由段會蓋掉動態段）、schema 開始長 UI 設定（`listFields`／`detailTables`）。**回頭重看**：表多到十幾張、而且大多長得一樣
 - **佇列持久化**。佇列只在記憶體，重整／當機／分頁被系統殺掉就會丟掉未推送的變更（`beforeunload` 只擋得住主動關分頁）。單人使用、推送就是一顆鈕，不值得。要做的話：存 `localStorage`（`values` 進佇列時就已序列化，直接 `JSON.stringify`）、流程期間暫停寫入（磁碟上停在流程開始前的樣子，被殺掉再開等於自動回滾）；唯一貴的是開機後要把佇列重新疊回從後端抓來的 `rows`，需要一個部分欄位版的 `coerceRow`。**回頭重看**：真的丟過一次未推送的變更
 - **離線寫入佇列**（離線時照常操作、連上線再送）。跟上一條是同一個成本結構，而且多了「離線期間看到的資料可能已經過期」的問題。**回頭重看**：真的常在沒網路的地方用
-- **推送失敗的逐筆補償**（記錄哪幾筆成功了、只重送失敗的）。因為 id 由前端發、`create` 定義成冪等，整批重送本來就是安全的
+- **推送失敗的逐筆補償**（記錄哪幾筆成功了、只重送失敗的）。推送是全有全無的，根本不會有「成功了幾筆」；而且 id 由前端發、`create` 定義成冪等，整批重送本來就是安全的
 - **把佇列重新套用到新資料上**（衝突時保留未推送的改動、疊到重抓回來的資料）。跟佇列持久化是同一種成本；衝突時的兩條出路（放棄重抓／強制推送）夠用
 - **連續動作的三件**：
   - **返回＝回到上一步**（而不是整條取消）。代價是三件事加起來等於一個多頁精靈：每步改 `push` 且結束後要清歷史；存檔點要從一格變一疊（每步單獨收回）；上一步的表單要帶著使用者上次填的值重開。**回頭重看**：真有三步以上、常態要回頭改的流程

@@ -125,10 +125,11 @@
 - `leaveAfterAction()`：完成動作後用瀏覽器返回離開，不把已完成的表單頁留在歷史裡
 - `useListOrder` / `useSiblingNav`：列表頁發布畫面上的實際順序，detail 頁據此翻上/下一筆（箭頭 + 手勢），切換用 `replace`
 
-### 假後端
+### 後端的對接層與假後端
 - `services/mock/`：記憶體資料表 + 可運作的 batch（create／update／delete，全有全無），跟真 Sheet 一樣只存原始字串
 - 純記憶體，重整頁面回到 CSV 原始內容
-- `services/appScript.ts` 是對後端唯一的出入口，上線時只要換掉這兩個函式的主體、刪掉 `mock/`
+- `services/appScript.ts` 是對後端唯一的出入口，**真的 fetch 已經寫好**（GET 讀整張表、POST 送 batch、拆 `{ success }` 信封、認 `code: 'modified'` 轉成 `ConflictError`）。`VITE_APPS_SCRIPT_URL` 沒設就走假後端，所以 clone 下來不填東西就能跑；真後端穩定後整個 `mock/` 可以刪掉
+- POST 的 `Content-Type` 刻意是 `text/plain`：`application/json` 會觸發 CORS 預檢，而 Apps Script 回不了預檢（後端 `JSON.parse(e.postData.contents)` 讀）
 
 ### 文件與範本
 - 根目錄 `README.md` 是索引；跨兩端的介面在 `docs/api.md`，前端的設計在 `vue-build/docs/`（`architecture` / `schema` / `store` / `ui` + `components/` 每個元件一份）
@@ -143,7 +144,7 @@
 - Schema.gs、SheetUtils.gs（header 對應、row array ↔ object；ID 改由前端產生，後端不發）
 - Validation.gs：只做安全性與結構完整性（id 不重複、目標存在、表名與欄位名在 schema 內），不做合法性驗證
 - Hooks 機制（見 [docs/api.md](docs/api.md)）
-- 前端 `appScript.ts` 從假後端換成真的 fetch
+- 部署出網址、填進 `.env` 的 `VITE_APPS_SCRIPT_URL`（前端的 fetch 已經寫好，見「後端的對接層與假後端」那節），然後對著真的 Apps Script 驗一次
 
 ### 後端 API 介面（已定案，後端還沒實作）
 

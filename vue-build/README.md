@@ -58,7 +58,7 @@ src/
   components/ui/   共用元件庫，依用途分成 shell / dialog / list / record / page（用法見 docs/components/）
   composables/     依用途分成 data / form / shell / navigation / list / actions / page
   stores/tables/   每張表一份共用快取 + 寫入佇列 + row 上的 getter
-  services/        對後端唯一的出入口；mock/ 是假後端，正式後端接上後整個刪掉
+  services/        對後端唯一的出入口（.env 沒填網址就走 mock/ 的假後端，填了就打真的）
   schema/          對 row 做事的純函數（型別、排序、分組、篩選、驗證、關聯圖）；tables/ 底下是每張表的欄位定義
   config/          App 名稱與導覽列項目
   router/          路由實例與轉場方向判定

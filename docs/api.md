@@ -10,7 +10,7 @@
 
 ## CRUD API 設計決策
 
-> 🔶 **部分實作。** 這一節是跟「還不存在的後端」之間的約定。目前只有 `services/mock/` 的假後端：讀整張表與寫入的 batch（含全有全無）已經照這裡實作，但 HTTP 那一層（doGet/doPost、`{ success }` 信封、`VITE_APPS_SCRIPT_URL`）都還沒接上——`services/types.ts` 的 `ApiResponse` 型別已定義但還沒有人使用。
+> 🔶 **前端全部做好了，等後端。** `appScript.ts` 已經有真的 `fetch`（GET 讀整張表、POST 送 batch、拆 `{ success }` 信封、認衝突），**`VITE_APPS_SCRIPT_URL` 沒設就自動走 `services/mock/` 的假後端**——兩邊回傳的形狀一樣，所以上線只是在 `.env` 填一個網址。還沒驗證過的只有「真的對著 Apps Script 打」這件事。
 
 ---
 
@@ -23,10 +23,11 @@
 - **`update` 的 `values` 只有改過的那幾欄**，後端在鎖裡讀現值、合併、寫整列，所以同一列上沒動過的欄位保留 Sheet 上手改的值
 - payload 裡的欄位值**由前端轉成 sheet 的形狀**（表頭當 key、值是字串）再送出，後端拿到什麼就寫什麼，不自己做型別轉換
 - 保留字：`table`、`id`、`kind` 不能拿來當欄位名稱
-- 回應統一包裝成 `{ success: true, data }` 或 `{ success: false, error: { message } }`
+- 回應統一包裝成 `{ success: true, data }` 或 `{ success: false, error: { message, code? } }`。batch 成功時的 `data` 是 `{ modifiedTime }`
 - **重要限制**：Apps Script Web App 無法自由設定 HTTP status code（幾乎都回 200），前端一律看 body 的 `success` 判斷成敗，不看 status
-- 錯誤只回一句 `message`，不分類 error code（單人使用，看得懂就好）
-- 部署後的網址放環境變數 `VITE_APPS_SCRIPT_URL`（`.env`，不進版控）
+- 錯誤只回一句 `message`，不分類 error code——**唯一的例外是 `code: 'modified'`**，衝突要能被前端認出來才問得了使用者
+- **POST 的 `Content-Type` 要是 `text/plain`**，不是 `application/json`：後者會觸發 CORS 預檢（`OPTIONS`），而 Apps Script 的 Web App 回不了預檢。後端用 `JSON.parse(e.postData.contents)` 讀 body，內容仍然是 JSON
+- 部署後的網址放環境變數 `VITE_APPS_SCRIPT_URL`（`.env`，不進版控；範本見 `.env.example`）。**沒設就走假後端**，所以 clone 下來不填任何東西就能跑
 
 ---
 

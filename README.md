@@ -59,7 +59,7 @@ npm run dev     # 開發伺服器
 npm run build   # 產出靜態檔案到 dist/
 ```
 
-跑起來會看到一個可以瀏覽、新增、編輯、刪除的 App，資料來自 `vue-build/src/services/mock/` 的假後端（把 `vue-build/mock/*.csv` 讀進記憶體）——不需要任何設定，但**重整頁面就回到 CSV 的原始內容**。正式的 Apps Script 後端還沒開始寫，見 [ROADMAP.md](ROADMAP.md)。
+跑起來會看到一個可以瀏覽、新增、編輯、刪除的 App，資料來自 `vue-build/src/services/mock/` 的假後端（把 `vue-build/mock/*.csv` 讀進記憶體）——不需要任何設定，但**重整頁面就回到 CSV 的原始內容**。前端對後端的那一層已經寫好了（`.env` 填了 `VITE_APPS_SCRIPT_URL` 就打真的、沒填就走假後端），但 **Apps Script 那一側還沒開始寫**，見 [ROADMAP.md](ROADMAP.md)。
 
 接下來：
 

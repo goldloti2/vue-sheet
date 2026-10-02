@@ -5,7 +5,7 @@
     tables: ListTable[]
   }>()
 
-  // 選中那張表的 sheetName
+  // 選中那張表的 tableLabel
   const picked = defineModel<string>({ required: true })
 </script>
 
@@ -20,10 +20,10 @@
   >
     <v-chip
       v-for="item in tables"
-      :key="item.schema.sheetName"
+      :key="item.schema.tableLabel"
       size="small"
-      :text="item.schema.sheetName"
-      :value="item.schema.sheetName"
+      :text="item.schema.tableLabel"
+      :value="item.schema.tableLabel"
     />
   </v-chip-group>
 </template>

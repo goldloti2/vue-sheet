@@ -80,7 +80,7 @@
 - `useSearch(query, rows, schema)`：純函數式，每列的可搜尋文字（searchable 欄位的顯示文字接起來、小寫）只跟 rows 一起重算，敲字只做 `includes`；query 依空白切詞、雙引號包起來的當一個詞，每個詞都要命中（AND）
 - `useFilter(filters, rows, schema)`：`Filters = { 欄位key: { values?, min?, max? } }`，select 用 `values`（`null` 是空白）、number／date 共用 `min`／`max`；欄位之間 AND、`values` 之間 OR；設了範圍而值是空的列排除、select 只有勾了空白才留
 - **query 與 filters 都屬於頁面**：`useListControls(query, { tables, current? }?)` 登記後 App Bar 才出現放大鏡，按下去整條換成輸入框；給了 tables 就在輸入框內最右多一顆篩選鈕（有條件生效時主色），開右側抽屜（抽屜歸 `AppShell`，內容是 `FilterPanel`），改了即時生效。← 關閉清掉 query 與所有表的篩選、換頁自動收起、回到還帶著 query 或篩選的頁面自動重開；抽屜開著時 `PageFab` 讓開（`useOverlay` 的 `overlayOpenKey`）。左右兩個抽屜都設 `order="-1"`，連 scrim 一起蓋在 App Bar 之上（Vuetify 的 layout 是 `z-index = 1000 + 層數×2 − 註冊順序×2`，越早註冊越上層，順序由 `order` 決定），所以抽屜開著時搜尋列與右上的鈕都碰不到。頁面串法 `rows → useFilter → useSearch → 頁籤切`，跨所有頁籤
-- **一頁可以有好幾張表的條件**：`tables: [{ schema, filters, rows }, …]` 每張表各自一份 `Filters`、同時生效（頁籤各接一張表時，每個面板各用自己那份過濾）；query 則是全頁共用一份。抽屜第一層上方多一排表的 chip 決定現在編哪一張，`current`（頁面的頁籤 v-model，值對得上 `sheetName`）決定打開時停在哪張，使用者仍可自己切。「清除」只清當前那張，← 關閉搜尋才是全部清掉。單表頁 `tables` 給一個元素，看不到 chip、行為跟以前一樣
+- **一頁可以有好幾張表的條件**：`tables: [{ schema, filters, rows }, …]` 每張表各自一份 `Filters`、同時生效（頁籤各接一張表時，每個面板各用自己那份過濾）；query 則是全頁共用一份。抽屜第一層上方多一排表的 chip 決定現在編哪一張，`current`（頁面的頁籤 v-model，值對得上 `tableLabel`）決定打開時停在哪張，使用者仍可自己切。「清除」只清當前那張，← 關閉搜尋才是全部清掉。單表頁 `tables` 給一個元素，看不到 chip、行為跟以前一樣
 - 抽屜分兩層：第一層是可篩選欄位的清單（順序就是 `searchable` 清單的順序，跳過歸搜尋列的 `text`／`ref`），有條件的欄位名稱底下用小字顯示現在篩什麼、右側一個主色圓點；第二層是單一欄位的值——select 是一列一項的 checkbox（只列 rows 裡出現過的值，照 `options` 順序、`options` 沒有的排最後、有空的才有「(空白)」並排在最後），number／date／duration 是兩格範圍
 - 只為搜尋存在的虛擬欄位（例如父表把所有子列的名字接起來）照常宣告、列進 `searchable`，不排進 `detailOrder` 就不會顯示
 - **排序**：列進 `sortable` 的欄位才出現在排序面板，順序就是清單的順序（跟 `searchable` 分開兩份，備註這種長文字不用排；`image` 列了也會跳過）。`useListPage` 順手登記，所以列表頁零設定，App Bar 放大鏡右邊多一顆排序鈕（非預設排序時主色）。**一次只排一欄**：點一欄選它、再點同一欄換升降，`defaultSort` 永遠接在後面當 tiebreaker；toolbar 的「清除」回到只照 `defaultSort` 排（位置與外觀跟篩選那顆一樣）。即時生效、重整回預設（不持久化）
@@ -182,7 +182,7 @@
   - 這張表單可能本身就是某條流程的一步（例如「新增父表接著新增子表」的第二步），`runFlow` 不能套疊，而且 `runStep` 在流程中會用 `replace`，把目前這張表單頁換掉
   - 完成後要回到原本那張表單（`back`），不是像流程一樣往前走
   - 等真的常用到再做；現在的替代路徑是先去父表新增、再回來選
-- **schema 要不要拆成 `fields.ts` / `view.ts`**（評估過，先不做）：能乾淨切的只有表這一層——`fields.ts` 放 Row 介面、`sheetName`／`idColumn`／`newId`／`labelColumn`／`columns`／`virtualColumns`，`view.ts` 放 `detailOrder`／`formOrder`／`defaultSort`，`index.ts` 組起來。切在欄位內部（型別／必填 vs 標籤／可搜尋）已否決，那會逼每個 key 寫兩次。現在 view 那半只有三個欄位，拆完是一個五行的檔加一個 import，不划算。回頭重看的時機：view 那半長到 15～20 行，或哪張表需要兩種視圖（跟下一條一起做）
+- **schema 要不要拆成 `fields.ts` / `view.ts`**（評估過，先不做）：能乾淨切的只有表這一層——`fields.ts` 放 Row 介面、`tableLabel`／`idColumn`／`newId`／`labelColumn`／`columns`／`virtualColumns`，`view.ts` 放 `detailOrder`／`formOrder`／`defaultSort`，`index.ts` 組起來。切在欄位內部（型別／必填 vs 標籤／可搜尋）已否決，那會逼每個 key 寫兩次。現在 view 那半只有三個欄位，拆完是一個五行的檔加一個 import，不划算。回頭重看的時機：view 那半長到 15～20 行，或哪張表需要兩種視圖（跟下一條一起做）
 - **視圖設定讓頁面覆寫**（等真的有第二種視圖需求再做）：`detailOrder`／`formOrder`／`defaultSort` 現在只有 schema 一份，同一張表在不同頁面沒辦法有不同的排法與欄位集（AppSheet 是把這些掛在 view 上，所以一張表能有多個 view）。做法是 schema 那份當**預設**、頁面用選用 prop 覆寫（`DataDetail`／`DataForm` 各加一個 `order`、排序走 `useSortedTableList` 的參數），不是搬到頁面去——沒指定的頁面要有東西可用，預設值一定要留在 schema。頁面端自己寫仍然有型別檢查（`RowKey<XxxRow>[]` 是 exported 的），元件內部那層本來就是 `TableSchema<any>`。（篩選抽屜與排序面板的順序已經不必跟著誰了——它們有自己的 `searchable`／`sortable` 清單）
 - 總覽頁範本（`DataDashboardTemplate`）：保留了位置但沒有具體需求
 

@@ -93,8 +93,8 @@ export interface SortSpec<Row extends object = AnyRow> {
 
 // 各表宣告成 TableSchema<XxxRow>，欄位 key 與 value 的 row 就有型別；框架端一律用不帶參數的 TableSchema 接
 export interface TableSchema<Row extends object = AnyRow> {
-  /** 對應 Google Sheet 分頁的實際名稱，也是打 API 時 table= 的值 */
-  sheetName: string
+  /** 畫面上怎麼顯示這張表（表的 chip、頁籤比對）。Sheet 分頁的名稱只有後端知道 */
+  tableLabel: string
   /** 這張表的 ID 欄，填 Sheet 上的實際表頭文字。系統欄位，不放進 columns */
   idColumn: string
   /** 用哪一欄稱呼一列（真實或虛擬欄位都行），store 據此掛 row.$label；別的表 ref 到這裡就顯示它。省略就是 id */

@@ -20,7 +20,7 @@
   // 使用者在抽屜裡點的表；關起來就忘掉，下次打開重新跟著 current
   const picked = shallowRef<string | null>(null)
 
-  const table = computed(() => props.tables.find(item => item.schema.sheetName === (picked.value ?? props.current)) ?? props.tables[0])
+  const table = computed(() => props.tables.find(item => item.schema.tableLabel === (picked.value ?? props.current)) ?? props.tables[0])
 
   // 改了就即時生效，沒有套用鈕。每次都給新物件，讀它的 computed 才會重算
   const filters = computed<Filters>(() => table.value?.filters.value ?? {})
@@ -37,7 +37,7 @@
 
   // 換表就回到欄位清單：第二層那一欄是上一張表的
   const tableName = computed({
-    get: () => table.value?.schema.sheetName ?? '',
+    get: () => table.value?.schema.tableLabel ?? '',
     set: value => {
       picked.value = value
       editing.value = null

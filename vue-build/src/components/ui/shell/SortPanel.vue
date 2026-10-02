@@ -17,7 +17,7 @@
 
   const picked = shallowRef<string | null>(null)
 
-  const table = computed(() => props.tables.find(item => item.schema.sheetName === (picked.value ?? props.current)) ?? props.tables[0])
+  const table = computed(() => props.tables.find(item => item.schema.tableLabel === (picked.value ?? props.current)) ?? props.tables[0])
 
   watch(() => props.open, value => {
     if (!value) {
@@ -26,7 +26,7 @@
   })
 
   const tableName = computed({
-    get: () => table.value?.schema.sheetName ?? '',
+    get: () => table.value?.schema.tableLabel ?? '',
     set: value => {
       picked.value = value
     },

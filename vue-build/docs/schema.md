@@ -25,7 +25,7 @@ export interface OrderRow extends RowBase {
 }
 
 export const orderSchema: TableSchema<OrderRow> = {
-  sheetName: '訂單',            // Sheet 分頁的實際名稱
+  tableLabel: '訂單',           // 畫面上怎麼顯示這張表
   idColumn: '訂單編號',          // ID 欄的實際表頭
   newId: prefixedId('ORD'),     // 怎麼發新 id
   labelColumn: 'title',         // 別的表 ref 到這裡時顯示哪一欄
@@ -238,7 +238,7 @@ select 兩個可選開關：
 
 **各表的定義在 `schema/tables/`**（一張表一個檔），`schema/` 根目錄則是一批**對 row 做事的純函數**：`types.ts`（型別、`coerceRow`／`formatColumnValue`）、`sort.ts`（`sortRows`／`sortableColumns`）、`group.ts`（`groupRows`／`flattenGroups`）、`filter.ts`（`Filters` 與比對）、`validation.ts`、`relations.ts`、`image.ts`。它們都不碰 reactivity，所以 store、元件、composable 都能直接叫；`composables/data/` 底下的 `useFilter`／`useTable` 只是把它們包成 computed。
 
-`schema/index.ts` 另外帶「代稱 → 實際分頁名稱」的對照：程式碼裡好打的英文代稱（`'order'`）不等於 Sheet 分頁的實際名稱（那是對外名稱，通常不是英文）。打 API 用的是 `sheetName`，兩者分開——換代稱不影響 API，換分頁名稱也不用到處改字串。
+**前端不知道 Sheet 分頁叫什麼**：程式碼裡好打的英文代稱（`schemas` 的 key，`'order'`）就是打 API 用的值（`?table=order`），分頁的實際名稱只有後端需要——所以改分頁名稱不用動前端。`tableLabel` 是另一件事：畫面上怎麼顯示這張表（表的 chip、頁籤比對）。
 
 ---
 

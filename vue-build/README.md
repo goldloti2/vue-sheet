@@ -38,7 +38,7 @@ npx eslint src && npx vue-tsc --build --force   # 提交前跑這兩個
 | 名詞 | 意思 |
 | --- | --- |
 | **表**（table） | 一個 Google Sheet 分頁。前端這邊對應一份 schema |
-| **代稱**（table key） | 程式裡稱呼一張表的英文字串（`'order'`），跟 Sheet 分頁的實際名稱分開 |
+| **代稱**（table key） | 程式裡稱呼一張表的英文字串（`'order'`），也是打 API 用的值。Sheet 分頁的實際名稱只有後端知道 |
 | **schema** | 一張表的欄位定義：型別、驗證、排序、關聯。見 [docs/schema.md](docs/schema.md) |
 | **列**（row） | 表裡的一筆資料。id 由前端產生 |
 | **虛擬欄位**（virtual column） | 不存在 Sheet 上、讀的時候才算出來的欄位 |

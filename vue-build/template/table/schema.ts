@@ -15,7 +15,8 @@ export interface __Table__Row extends RowBase {
 }
 
 export const __table__Schema: TableSchema<__Table__Row> = {
-  sheetName: '範本',
+  // 畫面上怎麼顯示這張表（表的 chip、頁籤比對）
+  tableLabel: '範本',
   idColumn: 'TPL-ID',
   // 用哪一欄稱呼一列（可省略，省略就是 id）：row.$label、別的表 ref 到這裡、選擇器清單都顯示它
   labelColumn: 'name',

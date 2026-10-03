@@ -185,6 +185,9 @@ if (values) {
 **為什麼 KeepAlive 的 key 要帶完整網址**
 不帶的話，同一個路由換 id（`/表名/A` → `/表名/B`）對 Vue 而言是同一個元件、同一個 vnode，會就地更新而不觸發 `<transition>`，翻上／下一筆就完全沒有動畫。代價是 KeepAlive 從「每個元件一份」變成「每個網址一份」，所以要配 `max` 收斂；連續翻超過 50 筆不回列表的話，列表頁會被擠掉、展開狀態就沒了。
 
+**為什麼每個版型最外面都包一層 `div`**
+`<Transition>` 只動得了「root 是單一元素」的頁面。版型裡的 `PageState` 渲染出來是 fragment（進度條 + slot），直接當 root 的話那一頁不播動畫，而且 console 會出現 `renders non-element root node` 的警告。所以 `ListPage`／`DetailPage`／`FormPage` 都在外面包一層（細節見 [components/PageState.md](components/PageState.md)）。
+
 **為什麼離開中的頁面還在運轉**
 KeepAlive 的 `deactivate` 只搬 DOM，不會暫停元件的 effect；而 `onDeactivated` 是 post-render，比 pre-flush 的 `watch` 還晚。所以在整段離場動畫期間，舊頁面仍然會對外部變化重新計算、重新渲染——而外面的世界已經換頁了。這是「返回時閃一下錯誤內容」這一整類問題的唯一根源，上面那五條規則都是為它而存在。流進離開中頁面的東西只有兩種：路由參數（讀一次就固定）與共用快取（讓它變）。
 

@@ -46,3 +46,4 @@
 - **動作失敗不要走這裡**：送出失敗、推送失敗那種錯誤要讓內容留在畫面上（表單不能消失），訊息顯示在內容底下——`FormPage` 的 `error` prop 就是這樣分的
 - **一頁可以有好幾份**：主記錄之外的區塊（詳細頁內嵌的子表格、總覽頁的各區塊）各包各的，狀態不會互相影響
 - 三種狀態的優先順序是 loading → error → empty，跟資料實際到手的順序一致
+- **它渲染出來的不是單一元素**（資料到手時是「進度條 + slot」的 fragment），所以**不要讓它當頁面的 root**：頁面轉場的 `<Transition>` 只動得了單一元素的 root，fragment 會讓那一頁不播動畫並在 console 留下 `renders non-element root node` 的警告。三個版型（`ListPage`／`DetailPage`／`FormPage`）都在外面包一層 `div`，自己直接用 `PageState` 的頁面也要包（通常本來就包在 `v-container` 裡）

@@ -19,17 +19,19 @@
 </script>
 
 <template>
-  <PageState :empty="!model" :error="loadError" :loading="loading">
-    <!-- PageState 已經擋掉 null 了，這層只是讓型別看得出來 -->
-    <template v-if="model">
-      <DataForm v-model="model" :errors="errors" :schema="schema" />
+  <div>
+    <PageState :empty="!model" :error="loadError" :loading="loading">
+      <!-- PageState 已經擋掉 null 了，這層只是讓型別看得出來 -->
+      <template v-if="model">
+        <DataForm v-model="model" :errors="errors" :schema="schema" />
 
-      <v-container v-if="error">
-        <v-alert :text="error" type="error" />
-      </v-container>
+        <v-container v-if="error">
+          <v-alert :text="error" type="error" />
+        </v-container>
 
-      <!-- 這張表額外要放的東西（說明、預覽…）；一般不用 -->
-      <slot :row="model" />
-    </template>
-  </PageState>
+        <!-- 這張表額外要放的東西（說明、預覽…）；一般不用 -->
+        <slot :row="model" />
+      </template>
+    </PageState>
+  </div>
 </template>

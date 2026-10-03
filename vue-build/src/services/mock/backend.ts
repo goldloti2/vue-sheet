@@ -52,9 +52,16 @@ function asStrings (values: Record<string, unknown>): Record<string, string> {
 // 整個「檔案」的修改時間，對應真後端的 DriveApp.getFileById(id).getLastUpdated()
 let modifiedTime = new Date().toISOString()
 
+// 跟 Sheet 一樣：開頭的單引號是純文字前綴，不算內容
+function readValues (row: Record<string, string>): Record<string, string> {
+  return Object.fromEntries(
+    Object.entries(row).map(([header, value]) => [header, value.replace(/^'/, '')]),
+  )
+}
+
 // 回傳複本，呼叫端改到的東西不會影響這裡存的狀態
 export function mockList (table: TableKey): TableData {
-  return { rows: tableRows(table).map(row => ({ ...row })), modifiedTime }
+  return { rows: tableRows(table).map(row => readValues(row)), modifiedTime }
 }
 
 // 開發用：模擬「別人在 Sheet 上改了東西」，讓衝突那條路測得到。

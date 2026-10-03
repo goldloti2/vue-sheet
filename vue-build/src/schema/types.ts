@@ -99,7 +99,7 @@ export interface TableSchema<Row extends object = AnyRow> {
   idColumn: string
   /** 用哪一欄稱呼一列（真實或虛擬欄位都行），store 據此掛 row.$label；別的表 ref 到這裡就顯示它。省略就是 id */
   labelColumn?: RowKey<Row>
-  /** 怎麼發一筆新 id，由各表自己決定；常見的前綴式用 prefixedId('TPL') */
+  /** 怎麼發一筆新 id（常見的前綴式用 prefixedId('TPL')）。格式別用數字開頭，見 docs/schema.md */
   newId: () => string
   /** Sheet 上真的有的欄位，順序同時是表單與詳細頁的預設順序 */
   columns: SchemaColumn<Row>[]
@@ -185,12 +185,23 @@ export function formatDate (date: Date): string {
   return `${year}/${month}/${day}`
 }
 
+// 寫進 Sheet 的字串會被當成「使用者在那一格輸入」解析，有幾種形狀會讓那一格變成別的型別：
+// = 與 + 開頭變公式、0 開頭掉前導零、1/2 變日期、1E5 變數字。只有這幾種補一個單引號
+// （Sheet 的純文字前綴，不算內容、讀回來不含它），其他值原樣送出
+const sheetTypeChanging = /^[=+0]|^\d+(?:\.\d+)?e[+-]?\d+$|^\d+(?:\/\d+)+$/i
+
+const sheetTextTypes = new Set<ColumnType>(['text', 'select', 'image'])
+
+function sheetValue (text: string, type: ColumnType): string {
+  return sheetTextTypes.has(type) && sheetTypeChanging.test(text) ? `'${text}` : text
+}
+
 export function serializeRow (values: Record<string, unknown>, schema: TableSchema): Record<string, string> {
   const result: Record<string, string> = {}
 
   for (const column of schema.columns) {
     if (column.key in values) {
-      result[columnHeader(column)] = formatColumnValue(values, column)
+      result[columnHeader(column)] = sheetValue(formatColumnValue(values, column), column.type)
     }
   }
 

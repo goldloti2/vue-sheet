@@ -68,7 +68,7 @@ store.removeMany(table, ids)     // 從快取移除多筆
 
 ### 新增的 id 由前端發
 
-`store.create` 呼叫 schema 的 `newId()`，不等後端回傳。怎麼發是每張表自己的事——框架只提供現成的 `prefixedId('TPL')`（前綴 + 8 碼十六進位隨機值，例如 `TPL-11eef1a8`），要日期編號或流水號就自己寫一個 `() => string`。
+`store.create` 呼叫 schema 的 `newId()`，不等後端回傳。怎麼發是每張表自己的事——框架只提供現成的 `prefixedId('TPL')`（前綴 + 8 碼十六進位隨機值，例如 `TPL-11eef1a8`），要日期編號或流水號就自己寫一個 `() => string`（格式別用數字開頭，理由見 [schema.md](schema.md#sheet-上的慣例)）。
 
 這讓重送變成安全的：`create` 的語意是「id 不存在就建、已存在就當作已完成」，整批重送不需要記錄哪幾筆成功過。後端仍然要擋重複 id——Sheet 可以手動打開來改。
 

@@ -22,7 +22,7 @@
 - **不回傳資料列**：前端寫入當下就改好自己的快取了，推送成功後本來就會重抓整表。完整介面見 ROADMAP「後端 API 介面」
 - **`update` 的 `values` 僅含進入過佇列的欄位**（表單送出整列，快速編輯與欄位動作僅送該欄），後端只寫入這些儲存格，因此同一列中未進入佇列的欄位會保留 Sheet 上手動修改的值與公式
 - **`table` 的值是前端的表代稱**（`schemas` 的 key，例如 `order`），而非 Sheet 分頁的名稱。後端另有一份「代稱 → 分頁名稱 + ID 欄表頭」的對照（`apps-script/Config.gs`），因此變更分頁名稱不影響前端
-- payload 的欄位值**由前端轉換為 sheet 的形狀**（表頭作為 key、值為字串）後送出，後端原封不動寫入、不做任何型別轉換。值寫入儲存格時 Sheet 會自行解析該字串：數字與日期的解析是需要的，開頭為 `=` 的字串被解析為公式則是尚未處理的問題。細節見 [../apps-script/README.md](../apps-script/README.md) 的「值寫入儲存格的行為」
+- payload 的欄位值**由前端轉換為 sheet 的形狀**（表頭作為 key、值為字串）後送出，後端原封不動寫入、不做任何型別轉換。值寫入儲存格時 Sheet 會自行解析該字串：數字與日期的解析是需要的，而文字類欄位中「會讓儲存格變成別的型別」的值（開頭為 `=`、`+`、`0`，分數、科學記號）**由前端在 `serializeRow` 補上單引號前綴**——只有前端知道欄位型別，後端不做任何轉義。細節見 [../apps-script/README.md](../apps-script/README.md) 的「值寫入儲存格的行為」
 - 保留字：`table`、`id`、`kind` 不能拿來當欄位名稱
 - 回應統一包裝成 `{ success: true, data }` 或 `{ success: false, error: { message, code? } }`。batch 成功時的 `data` 是 `{ modifiedTime }`
 - **重要限制**：Apps Script Web App 無法自由設定 HTTP status code（幾乎都回 200），前端一律看 body 的 `success` 判斷成敗，不看 status

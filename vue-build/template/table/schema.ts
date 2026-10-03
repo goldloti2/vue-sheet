@@ -20,7 +20,7 @@ export const __table__Schema: TableSchema<__Table__Row> = {
   idColumn: 'TPL-ID',
   // 用哪一欄稱呼一列（可省略，省略就是 id）：row.$label、別的表 ref 到這裡、選擇器清單都顯示它
   labelColumn: 'name',
-  // 怎麼發新 id，各表自己決定。prefixedId 是現成的前綴式（TPL-11eef1a8）
+  // 怎麼發新 id，各表自己決定。prefixedId 是現成的前綴式（TPL-11eef1a8）；格式別用數字開頭
   newId: prefixedId('TPL'),
   columns: [
     // 欄位只描述資料本身；「列表頁怎麼用它」寫在下面的清單裡

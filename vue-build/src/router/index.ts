@@ -52,12 +52,12 @@ router.beforeEach((_to, from) => {
 // 用來判斷「返回」要不要相信瀏覽器歷史紀錄——count > 1 才代表真的有上一頁在 App 裡
 export const navigationCount = shallowRef(0)
 
-// 頁面切換動畫方向，對應的 CSS 寫在 App.vue。判定分四層，優先度由上往下：
+// 頁面切換動畫方向，`App.vue` 把它掛成轉場容器的 data-dir（CSS 也在那裡）。判定分四層，優先度由上往下：
 //   1. 兩端都是導覽項目 → 依導覽列上的排列順序（右邊的算前進）
 //   2. 只有目的地是導覽項目 → 一律後退（從內頁回到頂層就是往外）
 //   3. 同一個路由換 id，而且兩筆都在列表發布的順序裡 → 依它們在列表中的先後
 //   4. 其他 → 看瀏覽器歷史是往前還是往後（點連結/action 是前進，返回鍵是後退）
-export const transitionDir = shallowRef<'page-forward' | 'page-back'>('page-forward')
+export const transitionDir = shallowRef<'forward' | 'back'>('forward')
 
 function navIndexOf (path: string): number {
   return navItems.findIndex(item => item.to === path)
@@ -95,11 +95,11 @@ router.afterEach((to, from) => {
   const fromNav = navIndexOf(from.path)
 
   if (toNav === -1) {
-    transitionDir.value = sameRecordDirection(to, from) ?? (wentBack ? 'page-back' : 'page-forward')
+    transitionDir.value = sameRecordDirection(to, from) ?? (wentBack ? 'back' : 'forward')
   } else if (fromNav === -1 || toNav === fromNav) {
-    transitionDir.value = 'page-back'
+    transitionDir.value = 'back'
   } else {
-    transitionDir.value = toNav < fromNav ? 'page-back' : 'page-forward'
+    transitionDir.value = toNav < fromNav ? 'back' : 'forward'
   }
 
   navigationCount.value++

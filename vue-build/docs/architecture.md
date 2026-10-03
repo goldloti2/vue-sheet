@@ -185,6 +185,9 @@ if (values) {
 **為什麼 KeepAlive 的 key 要帶完整網址**
 不帶的話，同一個路由換 id（`/表名/A` → `/表名/B`）對 Vue 而言是同一個元件、同一個 vnode，會就地更新而不觸發 `<transition>`，翻上／下一筆就完全沒有動畫。代價是 KeepAlive 從「每個元件一份」變成「每個網址一份」，所以要配 `max` 收斂；連續翻超過 50 筆不回列表的話，列表頁會被擠掉、展開狀態就沒了。
 
+**為什麼轉場方向是容器的 `data-dir`，不是 `<Transition>` 的 `name`**
+前進／後退的位移量寫成 `[data-dir='forward'] .page-leave-to { … }` 這種屬性選擇器，`name` 固定是 `page`。用兩個 name（`page-forward`／`page-back`）會踩到 `<Transition>` + `<KeepAlive>` 的坑：KeepAlive 重新啟用一個快取頁面時會把當下的 transition hooks 傳進子樹，所以**進場**的 class 永遠是對的；但**停用**那一側沒有這個傳遞，離場跑的是「那個 vnode 上次被啟用時掛的」那份 hooks，class 名稱因此是上一次的方向。實測過的症狀：導覽列最左邊那一頁永遠以 back 進場，於是它不管往哪裡去都用 `page-back-leave-to` 往右滑出。改成屬性之後 class 只有 `page-leave-*` 一種，位移量在動畫那一帧才從 DOM 讀，過期的 hooks 也不影響。
+
 **為什麼每個版型最外面都包一層 `div`**
 `<Transition>` 只動得了「root 是單一元素」的頁面。版型裡的 `PageState` 渲染出來是 fragment（進度條 + slot），直接當 root 的話那一頁不播動畫，而且 console 會出現 `renders non-element root node` 的警告。所以 `ListPage`／`DetailPage`／`FormPage` 都在外面包一層（細節見 [components/PageState.md](components/PageState.md)）。
 

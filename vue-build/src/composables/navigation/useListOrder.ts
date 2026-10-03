@@ -68,12 +68,12 @@ export function useSiblingNav (table: TableKey, id: MaybeRefOrGetter<string>): S
 }
 
 // 給 router 判斷「同一個路由換 id」的動畫方向用。
-export function siblingDirection (fromId: string, toId: string): 'page-forward' | 'page-back' | null {
+export function siblingDirection (fromId: string, toId: string): 'forward' | 'back' | null {
   for (const order of orders.values()) {
     const from = order.indexOf(fromId)
     const to = order.indexOf(toId)
     if (from !== -1 && to !== -1 && from !== to) {
-      return to > from ? 'page-forward' : 'page-back'
+      return to > from ? 'forward' : 'back'
     }
   }
   return null

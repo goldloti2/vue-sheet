@@ -10,9 +10,10 @@
 <template>
   <v-app>
     <AppShell :nav-items="navItems">
-      <div class="page-transition-viewport">
+      <!-- 方向掛在這裡而不是 transition 的 name 上，理由見 docs/architecture.md 的設計取捨 -->
+      <div class="page-transition-viewport" :data-dir="transitionDir">
         <router-view v-slot="{ Component }">
-          <transition :name="transitionDir">
+          <transition name="page">
             <keep-alive :max="50">
               <component :is="Component" :key="route.fullPath" />
             </keep-alive>
@@ -30,34 +31,33 @@
   overflow-y: hidden;
 }
 
-.page-forward-enter-active,
-.page-forward-leave-active,
-.page-back-enter-active,
-.page-back-leave-active {
+.page-enter-active,
+.page-leave-active {
   transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.5, 1);
 }
 
-.page-forward-leave-active,
-.page-back-leave-active {
+/* 離場的那一頁疊在進場那頁上面，否則它會把進場的推到下面去 */
+.page-leave-active {
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
 }
 
-.page-forward-enter-from {
+/* 位移量由 viewport 的 data-dir 決定，取的是動畫那一帧的值 */
+[data-dir='forward'] .page-enter-from {
   transform: translateX(100%);
 }
 
-.page-forward-leave-to {
+[data-dir='forward'] .page-leave-to {
   transform: translateX(-100%);
 }
 
-.page-back-enter-from {
+[data-dir='back'] .page-enter-from {
   transform: translateX(-100%);
 }
 
-.page-back-leave-to {
+[data-dir='back'] .page-leave-to {
   transform: translateX(100%);
 }
 </style>

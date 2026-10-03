@@ -12,7 +12,7 @@
 - Vue 3 + TypeScript + Vuetify，unplugin-vue-router 檔案式路由，Pinia
 - `AppShell`：頂部 App Bar（標題來自 `route.meta.title`）+ 底部導覽列 + 側邊欄空殼
 - App Bar 左側圖示依路由自動切換漢堡選單／返回箭頭
-- 頁面前進/後退轉場動畫，方向依「導覽列順序 → 回到頂層 → 同路由換 id 依列表順序 → 瀏覽器歷史前後」四層判定（見 [vue-build/docs/ui.md](vue-build/docs/ui.md)）
+- 頁面前進/後退轉場動畫，方向依「導覽列順序 → 回到頂層 → 同路由換 id 依列表順序 → 瀏覽器歷史前後」四層判定（見 [vue-build/docs/ui.md](vue-build/docs/ui.md)）。方向是掛在轉場容器上的 `data-dir`，`<Transition>` 的 `name` 固定——這樣才避得開 `KeepAlive` 讓離場套到上一次方向的坑（見 [vue-build/docs/architecture.md](vue-build/docs/architecture.md) 的設計取捨）
 - 底部導覽列切換分頁用 `replace`，內頁不會堆進歷史
 - `<KeepAlive :max="50">` 以 `route.fullPath` 為 key，保留列表的展開狀態與頁面裡的其他元件狀態；同時讓「同路由換 id」能觸發轉場動畫
 - 捲動位置還原：視窗的捲動位置不是元件狀態，KeepAlive 管不到，所以 router 自己記一份 `fullPath → scrollY`（`beforeEach` 存、`scrollBehavior` 還原，上限同 KeepAlive 的 50 筆）。返回鍵優先用瀏覽器自己記的 `savedPosition`；沒看過的頁面一律從頂端開始（以前是停在上一頁的位置）

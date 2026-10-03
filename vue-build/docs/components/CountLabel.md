@@ -8,7 +8,7 @@
 
 ```vue
 <div class="text-title-medium font-weight-bold">
-  <CountLabel :count="rows.length" label="品項" />
+  <CountLabel :count="rows.length" label="項目" />
 </div>
 ```
 

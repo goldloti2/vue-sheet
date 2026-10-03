@@ -9,7 +9,7 @@ npm run build   # 產出靜態檔案到 dist/
 npx eslint src && npx vue-tsc --build --force   # 提交前跑這兩個
 ```
 
-`npm run dev` 起來就能操作：資料來自 `src/services/mock/` 的假後端（把 `mock/*.csv` 讀進記憶體），改了會即時反映在畫面上，但**重整頁面就回到 CSV 的原始內容**——正式的 Apps Script 後端還沒接上。
+`npm run dev` 起來就能操作：資料來自 `src/services/mock/` 的假後端（把 `mock/*.csv` 讀進記憶體），改了會即時反映在畫面上，但**重整頁面就回到 CSV 的原始內容**。要接上實際的 Sheet 見 [../apps-script/README.md](../apps-script/README.md)（`.env` 填入 `VITE_APPS_SCRIPT_URL` 後即改打實際的後端）。
 
 ## 從哪裡開始看
 
@@ -31,7 +31,8 @@ npx eslint src && npx vue-tsc --build --force   # 提交前跑這兩個
 | [docs/ui.md](docs/ui.md) | 外殼與導覽、列表、動作擺在哪裡、搜尋與篩選 |
 | [docs/components/](docs/components/) | 每個共用 UI 元件一份用法說明 |
 | [template/README.md](template/README.md) | 初次設定、新增一張表要複製與修改哪些檔案 |
-| [../docs/api.md](../docs/api.md) | 前後端之間的介面（後端還沒實作） |
+| [../docs/api.md](../docs/api.md) | 前後端之間的介面 |
+| [../apps-script/README.md](../apps-script/README.md) | 後端：要填什麼、怎麼部署、實測結果 |
 
 ## 名詞
 

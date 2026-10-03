@@ -8,6 +8,7 @@
 - 新增一張表／一個頁面怎麼做：[vue-build/template/README.md](vue-build/template/README.md)
 - 前端的設計與內部運作：[vue-build/README.md](vue-build/README.md)
 - 前後端之間的介面：[docs/api.md](docs/api.md)
+- 後端怎麼填與怎麼部署：[apps-script/README.md](apps-script/README.md)
 
 ---
 
@@ -59,12 +60,15 @@ npm run dev     # 開發伺服器
 npm run build   # 產出靜態檔案到 dist/
 ```
 
-跑起來會看到一個可以瀏覽、新增、編輯、刪除的 App，資料來自 `vue-build/src/services/mock/` 的假後端（把 `vue-build/mock/*.csv` 讀進記憶體）——不需要任何設定，但**重整頁面就回到 CSV 的原始內容**。前端對後端的那一層已經寫好了（`.env` 填了 `VITE_APPS_SCRIPT_URL` 就打真的、沒填就走假後端），但 **Apps Script 那一側還沒開始寫**，見 [ROADMAP.md](ROADMAP.md)。
+跑起來會看到一個可以瀏覽、新增、編輯、刪除的 App，資料來自 `vue-build/src/services/mock/` 的假後端（把 `vue-build/mock/*.csv` 讀進記憶體）——不需要任何設定，但**重整頁面就回到 CSV 的原始內容**。
+
+要接上實際的 Sheet：後端在 `apps-script/`（將四個 `.gs` 檔貼進 Apps Script、填妥 `Config.gs`、部署），前端在 `.env` 填入 `VITE_APPS_SCRIPT_URL`。整條路徑已對實際的 Sheet 完成測試（讀取、寫入、衝突比對皆正常）；尚未解決的項目與存取權限的暫時妥協見 [apps-script/README.md](apps-script/README.md) 的「實測結果」與 [ROADMAP.md](ROADMAP.md)。
 
 接下來：
 
 - **想加自己的表** → [vue-build/template/README.md](vue-build/template/README.md)
 - **想先搞懂它怎麼運作** → [vue-build/README.md](vue-build/README.md)（前端文件索引，含名詞對照）
+- **想接真的 Sheet** → [apps-script/README.md](apps-script/README.md)
 
 ---
 
@@ -74,5 +78,6 @@ npm run build   # 產出靜態檔案到 dist/
 | --- | --- |
 | [ROADMAP.md](ROADMAP.md) | 做到哪裡、還有什麼沒做、刻意不做的是什麼 |
 | [docs/api.md](docs/api.md) | 前後端之間的介面：CRUD API、後端 Hooks、認證與權限 |
+| [apps-script/README.md](apps-script/README.md) | 後端：要填什麼、怎麼部署、實作上的規則、實測結果 |
 | [vue-build/README.md](vue-build/README.md) | 前端：指令、資料夾、以及底下所有前端文件的索引 |
 | [vue-build/template/README.md](vue-build/template/README.md) | 初次設定、新增一張表要複製與修改哪些檔案 |

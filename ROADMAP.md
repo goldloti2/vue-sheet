@@ -139,14 +139,18 @@
 
 ## 未完成
 
-### 後端（完全還沒開始）
-- Apps Script 的 `doGet`/`doPost` 入口與泛用 CRUD 引擎
-- Schema.gs、SheetUtils.gs（header 對應、row array ↔ object；ID 改由前端產生，後端不發）
-- Validation.gs：只做安全性與結構完整性（id 不重複、目標存在、表名與欄位名在 schema 內），不做合法性驗證
-- Hooks 機制（見 [docs/api.md](docs/api.md)）
-- 部署出網址、填進 `.env` 的 `VITE_APPS_SCRIPT_URL`（前端的 fetch 已經寫好，見「後端的對接層與假後端」那節），然後對著真的 Apps Script 驗一次
+### 後端（已可運作，尚有兩項待處理）
 
-### 後端 API 介面（已定案，後端還沒實作）
+程式在 `apps-script/`（四個 `.gs` 檔），需填寫的僅有 `Config.gs`：試算表 id、「表代稱 → 分頁名稱 + ID 欄表頭」的對照、表頭列號。細節、部署步驟與實測結果見 [apps-script/README.md](apps-script/README.md)。
+
+- 已實作並於 **2026-10-02 對實際的 Sheet 完成測試**：`doGet`／`doPost` 入口與 `{ success }` 信封、泛用的整表讀取、batch 的鎖與衝突比對、`create`／`update`／`delete`、表頭對應、結構完整性檢查（表名與欄位名在對照內、id 不重複、目標存在）。讀取、新增、修改單一欄位、刪除、衝突比對、日期格式、`flush()` 後的 `modifiedTime` 皆正常
+- 全有全無的實作方式：**規劃（僅讀取）與寫入（僅寫入）分成兩段**，結構檢查全部在規劃階段完成，寫入階段不存在預期內的失敗，因此不需要回滾機制
+- 寫入無須掛載進階服務 Sheets API：`setValue` 讓 Sheet 自行解析字串（數字、日期）正是需要的行為，`RAW` 反而會把數字存成文字
+- 🔲 **開頭為 `=` 的字串會被解析為公式**（已實測）。尚未處理；可行的方式是寫入前補一個單引號（Sheet 的純文字前綴，讀回時不含該字元）
+- 🔲 **存取權限暫時設為「任何人」**，以網址作為唯一的保護：「只有我自己」實測無法從前端連線（跨網域 `fetch` 不會帶上 Google 的 cookie，亦不會出現登入頁）。最終預期採用 Google 認證，兩種方向（共用密鑰／前端 OAuth 取得 ID token）都需先修改前端
+- 🔲 Hooks 機制（見 [docs/api.md](docs/api.md)）
+
+### 後端 API 介面（已定案，兩端均依此實作並實測）
 
 兩個端點：讀是整張表，寫是**一個 batch**。
 
@@ -164,12 +168,12 @@
 - 後端仍然要擋重複 id——Sheet 可以手動打開來改，不能假設 id 只由前端產生
 - 佇列是逐筆的，快速編輯與批次刪除都拆成多個單筆操作進佇列（合併規則才適用），送出時才攤平成一串 operations
 - `SpreadsheetApp` 的寫入能力：單格、連續多格同值（`getRange('A2:D2').setValue(v)`）、連續多格不同值（`setValues`，維度要完全相符）、不連續同值（`getRangeList([...]).setValue(v)`）都是一次呼叫；**只有「不連續、各自不同值」沒有**（`RangeList` 沒有 `setValues`），要迴圈寫、或改用進階服務 Sheets API 的 `Values.batchUpdate`
-- 後端實作的三條規則：**一張表讀一次 used range**（順便拿到舊值供合併）、**讀寫不交錯**（任何讀取會強制 flush 前面的寫入）、**刪列由下往上**（否則索引位移）
-- 🔲 **要先實測**：`setValue` 會把字串當成「使用者打字」解析（`=` 開頭變公式、像日期的字串變日期、前導零可能掉）。`SpreadsheetApp` 沒有 RAW 模式，Sheets API 的 `valueInputOption: 'RAW'` 有——這個結果決定要不要為了寫入掛進階服務
+- 後端實作的三條規則：**一張表讀一次 used range**（順便拿到舊值供合併）、**讀寫不交錯**（任何讀取會強制 flush 前面的寫入）、**刪列由下往上**（否則索引位移）。`apps-script/Batch.gs` 即依這三項實作（規劃僅讀取、寫入僅寫入）
+- **`setValue` 會將字串視為「使用者輸入」解析**（已實測）：數字解析為數字、日期解析為日期，這正是需要的行為，Sheet 上的 `SUM` 與日期格式才能運作，因此**不掛載進階服務**（`valueInputOption: 'RAW'` 反而會把數字存成文字）。代價是開頭為 `=` 的字串會被解析為公式（見「後端」那節的待辦），且經由 App 編輯過的欄位會將原有公式替換為純字串（預期行為，細節見 [apps-script/README.md](apps-script/README.md)）
 - `bulkCreate`：等真的有匯入需求再說
 
 ### 資料一致性
-- **推送前比對檔案的 modifiedTime**（取代原本 `updatedAt` 欄位的想法；**前端已完成，等後端實作比對**）：Sheets 沒有逐列的修改時間，維護 `updatedAt` 要後端戳章加 `onEdit` 觸發器；改成用整個檔案的 `modifiedTime`（`DriveApp.getFileById(id).getLastUpdated()`），粗糙（任何分頁、連格式變更都算）但夠用
+- **推送前比對檔案的 modifiedTime**（取代原本 `updatedAt` 欄位的想法；兩端均已實作並實測）：Sheets 沒有逐列的修改時間，維護 `updatedAt` 要後端戳章加 `onEdit` 觸發器；改成用整個檔案的 `modifiedTime`（`DriveApp.getFileById(id).getLastUpdated()`），粗糙（任何分頁、連格式變更都算）但夠用
   - `fetchTable` 的回應帶 `modifiedTime`，store 記成 `knownModifiedTime`；batch 的 payload 帶 `since`，**由後端**在 `LockService` 鎖裡跟當下的值比對再寫，不一致就回 `{ success: false, error: 'modified' }` 什麼都不寫，一致就寫入並回新的 `modifiedTime`
   - 衝突時前端保留佇列、立起 `store.conflict`，`AppShell` 用 `choose()` 問兩條出路：`discardAndReload()`（放棄未推送的變更並重抓）或 `forcePush()`（payload 不帶 `since`；蓋掉的只有進過佇列的那幾欄）。關掉對話框就什麼都不做，下次按同步再問
   - 衝突時不把佇列重新套用到新資料上（見「決定不做」）
@@ -195,7 +199,8 @@
 
 ### 部署
 - 前端靜態託管（Vercel / Cloudflare Pages，注意 SPA fallback）
-- 後端 Apps Script 部署與存取權限設定
+- 後端 Apps Script 部署（步驟見 [apps-script/README.md](apps-script/README.md)）
+- 🔲 **存取權限目前設為「任何人」**，以網址作為唯一的保護（僅存放於不進版控的 `.env`）：「只有我自己」實測無法從前端連線。最終預期採用 Google 認證，見「後端」那節
 - API 配額用量監控
 
 ---

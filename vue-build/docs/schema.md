@@ -182,7 +182,7 @@ Sheet 上的真相只有子表的 ref 欄位一份，父列上的陣列是讀的
 | | 檢查什麼 | 在哪裡 |
 | --- | --- | --- |
 | **前端** | 合法性：`required`、數值範圍、`select` 選項、自訂規則 | `schema/validation.ts` 的 `validateRow`，一份、兩處呼叫 |
-| **後端** | 安全性與結構完整性：id 不重複、目標存在、表名與欄位名在 schema 內 | 🔲 還沒實作 |
+| **後端** | 安全性與結構完整性：id 不重複、目標存在、表在 `Config.gs` 的對照內、欄位名在 Sheet 表頭內 | `apps-script/Batch.gs` 的規劃階段 |
 
 - **form 層**：送出前跑 `validateRow`，不通過就不送，`fieldErrors` 交給 `DataForm` 逐欄顯示。**第一次按送出之前不提示**，按過一次之後改成即時更新。`askFields` 同一套，只驗問到的欄位
 - **store 層**：`create`／`update` 在碰快取與佇列之前再擋一次，有錯就把訊息串成一句拋出去、什麼都不動。這層擋的是繞過表單的程式 bug，錯誤經 `useActionRunner` 進 snackbar
@@ -223,7 +223,7 @@ select 兩個可選開關：
 2. **導覽帶來的 `history.state.defaults`** — 從哪裡按新增決定。`useNewAction(table, defaults)` 收 getter，按下去的當下才求值
 3. **`useCreateForm` 的第三個參數** — 頁面自己算得出來的
 
-> 函式型的 `default` 只存在於前端。前後端各自維護一份 schema，靜態值兩邊可以對照著寫、函式沒辦法——跟「合法性驗證只在前端做」是同一條線。
+> 初始值整件事只存在於前端：後端沒有欄位層的 schema，不會幫沒給的欄位填任何東西（`create` 沒送到的欄位就是留空）——跟「合法性驗證只在前端做」是同一條線。
 
 ---
 
@@ -231,14 +231,14 @@ select 兩個可選開關：
 
 - 前端讀取時的型別轉換依據
 - 共用欄位元件的設定來源（顯示順序、輸入元件、select 選項、ref 目標表）
-- 後端泛用 CRUD 引擎的依據
+- 送給後端的 payload 長什麼樣（表頭當 key、值是字串）
 - **不用來自動產生整個頁面**——版面與內容由開發者決定
 
-前後端各自維護一份，不共用程式碼。欄位改動時兩邊要手動同步；等到真的常常對不起來，再考慮做產生器。
+**後端沒有欄位層的 schema**：它認表頭（payload 的 key 就是表頭文字），只需要知道「代稱 → 分頁名稱 + ID 欄」這一行對照。所以加減欄位只要改前端 schema 與 Sheet 本身，兩邊要一起動的只有「加一張表」。
 
 **各表的定義在 `schema/tables/`**（一張表一個檔），`schema/` 根目錄則是一批**對 row 做事的純函數**：`types.ts`（型別、`coerceRow`／`formatColumnValue`）、`sort.ts`（`sortRows`／`sortableColumns`）、`group.ts`（`groupRows`／`flattenGroups`）、`filter.ts`（`Filters` 與比對）、`validation.ts`、`relations.ts`、`image.ts`。它們都不碰 reactivity，所以 store、元件、composable 都能直接叫；`composables/data/` 底下的 `useFilter`／`useTable` 只是把它們包成 computed。
 
-**前端不知道 Sheet 分頁叫什麼**：程式碼裡好打的英文代稱（`schemas` 的 key，`'order'`）就是打 API 用的值（`?table=order`），分頁的實際名稱只有後端需要——所以改分頁名稱不用動前端。`tableLabel` 是另一件事：畫面上怎麼顯示這張表（表的 chip、頁籤比對）。
+**前端不知道 Sheet 分頁叫什麼**：程式碼裡好打的英文代稱（`schemas` 的 key，`'order'`）就是打 API 用的值（`?table=order`），分頁的實際名稱只有後端需要，對照表在 `apps-script/Config.gs`——所以改分頁名稱不用動前端。`tableLabel` 是另一件事：畫面上怎麼顯示這張表（表的 chip、頁籤比對）。
 
 ---
 

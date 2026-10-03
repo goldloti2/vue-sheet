@@ -15,6 +15,22 @@ const NO_ROWS: unknown[] = []
 export function createRowGetters (rows: Partial<Record<TableKey, unknown[]>>) {
   // 每條關聯的索引只建一次；重算與否由 computed 自己判斷（依賴的是 rows[子表]）
   const childIndexes = new Map<string, ComputedRef<Map<string, unknown[]>>>()
+  const idIndexes = new Map<TableKey, ComputedRef<Map<string, unknown>>>()
+
+  // 一張表一份「id → 列」，給 ref 欄位查父列用
+  function idIndex (table: TableKey): ComputedRef<Map<string, unknown>> {
+    const existing = idIndexes.get(table)
+    if (existing) {
+      return existing
+    }
+
+    const index = computed(() => new Map(
+      (rows[table] ?? []).map(row => [(row as { id: string }).id, row]),
+    ))
+
+    idIndexes.set(table, index)
+    return index
+  }
 
   // 一條關聯一份索引：父 id → 指向它的子列，照子表的 defaultSort 排好。建立一次，之後靠 computed 自己失效
   function childIndex (relation: Relation): ComputedRef<Map<string, unknown[]>> {
@@ -74,7 +90,7 @@ export function createRowGetters (rows: Partial<Record<TableKey, unknown[]>>) {
         const parentTable = column.refTable as TableKey
         defineGetter(row, `$${column.key}`, () => {
           const id = (row as Record<string, unknown>)[column.key]
-          return (rows[parentTable] ?? []).find(candidate => (candidate as { id: string }).id === id)
+          return typeof id === 'string' ? idIndex(parentTable).value.get(id) : undefined
         })
       }
     }

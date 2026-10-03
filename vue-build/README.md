@@ -30,6 +30,7 @@ npx eslint src && npx vue-tsc --build --force   # 提交前跑這兩個
 | [docs/architecture.md](docs/architecture.md) | 模組結構、KeepAlive 的規則、完成動作後的導覽與連續流程 |
 | [docs/ui.md](docs/ui.md) | 外殼與導覽、列表、動作擺在哪裡、搜尋與篩選 |
 | [docs/components/](docs/components/) | 每個共用 UI 元件一份用法說明 |
+| [docs/perf.md](docs/perf.md) | 附錄：列表效能的實測數字、量測方法與判讀方式 |
 | [template/README.md](template/README.md) | 初次設定、新增一張表要複製與修改哪些檔案 |
 | [../docs/api.md](../docs/api.md) | 前後端之間的介面 |
 | [../apps-script/README.md](../apps-script/README.md) | 後端：要填什麼、怎麼部署、實測結果 |

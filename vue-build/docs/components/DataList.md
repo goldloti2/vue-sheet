@@ -47,3 +47,8 @@
 | --- | --- |
 | `longpress` | 長按觸發，只有 `selectable` 時會發 |
 | `toggle` | 多選模式下點擊觸發；此時不會導覽 |
+
+## 備註
+
+- **`to` 渲染成自己組 href 的 `<a>`，不是 `RouterLink`**：`RouterLink` 內部有一個讀 `currentRoute` 的 computed，列表有幾列就有幾個，每次導覽都會全部重算，而這個元件是給上千列的列表用的。點擊走 `router.push`；帶修飾鍵或非左鍵時交給瀏覽器，所以中鍵開新分頁是原生行為。代價是沒有 `router-link-active` 那組 class（列表用不到）
+- **`content-visibility: auto`**：畫面外的列不排版也不繪製。`contain-intrinsic-size: auto 72px` 是它還沒量到真實高度前的替代值，列的版型若改動很多，這個數字要跟著調——差太多會讓捲動軸長度估錯、快速拖曳時跳動

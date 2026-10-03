@@ -131,6 +131,9 @@
 - `services/appScript.ts` 是對後端唯一的出入口，**真的 fetch 已經寫好**（GET 讀整張表、POST 送 batch、拆 `{ success }` 信封、認 `code: 'modified'` 轉成 `ConflictError`）。`VITE_APPS_SCRIPT_URL` 沒設就走假後端，所以 clone 下來不填東西就能跑；真後端穩定後整個 `mock/` 可以刪掉
 - POST 的 `Content-Type` 刻意是 `text/plain`：`application/json` 會觸發 CORS 預檢，而 Apps Script 回不了預檢（後端 `JSON.parse(e.postData.contents)` 讀）
 
+### 列表效能
+上千列的列表頁做過一輪渲染成本的處理（每列的連結元件、`ref` 的父列查詢、畫面外的列要不要排版）。量測方法、數字與判讀方式見 [vue-build/docs/perf.md](vue-build/docs/perf.md)（附錄）。
+
 ### 文件與範本
 - 根目錄 `README.md` 是索引；跨兩端的介面在 `docs/api.md`，前端的設計在 `vue-build/docs/`（`architecture` / `schema` / `store` / `ui` + `components/` 每個元件一份）
 - `vue-build/template/`：新增一張表所需的全套檔案，**留成真的檔案**（複製整份比從程式區塊裡挑好用，而且 `main` 分支上它是唯一的頁面範例）。裡面只留最小骨架＋每個檔開頭一段「該看哪份文件」；選項目錄與說明一律回 docs，不留第二份會漂移的副本
@@ -189,6 +192,9 @@
 - **schema 要不要拆成 `fields.ts` / `view.ts`**（評估過，先不做）：能乾淨切的只有表這一層——`fields.ts` 放 Row 介面、`tableLabel`／`idColumn`／`newId`／`labelColumn`／`columns`／`virtualColumns`，`view.ts` 放 `detailOrder`／`formOrder`／`defaultSort`，`index.ts` 組起來。切在欄位內部（型別／必填 vs 標籤／可搜尋）已否決，那會逼每個 key 寫兩次。現在 view 那半只有三個欄位，拆完是一個五行的檔加一個 import，不划算。回頭重看的時機：view 那半長到 15～20 行，或哪張表需要兩種視圖（跟下一條一起做）
 - **視圖設定讓頁面覆寫**（等真的有第二種視圖需求再做）：`detailOrder`／`formOrder`／`defaultSort` 現在只有 schema 一份，同一張表在不同頁面沒辦法有不同的排法與欄位集（AppSheet 是把這些掛在 view 上，所以一張表能有多個 view）。做法是 schema 那份當**預設**、頁面用選用 prop 覆寫（`DataDetail`／`DataForm` 各加一個 `order`、排序走 `useSortedTableList` 的參數），不是搬到頁面去——沒指定的頁面要有東西可用，預設值一定要留在 schema。頁面端自己寫仍然有型別檢查（`RowKey<XxxRow>[]` 是 exported 的），元件內部那層本來就是 `TableSchema<any>`。（篩選抽屜與排序面板的順序已經不必跟著誰了——它們有自己的 `searchable`／`sortable` 清單）
 - 總覽頁範本（`DataDashboardTemplate`）：保留了位置但沒有具體需求
+
+### 列表效能（剩下的部分）
+- 🔲 瓶頸剩下「畫面上有幾千個元件」，只有少渲染幾列能解。候選做法（虛擬捲動、漸進渲染、分組預設收合、`TabView` 只掛當前面板）與各自的代價見 [vue-build/docs/perf.md](vue-build/docs/perf.md)；動手前先照那份的方法重新量一次
 
 ### PWA 與離線
 - manifest.json、Service Worker 都還沒建立（`vite-plugin-pwa` 未安裝）

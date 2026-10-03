@@ -47,7 +47,8 @@ src/
     actions/           useTableActions：PageAction 型別 + 通用動作 builder
   stores/tables/       共用快取、待推送佇列、row 上的 getter（見 store.md）
   services/            appScript.ts 是對後端唯一的出入口（VITE_APPS_SCRIPT_URL 沒設
-                       就走 mock/ 的假後端）；mock/ 在真後端穩定後整個刪掉
+                       就走 mock/ 的假後端）；dev 模式會把進出的 payload 印進 console
+                       （`[api] →／←／✗`）；mock/ 在真後端穩定後整個刪掉
   schema/              對 row 做事的純函數（見 schema.md）：types（型別、coerce／format）、
                        sort、group、filter、validation、relations（關聯圖）、image、
                        index（註冊表：代稱 → schema）

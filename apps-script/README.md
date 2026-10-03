@@ -33,7 +33,7 @@ const TABLES = {
 1. 於 Sheet 選擇「擴充功能 → Apps Script」，將四個檔案貼入（採用綁定方式時 `SPREADSHEET_ID` 留空）
 2. 填妥 `Config.gs`
 3. 選擇「部署 → 新增部署作業 → 網頁應用程式」：**執行身分為「我」**，**存取權限見「認證」**
-4. 將部署網址填入 `vue-build/.env` 的 `VITE_APPS_SCRIPT_URL`，並重新啟動前端 dev server
+4. 將部署網址填入 `vue-build/.env` 的 `VITE_APPS_SCRIPT_URL`，並重新啟動前端 dev server。dev 模式下每次請求的 payload 都會輸出到瀏覽器 console（`[api] → / ← / ✗`），是對接時最直接的檢查方式
 5. 修改 Apps Script 程式後必須**重新部署**（「管理部署作業 → 編輯 → 版本：新版本」），否則前端打到的仍是舊版
 
 首次執行會要求授權（Sheets 與 Drive，`DriveApp` 用於讀取檔案的修改時間），同一個 Google 帳號僅需授權一次。

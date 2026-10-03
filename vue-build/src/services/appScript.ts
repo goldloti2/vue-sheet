@@ -30,12 +30,30 @@ async function unwrap<T> (response: Response): Promise<T> {
   return payload.data
 }
 
+// 開發時把進出的 payload 印到 console；production build 會把整段當死碼拿掉
+async function trace<T> (label: string, request: unknown, run: () => Promise<T>): Promise<T> {
+  if (!import.meta.env.DEV) {
+    return run()
+  }
+
+  console.debug(`[api] → ${label}`, request)
+  try {
+    const data = await run()
+    console.debug(`[api] ← ${label}`, data)
+    return data
+  } catch (error) {
+    console.debug(`[api] ✗ ${label}`, error)
+    throw error
+  }
+}
+
 // GET：list/get，回傳整張表 + 整個檔案的 modifiedTime（推送時當 since 用）
 // 後端給的是原始字串，回傳前照 schema 轉成該有的型別（見文件 6.1 節）
 export async function fetchTable<Row> (table: TableKey): Promise<{ rows: Row[], modifiedTime: string }> {
-  const { rows, modifiedTime } = API_URL
-    ? await unwrap<TableData>(await fetch(`${API_URL}?table=${encodeURIComponent(table)}`))
-    : mockList(table)
+  // trace 包的是轉型別之前的原始字串，也就是後端真正回了什麼
+  const { rows, modifiedTime } = await trace<TableData>(`GET ${table}`, { table }, async () => API_URL
+    ? unwrap<TableData>(await fetch(`${API_URL}?table=${encodeURIComponent(table)}`))
+    : mockList(table))
 
   return { rows: rows.map(row => coerceRow<Row>(row, schemas[table])), modifiedTime }
 }
@@ -45,18 +63,21 @@ export async function fetchTable<Row> (table: TableKey): Promise<{ rows: Row[], 
 // since 是前端上次看到的 modifiedTime，後端在同一把鎖裡比對；對不上就拋 ConflictError，什麼都不寫。
 // 不給 since 就是強制推送（不比對）。不回傳資料列——寫入當下前端快取就改好了，推送成功後本來就會重抓
 export async function mutateBatch (operations: readonly BatchOperation[], since?: string): Promise<string> {
-  if (!API_URL) {
-    return mockBatch(operations, since)
-  }
+  const { modifiedTime } = await trace('POST', { operations, since }, async () => {
+    if (!API_URL) {
+      return { modifiedTime: mockBatch(operations, since) }
+    }
 
-  // Content-Type 刻意留成 text/plain：帶 application/json 會觸發 CORS 預檢，
-  // 而 Apps Script 的 Web App 回不了預檢。後端用 JSON.parse(e.postData.contents) 讀
-  const response = await fetch(API_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify({ operations, since }),
+    // Content-Type 刻意留成 text/plain：帶 application/json 會觸發 CORS 預檢，
+    // 而 Apps Script 的 Web App 回不了預檢。後端用 JSON.parse(e.postData.contents) 讀
+    const response = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ operations, since }),
+    })
+
+    return unwrap<{ modifiedTime: string }>(response)
   })
 
-  const { modifiedTime } = await unwrap<{ modifiedTime: string }>(response)
   return modifiedTime
 }

@@ -5,6 +5,7 @@
 > 這個 repo 的程式碼與文件都由 Claude（Anthropic 的 AI）生成。作者提供想法與需求、確認程式邏輯、在實機上驗證。
 
 - 目前進度與待辦：[ROADMAP.md](ROADMAP.md)
+- 各版本的內容：[CHANGELOG.md](CHANGELOG.md)
 - 新增一張表／一個頁面怎麼做：[vue-build/template/README.md](vue-build/template/README.md)
 - 前端的設計與內部運作：[vue-build/README.md](vue-build/README.md)
 - 前後端之間的介面：[docs/api.md](docs/api.md)

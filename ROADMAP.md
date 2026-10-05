@@ -131,6 +131,43 @@
 - `services/appScript.ts` 是對後端唯一的出入口，**真的 fetch 已經寫好**（GET 讀整張表、POST 送 batch、拆 `{ success }` 信封、認 `code: 'modified'` 轉成 `ConflictError`）。`VITE_APPS_SCRIPT_URL` 沒設就走假後端，所以 clone 下來不填東西就能跑；真後端穩定後整個 `mock/` 可以刪掉
 - POST 的 `Content-Type` 刻意是 `text/plain`：`application/json` 會觸發 CORS 預檢，而 Apps Script 回不了預檢（後端 `JSON.parse(e.postData.contents)` 讀）
 
+### 後端（Apps Script）
+
+程式在 `apps-script/`（四個 `.gs` 檔），需填寫的僅有 `Config.gs`：試算表 id、「表代稱 → 分頁名稱 + ID 欄表頭」的對照、表頭列號。細節、部署步驟與實測結果見 [apps-script/README.md](apps-script/README.md)。
+
+- 已實作並於 **2026-10-02 對實際的 Sheet 完成測試**：`doGet`／`doPost` 入口與 `{ success }` 信封、泛用的整表讀取、batch 的鎖與衝突比對、`create`／`update`／`delete`、表頭對應、結構完整性檢查（表名與欄位名在對照內、id 不重複、目標存在）。讀取、新增、修改單一欄位、刪除、衝突比對、日期格式、`flush()` 後的 `modifiedTime` 皆正常
+- 全有全無的實作方式：**規劃（僅讀取）與寫入（僅寫入）分成兩段**，結構檢查全部在規劃階段完成，寫入階段不存在預期內的失敗，因此不需要回滾機制
+- 寫入的字串會被 Sheet 當成使用者輸入解析，**轉義全部由前端做**（`serializeRow`）：只對會讓儲存格變型別的值補單引號前綴（開頭 `=`／`+`／`0`、分數、科學記號），且只在 `text`／`select`／`image` 的欄位上。後端不做轉義——它看不出型別，分不出文字欄位的 `0912` 與數字欄位的 `0.5`。**id 與 `ref` 欄位一律不補**：id 要跟 Sheet 的顯示值比對才找得到列，而 ref 的值必須跟 id 欄一字不差，只有一邊補就會讓關聯對不起來；連帶的限制是 `newId` 的格式別用數字開頭。已對實際的 Sheet 測過
+- 待處理的項目（存取權限、Hooks）見「未完成」
+
+### 後端 API 介面（兩端均依此實作並實測）
+
+兩個端點：讀是整張表，寫是**一個 batch**。
+
+| | payload | 回傳 |
+| --- | --- | --- |
+| 讀（GET） | `table` | 整張表的原始字串 row |
+| 寫（POST） | `operations: [{ table, kind, id, values? }, …]`，`kind` 是 `create`／`update`／`delete` | 成功與否（不回傳資料列） |
+
+- **一個請求帶所有表的所有操作**。要省的是每次請求的 script 冷啟（0.5～2 秒），不是配額——每分鐘 60 次是 Sheets REST API 的限制，`SpreadsheetApp` 不適用（但若為了 RAW 寫入改走進階服務 Sheets API，那條配額就回來了）
+- **全有全無**：後端在 `LockService` 裡跑完整批，中途失敗什麼都不寫；前端保留佇列、使用者重按就是整批重送
+- **`update` 只送進佇列的那幾欄**（表單是整列，快速編輯與欄位動作只有那一欄），後端只寫 payload 裡的那幾格，所以沒進過佇列的欄位保留 Sheet 上手改的值。送整列省不到呼叫（後端為了把 id 換成列號本來就要讀一次），卻會讓前端快取蓋掉手改的欄位
+- **不回傳資料列**：前端寫入當下就改好快取了，推送成功後本來就會重抓
+- 單筆的 `create`／`update`／`delete` 端點與 `bulkUpdate`／`bulkDelete` 都拿掉了——batch 涵蓋得了，前端也沒有地方會送
+- **ID 由前端產生**（`create` 的 payload 帶 id）。這讓重送變成冪等的：`create` 定義成「id 不存在就建、已存在就當作已完成」，整批重送是安全的，不需要記錄哪幾筆成功過。也讓待推送佇列可以直接用 `table + id` 當 key，因為不會出現「刪掉又新增同一個 id」
+- 後端仍然要擋重複 id——Sheet 可以手動打開來改，不能假設 id 只由前端產生
+- 佇列是逐筆的，快速編輯與批次刪除都拆成多個單筆操作進佇列（合併規則才適用），送出時才攤平成一串 operations
+- `SpreadsheetApp` 的寫入能力：單格、連續多格同值（`getRange('A2:D2').setValue(v)`）、連續多格不同值（`setValues`，維度要完全相符）、不連續同值（`getRangeList([...]).setValue(v)`）都是一次呼叫；**只有「不連續、各自不同值」沒有**（`RangeList` 沒有 `setValues`），要迴圈寫、或改用進階服務 Sheets API 的 `Values.batchUpdate`
+- 後端實作的三條規則：**一張表讀一次 used range**（順便拿到舊值供合併）、**讀寫不交錯**（任何讀取會強制 flush 前面的寫入）、**刪列由下往上**（否則索引位移）。`apps-script/Batch.gs` 即依這三項實作（規劃僅讀取、寫入僅寫入）
+- **`setValue` 會將字串視為「使用者輸入」解析**（已實測）：數字解析為數字、日期解析為日期，這正是需要的行為，Sheet 上的 `SUM` 與日期格式才能運作，因此**不掛載進階服務**（`valueInputOption: 'RAW'` 反而會把數字存成文字）。代價是文字類欄位必須補單引號前綴才不會被誤解析（前端 `serializeRow` 依型別處理），且經由 App 編輯過的欄位會將原有公式替換為純字串（預期行為，細節見 [apps-script/README.md](apps-script/README.md)）
+
+### 資料一致性
+- **推送前比對檔案的 modifiedTime**（取代原本 `updatedAt` 欄位的想法；兩端均已實作並實測）：Sheets 沒有逐列的修改時間，維護 `updatedAt` 要後端戳章加 `onEdit` 觸發器；改成用整個檔案的 `modifiedTime`（`DriveApp.getFileById(id).getLastUpdated()`），粗糙（任何分頁、連格式變更都算）但夠用
+  - `fetchTable` 的回應帶 `modifiedTime`，store 記成 `knownModifiedTime`；batch 的 payload 帶 `since`，**由後端**在 `LockService` 鎖裡跟當下的值比對再寫，不一致就回 `{ success: false, error: 'modified' }` 什麼都不寫，一致就寫入並回新的 `modifiedTime`
+  - 衝突時前端保留佇列、立起 `store.conflict`，`AppShell` 用 `choose()` 問兩條出路：`discardAndReload()`（放棄未推送的變更並重抓）或 `forcePush()`（payload 不帶 `since`；蓋掉的只有進過佇列的那幾欄）。關掉對話框就什麼都不做，下次按同步再問
+  - 衝突時不把佇列重新套用到新資料上（見「決定不做」）
+  - 假後端在 dev 模式掛了一個 `mockTouch()`（console 可叫），用來模擬「別人改了 Sheet」把衝突那條路測出來
+
 ### 列表效能
 上千列的列表頁做過一輪渲染成本的處理（每列的連結元件、`ref` 的父列查詢、畫面外的列要不要排版）。量測方法、數字與判讀方式見 [vue-build/docs/perf.md](vue-build/docs/perf.md)（附錄）。
 
@@ -142,45 +179,12 @@
 
 ## 未完成
 
-### 後端（已可運作，尚有兩項待處理）
+### 後端
 
-程式在 `apps-script/`（四個 `.gs` 檔），需填寫的僅有 `Config.gs`：試算表 id、「表代稱 → 分頁名稱 + ID 欄表頭」的對照、表頭列號。細節、部署步驟與實測結果見 [apps-script/README.md](apps-script/README.md)。
-
-- 已實作並於 **2026-10-02 對實際的 Sheet 完成測試**：`doGet`／`doPost` 入口與 `{ success }` 信封、泛用的整表讀取、batch 的鎖與衝突比對、`create`／`update`／`delete`、表頭對應、結構完整性檢查（表名與欄位名在對照內、id 不重複、目標存在）。讀取、新增、修改單一欄位、刪除、衝突比對、日期格式、`flush()` 後的 `modifiedTime` 皆正常
-- 全有全無的實作方式：**規劃（僅讀取）與寫入（僅寫入）分成兩段**，結構檢查全部在規劃階段完成，寫入階段不存在預期內的失敗，因此不需要回滾機制
-- 寫入無須掛載進階服務 Sheets API：`setValue` 讓 Sheet 自行解析字串（數字、日期）正是需要的行為，`RAW` 反而會把數字存成文字
-- 寫入的字串會被 Sheet 當成使用者輸入解析，**轉義全部由前端做**（`serializeRow`）：只對會讓儲存格變型別的值補單引號前綴（開頭 `=`／`+`／`0`、分數、科學記號），且只在 `text`／`select`／`image` 的欄位上。後端不做轉義——它看不出型別，分不出文字欄位的 `0912` 與數字欄位的 `0.5`。**id 與 `ref` 欄位一律不補**：id 要跟 Sheet 的顯示值比對才找得到列，而 ref 的值必須跟 id 欄一字不差，只有一邊補就會讓關聯對不起來；連帶的限制是 `newId` 的格式別用數字開頭。已對實際的 Sheet 測過
 - 🔲 **存取權限暫時設為「任何人」**，以網址作為唯一的保護：「只有我自己」實測無法從前端連線（跨網域 `fetch` 不會帶上 Google 的 cookie，亦不會出現登入頁）。最終預期採用 Google 認證，兩種方向（共用密鑰／前端 OAuth 取得 ID token）都需先修改前端
+  - 構想：共用密鑰做成**可選的開關**——啟用時前端在每個請求帶上 key、後端驗證；有了 Google 認證之後也能選擇不啟用。更後面要考慮多人使用：多組 key、各自的權限
 - 🔲 Hooks 機制（見 [docs/api.md](docs/api.md)）
-
-### 後端 API 介面（已定案，兩端均依此實作並實測）
-
-兩個端點：讀是整張表，寫是**一個 batch**。
-
-| | payload | 回傳 |
-| --- | --- | --- |
-| 讀（GET） | `table` | 整張表的原始字串 row |
-| 寫（POST） | `operations: [{ table, kind, id, values? }, …]`，`kind` 是 `create`／`update`／`delete` | 成功與否（不回傳資料列） |
-
-- **一個請求帶所有表的所有操作**。要省的是每次請求的 script 冷啟（0.5～2 秒），不是配額——每分鐘 60 次是 Sheets REST API 的限制，`SpreadsheetApp` 不適用（但若為了 RAW 寫入改走進階服務 Sheets API，那條配額就回來了）
-- **全有全無**：後端在 `LockService` 裡跑完整批，中途失敗什麼都不寫；前端保留佇列、使用者重按就是整批重送
-- **`update` 只送進佇列的那幾欄**（表單是整列，快速編輯與欄位動作只有那一欄），後端在鎖裡讀現值、合併、寫整列，所以沒進過佇列的欄位保留 Sheet 上手改的值。送整列省不到呼叫（後端為了把 id 換成列號本來就要讀一次），卻會讓前端快取蓋掉手改的欄位
-- **不回傳資料列**：前端寫入當下就改好快取了，推送成功後本來就會重抓
-- 單筆的 `create`／`update`／`delete` 端點與 `bulkUpdate`／`bulkDelete` 都拿掉了——batch 涵蓋得了，前端也沒有地方會送
-- **ID 由前端產生**（`create` 的 payload 帶 id）。這讓重送變成冪等的：`create` 定義成「id 不存在就建、已存在就當作已完成」，整批重送是安全的，不需要記錄哪幾筆成功過。也讓待推送佇列可以直接用 `table + id` 當 key，因為不會出現「刪掉又新增同一個 id」
-- 後端仍然要擋重複 id——Sheet 可以手動打開來改，不能假設 id 只由前端產生
-- 佇列是逐筆的，快速編輯與批次刪除都拆成多個單筆操作進佇列（合併規則才適用），送出時才攤平成一串 operations
-- `SpreadsheetApp` 的寫入能力：單格、連續多格同值（`getRange('A2:D2').setValue(v)`）、連續多格不同值（`setValues`，維度要完全相符）、不連續同值（`getRangeList([...]).setValue(v)`）都是一次呼叫；**只有「不連續、各自不同值」沒有**（`RangeList` 沒有 `setValues`），要迴圈寫、或改用進階服務 Sheets API 的 `Values.batchUpdate`
-- 後端實作的三條規則：**一張表讀一次 used range**（順便拿到舊值供合併）、**讀寫不交錯**（任何讀取會強制 flush 前面的寫入）、**刪列由下往上**（否則索引位移）。`apps-script/Batch.gs` 即依這三項實作（規劃僅讀取、寫入僅寫入）
-- **`setValue` 會將字串視為「使用者輸入」解析**（已實測）：數字解析為數字、日期解析為日期，這正是需要的行為，Sheet 上的 `SUM` 與日期格式才能運作，因此**不掛載進階服務**（`valueInputOption: 'RAW'` 反而會把數字存成文字）。代價是文字類欄位必須補單引號前綴才不會被誤解析（前端 `serializeRow` 依型別處理），且經由 App 編輯過的欄位會將原有公式替換為純字串（預期行為，細節見 [apps-script/README.md](apps-script/README.md)）
 - `bulkCreate`：等真的有匯入需求再說
-
-### 資料一致性
-- **推送前比對檔案的 modifiedTime**（取代原本 `updatedAt` 欄位的想法；兩端均已實作並實測）：Sheets 沒有逐列的修改時間，維護 `updatedAt` 要後端戳章加 `onEdit` 觸發器；改成用整個檔案的 `modifiedTime`（`DriveApp.getFileById(id).getLastUpdated()`），粗糙（任何分頁、連格式變更都算）但夠用
-  - `fetchTable` 的回應帶 `modifiedTime`，store 記成 `knownModifiedTime`；batch 的 payload 帶 `since`，**由後端**在 `LockService` 鎖裡跟當下的值比對再寫，不一致就回 `{ success: false, error: 'modified' }` 什麼都不寫，一致就寫入並回新的 `modifiedTime`
-  - 衝突時前端保留佇列、立起 `store.conflict`，`AppShell` 用 `choose()` 問兩條出路：`discardAndReload()`（放棄未推送的變更並重抓）或 `forcePush()`（payload 不帶 `since`；蓋掉的只有進過佇列的那幾欄）。關掉對話框就什麼都不做，下次按同步再問
-  - 衝突時不把佇列重新套用到新資料上（見「決定不做」）
-  - 假後端在 dev 模式掛了一個 `mockTouch()`（console 可叫），用來模擬「別人改了 Sheet」把衝突那條路測出來
 
 ### UI 功能
 - 關聯選擇器的 `allowCreate`：清單最上面一項「＋ 新增…」，開父表的新增表單、回來自動選上。看起來是 `runStep('/父表/new')`，但表單頁當「呼叫端」跟動作當呼叫端不一樣，四件事要先解：
@@ -191,10 +195,43 @@
   - 等真的常用到再做；現在的替代路徑是先去父表新增、再回來選
 - **schema 要不要拆成 `fields.ts` / `view.ts`**（評估過，先不做）：能乾淨切的只有表這一層——`fields.ts` 放 Row 介面、`tableLabel`／`idColumn`／`newId`／`labelColumn`／`columns`／`virtualColumns`，`view.ts` 放 `detailOrder`／`formOrder`／`defaultSort`，`index.ts` 組起來。切在欄位內部（型別／必填 vs 標籤／可搜尋）已否決，那會逼每個 key 寫兩次。現在 view 那半只有三個欄位，拆完是一個五行的檔加一個 import，不划算。回頭重看的時機：view 那半長到 15～20 行，或哪張表需要兩種視圖（跟下一條一起做）
 - **視圖設定讓頁面覆寫**（等真的有第二種視圖需求再做）：`detailOrder`／`formOrder`／`defaultSort` 現在只有 schema 一份，同一張表在不同頁面沒辦法有不同的排法與欄位集（AppSheet 是把這些掛在 view 上，所以一張表能有多個 view）。做法是 schema 那份當**預設**、頁面用選用 prop 覆寫（`DataDetail`／`DataForm` 各加一個 `order`、排序走 `useSortedTableList` 的參數），不是搬到頁面去——沒指定的頁面要有東西可用，預設值一定要留在 schema。頁面端自己寫仍然有型別檢查（`RowKey<XxxRow>[]` 是 exported 的），元件內部那層本來就是 `TableSchema<any>`。（篩選抽屜與排序面板的順序已經不必跟著誰了——它們有自己的 `searchable`／`sortable` 清單）
-- 總覽頁範本（`DataDashboardTemplate`）：保留了位置但沒有具體需求
+- 總覽頁範本（`DataDashboardTemplate`）：保留了位置但沒有具體需求（見下一節的 dashboard）
+
+### 頁面類型（對照 AppSheet）
+
+| AppSheet | 現況 |
+| --- | --- |
+| deck | ✅ 卡片式列表（`DataList`）；🔲 每列的 action 按鍵，見下方 |
+| table | ✅ `DataTable` |
+| detail | ✅ 詳細頁；🔲 標頭區塊，見下方 |
+| form | ✅ 新增／編輯頁 |
+| card | 🔲 見下方 |
+| gallery | 🔲 圖片 + 標題的格狀排列 |
+| chart | 🔲 使用者選幾個欄位當軸，畫圓餅圖、折線圖、長條圖。 |
+| dashboard | 🔲 見下方 |
+| calendar | 把資料當成事件放上日曆（通常靠日期與時間欄位），暫不考慮 |
+| map | 把座標標在 Google 地圖上，暫不考慮 |
+| onboarding | 導覽頁，暫不考慮 |
+
+**deck 的 action 按鍵**：在右下角欄位的下一列，以圖示由右往左排列。沒有 action 時整列不佔高度；多選模式下藏起來。
+
+**card** 跟 deck 不同的地方是一張張分開的卡片（有間隔），不是連在一起的清單。點卡片進 detail，不支援長按多選。分大小兩種：
+- **小**：左側圓形頭像，中間主標題與副標題，右側 ⋮ 選單收 action
+- **大**：上下四層，沒有內容的那層整層藏起來
+  1. 圓形頭像 + 主標題與副標題（沒有選單）
+  2. 圖片
+  3. 標題、副標題、摘要（欄位跟第 1 層分別指定）
+  4. 最多四個 action：左兩格、右兩格，每一格各自選用圖示或文字
+
+**detail 的標頭區塊**（可開可不開，裡面每一項都是可選的）：放在 `#top` 之上、整頁最上方，讓人一眼看到這筆的重要資訊。結構是大 card 去掉第 1 層：第 3 層的標題、副標題、摘要疊在第 2 層的圖片上，第 4 層的 action 接在圖片下方、不疊在圖上。沒有圖片時用一般的背景。
+
+dashboard 分三種形式：
+1. **分頁**：一次只顯示一個面板，用頁籤切換，只用在手機版
+2. **全部顯示**：所有面板同時出現。手機版由上往下排列；電腦版可以自由決定每個面板的長寬與二維的排版位置
+3. **連動**：排版同第 2 種，但面板之間會連動，例如在 list 點一個項目，下面的 detail 就顯示那一項
 
 ### 列表效能（剩下的部分）
-- 🔲 瓶頸剩下「畫面上有幾千個元件」，只有少渲染幾列能解。候選做法（虛擬捲動、漸進渲染、分組預設收合、`TabView` 只掛當前面板）與各自的代價見 [vue-build/docs/perf.md](vue-build/docs/perf.md)；動手前先照那份的方法重新量一次
+- 🔲 見 [vue-build/docs/perf.md](vue-build/docs/perf.md) 的「還沒做的」
 
 ### PWA 與離線
 - manifest.json、Service Worker 都還沒建立（`vite-plugin-pwa` 未安裝）
@@ -205,10 +242,8 @@
 
 ### 部署
 - 前端靜態託管（Vercel / Cloudflare Pages，注意 SPA fallback）
-- 後端 Apps Script 部署（步驟見 [apps-script/README.md](apps-script/README.md)）
-- 🔲 **存取權限目前設為「任何人」**，以網址作為唯一的保護（僅存放於不進版控的 `.env`）：「只有我自己」實測無法從前端連線。最終預期採用 Google 認證，見「後端」那節
+- 🔲 **存取權限目前設為「任何人」**，以網址作為唯一的保護（僅存放於不進版控的 `.env`）：「只有我自己」實測無法從前端連線。最終預期採用 Google 認證，見上面的「後端」
 - API 配額用量監控
-
 ---
 
 ## 決定不做

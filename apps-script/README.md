@@ -10,8 +10,9 @@ Google Sheet 的 Apps Script Web App，是前端唯一的資料來源。介面�
 | `Api.gs` | `doGet`／`doPost` 入口與 `{ success }` 信封，前端唯一的進入點 |
 | `Sheets.gs` | 單張表的讀取、表頭對應、列的尋找 |
 | `Batch.gs` | 一次推送的完整流程：鎖、衝突比對、規劃、寫入 |
+| `Auth.gs` | 登入（`action: 'login'`）。目前不驗證，直接回 placeholder token，見 [../docs/auth.md](../docs/auth.md) |
 
-無建置步驟，`.gs` 檔直接貼進 Apps Script 編輯器，或以 `clasp push` 上傳。四個檔案共用同一個全域範圍，載入順序不影響結果。
+無建置步驟，`.gs` 檔直接貼進 Apps Script 編輯器，或以 `clasp push` 上傳。所有檔案共用同一個全域範圍，載入順序不影響結果。
 
 ## 需要填寫的內容
 
@@ -30,7 +31,7 @@ const TABLES = {
 
 ## 部署步驟
 
-1. 於 Sheet 選擇「擴充功能 → Apps Script」，將四個檔案貼入（採用綁定方式時 `SPREADSHEET_ID` 留空）
+1. 於 Sheet 選擇「擴充功能 → Apps Script」，將所有 `.gs` 檔貼入（採用綁定方式時 `SPREADSHEET_ID` 留空）
 2. 填妥 `Config.gs`
 3. 選擇「部署 → 新增部署作業 → 網頁應用程式」：**執行身分為「我」**，**存取權限見「認證」**
 4. 將部署網址填入 `vue-build/.env` 的 `VITE_APPS_SCRIPT_URL`，並重新啟動前端 dev server。dev 模式下每次請求的 payload 都會輸出到瀏覽器 console（`[api] → / ← / ✗`），是對接時最直接的檢查方式

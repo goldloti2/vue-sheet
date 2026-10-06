@@ -4,7 +4,7 @@
 //
 // 純記憶體：重整頁面就回到 CSV 的原始內容
 
-import type { BatchOperation, TableData } from '../types'
+import type { BatchOperation, LoginCredentials, TableData } from '../types'
 import type { TableKey } from '@/schema'
 import { schemas } from '@/schema'
 import { ConflictError } from '../types'
@@ -130,4 +130,9 @@ export function mockBatch (operations: readonly BatchOperation[], since?: string
 
   modifiedTime = new Date().toISOString()
   return modifiedTime
+}
+
+// 登入：跟真後端目前一樣還沒有驗證，收到什麼都算成功
+export function mockLogin (_credentials: LoginCredentials): { token: string } {
+  return { token: 'placeholder' }
 }

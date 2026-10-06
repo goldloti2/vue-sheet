@@ -134,7 +134,7 @@
 
 ### 後端（Apps Script）
 
-程式在 `apps-script/`（四個 `.gs` 檔），需填寫的僅有 `Config.gs`：試算表 id、「表代稱 → 分頁名稱 + ID 欄表頭」的對照、表頭列號。細節、部署步驟與實測結果見 [apps-script/README.md](apps-script/README.md)。
+程式在 `apps-script/`，需填寫的僅有 `Config.gs`：試算表 id、「表代稱 → 分頁名稱 + ID 欄表頭」的對照、表頭列號。細節、部署步驟與實測結果見 [apps-script/README.md](apps-script/README.md)。
 
 - 已實作並於 **2026-10-02 對實際的 Sheet 完成測試**：`doGet`／`doPost` 入口與 `{ success }` 信封、泛用的整表讀取、batch 的鎖與衝突比對、`create`／`update`／`delete`、表頭對應、結構完整性檢查（表名與欄位名在對照內、id 不重複、目標存在）。讀取、新增、修改單一欄位、刪除、衝突比對、日期格式、`flush()` 後的 `modifiedTime` 皆正常
 - 全有全無的實作方式：**規劃（僅讀取）與寫入（僅寫入）分成兩段**，結構檢查全部在規劃階段完成，寫入階段不存在預期內的失敗，因此不需要回滾機制
@@ -182,7 +182,7 @@
 
 ### 後端
 
-- 🔲 **存取權限暫時設為「任何人」**，以網址作為唯一的保護：「只有我自己」實測無法從前端連線（跨網域 `fetch` 不會帶上 Google 的 cookie，亦不會出現登入頁）。認證的設計見 [docs/auth.md](docs/auth.md)：可替換的認證模組，附帳號密碼的示範模組；之後的 Google 登入也走同一套約定。前端的登入頁與導向已完成，後端與前後端的串接尚未實作
+- 🔲 **存取權限暫時設為「任何人」**，以網址作為唯一的保護：「只有我自己」實測無法從前端連線（跨網域 `fetch` 不會帶上 Google 的 cookie，亦不會出現登入頁）。認證的設計見 [docs/auth.md](docs/auth.md)：可替換的認證模組，附帳號密碼的示範模組；之後的 Google 登入也走同一套約定。前端的登入頁與導向已完成，登入請求已前後端串通（後端還不驗證，直接回 placeholder token）；驗證、請求帶 token 尚未實作
 - 🔲 Hooks 機制（見 [docs/api.md](docs/api.md)）
 - `bulkCreate`：等真的有匯入需求再說
 

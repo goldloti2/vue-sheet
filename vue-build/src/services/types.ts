@@ -19,6 +19,9 @@ export interface TableData {
   modifiedTime: string
 }
 
+// 登入時送出的憑證，內容由認證模組決定（帳號密碼、Google 的 ID token…）
+export type LoginCredentials = Record<string, string>
+
 // 後端回 error: 'modified' 時前端拿到的錯誤：Sheet 在這段時間被別處改過，這一批完全沒有寫入
 export class ConflictError extends Error {
   constructor () {

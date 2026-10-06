@@ -1,6 +1,6 @@
 # 認證
 
-> **狀態**：設計已定。前端的登入頁與導向已實作，但 token 還是固定的 placeholder（登入不打後端）；後端尚未實作。
+> **狀態**：設計已定。前端的登入頁與導向已實作；登入請求已經前後端串通（`action: 'login'`），但後端還不驗證，收到什麼都回成功與固定的 placeholder token。
 
 認證是**可選的**：不啟用時行為與現在相同（存取權限為「任何人」，見 [apps-script/README.md](../apps-script/README.md) 的「認證」）。後端視為可信任，認證只負責確認連進來的前端有權限。
 
@@ -43,6 +43,8 @@ const AUTH = null              // 不驗證
 
 `verify` 回傳的 `user` 保留給日後的權限檢查（多人使用時，依使用者限制可讀寫的表）；目前不做權限檢查。
 
+🔶 目前的實作：`Auth.gs` 只有一個 `login(credentials)`，不驗證、直接回 `{ token: 'placeholder' }`；`Api.gs` 的 `doPost` 看到 `action: 'login'` 就交給它。`AUTH` 的模組切換、`verify` 與示範模組都還沒有。
+
 ## 前端
 
 `config/app.ts` 的 `authMethod` 決定登入方式，須與後端的 `AUTH` 對得上：
@@ -57,7 +59,8 @@ const AUTH = null              // 不驗證
 | --- | --- |
 | `services/auth/token.ts` | token 的讀寫：存在 `localStorage`（key 帶 `BASE_URL` 前綴，避免同網域的其他 App 互相覆蓋），另有一份 `shallowRef` 供畫面與 guard 讀取。前端只存 token |
 | `router/index.ts` | 全域 `beforeEach`：連第一次開啟（直接貼網址、重新整理）都會經過，沒有 token 就轉到 `/login?redirect=原目的地`。標了 `meta.public` 的頁面不檢查 |
-| `composables/auth/useLogin.ts` | 登入頁的資料層：送出、錯誤訊息、成功後以 `replace` 前往 `redirect`（只接受站內路徑） |
+| `services/appScript.ts` | `fetchToken(credentials)`：送出 `{ action: 'login', credentials }`、取回 token。沒設 `VITE_APPS_SCRIPT_URL` 時走假後端的 `mockLogin`（同樣不驗證）。dev 模式的 console 紀錄會把 `password` 遮掉 |
+| `composables/auth/useLogin.ts` | 登入頁的資料層：送出（`fetchToken`）、錯誤訊息、成功後存 token 並以 `replace` 前往 `redirect`（只接受站內路徑） |
 | `components/ui/auth/PasswordLoginForm.vue` | 帳號密碼表單，見 [PasswordLoginForm](../vue-build/docs/components/PasswordLoginForm.md) |
 | `pages/login.vue` | 登入頁本身，整頁自己排版（置中卡片、標題、錯誤訊息），表單用上面那個元件。專案要改外觀（logo、標題、背景、版面）就直接改這個檔 |
 | `components/ui/shell/AppShell.vue` | `meta.shell: false` 的頁面不顯示 App Bar、側邊欄與底部導覽列；`authMethod` 不是 `'none'` 時側邊欄有「登出」 |
@@ -73,7 +76,7 @@ const AUTH = null              // 不驗證
 
 **可替換的只有登入頁上的表單元件**。改用 Google 登入時，`PasswordLoginForm` 換成 Google 的按鈕，取得的 ID token 放進 `credentials` 送出，其餘流程不變。
 
-🔲 尚未實作的部分：`useLogin` 送出時打後端的 `action: 'login'`（現在存固定的 placeholder）、請求帶上 token、`expired`／`unauthorized` 的處理、續期、console 遮蔽 token。
+🔲 尚未實作的部分：請求帶上 token、`expired`／`unauthorized` 的處理、續期、console 遮蔽 token。
 
 ---
 

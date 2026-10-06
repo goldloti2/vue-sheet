@@ -6,6 +6,9 @@ function doPost (e) {
   return respond(() => {
     // 前端刻意用 Content-Type: text/plain（application/json 會觸發 Web App 回不了的 CORS 預檢），內容仍是 JSON
     const body = JSON.parse(e.postData.contents)
+    if (body.action === 'login') {
+      return login(body.credentials || {})
+    }
     return runBatch(body.operations || [], body.since)
   })
 }

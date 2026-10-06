@@ -3,15 +3,15 @@
 // VITE_APPS_SCRIPT_URL 沒設就走 mock/ 底下的假後端（開發預設）。兩邊回傳的形狀一樣，
 // 所以上線只是在 .env 填一個網址，這個檔案以外的程式碼都不用動；真後端穩定後整個 mock/ 可以刪掉
 
-import type { ApiResponse, BatchOperation, TableData } from './types'
+import type { ApiResponse, BatchOperation, LoginCredentials, TableData } from './types'
 import type { TableKey } from '@/schema'
 import { schemas } from '@/schema'
 import { coerceRow } from '@/schema/types'
-import { mockBatch, mockList } from './mock/backend'
+import { mockBatch, mockList, mockLogin } from './mock/backend'
 import { ConflictError } from './types'
 
 export { ConflictError } from './types'
-export type { ApiResponse, BatchOperation, SheetAction, TableData } from './types'
+export type { ApiResponse, BatchOperation, LoginCredentials, SheetAction, TableData } from './types'
 
 const API_URL = import.meta.env.VITE_APPS_SCRIPT_URL
 
@@ -28,6 +28,16 @@ async function unwrap<T> (response: Response): Promise<T> {
   }
 
   return payload.data
+}
+
+// Content-Type 刻意留成 text/plain：帶 application/json 會觸發 CORS 預檢，
+// 而 Apps Script 的 Web App 回不了預檢。後端用 JSON.parse(e.postData.contents) 讀
+async function post<T> (url: string, body: unknown): Promise<T> {
+  return unwrap<T>(await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify(body),
+  }))
 }
 
 // 開發時把進出的 payload 印到 console；production build 會把整段當死碼拿掉
@@ -63,21 +73,19 @@ export async function fetchTable<Row> (table: TableKey): Promise<{ rows: Row[], 
 // since 是前端上次看到的 modifiedTime，後端在同一把鎖裡比對；對不上就拋 ConflictError，什麼都不寫。
 // 不給 since 就是強制推送（不比對）。不回傳資料列——寫入當下前端快取就改好了，推送成功後本來就會重抓
 export async function mutateBatch (operations: readonly BatchOperation[], since?: string): Promise<string> {
-  const { modifiedTime } = await trace('POST', { operations, since }, async () => {
-    if (!API_URL) {
-      return { modifiedTime: mockBatch(operations, since) }
-    }
-
-    // Content-Type 刻意留成 text/plain：帶 application/json 會觸發 CORS 預檢，
-    // 而 Apps Script 的 Web App 回不了預檢。後端用 JSON.parse(e.postData.contents) 讀
-    const response = await fetch(API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ operations, since }),
-    })
-
-    return unwrap<{ modifiedTime: string }>(response)
-  })
+  const { modifiedTime } = await trace('POST', { operations, since }, async () => API_URL
+    ? post<{ modifiedTime: string }>(API_URL, { operations, since })
+    : { modifiedTime: mockBatch(operations, since) })
 
   return modifiedTime
+}
+
+// POST：登入，用憑證換 token（約定見 docs/auth.md）。console 上的密碼會遮掉
+export async function fetchToken (credentials: LoginCredentials): Promise<string> {
+  const shown = { action: 'login', credentials: { ...credentials, password: '***' } }
+  const { token } = await trace('POST login', shown, async () => API_URL
+    ? post<{ token: string }>(API_URL, { action: 'login', credentials })
+    : mockLogin(credentials))
+
+  return token
 }

@@ -1,9 +1,8 @@
+import type { LoginCredentials } from '@/services/appScript'
 import { shallowRef } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { fetchToken } from '@/services/appScript'
 import { setToken } from '@/services/auth/token'
-
-// 登入表單送出的東西，內容由認證模組決定（帳號密碼、Google 的 ID token…）
-export type LoginCredentials = Record<string, string>
 
 // 登入頁的資料層：送出、錯誤訊息、登入後回到原本要去的那頁
 export function useLogin () {
@@ -19,12 +18,11 @@ export function useLogin () {
     return typeof redirect === 'string' && redirect.startsWith('/') ? redirect : '/'
   }
 
-  async function login (_credentials: LoginCredentials): Promise<void> {
+  async function login (credentials: LoginCredentials): Promise<void> {
     submitting.value = true
     error.value = null
     try {
-      // 🔲 placeholder：還沒接後端，先存一個固定值，只用來測導向
-      setToken('placeholder')
+      setToken(await fetchToken(credentials))
       await router.replace(redirectTarget())
     } catch (loginError) {
       error.value = loginError instanceof Error ? loginError.message : String(loginError)

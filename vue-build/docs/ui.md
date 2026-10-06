@@ -39,7 +39,7 @@
 | **同步鈕** | `AppShell` | 永遠在最右邊，不屬於任何頁面 |
 | **頁籤列** | `TabView` | 掛在 App Bar 底下的 extension，不跟著內容捲動 |
 | **內容區** | `pages/*.vue` | 換頁時左右滑動的就是這一塊 |
-| **側邊欄** | `AppShell` | 左側滑出，目前是空殼。蓋在 App Bar 之上 |
+| **側邊欄** | `AppShell` | 左側滑出，蓋在 App Bar 之上。目前只有「登出」（`config/app.ts` 的 `authMethod` 不是 `'none'` 時才有） |
 | **篩選／排序抽屜** | `AppShell` + `FilterPanel`／`SortPanel` | 右側滑出（篩選是兩層）。蓋在 App Bar 之上。抽屜本身歸 `AppShell`，面板只放內容，一次顯示一種 |
 | **FAB** | `PageFab` | 右下角浮動按鈕，主要動作 |
 | **底部導覽列** | `config/navigation.ts` | 切換主要頁面 |
@@ -54,7 +54,8 @@
 ## 外殼與導覽
 
 - **頂部 App Bar + 側邊欄外殼**。左側圖示依當下路由自動切換漢堡選單／返回箭頭——用 router 累計的導覽次數判斷有沒有真正的 App 內上一頁，沒有就不顯示返回箭頭
-- **主要導覽用底部導覽列**，項目來自 `config/navigation.ts`；側邊欄先保留空殼
+- **主要導覽用底部導覽列**，項目來自 `config/navigation.ts`；側邊欄目前只放登出
+- **頁面可以不要外殼**：`definePage` 的 `meta.shell` 設成 `false`，App Bar、側邊欄、底部導覽列都不顯示，整頁由頁面自己排版（登入頁 `pages/login.vue` 就是這樣）
 - 🔲 **桌面版導覽待定**：要不要改成側邊欄常駐、底部導覽列要不要在桌面隱藏，等要做桌面體驗時再決定
 
 ---

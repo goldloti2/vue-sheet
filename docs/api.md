@@ -85,4 +85,4 @@ hooks: {
 | **只有我自己** | 由 Google 在程式執行前完成把關，安全性最高。但**實測無法從前端連線**：跨網域的 `fetch()` 不會帶上 Google 的 cookie，且不會出現登入頁（本機 dev server 的情形），前端取得的是網路層錯誤而非 401 回應 |
 | **任何人**（現況） | 一定可以連線（Apps Script 回應 `Access-Control-Allow-Origin: *`），但**網址等同於密碼**：取得網址者即可讀寫整份 Sheet，因此網址僅存放於不進版控的 `.env` |
 
-🔲 **最終仍預期採用 Google 認證**。共用密鑰（payload 攜帶、後端以 `PropertiesService` 比對）可阻擋取得網址的第三方，但密鑰同樣存在於前端 bundle 中；若要達成「僅限本人帳號」，須由前端完成 OAuth 取得 ID token、後端驗簽，代價是增加一道登入流程。兩種方向都需先修改前端，故暫時維持現況。部署步驟與細節見 [../apps-script/README.md](../apps-script/README.md)。
+🔲 程式內的認證設計已定、尚未實作，見 [auth.md](auth.md)：登入換取 token、之後每個請求在網址帶 `?token=`，驗證方式由可替換的模組決定。部署步驟與細節見 [../apps-script/README.md](../apps-script/README.md)。

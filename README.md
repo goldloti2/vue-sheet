@@ -9,6 +9,7 @@
 - 新增一張表／一個頁面怎麼做：[vue-build/template/README.md](vue-build/template/README.md)
 - 前端的設計與內部運作：[vue-build/README.md](vue-build/README.md)
 - 前後端之間的介面：[docs/api.md](docs/api.md)
+- 認證：[docs/auth.md](docs/auth.md)
 - 後端怎麼填與怎麼部署：[apps-script/README.md](apps-script/README.md)
 
 ---

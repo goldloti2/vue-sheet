@@ -2,7 +2,7 @@
   import type { PageAction } from '@/composables/actions/useTableActions'
   import type { AppBarTabs } from '@/composables/shell/useAppBarTabs'
   import type { ListControls } from '@/composables/shell/useListControls'
-  import { mdiArrowLeft, mdiClose, mdiDotsVertical, mdiFilterVariant, mdiMagnify, mdiRefresh, mdiSort } from '@mdi/js'
+  import { mdiArrowLeft, mdiClose, mdiDotsVertical, mdiFilterVariant, mdiLogout, mdiMagnify, mdiRefresh, mdiSort } from '@mdi/js'
   import { computed, onBeforeUnmount, onMounted, provide, shallowRef, watch } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
   import ConfirmDialog from '@/components/ui/dialog/ConfirmDialog.vue'
@@ -12,13 +12,14 @@
   import { provideActionRunner } from '@/composables/shell/useActionRunner'
   import { appBarTabsKey, currentTabKey } from '@/composables/shell/useAppBarTabs'
   import { confirmFields, fieldsDialog } from '@/composables/shell/useAskFields'
-  import { choose, confirmDialog, notice, notify, pickChoice } from '@/composables/shell/useDialogs'
+  import { choose, confirm, confirmDialog, notice, notify, pickChoice } from '@/composables/shell/useDialogs'
   import { listControlsKey } from '@/composables/shell/useListControls'
   import { overlayOpenKey } from '@/composables/shell/useOverlay'
   import { appBarActionsKey, appBarSelectionKey, bottomActionsKey } from '@/composables/shell/useShellActions'
-  import { appName } from '@/config/app'
-  import { navigationCount } from '@/router'
+  import { appName, authMethod } from '@/config/app'
+  import { loginPath, navigationCount } from '@/router'
   import { hasActiveFilter } from '@/schema/filter'
+  import { clearToken } from '@/services/auth/token'
   import { useTablesStore } from '@/stores/tables'
 
   export interface AppNavItem {
@@ -40,6 +41,9 @@
   const router = useRouter()
 
   const title = computed(() => route.meta.title ?? appName)
+
+  // 登入頁這類整頁自己排版的頁面：App Bar、側邊欄、底部導覽列都不顯示
+  const showShell = computed(() => route.meta.shell !== false)
 
   const appBarActions = shallowRef<PageAction[]>([])
   provide(appBarActionsKey, actions => {
@@ -169,6 +173,15 @@
     }
   }
 
+  // 未推送的變更留在佇列裡，重新登入後照常推送
+  async function logout () {
+    if (store.hasPending && !await confirm('登出', '有尚未推送的變更，確定要登出嗎？')) {
+      return
+    }
+    clearToken()
+    await router.replace(loginPath)
+  }
+
   onMounted(() => window.addEventListener('beforeunload', warnUnsaved))
   onBeforeUnmount(() => window.removeEventListener('beforeunload', warnUnsaved))
 
@@ -184,7 +197,7 @@
 </script>
 
 <template>
-  <v-app-bar>
+  <v-app-bar v-if="showShell">
     <!-- 搜尋模式：整條 App Bar 換成返回鍵 + 輸入框，標題與動作先讓位 -->
     <template v-if="searchOpen && controls">
       <v-app-bar-nav-icon aria-label="關閉搜尋" :icon="mdiArrowLeft" @click="closeSearch" />
@@ -334,13 +347,17 @@
 
   <v-snackbar v-model="notice.open" :color="notice.color">{{ notice.text }}</v-snackbar>
 
-  <v-navigation-drawer v-model="drawer" order="-1" />
+  <v-navigation-drawer v-if="showShell" v-model="drawer" order="-1">
+    <v-list v-if="authMethod !== 'none'" nav>
+      <v-list-item :prepend-icon="mdiLogout" title="登出" @click="logout" />
+    </v-list>
+  </v-navigation-drawer>
 
   <v-main>
     <slot />
   </v-main>
 
-  <v-bottom-navigation v-if="bottomActions.length > 0" grow>
+  <v-bottom-navigation v-if="showShell && bottomActions.length > 0" grow>
     <v-btn
       v-for="action in bottomActions"
       :key="action.key"
@@ -350,7 +367,7 @@
     </v-btn>
   </v-bottom-navigation>
 
-  <v-bottom-navigation v-else :model-value="route.path">
+  <v-bottom-navigation v-else-if="showShell" :model-value="route.path">
     <v-btn
       v-for="item in navItems"
       :key="item.to"

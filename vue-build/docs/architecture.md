@@ -34,6 +34,7 @@ src/
     list/              DataList、ListField、GroupedList、DataTable、CountLabel
     record/            DataDetail、DetailField、DataForm、RecordNav
     page/              整頁的版型：PageState（載入中／失敗／找不到）、FormPage、DetailPage、ListPage、ChildList
+    auth/              PasswordLoginForm（登入頁上的表單，依登入方式替換；登入頁本身在 pages/login.vue）
   composables/
     data/              讀資料的反應式包裝：useTable（整表／排序過／單筆）、useSearch、useFilter
                        （比對與排序本身是 schema/ 底下的純函數）
@@ -45,16 +46,18 @@ src/
     list/              列表互動：useMultiSelect、useLongPress
     page/              頁面的資料層：useRecordPage、useListPage
     actions/           useTableActions：PageAction 型別 + 通用動作 builder
+    auth/              useLogin（登入頁的資料層）
   stores/tables/       共用快取、待推送佇列、row 上的 getter（見 store.md）
   services/            appScript.ts 是對後端唯一的出入口（VITE_APPS_SCRIPT_URL 沒設
                        就走 mock/ 的假後端）；dev 模式會把進出的 payload 印進 console
                        （`[api] →／←／✗`）；mock/ 在真後端穩定後整個刪掉
+    auth/              token 的讀寫（見 docs/auth.md）
   schema/              對 row 做事的純函數（見 schema.md）：types（型別、coerce／format）、
                        sort、group、filter、validation、relations（關聯圖）、image、
                        index（註冊表：代稱 → schema）
     tables/            每張表的欄位定義，一張表一個檔
-  config/              app.ts（App 名稱）、navigation.ts（導覽列項目）
-  router/index.ts      路由實例、轉場方向判定、leaveAfterAction / pushWithDefaults
+  config/              app.ts（App 名稱、登入方式）、navigation.ts（導覽列項目）
+  router/index.ts      路由實例、登入檢查、轉場方向判定、leaveAfterAction / pushWithDefaults
   pages/               檔案即路由
 ```
 

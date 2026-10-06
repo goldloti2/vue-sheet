@@ -35,7 +35,7 @@
 
 | 檔案 | 改什麼 |
 | --- | --- |
-| `src/config/app.ts` | `appName`：App 名稱，沒指定 `route.meta.title` 的頁面用它當標題 |
+| `src/config/app.ts` | `appName`：App 名稱，沒指定 `route.meta.title` 的頁面用它當標題<br>`authMethod`：登入方式，要跟後端對得上（見 [docs/auth.md](../../docs/auth.md)）；要改登入頁的外觀就改 `src/pages/login.vue` |
 | `index.html` | `<title>` 寫同一個名字（靜態 HTML 讀不到 TS，只能各寫一次）；`lang` 依介面語言 |
 | `src/config/navigation.ts` | 導覽列項目，隨表增減（見下面第 1 節） |
 

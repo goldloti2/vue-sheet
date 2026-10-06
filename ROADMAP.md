@@ -10,7 +10,7 @@
 
 ### 前端骨架
 - Vue 3 + TypeScript + Vuetify，unplugin-vue-router 檔案式路由，Pinia
-- `AppShell`：頂部 App Bar（標題來自 `route.meta.title`）+ 底部導覽列 + 側邊欄空殼
+- `AppShell`：頂部 App Bar（標題來自 `route.meta.title`）+ 底部導覽列 + 側邊欄（目前只有登出）。`meta.shell: false` 的頁面三者都不顯示
 - App Bar 左側圖示依路由自動切換漢堡選單／返回箭頭
 - 頁面前進/後退轉場動畫，方向依「導覽列順序 → 回到頂層 → 同路由換 id 依列表順序 → 瀏覽器歷史前後」四層判定（見 [vue-build/docs/ui.md](vue-build/docs/ui.md)）。方向是掛在轉場容器上的 `data-dir`，`<Transition>` 的 `name` 固定——這樣才避得開 `KeepAlive` 讓離場套到上一次方向的坑（見 [vue-build/docs/architecture.md](vue-build/docs/architecture.md) 的設計取捨）
 - 底部導覽列切換分頁用 `replace`，內頁不會堆進歷史
@@ -121,6 +121,7 @@
 - 三件刻意不做的（返回＝回到上一步、編輯表單的預設值通道、進度指示）見「決定不做」
 
 ### 路由
+- 登入頁與導向（`config/app.ts` 的 `authMethod` 不是 `'none'` 時）：全域 guard 連第一次開啟都會檢查，沒有 token 就轉到 `/login?redirect=…`，登入後回到原本要去的地方；側邊欄可登出。token 目前是固定的 placeholder，接後端的部分見「未完成」的「後端」
 - `useRouteId()`：路由參數讀一次就固定（靠 `route.fullPath` 當 key 成立），離場動畫期間不會被目的地的 id 汙染。拿掉 key 時開發模式會警告
 - `leaveAfterAction()`：完成動作後用瀏覽器返回離開，不把已完成的表單頁留在歷史裡
 - `useListOrder` / `useSiblingNav`：列表頁發布畫面上的實際順序，detail 頁據此翻上/下一筆（箭頭 + 手勢），切換用 `replace`
@@ -181,8 +182,7 @@
 
 ### 後端
 
-- 🔲 **存取權限暫時設為「任何人」**，以網址作為唯一的保護：「只有我自己」實測無法從前端連線（跨網域 `fetch` 不會帶上 Google 的 cookie，亦不會出現登入頁）。最終預期採用 Google 認證，兩種方向（共用密鑰／前端 OAuth 取得 ID token）都需先修改前端
-  - 構想：共用密鑰做成**可選的開關**——啟用時前端在每個請求帶上 key、後端驗證；有了 Google 認證之後也能選擇不啟用。更後面要考慮多人使用：多組 key、各自的權限
+- 🔲 **存取權限暫時設為「任何人」**，以網址作為唯一的保護：「只有我自己」實測無法從前端連線（跨網域 `fetch` 不會帶上 Google 的 cookie，亦不會出現登入頁）。認證的設計見 [docs/auth.md](docs/auth.md)：可替換的認證模組，附帳號密碼的示範模組；之後的 Google 登入也走同一套約定。前端的登入頁與導向已完成，後端與前後端的串接尚未實作
 - 🔲 Hooks 機制（見 [docs/api.md](docs/api.md)）
 - `bulkCreate`：等真的有匯入需求再說
 
@@ -242,7 +242,7 @@ dashboard 分三種形式：
 
 ### 部署
 - 前端靜態託管（Vercel / Cloudflare Pages，注意 SPA fallback）
-- 🔲 **存取權限目前設為「任何人」**，以網址作為唯一的保護（僅存放於不進版控的 `.env`）：「只有我自己」實測無法從前端連線。最終預期採用 Google 認證，見上面的「後端」
+- 🔲 **存取權限目前設為「任何人」**，以網址作為唯一的保護（僅存放於不進版控的 `.env`）：「只有我自己」實測無法從前端連線。認證見上面的「後端」
 - API 配額用量監控
 ---
 

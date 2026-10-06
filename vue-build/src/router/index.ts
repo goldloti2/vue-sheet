@@ -10,13 +10,21 @@ import { shallowRef } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
 import { routes } from 'vue-router/auto-routes'
 import { siblingDirection } from '@/composables/navigation/useListOrder'
+import { authMethod } from '@/config/app'
 import { navItems } from '@/config/navigation'
+import { token } from '@/services/auth/token'
 
 declare module 'vue-router' {
   interface RouteMeta {
     title?: string
+    // 不用登入也能看（登入頁本身）
+    public?: boolean
+    // false：不顯示 App Bar、側邊欄與底部導覽列
+    shell?: boolean
   }
 }
+
+export const loginPath = '/login'
 
 // 每個網址最後停在哪裡。跟 KeepAlive 是同一件事的兩半：元件狀態歸 KeepAlive（也是以 fullPath 為 key），
 // 視窗的捲動位置不是元件狀態，所以記在這裡。上限跟 KeepAlive 的 max 一樣，滿了先丟最舊的
@@ -46,6 +54,18 @@ const router = createRouter({
 // 離場前記下來。這時畫面還沒換，window.scrollY 仍然是離開中那一頁的
 router.beforeEach((_to, from) => {
   rememberScroll(from.fullPath)
+})
+
+// 包含第一次開啟（直接貼網址、重新整理）：沒有 token 就先去登入頁，登入後回到原本要去的地方
+router.beforeEach(to => {
+  const toLogin = to.path === loginPath
+  if (authMethod === 'none' || (toLogin && token.value)) {
+    return toLogin ? '/' : true
+  }
+  if (token.value || to.meta.public) {
+    return true
+  }
+  return { path: loginPath, query: { redirect: to.fullPath } }
 })
 
 // 這次瀏覽在 App 裡面總共導覽過幾次；第一次載入（不管是首頁還是直接貼網址）算 1。
@@ -102,7 +122,8 @@ router.afterEach((to, from) => {
     transitionDir.value = toNav < fromNav ? 'back' : 'forward'
   }
 
-  navigationCount.value++
+  // 登入後是 replace 掉登入頁，歷史上沒有 App 內的上一頁，所以重新從 1 算
+  navigationCount.value = from.path === loginPath ? 1 : navigationCount.value + 1
 })
 
 // 新增動作可以帶預設值給目的地的表單。放 history.state 而不是網址

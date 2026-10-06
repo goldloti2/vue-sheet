@@ -1,6 +1,6 @@
 # 認證
 
-> **狀態**：設計已定。前端的登入頁與導向已實作；登入請求已經前後端串通（`action: 'login'`），但後端還不驗證，收到什麼都回成功與固定的 placeholder token。
+> **狀態**：設計已定。前端的登入頁與導向已實作；登入請求已經前後端串通（`action: 'login'`），後端以**明文**比對 Script Properties 裡的帳密，成功時回固定的 placeholder token。
 
 認證是**可選的**：不啟用時行為與現在相同（存取權限為「任何人」，見 [apps-script/README.md](../apps-script/README.md) 的「認證」）。後端視為可信任，認證只負責確認連進來的前端有權限。
 
@@ -43,7 +43,7 @@ const AUTH = null              // 不驗證
 
 `verify` 回傳的 `user` 保留給日後的權限檢查（多人使用時，依使用者限制可讀寫的表）；目前不做權限檢查。
 
-🔶 目前的實作：`Auth.gs` 只有一個 `login(credentials)`，不驗證、直接回 `{ token: 'placeholder' }`；`Api.gs` 的 `doPost` 看到 `action: 'login'` 就交給它。`AUTH` 的模組切換、`verify` 與示範模組都還沒有。
+🔶 目前的實作：`Api.gs` 的 `doPost` 看到 `action: 'login'` 就交給 `Auth.gs` 的 `login(credentials)`。它讀取 `AUTH_USER_<username>`（現在存的是明文 `{ password }`）並比對密碼，帳號不存在與密碼錯誤都回 `code: 'unauthorized'` 與同一句「帳號或密碼錯誤」；成功時回 `{ token: 'placeholder' }`。帳號用下方「管理員手動執行的函式」的 `addUser()`／`removeUser()` 管理。`AUTH` 的模組切換、`verify`、雜湊、token 簽章與失敗次數限制都還沒有。
 
 ## 前端
 
@@ -95,13 +95,16 @@ Script Properties 只有能編輯此腳本專案的人看得到（專案設定 �
 
 ### 管理員手動執行的函式
 
-在 Apps Script 編輯器中執行：
+在 Apps Script 編輯器中執行。編輯器的「執行」鈕無法傳入參數，因此帳號與密碼先填在 `Auth.gs` 的 `ACCOUNT_USERNAME`／`ACCOUNT_PASSWORD` 兩個常數，再從上方選單選擇函式執行；**執行完畢後須將密碼清空**，不留在程式碼中。
 
 - `setupSecret()`：產生 `AUTH_SECRET`，只需執行一次
-- `addUser('名稱', '密碼')`：產生 salt、計算雜湊、寫入 `AUTH_USER_<名稱>`
-- `removeUser('名稱')`
+- `addUser()`：產生 salt、計算雜湊、寫入 `AUTH_USER_<名稱>`；同名帳號即覆寫（等於改密碼）
+- `removeUser()`：刪除 `AUTH_USER_<名稱>`（只需填帳號）
 
-執行 `addUser` 後須刪除呼叫時填入的密碼，編輯器會保留填過的參數。
+也可以不經過函式，直接在「專案設定 → 指令碼屬性」畫面上管理：
+
+- **刪除**：刪掉該帳號的那一筆屬性即可
+- **新增或改密碼**（🔶 僅限目前的明文階段）：新增一筆屬性，名稱填 `AUTH_USER_<帳號>`，值填 `{"password":"密碼"}`（須是合法的 JSON，雙引號不能省）。改成雜湊之後，值需要 salt 與計算結果，就只能用 `addUser()`
 
 ### 登入
 

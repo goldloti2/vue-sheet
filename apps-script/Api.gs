@@ -13,7 +13,7 @@ function doPost (e) {
   })
 }
 
-// 錯誤只回一句訊息，code 只有衝突那一種（'modified'），前端要認出衝突才問得了使用者
+// 錯誤只回一句訊息；code 只用在前端要分辨的情況：'modified'（衝突）、'unauthorized'（登入失敗）
 function apiError (message, code) {
   const error = new Error(message)
   error.code = code

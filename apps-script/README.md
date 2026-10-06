@@ -10,7 +10,7 @@ Google Sheet 的 Apps Script Web App，是前端唯一的資料來源。介面�
 | `Api.gs` | `doGet`／`doPost` 入口與 `{ success }` 信封，前端唯一的進入點 |
 | `Sheets.gs` | 單張表的讀取、表頭對應、列的尋找 |
 | `Batch.gs` | 一次推送的完整流程：鎖、衝突比對、規劃、寫入 |
-| `Auth.gs` | 登入（`action: 'login'`）。目前不驗證，直接回 placeholder token，見 [../docs/auth.md](../docs/auth.md) |
+| `Auth.gs` | 登入（`action: 'login'`）與帳號管理（`addUser`／`removeUser`，在編輯器手動執行）。目前密碼以明文比對、token 為 placeholder，見 [../docs/auth.md](../docs/auth.md) |
 
 無建置步驟，`.gs` 檔直接貼進 Apps Script 編輯器，或以 `clasp push` 上傳。所有檔案共用同一個全域範圍，載入順序不影響結果。
 

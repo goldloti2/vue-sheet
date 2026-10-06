@@ -37,8 +37,8 @@ interface ApiSuccess<T> {
 
 interface ApiFailure {
   success: false
-  // 錯誤只有一句訊息、不分類；唯一的例外是 code: 'modified'，因為前端要認出衝突才能問使用者
-  error: { message: string, code?: 'modified' }
+  // 錯誤只有一句訊息；code 只用在前端要分辨的情況：'modified'（衝突）、'unauthorized'（登入失敗）
+  error: { message: string, code?: 'modified' | 'unauthorized' }
 }
 
 export type ApiResponse<T> = ApiSuccess<T> | ApiFailure

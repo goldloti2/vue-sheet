@@ -182,7 +182,7 @@
 
 ### 後端
 
-- 🔲 **存取權限暫時設為「任何人」**，以網址作為唯一的保護：「只有我自己」實測無法從前端連線（跨網域 `fetch` 不會帶上 Google 的 cookie，亦不會出現登入頁）。認證的設計見 [docs/auth.md](docs/auth.md)：可替換的認證模組，附帳號密碼的示範模組；之後的 Google 登入也走同一套約定。前端的登入頁與導向已完成，登入請求已前後端串通（後端還不驗證，直接回 placeholder token）；驗證、請求帶 token 尚未實作
+- 🔲 **存取權限暫時設為「任何人」**，以網址作為唯一的保護：「只有我自己」實測無法從前端連線（跨網域 `fetch` 不會帶上 Google 的 cookie，亦不會出現登入頁）。認證的設計見 [docs/auth.md](docs/auth.md)：可替換的認證模組，附帳號密碼的示範模組；之後的 Google 登入也走同一套約定。前端的登入頁與導向已完成，登入請求已前後端串通，後端以明文比對帳密（token 仍是 placeholder）；雜湊、token 簽章、請求帶 token 尚未實作
 - 🔲 Hooks 機制（見 [docs/api.md](docs/api.md)）
 - `bulkCreate`：等真的有匯入需求再說
 

@@ -1,6 +1,6 @@
 # 認證
 
-> **狀態**：設計已定。前端的登入頁與導向已實作；登入請求已經前後端串通（`action: 'login'`），後端以**明文**比對 Script Properties 裡的帳密，成功時回固定的 placeholder token。
+> **狀態**：設計已定。前端的登入頁與導向已實作；登入請求已經前後端串通（`action: 'login'`），後端以加鹽的 SHA-256 比對 Script Properties 裡的帳密，成功時回固定的 placeholder token。
 
 認證是**可選的**：不啟用時行為與現在相同（存取權限為「任何人」，見 [apps-script/README.md](../apps-script/README.md) 的「認證」）。後端視為可信任，認證只負責確認連進來的前端有權限。
 
@@ -43,7 +43,7 @@ const AUTH = null              // 不驗證
 
 `verify` 回傳的 `user` 保留給日後的權限檢查（多人使用時，依使用者限制可讀寫的表）；目前不做權限檢查。
 
-🔶 目前的實作：`Api.gs` 的 `doPost` 看到 `action: 'login'` 就交給 `Auth.gs` 的 `login(credentials)`。它讀取 `AUTH_USER_<username>`（現在存的是明文 `{ password }`）並比對密碼，帳號不存在與密碼錯誤都回 `code: 'unauthorized'` 與同一句「帳號或密碼錯誤」；成功時回 `{ token: 'placeholder' }`。帳號用下方「管理員手動執行的函式」的 `addUser()`／`removeUser()` 管理。`AUTH` 的模組切換、`verify`、雜湊、token 簽章與失敗次數限制都還沒有。
+🔶 目前的實作：`Api.gs` 的 `doPost` 看到 `action: 'login'` 就交給 `Auth.gs` 的 `login(credentials)`。它讀取 `AUTH_USER_<username>` 的 `{ salt, hash }`，以 `SHA256(password + salt)` 比對（見下方「登入」的第 2、3 步），帳號不存在與密碼錯誤都回 `code: 'unauthorized'` 與同一句「帳號或密碼錯誤」；成功時回 `{ token: 'placeholder' }`。帳號用下方「管理員手動執行的函式」的 `addUser()`／`removeUser()` 管理。`AUTH` 的模組切換、`verify`、`setupSecret()`、token 簽章與失敗次數限制都還沒有。
 
 ## 前端
 
@@ -101,10 +101,7 @@ Script Properties 只有能編輯此腳本專案的人看得到（專案設定 �
 - `addUser()`：產生 salt、計算雜湊、寫入 `AUTH_USER_<名稱>`；同名帳號即覆寫（等於改密碼）
 - `removeUser()`：刪除 `AUTH_USER_<名稱>`（只需填帳號）
 
-也可以不經過函式，直接在「專案設定 → 指令碼屬性」畫面上管理：
-
-- **刪除**：刪掉該帳號的那一筆屬性即可
-- **新增或改密碼**（🔶 僅限目前的明文階段）：新增一筆屬性，名稱填 `AUTH_USER_<帳號>`，值填 `{"password":"密碼"}`（須是合法的 JSON，雙引號不能省）。改成雜湊之後，值需要 salt 與計算結果，就只能用 `addUser()`
+也可以不經過函式，直接在「專案設定 → 指令碼屬性」畫面上**刪除**帳號：刪掉該帳號的那一筆屬性即可。**新增或改密碼只能用 `addUser()`**——屬性的值是 salt 與雜湊結果，無法手動填寫。
 
 ### 登入
 
@@ -114,7 +111,8 @@ Script Properties 只有能編輯此腳本專案的人看得到（專案設定 �
 2. 讀取 `AUTH_USER_<username>`，計算 `SHA256(password + salt)` 與 `hash` 比對
 3. 成功即發出 token
 
-- salt 每人各自隨機產生（`Utilities.getUuid()`）
+- salt 每人各自隨機產生（`Utilities.getUuid()`），改密碼時也重新產生
+- 雜湊結果以 base64 字串存放：`AUTH_USER_<名稱>` 的值是 `{"salt":"…","hash":"…"}`
 - 使用 SHA-256 是因為 Apps Script 沒有 bcrypt 等密碼專用的雜湊
 
 ### token

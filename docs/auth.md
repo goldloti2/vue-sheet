@@ -1,6 +1,6 @@
 # 認證
 
-> **狀態**：設計已定，大部分已實作。登入（加鹽的 SHA-256 比對帳密）、發 token、每個請求驗 token（格式、過期、帳號是否存在）、續期、前端帶 token 與失效時回登入頁都已完成。🔲 尚未實作：token 簽章（目前任何人都改得了 token）、登入失敗次數限制。
+> **狀態**：帳號密碼的示範模組已完成：登入（加鹽的 SHA-256 比對帳密）、發 token（HMAC 簽章）、每個請求驗 token（簽章、過期、帳號是否存在）、續期、前端帶 token 與失效時回登入頁。🔲 Google 登入尚未實作。
 
 認證是**可選的**：不啟用時行為與現在相同（存取權限為「任何人」，見 [apps-script/README.md](../apps-script/README.md) 的「認證」）。後端視為可信任，認證只負責確認連進來的前端有權限。
 
@@ -59,7 +59,7 @@ const AUTH = null          // 不驗證
 | `services/auth/token.ts` | token 的讀寫：存在 `localStorage`（key 帶 `BASE_URL` 前綴，避免同網域的其他 App 互相覆蓋），另有一份 `shallowRef` 供畫面與 guard 讀取。前端只存 token |
 | `services/auth/tokenMessage.ts` | token 裡 message 的編碼與解碼。正式流程不解析 token，只有假後端用 |
 | `router/index.ts` | 全域 `beforeEach`：連第一次開啟（直接貼網址、重新整理）都會經過，沒有 token 就轉到 `/login?redirect=原目的地`。標了 `meta.public` 的頁面不檢查。另外 `watch` token：token 被清掉時人還在要登入的頁面，就帶去登入頁（`redirect` 是當下這頁） |
-| `services/appScript.ts` | 每個請求的網址帶上 `?token=`；後端回 `unauthorized`／`expired` 時拋 `AuthError` 並清掉 token；回應附帶續期的 token 時換上。`fetchToken(credentials)`：送出 `{ action: 'login', credentials }`、取回 token。沒設 `VITE_APPS_SCRIPT_URL` 時走假後端（`mockLogin` 收到什麼都算成功、`mockAuthorize` 檢查格式與過期、同樣會續期）。dev 模式的 console 紀錄會把密碼與登入回傳的 token 遮掉 |
+| `services/appScript.ts` | 每個請求的網址帶上 `?token=`；後端回 `unauthorized`／`expired` 時拋 `AuthError` 並清掉 token；回應附帶續期的 token 時換上。`fetchToken(credentials)`：送出 `{ action: 'login', credentials }`、取回 token。沒設 `VITE_APPS_SCRIPT_URL` 時走假後端（`mockLogin` 收到什麼都算成功、發的 token 不簽章；`mockAuthorize` 檢查格式與過期、同樣會續期）。dev 模式的 console 紀錄會把密碼與登入回傳的 token 遮掉 |
 | `composables/auth/useLogin.ts` | 登入頁的資料層：送出（`fetchToken`）、錯誤訊息、成功後存 token、重抓已載入與載入失敗的表（`store.reload()`，不推送），再以 `replace` 前往 `redirect`（只接受站內路徑） |
 | `components/ui/auth/PasswordLoginForm.vue` | 帳號密碼表單，見 [PasswordLoginForm](../vue-build/docs/components/PasswordLoginForm.md) |
 | `pages/login.vue` | 登入頁本身，整頁自己排版（置中卡片、標題、錯誤訊息），表單用上面那個元件。專案要改外觀（logo、標題、背景、版面）就直接改這個檔 |
@@ -85,7 +85,6 @@ const AUTH = null          // 不驗證
 | 位置 | 存什麼 |
 | --- | --- |
 | Script Properties | `AUTH_SECRET`：簽 token 用的密鑰（一長串隨機字串）<br>`AUTH_USER_<名稱>`：`{ salt, hash }`，一人一筆 |
-| CacheService | 登入失敗的次數（暫存，到期自動消失） |
 
 Script Properties 只有能編輯此腳本專案的人看得到（專案設定 → 指令碼屬性），也可以直接在該畫面刪改；一人一筆的好處是在畫面上就能看到有哪些帳號、直接刪除。
 
@@ -93,7 +92,7 @@ Script Properties 只有能編輯此腳本專案的人看得到（專案設定 �
 
 在 Apps Script 編輯器中執行。編輯器的「執行」鈕無法傳入參數，因此帳號與密碼先填在 `Auth.gs` 的 `ACCOUNT_USERNAME`／`ACCOUNT_PASSWORD` 兩個常數，再從上方選單選擇函式執行；**執行完畢後須將密碼清空**，不留在程式碼中。
 
-- 🔲 `setupSecret()`：產生 `AUTH_SECRET`，只需執行一次
+- `setupSecret()`：產生 `AUTH_SECRET`（兩個 UUID 接起來），啟用前執行一次，不需要填常數。重新執行會讓所有已發出的 token 失效
 - `addUser()`：產生 salt、計算雜湊、寫入 `AUTH_USER_<名稱>`；同名帳號即覆寫（等於改密碼）
 - `removeUser()`：刪除 `AUTH_USER_<名稱>`（只需填帳號）
 
@@ -103,17 +102,14 @@ Script Properties 只有能編輯此腳本專案的人看得到（專案設定 �
 
 `credentials` 為 `{ username, password }`，密碼以明文傳送，由 HTTPS 保護。
 
-1. 🔲 檢查失敗次數：連續失敗 5 次即鎖定 15 分鐘
-2. 讀取 `AUTH_USER_<username>`，計算 `SHA256(password + salt)` 與 `hash` 比對
-3. 成功即發出 token
+1. 讀取 `AUTH_USER_<username>`，計算 `SHA256(password + salt)` 與 `hash` 比對
+2. 成功即發出 token
 
 - salt 每人各自隨機產生（`Utilities.getUuid()`），改密碼時也重新產生
 - 雜湊結果以 base64 字串存放：`AUTH_USER_<名稱>` 的值是 `{"salt":"…","hash":"…"}`
 - 使用 SHA-256 是因為 Apps Script 沒有 bcrypt 等密碼專用的雜湊
 
 ### token
-
-🔶 目前還沒有簽章：token 只有 `payload` 那段（沒有 `.` 與後面的簽章），任何人都能解開、改掉再編碼回去。下面是完成後的格式。
 
 ```
 message = { user: 名稱, exp: 後端當下時間 + 30 天 }    // exp 單位為秒
@@ -128,9 +124,11 @@ token   = payload + "." + base64url(HMAC_SHA256(AUTH_SECRET, payload))
 
 ### 驗證
 
-1. 🔲 以 `.` 拆開 token，對收到的 `payload` 以 `AUTH_SECRET` 重算 HMAC 並比對，不符即 `unauthorized`；相符才解開 `payload` 讀取 message。（目前直接解開；解不開或缺欄位即 `unauthorized`）
+1. 以 `.` 拆開 token，對收到的 `payload` 以 `AUTH_SECRET` 重算 HMAC 並比對，不符（或不是剛好兩段）即 `unauthorized`；相符才解開 `payload` 讀取 message，解不開或缺欄位同樣是 `unauthorized`
 2. 檢查 `exp`，已過期即 `expired`
 3. 檢查 `AUTH_USER_<user>` 仍存在，不存在即 `unauthorized`
 4. 剩餘效期不足一半（15 天）時發出新 token（續期）：`authorize` 把它交給 `Api.gs`，由 `respond` 放上信封
 
-只要 30 天內使用過一次，就不需要重新登入。作廢單一使用者：`removeUser`（已可用）；作廢所有 token：重新執行 `setupSecret()`（🔲 簽章完成後）。
+只要 30 天內使用過一次，就不需要重新登入。作廢單一使用者：`removeUser`；作廢所有 token：重新執行 `setupSecret()`。
+
+`AUTH_SECRET` 不存在時，登入與驗證都會回「尚未設定 AUTH_SECRET」的錯誤（沒有 `code`，前端只顯示訊息、不清 token），提醒管理員先執行 `setupSecret()`。

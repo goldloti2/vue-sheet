@@ -41,14 +41,17 @@ function passwordLogin (credentials) {
   return issueToken(credentials.username)
 }
 
-// 🔲 還沒有簽章：token 只是 base64url(message)，任何人都改得了
+// token = payload.簽章。簽的是編碼後的 payload 字串
 function issueToken (username) {
   const message = { user: username, exp: Math.floor(Date.now() / 1000) + TOKEN_LIFETIME_SECONDS }
-  return base64url(JSON.stringify(message))
+  const payload = base64url(JSON.stringify(message))
+  return `${payload}.${sign(payload)}`
 }
 
 function verifyToken (token) {
-  const message = decodeMessage(token)
+  const [payload, signature, ...rest] = token.split('.')
+  const signed = Boolean(signature) && rest.length === 0 && signature === sign(payload)
+  const message = signed ? decodeMessage(payload) : null
   if (!message || typeof message.user !== 'string' || typeof message.exp !== 'number') {
     throw apiError('登入資訊無效，請重新登入', 'unauthorized')
   }
@@ -63,14 +66,31 @@ function verifyToken (token) {
   return { user: message.user, token: renew ? issueToken(message.user) : undefined }
 }
 
-function base64url (text) {
-  return Utilities.base64EncodeWebSafe(text, Utilities.Charset.UTF_8).replace(/=+$/, '')
+function sign (payload) {
+  return base64url(Utilities.computeHmacSha256Signature(payload, authSecret(), Utilities.Charset.UTF_8))
 }
 
-// 解不開就是 null（亂填的 token）
-function decodeMessage (token) {
+// 簽 token 的密鑰只在 Script Properties
+function authSecret () {
+  const secret = PropertiesService.getScriptProperties().getProperty('AUTH_SECRET')
+  if (!secret) {
+    throw new Error('尚未設定 AUTH_SECRET，請先在編輯器執行 setupSecret()')
+  }
+  return secret
+}
+
+// 字串照 UTF-8 編；HMAC 的結果是 byte 陣列，直接編
+function base64url (data) {
+  const encoded = typeof data === 'string'
+    ? Utilities.base64EncodeWebSafe(data, Utilities.Charset.UTF_8)
+    : Utilities.base64EncodeWebSafe(data)
+  return encoded.replace(/=+$/, '')
+}
+
+// 解不開就是 null
+function decodeMessage (payload) {
   try {
-    const padded = token + '='.repeat((4 - token.length % 4) % 4)
+    const padded = payload + '='.repeat((4 - payload.length % 4) % 4)
     const bytes = Utilities.base64DecodeWebSafe(padded)
     return JSON.parse(Utilities.newBlob(bytes).getDataAsString('UTF-8'))
   } catch {
@@ -95,6 +115,13 @@ function readUser (username) {
 }
 
 // ===== 管理員在編輯器裡手動執行 =====
+
+// 產生簽 token 用的密鑰，啟用前執行一次。重新執行會讓所有已發出的 token 失效（所有人都要重新登入）
+function setupSecret () {
+  PropertiesService.getScriptProperties().setProperty('AUTH_SECRET', Utilities.getUuid() + Utilities.getUuid())
+  console.log('已產生 AUTH_SECRET')
+}
+
 // 「執行」鈕不能帶參數，所以先填這兩個值、從上方選單選 addUser 或 removeUser 再按執行。
 // 執行完把密碼清掉，不要留在程式碼裡
 const ACCOUNT_USERNAME = ''

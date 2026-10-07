@@ -55,7 +55,7 @@
 - 佇列 `pending`、合併規則、`flush`、`hasPending` / `flushing` / `flushError`
 - 四個寫入 action 變成同步的，只動快取與佇列
 - 流程存檔點 `beginFlow` / `commitFlow` / `rollbackFlow`（給連續動作用；流程進行中 `flush` 會被擋下）
-- App Bar 最右側的同步鈕（`refresh()` ＝ 推送 + 重抓所有已載入的表）+ 未推送圓點標記（失敗轉紅）+ `beforeunload` 攔截
+- App Bar 最右側的同步鈕（`refresh()` ＝ 推送 + 重抓所有已載入與載入失敗的表）+ 未推送圓點標記（失敗轉紅）+ `beforeunload` 攔截
 - 表單開著的時候同步鈕停用（`useSyncHold` 持有 `holdSync()`，`canSync` 判斷）
 - flush 失敗保持「未推送」狀態並用 snackbar 報錯，讓使用者重按。因為 id 由前端發，整批重送是安全的（所以沒有逐筆補償，見「決定不做」）
 - **重抓前一定先 flush**，沒清乾淨就不重抓；沒有「只重抓一張表」的 API

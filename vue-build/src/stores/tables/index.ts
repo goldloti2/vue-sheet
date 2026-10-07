@@ -99,14 +99,21 @@ export const useTablesStore = defineStore('tables', () => {
     }
   }
 
-  // 推送 + 重抓所有已載入的表；推不出去就不重抓，否則會蓋掉未推送的變更
+  // 推送 + 重抓；推不出去就不重抓，否則會蓋掉未推送的變更
   async function refresh (force = false): Promise<boolean> {
     if (!canSync.value || !await flush(force)) {
       return false
     }
 
-    await Promise.all(Object.keys(rows).map(table => load(table as TableKey)))
+    await reload()
     return true
+  }
+
+  // 重抓用過的表：有資料的，加上載入失敗的。後者還不在 rows 裡，只看 rows 的話第一次就失敗的表永遠不會再試
+  async function reload (): Promise<void> {
+    const failed = Object.keys(error).filter(table => error[table as TableKey])
+    const tables = new Set([...Object.keys(rows), ...failed]) as Set<TableKey>
+    await Promise.all([...tables].map(table => load(table)))
   }
 
   // 流程碰到這張表之前先留一份。同一張表只留第一次，之後的改動都算流程的
@@ -149,10 +156,10 @@ export const useTablesStore = defineStore('tables', () => {
     return queue.flush(force)
   }
 
-  // 衝突的兩條出路之一：丟掉未推送的變更、重抓所有已載入的表（Sheet 上那份當真相）
+  // 衝突的兩條出路之一：丟掉未推送的變更、重抓（Sheet 上那份當真相）
   async function discardAndReload (): Promise<void> {
     queue.discard()
-    await Promise.all(Object.keys(rows).map(table => load(table as TableKey)))
+    await reload()
   }
 
   // 另一條：不帶 since 再送一次，只蓋掉自己改過的那幾欄。成功後照常重抓

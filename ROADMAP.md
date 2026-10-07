@@ -60,7 +60,7 @@
 - flush 失敗保持「未推送」狀態並用 snackbar 報錯，讓使用者重按。因為 id 由前端發，整批重送是安全的（所以沒有逐筆補償，見「決定不做」）
 - **重抓前一定先 flush**，沒清乾淨就不重抓；沒有「只重抓一張表」的 API
 - 跨表寫入順序無所謂。Sheet 沒有外鍵約束，後端也不做合法性驗證，所以父表子表誰先寫都不會壞
-- `flush` 把整個佇列（跨所有表）攤平成一串 operations，**一個請求送完、全有全無**：成功才清空佇列，失敗原封不動讓使用者重按（見「後端 API 介面」）
+- `flush` 把整個佇列（跨所有表）攤平成一串 operations，**一個請求送完、全有全無**：成功才清空佇列，失敗原封不動讓使用者重按（見 [docs/api.md](docs/api.md)）
 - 佇列只在記憶體、不寫進 `localStorage`（決定不做的理由與代價見「決定不做」）
 
 ### 共用元件庫
@@ -130,45 +130,20 @@
 - `services/mock/`：記憶體資料表 + 可運作的 batch（create／update／delete，全有全無），跟真 Sheet 一樣只存原始字串
 - 純記憶體，重整頁面回到 CSV 原始內容
 - `services/appScript.ts` 是對後端唯一的出入口，**真的 fetch 已經寫好**（GET 讀整張表、POST 送 batch、拆 `{ success }` 信封、認 `code: 'modified'` 轉成 `ConflictError`）。`VITE_APPS_SCRIPT_URL` 沒設就走假後端，所以 clone 下來不填東西就能跑；真後端穩定後整個 `mock/` 可以刪掉
-- POST 的 `Content-Type` 刻意是 `text/plain`：`application/json` 會觸發 CORS 預檢，而 Apps Script 回不了預檢（後端 `JSON.parse(e.postData.contents)` 讀）
+- POST 的 `Content-Type` 刻意是 `text/plain`（原因見 [docs/api.md](docs/api.md)）
 
 ### 後端（Apps Script）
 
 程式在 `apps-script/`，需填寫的僅有 `Config.gs`：試算表 id、「表代稱 → 分頁名稱 + ID 欄表頭」的對照、表頭列號。細節、部署步驟與實測結果見 [apps-script/README.md](apps-script/README.md)。
 
-- 已實作並於 **2026-10-02 對實際的 Sheet 完成測試**：`doGet`／`doPost` 入口與 `{ success }` 信封、泛用的整表讀取、batch 的鎖與衝突比對、`create`／`update`／`delete`、表頭對應、結構完整性檢查（表名與欄位名在對照內、id 不重複、目標存在）。讀取、新增、修改單一欄位、刪除、衝突比對、日期格式、`flush()` 後的 `modifiedTime` 皆正常
-- 全有全無的實作方式：**規劃（僅讀取）與寫入（僅寫入）分成兩段**，結構檢查全部在規劃階段完成，寫入階段不存在預期內的失敗，因此不需要回滾機制
-- 寫入的字串會被 Sheet 當成使用者輸入解析，**轉義全部由前端做**（`serializeRow`）：只對會讓儲存格變型別的值補單引號前綴（開頭 `=`／`+`／`0`、分數、科學記號），且只在 `text`／`select`／`image` 的欄位上。後端不做轉義——它看不出型別，分不出文字欄位的 `0912` 與數字欄位的 `0.5`。**id 與 `ref` 欄位一律不補**：id 要跟 Sheet 的顯示值比對才找得到列，而 ref 的值必須跟 id 欄一字不差，只有一邊補就會讓關聯對不起來；連帶的限制是 `newId` 的格式別用數字開頭。已對實際的 Sheet 測過
+- 已實作並於 **2026-10-02 對實際的 Sheet 完成測試**：入口與信封、整表讀取、batch（鎖、衝突比對、全有全無）、表頭對應、結構完整性檢查。實作規則、值寫入儲存格的行為與實測結果見 [apps-script/README.md](apps-script/README.md)；字串轉義由前端處理，見 [vue-build/docs/schema.md](vue-build/docs/schema.md)
 - 認證：`Config.gs` 的 `AUTH` 啟用時，登入換 token（加鹽的 SHA-256 比對帳密、HMAC 簽章、30 天效期、剩不到一半自動續期），每個請求先驗 token 才開試算表。設計見 [docs/auth.md](docs/auth.md)
+- 前後端介面（GET 整張表、POST 一個 batch、全有全無、id 由前端產生、不回傳資料列）見 [docs/api.md](docs/api.md)
 - 待處理的項目（Google 登入、Hooks）見「未完成」
 
-### 後端 API 介面（兩端均依此實作並實測）
-
-兩個端點：讀是整張表，寫是**一個 batch**。
-
-| | payload | 回傳 |
-| --- | --- | --- |
-| 讀（GET） | `table` | 整張表的原始字串 row |
-| 寫（POST） | `operations: [{ table, kind, id, values? }, …]`，`kind` 是 `create`／`update`／`delete` | 成功與否（不回傳資料列） |
-
-- **一個請求帶所有表的所有操作**。要省的是每次請求的 script 冷啟（0.5～2 秒），不是配額——每分鐘 60 次是 Sheets REST API 的限制，`SpreadsheetApp` 不適用（但若為了 RAW 寫入改走進階服務 Sheets API，那條配額就回來了）
-- **全有全無**：後端在 `LockService` 裡跑完整批，中途失敗什麼都不寫；前端保留佇列、使用者重按就是整批重送
-- **`update` 只送進佇列的那幾欄**（表單是整列，快速編輯與欄位動作只有那一欄），後端只寫 payload 裡的那幾格，所以沒進過佇列的欄位保留 Sheet 上手改的值。送整列省不到呼叫（後端為了把 id 換成列號本來就要讀一次），卻會讓前端快取蓋掉手改的欄位
-- **不回傳資料列**：前端寫入當下就改好快取了，推送成功後本來就會重抓
-- 單筆的 `create`／`update`／`delete` 端點與 `bulkUpdate`／`bulkDelete` 都拿掉了——batch 涵蓋得了，前端也沒有地方會送
-- **ID 由前端產生**（`create` 的 payload 帶 id）。這讓重送變成冪等的：`create` 定義成「id 不存在就建、已存在就當作已完成」，整批重送是安全的，不需要記錄哪幾筆成功過。也讓待推送佇列可以直接用 `table + id` 當 key，因為不會出現「刪掉又新增同一個 id」
-- 後端仍然要擋重複 id——Sheet 可以手動打開來改，不能假設 id 只由前端產生
-- 佇列是逐筆的，快速編輯與批次刪除都拆成多個單筆操作進佇列（合併規則才適用），送出時才攤平成一串 operations
-- `SpreadsheetApp` 的寫入能力：單格、連續多格同值（`getRange('A2:D2').setValue(v)`）、連續多格不同值（`setValues`，維度要完全相符）、不連續同值（`getRangeList([...]).setValue(v)`）都是一次呼叫；**只有「不連續、各自不同值」沒有**（`RangeList` 沒有 `setValues`），要迴圈寫、或改用進階服務 Sheets API 的 `Values.batchUpdate`
-- 後端實作的三條規則：**一張表讀一次 used range**（順便拿到舊值供合併）、**讀寫不交錯**（任何讀取會強制 flush 前面的寫入）、**刪列由下往上**（否則索引位移）。`apps-script/Batch.gs` 即依這三項實作（規劃僅讀取、寫入僅寫入）
-- **`setValue` 會將字串視為「使用者輸入」解析**（已實測）：數字解析為數字、日期解析為日期，這正是需要的行為，Sheet 上的 `SUM` 與日期格式才能運作，因此**不掛載進階服務**（`valueInputOption: 'RAW'` 反而會把數字存成文字）。代價是文字類欄位必須補單引號前綴才不會被誤解析（前端 `serializeRow` 依型別處理），且經由 App 編輯過的欄位會將原有公式替換為純字串（預期行為，細節見 [apps-script/README.md](apps-script/README.md)）
-
 ### 資料一致性
-- **推送前比對檔案的 modifiedTime**（取代原本 `updatedAt` 欄位的想法；兩端均已實作並實測）：Sheets 沒有逐列的修改時間，維護 `updatedAt` 要後端戳章加 `onEdit` 觸發器；改成用整個檔案的 `modifiedTime`（`DriveApp.getFileById(id).getLastUpdated()`），粗糙（任何分頁、連格式變更都算）但夠用
-  - `fetchTable` 的回應帶 `modifiedTime`，store 記成 `knownModifiedTime`；batch 的 payload 帶 `since`，**由後端**在 `LockService` 鎖裡跟當下的值比對再寫，不一致就回 `{ success: false, error: 'modified' }` 什麼都不寫，一致就寫入並回新的 `modifiedTime`
-  - 衝突時前端保留佇列、立起 `store.conflict`，`AppShell` 用 `choose()` 問兩條出路：`discardAndReload()`（放棄未推送的變更並重抓）或 `forcePush()`（payload 不帶 `since`；蓋掉的只有進過佇列的那幾欄）。關掉對話框就什麼都不做，下次按同步再問
-  - 衝突時不把佇列重新套用到新資料上（見「決定不做」）
-  - 假後端在 dev 模式掛了一個 `mockTouch()`（console 可叫），用來模擬「別人改了 Sheet」把衝突那條路測出來
+- 推送前比對整個試算表檔案的 `modifiedTime`（由後端在同一把鎖裡比對），衝突時問使用者「放棄並重抓」或「強制推送」。約定見 [docs/api.md](docs/api.md) 的「資料一致性」，前端的處置見 [vue-build/docs/store.md](vue-build/docs/store.md)
+- 衝突時不把佇列重新套用到新資料上（見「決定不做」）
 
 ### 列表效能
 上千列的列表頁做過一輪渲染成本的處理（每列的連結元件、`ref` 的父列查詢、畫面外的列要不要排版）。量測方法、數字與判讀方式見 [vue-build/docs/perf.md](vue-build/docs/perf.md)（附錄）。
@@ -196,7 +171,6 @@
   - 等真的常用到再做；現在的替代路徑是先去父表新增、再回來選
 - **schema 要不要拆成 `fields.ts` / `view.ts`**（評估過，先不做）：能乾淨切的只有表這一層——`fields.ts` 放 Row 介面、`tableLabel`／`idColumn`／`newId`／`labelColumn`／`columns`／`virtualColumns`，`view.ts` 放 `detailOrder`／`formOrder`／`defaultSort`，`index.ts` 組起來。切在欄位內部（型別／必填 vs 標籤／可搜尋）已否決，那會逼每個 key 寫兩次。現在 view 那半只有三個欄位，拆完是一個五行的檔加一個 import，不划算。回頭重看的時機：view 那半長到 15～20 行，或哪張表需要兩種視圖（跟下一條一起做）
 - **視圖設定讓頁面覆寫**（等真的有第二種視圖需求再做）：`detailOrder`／`formOrder`／`defaultSort` 現在只有 schema 一份，同一張表在不同頁面沒辦法有不同的排法與欄位集（AppSheet 是把這些掛在 view 上，所以一張表能有多個 view）。做法是 schema 那份當**預設**、頁面用選用 prop 覆寫（`DataDetail`／`DataForm` 各加一個 `order`、排序走 `useSortedTableList` 的參數），不是搬到頁面去——沒指定的頁面要有東西可用，預設值一定要留在 schema。頁面端自己寫仍然有型別檢查（`RowKey<XxxRow>[]` 是 exported 的），元件內部那層本來就是 `TableSchema<any>`。（篩選抽屜與排序面板的順序已經不必跟著誰了——它們有自己的 `searchable`／`sortable` 清單）
-- 總覽頁範本（`DataDashboardTemplate`）：保留了位置但沒有具體需求（見下一節的 dashboard）
 
 ### 頁面類型（對照 AppSheet）
 
@@ -243,7 +217,7 @@ dashboard 分三種形式：
 
 ### 部署
 - 前端靜態託管（Vercel / Cloudflare Pages，注意 SPA fallback）
-- 🔲 **存取權限目前設為「任何人」**，以網址作為唯一的保護（僅存放於不進版控的 `.env`）：「只有我自己」實測無法從前端連線。認證見上面的「後端」
+- 存取權限：前端直接 `fetch` 時只有「任何人」連得上（「只有我自己」需要前端另外取得 Google 的 OAuth access token，尚未試過）；要限制誰能用，靠選用的程式內認證（見 [docs/auth.md](docs/auth.md)），不用時網址是唯一的保護（僅存放於不進版控的 `.env`）
 - API 配額用量監控
 ---
 

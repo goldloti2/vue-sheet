@@ -38,7 +38,14 @@ Google Sheets 不讓前端裸連（會暴露金鑰，而且每個使用者都要
 
 在 Sheet 綁定的 Apps Script 寫 `doGet`/`doPost`，部署成網址供前端 fetch。免費、免架站、Google 代管。
 
-**API 配額**（2026，官方文件 https://developers.google.com/workspace/sheets/api/limits）：讀取每分鐘每專案 300 次、每使用者 60 次，寫入同規則，每日無硬性上限。個人使用通常足夠，但 2026 年稍晚起超額會計費，建議做請求節流。
+**配額**（2026）：存取 Sheet 有兩條路，配額各自不同。
+
+| | 配額 | 本框架 |
+| --- | --- | --- |
+| **Apps Script 內建的 `SpreadsheetApp`** | 個人帳號：單次執行最多 6 分鐘、每天累計執行 90 分鐘、每天讀寫 50 萬次 | ✅ 走這條 |
+| **直接呼叫 Google Sheets API**（不經過 Apps Script，跟 OAuth 一樣需要另外申請） | 每專案每分鐘 300 次、每使用者每分鐘 60 次，讀寫同規則（[官方文件](https://developers.google.com/workspace/sheets/api/limits)）；2026 年稍晚起超額會計費 | 不適用 |
+
+所以要注意的是 Apps Script 的執行時間，而不是每分鐘的次數：每個請求都是一次執行，前端把多筆改動合成一個 batch 送出，也是為了少開幾次（見 [docs/api.md](docs/api.md)）。
 
 ### 前端：Vue 3 + TypeScript
 
@@ -64,7 +71,7 @@ npm run build   # 產出靜態檔案到 dist/
 
 跑起來會看到一個可以瀏覽、新增、編輯、刪除的 App，資料來自 `vue-build/src/services/mock/` 的假後端（把 `vue-build/mock/*.csv` 讀進記憶體）——不需要任何設定，但**重整頁面就回到 CSV 的原始內容**。
 
-要接上實際的 Sheet：後端在 `apps-script/`（將四個 `.gs` 檔貼進 Apps Script、填妥 `Config.gs`、部署），前端在 `.env` 填入 `VITE_APPS_SCRIPT_URL`。整條路徑已對實際的 Sheet 完成測試（讀取、寫入、衝突比對皆正常）；尚未解決的項目與存取權限的暫時妥協見 [apps-script/README.md](apps-script/README.md) 的「實測結果」與 [ROADMAP.md](ROADMAP.md)。
+要接上實際的 Sheet：後端在 `apps-script/`（將所有 `.gs` 檔貼進 Apps Script、填妥 `Config.gs`、部署），前端在 `.env` 填入 `VITE_APPS_SCRIPT_URL`。整條路徑已對實際的 Sheet 完成測試，結果見 [apps-script/README.md](apps-script/README.md) 的「實測結果」；要限制誰能使用，見該檔的「認證」。
 
 接下來：
 
@@ -79,7 +86,9 @@ npm run build   # 產出靜態檔案到 dist/
 | 文件 | 內容 |
 | --- | --- |
 | [ROADMAP.md](ROADMAP.md) | 做到哪裡、還有什麼沒做、刻意不做的是什麼 |
+| [CHANGELOG.md](CHANGELOG.md) | 各版本的內容 |
 | [docs/api.md](docs/api.md) | 前後端之間的介面：CRUD API、後端 Hooks、認證與權限 |
+| [docs/auth.md](docs/auth.md) | 認證：前後端的約定、可替換的認證模組、帳號密碼的示範模組 |
 | [apps-script/README.md](apps-script/README.md) | 後端：要填什麼、怎麼部署、實作上的規則、實測結果 |
 | [vue-build/README.md](vue-build/README.md) | 前端：指令、資料夾、以及底下所有前端文件的索引 |
 | [vue-build/template/README.md](vue-build/template/README.md) | 初次設定、新增一張表要複製與修改哪些檔案 |

@@ -25,7 +25,7 @@
 - payload 的欄位值**由前端轉換為 sheet 的形狀**（表頭作為 key、值為字串）後送出，後端原封不動寫入、不做任何型別轉換。值寫入儲存格時 Sheet 會自行解析該字串：數字與日期的解析是需要的，而文字類欄位中「會讓儲存格變成別的型別」的值（開頭為 `=`、`+`、`0`，分數、科學記號）**由前端在 `serializeRow` 補上單引號前綴**——只有前端知道欄位型別，後端不做任何轉義。細節見 [../apps-script/README.md](../apps-script/README.md) 的「值寫入儲存格的行為」
 - 保留字：`table`、`id`、`kind` 不能拿來當欄位名稱
 - POST 的 body 另一種形狀是登入：`{ action: 'login', credentials }`，成功時的 `data` 是 `{ token }`（見 [auth.md](auth.md)）
-- 回應統一包裝成 `{ success: true, data }` 或 `{ success: false, error: { message, code? } }`。batch 成功時的 `data` 是 `{ modifiedTime }`
+- 回應統一包裝成 `{ success: true, data }` 或 `{ success: false, error: { message, code? } }`。batch 成功時的 `data` 是 `{ modifiedTime }`。啟用登入時，成功的回應可能另外帶 `token`（續期，見 [auth.md](auth.md)）
 - **重要限制**：Apps Script Web App 無法自由設定 HTTP status code（幾乎都回 200），前端一律看 body 的 `success` 判斷成敗，不看 status
 - 錯誤只回一句 `message`，不分類 error code——**例外只有前端需要分辨的情況**：`code: 'modified'`（衝突，前端要認出來才問得了使用者）、`code: 'unauthorized'`（登入失敗或 token 無效）與 `code: 'expired'`（token 過期），後兩者見 [auth.md](auth.md)
 - 啟用登入時（`Config.gs` 的 `AUTH`），每個請求的網址都要帶 `?token=`（見 [auth.md](auth.md)）

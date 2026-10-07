@@ -41,6 +41,8 @@ export class AuthError extends Error {
 interface ApiSuccess<T> {
   success: true
   data: T
+  // 續期：token 剩不到一半效期時後端換一張新的放這裡（見 docs/auth.md）
+  token?: string
 }
 
 interface ApiFailure {

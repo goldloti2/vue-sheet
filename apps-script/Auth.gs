@@ -19,12 +19,10 @@ function login (credentials) {
   return { token: auth.login(credentials) }
 }
 
-// 讀寫之前先過這關；AUTH 是 null 就不檢查
+// 讀寫之前先過這關；AUTH 是 null 就不檢查。回傳續期用的新 token（不需要續期就是 undefined）
 function authorize (token) {
   const auth = authModule()
-  if (auth) {
-    auth.verify(token || '')
-  }
+  return auth ? auth.verify(token || '').token : undefined
 }
 
 // ===== 示範模組：帳號密碼 =====
@@ -32,6 +30,7 @@ function authorize (token) {
 const PasswordAuth = { login: passwordLogin, verify: verifyToken }
 
 const TOKEN_LIFETIME_SECONDS = 30 * 24 * 60 * 60
+const TOKEN_RENEW_BELOW_SECONDS = TOKEN_LIFETIME_SECONDS / 2
 
 function passwordLogin (credentials) {
   const user = readUser(credentials.username)
@@ -60,7 +59,8 @@ function verifyToken (token) {
   if (!readUser(message.user)) {
     throw apiError('登入資訊無效，請重新登入', 'unauthorized')
   }
-  return { user: message.user }
+  const renew = message.exp - Date.now() / 1000 < TOKEN_RENEW_BELOW_SECONDS
+  return { user: message.user, token: renew ? issueToken(message.user) : undefined }
 }
 
 function base64url (text) {

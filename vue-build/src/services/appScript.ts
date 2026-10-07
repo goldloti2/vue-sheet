@@ -7,7 +7,7 @@ import type { ApiResponse, BatchOperation, LoginCredentials, TableData } from '.
 import type { TableKey } from '@/schema'
 import { schemas } from '@/schema'
 import { coerceRow } from '@/schema/types'
-import { clearToken, token } from './auth/token'
+import { clearToken, setToken, token } from './auth/token'
 import { mockAuthorize, mockBatch, mockList, mockLogin } from './mock/backend'
 import { AuthError, ConflictError } from './types'
 
@@ -32,7 +32,15 @@ async function unwrap<T> (response: Response): Promise<T> {
     throw code === 'unauthorized' || code === 'expired' ? new AuthError(message, code) : new Error(message)
   }
 
+  renewToken(payload.token)
   return payload.data
+}
+
+// 後端續期時在信封上附一張新的 token，換上就好（見 docs/auth.md）
+function renewToken (newToken: string | undefined): void {
+  if (newToken) {
+    setToken(newToken)
+  }
 }
 
 // GET 沒有 body，所以 token 一律放網址，POST 也一樣（見 docs/auth.md）
@@ -92,7 +100,7 @@ export async function fetchTable<Row> (table: TableKey): Promise<{ rows: Row[], 
     if (API_URL) {
       return unwrap<TableData>(await fetch(endpoint(API_URL, { table })))
     }
-    mockAuthorize(token.value)
+    renewToken(mockAuthorize(token.value))
     return mockList(table)
   })
 
@@ -108,7 +116,7 @@ export async function mutateBatch (operations: readonly BatchOperation[], since?
     if (API_URL) {
       return post<{ modifiedTime: string }>(endpoint(API_URL), { operations, since })
     }
-    mockAuthorize(token.value)
+    renewToken(mockAuthorize(token.value))
     return { modifiedTime: mockBatch(operations, since) }
   })
 

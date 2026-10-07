@@ -142,16 +142,20 @@ export function mockLogin (credentials: LoginCredentials): { token: string } {
   return { token: encodeMessage({ user: credentials.username ?? '', exp }) }
 }
 
-// 跟真後端的 verify 一樣檢查格式與過期（沒有帳號表，所以不查帳號在不在）
-export function mockAuthorize (token: string | null): void {
+// 跟真後端的 verify 一樣檢查格式與過期、剩不到一半效期就回新的 token（沒有帳號表，所以不查帳號在不在）
+export function mockAuthorize (token: string | null): string | undefined {
   if (authMethod === 'none') {
-    return
+    return undefined
   }
   const message = token ? decodeMessage(token) : null
   if (!message || typeof message.user !== 'string' || typeof message.exp !== 'number') {
     throw new AuthError('登入資訊無效，請重新登入', 'unauthorized')
   }
-  if (message.exp < Date.now() / 1000) {
+  const now = Date.now() / 1000
+  if (message.exp < now) {
     throw new AuthError('登入已過期，請重新登入', 'expired')
   }
+  return message.exp - now < TOKEN_LIFETIME_SECONDS / 2
+    ? encodeMessage({ user: message.user, exp: Math.floor(now) + TOKEN_LIFETIME_SECONDS })
+    : undefined
 }

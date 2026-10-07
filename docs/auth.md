@@ -1,6 +1,6 @@
 # 認證
 
-> **狀態**：設計已定，大部分已實作。登入（加鹽的 SHA-256 比對帳密）、發 token、每個請求驗 token（格式、過期、帳號是否存在）、前端帶 token 與失效時回登入頁都已完成。🔲 尚未實作：token 簽章（目前任何人都改得了 token）、續期、登入失敗次數限制。
+> **狀態**：設計已定，大部分已實作。登入（加鹽的 SHA-256 比對帳密）、發 token、每個請求驗 token（格式、過期、帳號是否存在）、續期、前端帶 token 與失效時回登入頁都已完成。🔲 尚未實作：token 簽章（目前任何人都改得了 token）、登入失敗次數限制。
 
 認證是**可選的**：不啟用時行為與現在相同（存取權限為「任何人」，見 [apps-script/README.md](../apps-script/README.md) 的「認證」）。後端視為可信任，認證只負責確認連進來的前端有權限。
 
@@ -16,7 +16,7 @@
 | --- | --- |
 | 登入 | POST body `{ action: 'login', credentials: {…} }`，成功時 `data` 為 `{ token }`。`credentials` 的內容由模組決定 |
 | 每個請求 | 網址帶 `?token=…`（GET 與 POST 皆同） |
-| 續期（🔲） | 任何成功的回應都可以在信封上附帶新的 token：`{ success: true, data, token }`，前端收到即替換 |
+| 續期 | 任何成功的回應都可以在信封上附帶新的 token：`{ success: true, data, token }`，前端收到即替換（`appScript.ts` 的 `unwrap`）。放在信封而不是 `data` 裡，各端點的 `data` 形狀才不受影響 |
 | 錯誤 | `code: 'expired'`：token 過期；`code: 'unauthorized'`：token 無效、帳號不存在或登入失敗 |
 
 - token 放在網址：GET 沒有 body，兩種請求一律放網址，後端只需在一處讀取（`e.parameter.token`）。不能放在 header，自訂 header 會觸發 CORS 預檢，而 Apps Script 無法回應預檢
@@ -38,7 +38,7 @@ const AUTH = null          // 不驗證
 | 函式 | 回傳 | 失敗時 |
 | --- | --- | --- |
 | `login(credentials)` | token 字串 | 擲出 `unauthorized` |
-| `verify(token)` | `{ user }`（🔲 之後加上續期用的 `token`） | 擲出 `expired` 或 `unauthorized` |
+| `verify(token)` | `{ user, token? }`；`token` 是續期用的新 token，不需要續期時省略 | 擲出 `expired` 或 `unauthorized` |
 
 `Api.gs` 只負責分派：body 為 `action: 'login'` 時交給 `login()`（包成 `{ token }` 回傳），其他請求先經過 `authorize()`（呼叫模組的 `verify`），**在開啟試算表之前**完成。`AUTH` 為 `null` 時不驗證，此時呼叫登入會回錯誤。
 
@@ -59,7 +59,7 @@ const AUTH = null          // 不驗證
 | `services/auth/token.ts` | token 的讀寫：存在 `localStorage`（key 帶 `BASE_URL` 前綴，避免同網域的其他 App 互相覆蓋），另有一份 `shallowRef` 供畫面與 guard 讀取。前端只存 token |
 | `services/auth/tokenMessage.ts` | token 裡 message 的編碼與解碼。正式流程不解析 token，只有假後端用 |
 | `router/index.ts` | 全域 `beforeEach`：連第一次開啟（直接貼網址、重新整理）都會經過，沒有 token 就轉到 `/login?redirect=原目的地`。標了 `meta.public` 的頁面不檢查。另外 `watch` token：token 被清掉時人還在要登入的頁面，就帶去登入頁（`redirect` 是當下這頁） |
-| `services/appScript.ts` | 每個請求的網址帶上 `?token=`；後端回 `unauthorized`／`expired` 時拋 `AuthError` 並清掉 token。`fetchToken(credentials)`：送出 `{ action: 'login', credentials }`、取回 token。沒設 `VITE_APPS_SCRIPT_URL` 時走假後端（`mockLogin` 收到什麼都算成功、`mockAuthorize` 檢查格式與過期）。dev 模式的 console 紀錄會把密碼與登入回傳的 token 遮掉 |
+| `services/appScript.ts` | 每個請求的網址帶上 `?token=`；後端回 `unauthorized`／`expired` 時拋 `AuthError` 並清掉 token；回應附帶續期的 token 時換上。`fetchToken(credentials)`：送出 `{ action: 'login', credentials }`、取回 token。沒設 `VITE_APPS_SCRIPT_URL` 時走假後端（`mockLogin` 收到什麼都算成功、`mockAuthorize` 檢查格式與過期、同樣會續期）。dev 模式的 console 紀錄會把密碼與登入回傳的 token 遮掉 |
 | `composables/auth/useLogin.ts` | 登入頁的資料層：送出（`fetchToken`）、錯誤訊息、成功後存 token、重抓已載入與載入失敗的表（`store.reload()`，不推送），再以 `replace` 前往 `redirect`（只接受站內路徑） |
 | `components/ui/auth/PasswordLoginForm.vue` | 帳號密碼表單，見 [PasswordLoginForm](../vue-build/docs/components/PasswordLoginForm.md) |
 | `pages/login.vue` | 登入頁本身，整頁自己排版（置中卡片、標題、錯誤訊息），表單用上面那個元件。專案要改外觀（logo、標題、背景、版面）就直接改這個檔 |
@@ -131,6 +131,6 @@ token   = payload + "." + base64url(HMAC_SHA256(AUTH_SECRET, payload))
 1. 🔲 以 `.` 拆開 token，對收到的 `payload` 以 `AUTH_SECRET` 重算 HMAC 並比對，不符即 `unauthorized`；相符才解開 `payload` 讀取 message。（目前直接解開；解不開或缺欄位即 `unauthorized`）
 2. 檢查 `exp`，已過期即 `expired`
 3. 檢查 `AUTH_USER_<user>` 仍存在，不存在即 `unauthorized`
-4. 🔲 剩餘效期不足 15 天時發出新 token（續期）
+4. 剩餘效期不足一半（15 天）時發出新 token（續期）：`authorize` 把它交給 `Api.gs`，由 `respond` 放上信封
 
-續期完成後，只要 30 天內使用過一次，就不需要重新登入。作廢單一使用者：`removeUser`（已可用）；作廢所有 token：重新執行 `setupSecret()`（🔲 簽章完成後）。
+只要 30 天內使用過一次，就不需要重新登入。作廢單一使用者：`removeUser`（已可用）；作廢所有 token：重新執行 `setupSecret()`（🔲 簽章完成後）。

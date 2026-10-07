@@ -6,7 +6,7 @@
 
 // Composables
 import type { HistoryState, RouteLocationNormalized, RouteLocationRaw } from 'vue-router'
-import { shallowRef } from 'vue'
+import { shallowRef, watch } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
 import { routes } from 'vue-router/auto-routes'
 import { siblingDirection } from '@/composables/navigation/useListOrder'
@@ -66,6 +66,14 @@ router.beforeEach(to => {
     return true
   }
   return { path: loginPath, query: { redirect: to.fullPath } }
+})
+
+// token 沒了（登出、後端說過期或無效）而人還在要登入的頁面：帶去登入頁，登入後回到這裡
+watch(token, value => {
+  const current = router.currentRoute.value
+  if (!value && authMethod !== 'none' && !current.meta.public) {
+    void router.replace({ path: loginPath, query: { redirect: current.fullPath } })
+  }
 })
 
 // 這次瀏覽在 App 裡面總共導覽過幾次；第一次載入（不管是首頁還是直接貼網址）算 1。

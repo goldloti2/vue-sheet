@@ -287,6 +287,7 @@ export const useTablesStore = defineStore('tables', () => {
     canSync,
     holdSync,
     ensureLoaded,
+    reload,
     refresh,
     flush,
     discardAndReload,

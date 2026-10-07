@@ -1,12 +1,81 @@
-// 登入：用憑證換 token（約定見 docs/auth.md）
-// 🔲 token 還是固定的 placeholder
+// 認證：登入換 token、每個請求驗 token（約定見 docs/auth.md）
+
+// 依 Config.gs 的 AUTH 取模組。放在函式裡查：各檔的頂層依載入順序執行，請求進來時才保證全部載完
+function authModule () {
+  if (AUTH === null) {
+    return null
+  }
+  if (AUTH === 'password') {
+    return PasswordAuth
+  }
+  throw new Error(`unknown AUTH: ${AUTH}`)
+}
+
 function login (credentials) {
+  const auth = authModule()
+  if (!auth) {
+    throw new Error('login is not enabled')
+  }
+  return { token: auth.login(credentials) }
+}
+
+// 讀寫之前先過這關；AUTH 是 null 就不檢查
+function authorize (token) {
+  const auth = authModule()
+  if (auth) {
+    auth.verify(token || '')
+  }
+}
+
+// ===== 示範模組：帳號密碼 =====
+
+const PasswordAuth = { login: passwordLogin, verify: verifyToken }
+
+const TOKEN_LIFETIME_SECONDS = 30 * 24 * 60 * 60
+
+function passwordLogin (credentials) {
   const user = readUser(credentials.username)
   // 帳號不存在與密碼錯誤回同一句，不讓人試出哪些帳號存在
   if (!user || hashPassword(credentials.password || '', user.salt) !== user.hash) {
     throw apiError('帳號或密碼錯誤', 'unauthorized')
   }
-  return { token: 'placeholder' }
+  return issueToken(credentials.username)
+}
+
+// 🔲 還沒有簽章：token 只是 base64url(message)，任何人都改得了
+function issueToken (username) {
+  const message = { user: username, exp: Math.floor(Date.now() / 1000) + TOKEN_LIFETIME_SECONDS }
+  return base64url(JSON.stringify(message))
+}
+
+function verifyToken (token) {
+  const message = decodeMessage(token)
+  if (!message || typeof message.user !== 'string' || typeof message.exp !== 'number') {
+    throw apiError('登入資訊無效，請重新登入', 'unauthorized')
+  }
+  if (message.exp < Date.now() / 1000) {
+    throw apiError('登入已過期，請重新登入', 'expired')
+  }
+  // 帳號被刪掉，手上的 token 就跟著失效
+  if (!readUser(message.user)) {
+    throw apiError('登入資訊無效，請重新登入', 'unauthorized')
+  }
+  return { user: message.user }
+}
+
+function base64url (text) {
+  return Utilities.base64EncodeWebSafe(text, Utilities.Charset.UTF_8).replace(/=+$/, '')
+}
+
+// 解不開就是 null（亂填的 token）
+function decodeMessage (token) {
+  try {
+    const padded = token + '='.repeat((4 - token.length % 4) % 4)
+    const bytes = Utilities.base64DecodeWebSafe(padded)
+    return JSON.parse(Utilities.newBlob(bytes).getDataAsString('UTF-8'))
+  } catch {
+    return null
+  }
 }
 
 // SHA-256(密碼 + salt)，以 base64 存。Apps Script 沒有 bcrypt 這類密碼專用的雜湊

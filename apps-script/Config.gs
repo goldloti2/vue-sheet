@@ -13,3 +13,7 @@ const HEADER_ROW = 1
 
 // 等鎖的上限；逾時就回錯誤讓前端重送
 const LOCK_TIMEOUT_MS = 30 * 1000
+
+// 登入方式，要跟前端 config/app.ts 的 authMethod 對得上（見 docs/auth.md）：
+// null＝不驗證（前端 'none'）；'password'＝Auth.gs 的帳號密碼示範模組（前端 'custom'）
+const AUTH = null

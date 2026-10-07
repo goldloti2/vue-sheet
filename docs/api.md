@@ -27,7 +27,8 @@
 - POST 的 body 另一種形狀是登入：`{ action: 'login', credentials }`，成功時的 `data` 是 `{ token }`（見 [auth.md](auth.md)）
 - 回應統一包裝成 `{ success: true, data }` 或 `{ success: false, error: { message, code? } }`。batch 成功時的 `data` 是 `{ modifiedTime }`
 - **重要限制**：Apps Script Web App 無法自由設定 HTTP status code（幾乎都回 200），前端一律看 body 的 `success` 判斷成敗，不看 status
-- 錯誤只回一句 `message`，不分類 error code——**例外只有前端需要分辨的情況**：`code: 'modified'`（衝突，前端要認出來才問得了使用者）與 `code: 'unauthorized'`（登入失敗，見 [auth.md](auth.md)）
+- 錯誤只回一句 `message`，不分類 error code——**例外只有前端需要分辨的情況**：`code: 'modified'`（衝突，前端要認出來才問得了使用者）、`code: 'unauthorized'`（登入失敗或 token 無效）與 `code: 'expired'`（token 過期），後兩者見 [auth.md](auth.md)
+- 啟用登入時（`Config.gs` 的 `AUTH`），每個請求的網址都要帶 `?token=`（見 [auth.md](auth.md)）
 - **POST 的 `Content-Type` 要是 `text/plain`**，不是 `application/json`：後者會觸發 CORS 預檢（`OPTIONS`），而 Apps Script 的 Web App 回不了預檢。後端用 `JSON.parse(e.postData.contents)` 讀 body，內容仍然是 JSON
 - 部署後的網址放環境變數 `VITE_APPS_SCRIPT_URL`（`.env`，不進版控；範本見 `.env.example`）。**沒設就走假後端**，所以 clone 下來不填任何東西就能跑
 

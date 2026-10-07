@@ -17,7 +17,7 @@
   import { overlayOpenKey } from '@/composables/shell/useOverlay'
   import { appBarActionsKey, appBarSelectionKey, bottomActionsKey } from '@/composables/shell/useShellActions'
   import { appName, authMethod } from '@/config/app'
-  import { loginPath, navigationCount } from '@/router'
+  import { navigationCount } from '@/router'
   import { hasActiveFilter } from '@/schema/filter'
   import { clearToken } from '@/services/auth/token'
   import { useTablesStore } from '@/stores/tables'
@@ -173,13 +173,12 @@
     }
   }
 
-  // 未推送的變更留在佇列裡，重新登入後照常推送
+  // 清掉 token，router 就會帶去登入頁。未推送的變更留在佇列裡，重新登入後照常推送
   async function logout () {
     if (store.hasPending && !await confirm('登出', '有尚未推送的變更，確定要登出嗎？')) {
       return
     }
     clearToken()
-    await router.replace(loginPath)
   }
 
   onMounted(() => window.addEventListener('beforeunload', warnUnsaved))

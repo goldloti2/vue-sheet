@@ -6,8 +6,10 @@
 
 import type { BatchOperation, LoginCredentials, TableData } from '../types'
 import type { TableKey } from '@/schema'
+import { authMethod } from '@/config/app'
 import { schemas } from '@/schema'
-import { ConflictError } from '../types'
+import { decodeMessage, encodeMessage } from '../auth/tokenMessage'
+import { AuthError, ConflictError } from '../types'
 import { parseCsv } from './csv'
 import { mockCsv } from './tables'
 
@@ -132,7 +134,24 @@ export function mockBatch (operations: readonly BatchOperation[], since?: string
   return modifiedTime
 }
 
-// 登入：跟真後端目前一樣還沒有驗證，收到什麼都算成功
-export function mockLogin (_credentials: LoginCredentials): { token: string } {
-  return { token: 'placeholder' }
+const TOKEN_LIFETIME_SECONDS = 30 * 24 * 60 * 60
+
+// 登入：假後端沒有帳號表，收到什麼都算成功；token 的格式跟真後端一樣
+export function mockLogin (credentials: LoginCredentials): { token: string } {
+  const exp = Math.floor(Date.now() / 1000) + TOKEN_LIFETIME_SECONDS
+  return { token: encodeMessage({ user: credentials.username ?? '', exp }) }
+}
+
+// 跟真後端的 verify 一樣檢查格式與過期（沒有帳號表，所以不查帳號在不在）
+export function mockAuthorize (token: string | null): void {
+  if (authMethod === 'none') {
+    return
+  }
+  const message = token ? decodeMessage(token) : null
+  if (!message || typeof message.user !== 'string' || typeof message.exp !== 'number') {
+    throw new AuthError('登入資訊無效，請重新登入', 'unauthorized')
+  }
+  if (message.exp < Date.now() / 1000) {
+    throw new AuthError('登入已過期，請重新登入', 'expired')
+  }
 }

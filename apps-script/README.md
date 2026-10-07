@@ -6,13 +6,13 @@ Google Sheet 的 Apps Script Web App，是前端唯一的資料來源。介面�
 
 | 檔案 | 內容 |
 | --- | --- |
-| `Config.gs` | **唯一需要填寫的檔案**：試算表 id、表代稱與分頁的對照、表頭列號 |
+| `Config.gs` | **唯一需要填寫的檔案**：試算表 id、表代稱與分頁的對照、表頭列號、登入方式（`AUTH`） |
 | `Api.gs` | `doGet`／`doPost` 入口與 `{ success }` 信封，前端唯一的進入點 |
 | `Sheets.gs` | 單張表的讀取、表頭對應、列的尋找 |
 | `Batch.gs` | 一次推送的完整流程：鎖、衝突比對、規劃、寫入 |
-| `Auth.gs` | 登入（`action: 'login'`）與帳號管理（`addUser`／`removeUser`，在編輯器手動執行）。密碼以加鹽的 SHA-256 比對，token 目前為 placeholder，見 [../docs/auth.md](../docs/auth.md) |
+| `Auth.gs` | 登入（`action: 'login'`）、每個請求的 token 驗證，與帳號管理（`addUser`／`removeUser`，在編輯器手動執行）。見 [../docs/auth.md](../docs/auth.md) |
 
-無建置步驟，`.gs` 檔直接貼進 Apps Script 編輯器，或以 `clasp push` 上傳。所有檔案共用同一個全域範圍，載入順序不影響結果。
+無建置步驟，`.gs` 檔直接貼進 Apps Script 編輯器，或以 `clasp push` 上傳。所有檔案共用同一個全域範圍；各檔的頂層依載入順序執行，所以頂層只宣告常數與函式，跨檔的引用一律放在函式裡（請求進來時才執行），載入順序就不影響結果。
 
 ## 需要填寫的內容
 
@@ -21,6 +21,7 @@ const SPREADSHEET_ID = ''          // 留空表示使用綁定的試算表
 const TABLES = {
   order: { sheetName: '訂單', idColumn: '訂單ID' },
 }
+const AUTH = null                  // 不驗證；'password' 為帳號密碼（見 ../docs/auth.md）
 ```
 
 `TABLES` 的 key 是**前端的表代稱**（`vue-build/src/schema/index.ts` 中 `schemas` 的 key），而非分頁名稱——前端送出的是 `?table=order`。**分頁的實際名稱僅存於此處**，前端並不保存（前端只有 `tableLabel`，即畫面上顯示的表名稱），因此變更分頁名稱只需修改本檔案；`idColumn` 則與前端 schema 的同名欄位一致。設定與實際情形不符時，後端會回傳 `unknown table`、`sheet not found` 或 `id column not found`，訊息會指出不符的項目。

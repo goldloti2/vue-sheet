@@ -121,7 +121,7 @@
 - 三件刻意不做的（返回＝回到上一步、編輯表單的預設值通道、進度指示）見「決定不做」
 
 ### 路由
-- 登入頁與導向（`config/app.ts` 的 `authMethod` 不是 `'none'` 時）：全域 guard 連第一次開啟都會檢查，沒有 token 就轉到 `/login?redirect=…`，登入後回到原本要去的地方；側邊欄可登出。token 目前是固定的 placeholder，接後端的部分見「未完成」的「後端」
+- 登入頁與導向（`config/app.ts` 的 `authMethod` 不是 `'none'` 時）：全域 guard 連第一次開啟都會檢查，沒有 token 就轉到 `/login?redirect=…`，登入後回到原本要去的地方；側邊欄可登出。每個請求帶 token，後端回過期或無效時清掉 token、回到登入頁，重新登入後重抓用過的表（含載入失敗的，不推送）。尚未完成的部分見「未完成」的「後端」
 - `useRouteId()`：路由參數讀一次就固定（靠 `route.fullPath` 當 key 成立），離場動畫期間不會被目的地的 id 汙染。拿掉 key 時開發模式會警告
 - `leaveAfterAction()`：完成動作後用瀏覽器返回離開，不把已完成的表單頁留在歷史裡
 - `useListOrder` / `useSiblingNav`：列表頁發布畫面上的實際順序，detail 頁據此翻上/下一筆（箭頭 + 手勢），切換用 `replace`
@@ -182,7 +182,7 @@
 
 ### 後端
 
-- 🔲 **存取權限暫時設為「任何人」**，以網址作為唯一的保護：「只有我自己」實測無法從前端連線（跨網域 `fetch` 不會帶上 Google 的 cookie，亦不會出現登入頁）。認證的設計見 [docs/auth.md](docs/auth.md)：可替換的認證模組，附帳號密碼的示範模組；之後的 Google 登入也走同一套約定。前端的登入頁與導向已完成，登入請求已前後端串通，後端以加鹽的 SHA-256 比對帳密（token 仍是 placeholder）；token 簽章、請求帶 token 尚未實作
+- 🔲 **存取權限暫時設為「任何人」**，以網址作為唯一的保護：「只有我自己」實測無法從前端連線（跨網域 `fetch` 不會帶上 Google 的 cookie，亦不會出現登入頁）。認證的設計見 [docs/auth.md](docs/auth.md)：可替換的認證模組，附帳號密碼的示範模組；之後的 Google 登入也走同一套約定。登入（加鹽的 SHA-256）、發 token、每個請求驗 token、失效時回登入頁都已完成；token 簽章、續期、登入失敗次數限制尚未實作
 - 🔲 Hooks 機制（見 [docs/api.md](docs/api.md)）
 - `bulkCreate`：等真的有匯入需求再說
 

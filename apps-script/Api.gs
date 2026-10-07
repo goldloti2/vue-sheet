@@ -1,5 +1,10 @@
+// token 一律在網址上（?token=），GET 與 POST 都一樣；驗證在開試算表之前
 function doGet (e) {
-  return respond(() => readTable((e.parameter || {}).table))
+  const params = e.parameter || {}
+  return respond(() => {
+    authorize(params.token)
+    return readTable(params.table)
+  })
 }
 
 function doPost (e) {
@@ -9,11 +14,13 @@ function doPost (e) {
     if (body.action === 'login') {
       return login(body.credentials || {})
     }
+    authorize((e.parameter || {}).token)
     return runBatch(body.operations || [], body.since)
   })
 }
 
-// 錯誤只回一句訊息；code 只用在前端要分辨的情況：'modified'（衝突）、'unauthorized'（登入失敗）
+// 錯誤只回一句訊息；code 只用在前端要分辨的情況：
+// 'modified'（衝突）、'unauthorized'（登入失敗或 token 無效）、'expired'（token 過期）
 function apiError (message, code) {
   const error = new Error(message)
   error.code = code

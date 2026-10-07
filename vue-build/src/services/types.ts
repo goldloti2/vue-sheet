@@ -30,6 +30,14 @@ export class ConflictError extends Error {
   }
 }
 
+// 後端回 unauthorized／expired：token 已經被清掉，router 會把畫面帶到登入頁
+export class AuthError extends Error {
+  constructor (message: string, readonly code: 'unauthorized' | 'expired') {
+    super(message)
+    this.name = 'AuthError'
+  }
+}
+
 interface ApiSuccess<T> {
   success: true
   data: T
@@ -37,8 +45,9 @@ interface ApiSuccess<T> {
 
 interface ApiFailure {
   success: false
-  // 錯誤只有一句訊息；code 只用在前端要分辨的情況：'modified'（衝突）、'unauthorized'（登入失敗）
-  error: { message: string, code?: 'modified' | 'unauthorized' }
+  // 錯誤只有一句訊息；code 只用在前端要分辨的情況：
+  // 'modified'（衝突）、'unauthorized'（登入失敗或 token 無效）、'expired'（token 過期）
+  error: { message: string, code?: 'modified' | 'unauthorized' | 'expired' }
 }
 
 export type ApiResponse<T> = ApiSuccess<T> | ApiFailure

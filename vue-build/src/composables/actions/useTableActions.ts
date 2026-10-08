@@ -15,6 +15,8 @@ export interface PageAction {
   icon: string
   onClick: () => void | Promise<void>
   confirm?: { title: string, text: string }
+  // 列上的動作用（schema/view.ts 的 RowActions）：顯示成圖示或文字，預設圖示
+  display?: 'icon' | 'text'
 }
 
 // detail 頁的欄位動作：欄位 key → 吃這一列、回傳動作，每欄一個

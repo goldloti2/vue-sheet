@@ -23,6 +23,7 @@ interface PageAction {
   icon: string
   onClick: () => void | Promise<void>
   confirm?: { title: string, text: string }
+  display?: 'icon' | 'text'
 }
 ```
 
@@ -33,6 +34,7 @@ interface PageAction {
 | `icon` | **一律要給**。底部動作列雖然只顯示文字，但形狀統一，同一個動作搬到別的位置不用補東西 |
 | `onClick` | 動作本體。要導覽就在裡面 `router.push`（理由見「設計取捨」） |
 | `confirm` | 有宣告就先跳出確認框，確定後才執行 `onClick` |
+| `display` | 列上的動作用（view 的 `actions`）：顯示成圖示或文字，預設為圖示。🔲 目前尚無元件讀取 |
 
 ---
 

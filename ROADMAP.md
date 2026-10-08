@@ -90,7 +90,7 @@
 
 ### 動作系統
 說明見 [vue-build/docs/actions.md](vue-build/docs/actions.md)。
-- `PageAction` 型別（`{ key, label, icon, onClick, confirm? }`），FAB、App Bar、底部動作列、detail 欄位動作共用同一種描述；內建 builder 的 label／icon 可用最後一個參數 `ActionLook` 覆寫，與行為的 options 分開
+- `PageAction` 型別（`{ key, label, icon, onClick, confirm?, display? }`），FAB、App Bar、底部動作列、detail 欄位動作共用同一種描述；內建 builder 的 label／icon 可用最後一個參數 `ActionLook` 覆寫，與行為的 options 分開
 - 通用 builder：`newAction` / `editAction` / `deleteAction` / `bulkDeleteAction` / `quickEditAction`，皆為一般函式，回傳一個 `PageAction`，不適用時回傳 `null`；不以列為參數者由 `use表名Actions` 以 `useAction` 包裝為 `ComputedRef<PageAction | null>`；以列為參數者（編輯、刪除）為函式，欄位動作直接以該列呼叫，detail 頁以 `useRowAction` 綁定至當前那一筆。刪除目前 detail 頁所顯示的那一筆時自動離開
 - 欄位動作（`DataDetail` 的 `fieldActions`，欄位 key → `(row) => PageAction | null`，一欄一個、整格可點）：`goToRefAction`（ref 前往對方）／`openUrlAction`（開新分頁）／`setFieldAction`（立即改成某個值，可帶 confirm）
 - 需要確認的動作宣告 `confirm` 就好，`useActionRunner` 先 `await confirm()` 再跑，錯誤進 snackbar；頁面不用擺 `ConfirmDialog`
@@ -175,36 +175,45 @@
 
 ### 頁面類型（對照 AppSheet）
 
-| AppSheet | 現況 |
-| --- | --- |
-| deck | ✅ 卡片式列表（`DataList`）；🔲 每列的 action 按鍵，見下方 |
-| table | ✅ `DataTable` |
-| detail | ✅ 詳細頁；🔲 標頭區塊，見下方 |
-| form | ✅ 新增／編輯頁 |
-| card | 🔲 見下方 |
-| gallery | 🔲 圖片 + 標題的格狀排列 |
-| chart | 🔲 使用者選幾個欄位當軸，畫圓餅圖、折線圖、長條圖。 |
-| dashboard | 🔲 見下方 |
-| calendar | 把資料當成事件放上日曆（通常靠日期與時間欄位），暫不考慮 |
-| map | 把座標標在 Google 地圖上，暫不考慮 |
-| onboarding | 導覽頁，暫不考慮 |
+| AppSheet | 本框架的名稱 | 現況 |
+| --- | --- | --- |
+| deck | deck | ✅ 卡片式列表（`DataList`）；🔲 每列的 action 按鍵，見下方 |
+| table | table | ✅ `DataTable` |
+| detail | detail | ✅ 詳細頁；🔲 標頭區塊，見下方 |
+| form | form | ✅ 新增／編輯頁 |
+| card（小） | **profile** | 🔲 見下方 |
+| card（大） | **card** | 🔲 見下方 |
+| gallery | gallery | 🔲 圖片 + 標題的格狀排列 |
+| chart | chart | 🔲 使用者選幾個欄位當軸，畫圓餅圖、折線圖、長條圖。屬於後期才做的項目 |
+| dashboard（分頁） | **tab** | ✅ `TabView` |
+| dashboard（全部顯示、連動） | **dashboard** | 🔲 見下方 |
+| calendar | — | 把資料當成事件放上日曆（通常靠日期與時間欄位），暫不考慮 |
+| map | — | 把座標標在 Google 地圖上，暫不考慮 |
+| onboarding | — | 導覽頁，暫不考慮 |
+
+**視圖（view）**：deck、profile、card、gallery 與 detail 標頭共用同一套「欄位與位置的對應」，型別定義於 `schema/view.ts`（🔲 尚未套用）。view 定義於頁面並交給版面元件，schema 本身不含 view：
+- 一組位置（`FieldGroup`）：`title`、`subtitle`、`image`、`summary`，以及僅 deck 使用的 `aside`。每個位置皆可省略。可填入欄位 key，或每列皆有的 `id`、`$label`（`keyof RowBase`）；需合併多個欄位，或顯示父列、子列的資訊時，應宣告為 `virtualColumns`
+- deck 的四角：`title` 左上、`subtitle` 右上、`summary` 左下、`aside` 右下，`image` 為左側縮圖
+- card 使用兩組：`header` 為第 1 層（`image` 作為頭像），`body` 為第 2、3 層（`image` 作為大圖，`summary` 為摘要）。detail 標頭即僅有 `body` 一組
+- 動作 `actions: (row) => (PageAction | null)[]`，與欄位定義於同一個 view。依位置排列：card 與 detail 標頭的前兩個置於左側、後兩個置於右側，`null` 表示空位；deck 與 profile 會略過空位。`PageAction` 新增 `display: 'icon' | 'text'`
 
 **deck 的 action 按鍵**：在右下角欄位的下一列，由左往右排列、整組靠右。沒有 action 時整列不佔高度；多選模式下藏起來。
 
-**card** 跟 deck 不同的地方是一張張分開的卡片（有間隔），不是連在一起的清單。點卡片進 detail，不支援長按多選。分大小兩種：
-- **小**：左側圓形頭像，中間主標題與副標題，右側 ⋮ 選單收 action
-- **大**：上下四層，沒有內容的那層整層藏起來
+**profile 與 card** 跟 deck 不同的地方是一張張分開的卡片（有間隔），不是連在一起的清單。點卡片進 detail，不支援長按多選。
+- **profile**：左側圓形頭像，中間主標題與副標題，右側 ⋮ 選單收 action
+- **card**：上下四層，沒有內容的那層整層藏起來
   1. 圓形頭像 + 主標題與副標題（沒有選單）
   2. 圖片
   3. 標題、副標題、摘要（欄位跟第 1 層分別指定）
   4. 最多四個 action：左兩格、右兩格，每一格各自選用圖示或文字
 
-**detail 的標頭區塊**（可開可不開，裡面每一項都是可選的）：放在 `#top` 之上、整頁最上方，讓人一眼看到這筆的重要資訊。結構是大 card 去掉第 1 層：第 3 層的標題、副標題、摘要疊在第 2 層的圖片上，第 4 層的 action 接在圖片下方、不疊在圖上。沒有圖片時用一般的背景。
+**detail 的標頭區塊**（可開可不開，裡面每一項都是可選的）：放在 `#top` 之上、整頁最上方，讓人一眼看到這筆的重要資訊。結構是 card 去掉第 1 層：第 3 層的標題、副標題、摘要疊在第 2 層的圖片上，第 4 層的 action 接在圖片下方、不疊在圖上。沒有圖片時用一般的背景。
 
-dashboard 分三種形式：
-1. **分頁**：一次只顯示一個面板，用頁籤切換，只用在手機版
-2. **全部顯示**：所有面板同時出現。手機版由上往下排列；電腦版可以自由決定每個面板的長寬與二維的排版位置
-3. **連動**：排版同第 2 種，但面板之間會連動，例如在 list 點一個項目，下面的 detail 就顯示那一項
+**tab**：一次只顯示一個面板，用頁籤切換。就是現有的 `TabView`。
+
+**dashboard**：所有面板同時出現。手機版由上往下排列；電腦版可以自由決定每個面板的長寬與二維的排版位置。用一個 `interactive` 開關決定面板之間要不要連動：
+- **關**：各面板各自獨立
+- **開**：面板之間會連動，例如在 list 點一個項目，旁邊的 detail 就顯示那一項，而不是換頁
 
 ### 列表效能（剩下的部分）
 - 🔲 見 [vue-build/docs/perf.md](vue-build/docs/perf.md) 的「還沒做的」

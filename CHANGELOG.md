@@ -1,5 +1,12 @@
 # 版本紀錄
 
+## v1.1
+
+- **登入**（選用）：前端有登入頁與導向（`config/app.ts` 的 `authMethod`），後端是可替換的認證模組（`Config.gs` 的 `AUTH`）。附帳號密碼的示範模組：密碼加鹽雜湊、token 有 HMAC 簽章、效期 30 天並自動續期。見 [docs/auth.md](docs/auth.md)
+- 同步時會重試第一次就載入失敗的表
+
+不用登入的話不需要做任何事：`AUTH` 與 `authMethod` 的預設值都是不驗證，舊的後端也能繼續用。
+
 ## v1.0
 
 前後端都已完整，可以對實際的 Google Sheet 讀寫。

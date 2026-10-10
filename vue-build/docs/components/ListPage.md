@@ -13,6 +13,7 @@
 ```vue
 <script lang="ts" setup>
   const { rows, loading, error, selection } = useListPage<__Table__Row>('__table__', __table__Schema)
+  const view = defineView(__table__Schema, { title: 'name', summary: 'amount' })
 
   const { new: newAction, bulkDelete } = use__Table__Actions({
     selectedIds: selection.selectedIds,
@@ -31,12 +32,7 @@
     table="__table__"
   >
     <template #default="{ row, props: itemProps }">
-      <DataList
-        v-bind="itemProps"
-        :bottom-left="formatField(row, __table__Schema, 'amount')"
-        :title="formatField(row, __table__Schema, 'name')"
-        :to="`/__table__/${row.id}`"
-      />
+      <DataList v-bind="itemProps" :row="row" :to="`/__table__/${row.id}`" :view="view" />
     </template>
   </ListPage>
 </template>
@@ -82,7 +78,7 @@
   <template #default="{ tab }">
     <ListPage :error="error" :fab="[newAction]" :groups="groupedFor(tab)" :loading="loading" :selection="selection" table="__table__">
       <template #default="{ row, props: itemProps }">
-        <DataList v-bind="itemProps" :title="row.$label" :to="`/__table__/${row.id}`" />
+        <DataList v-bind="itemProps" :row="row" :to="`/__table__/${row.id}`" :view="view" />
       </template>
     </ListPage>
   </template>

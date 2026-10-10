@@ -13,10 +13,13 @@
   import { useListPage } from '@/composables/page/useListPage'
   import { useAppBarActions } from '@/composables/shell/useShellActions'
   import { __table__Schema } from '@/schema/tables/__table__'
-  import { formatField } from '@/schema/types'
+  import { defineView } from '@/schema/view'
 
   // 整表 → 篩選 → 搜尋（放大鏡、篩選與排序鈕自動登記到 App Bar）+ 長按多選
   const { rows, loading, error, selection } = useListPage<__Table__Row>('__table__', __table__Schema)
+
+  // 每列四個角放哪個欄位：title 左上、subtitle 右上、summary 左下、aside 右下
+  const view = defineView(__table__Schema, { title: 'name', subtitle: 'date', summary: 'amount' })
 
   // 不要多選就不傳 selectedIds / onDone，也不用把 selection 交給 ListPage；
   // defaults 也可省略，要讓新增表單依當下頁面狀態預填時傳 getter
@@ -37,15 +40,9 @@
     :selection="selection"
     table="__table__"
   >
-    <!-- 這張表自己的四個角；props 是每列多選要綁的那一包 -->
+    <!-- props 是每列多選要綁的那一包 -->
     <template #default="{ row, props: itemProps }">
-      <DataList
-        v-bind="itemProps"
-        :bottom-left="formatField(row, __table__Schema, 'amount')"
-        :title="formatField(row, __table__Schema, 'name')"
-        :to="`/__table__/${row.id}`"
-        :top-right="formatField(row, __table__Schema, 'date')"
-      />
+      <DataList v-bind="itemProps" :row="row" :to="`/__table__/${row.id}`" :view="view" />
     </template>
   </ListPage>
 </template>

@@ -12,10 +12,12 @@
   import { use__Table__Actions } from '@/composables/actions/use__Table__Actions'
   import { useRecordPage } from '@/composables/page/useRecordPage'
   import { __table__Schema } from '@/schema/tables/__table__'
-  import { formatField } from '@/schema/types'
+  import { defineView } from '@/schema/view'
 
   // 讀的是父表那一筆，子列走 store 掛好的 $子表_欄位key getter（照子表的 defaultSort 排）
   const { id, row, loading, error } = useRecordPage<__Parent__Row>('__parent__')
+
+  const view = defineView(__table__Schema, { title: 'name', summary: 'amount' })
 
   // 從這裡新增的子列預設就掛在這個父列底下
   const { new: newAction } = use__Table__Actions({ defaults: () => ({ __parent__: id.value }) })
@@ -30,11 +32,7 @@
     table="__table__"
   >
     <template #default="{ row: child }">
-      <DataList
-        :bottom-left="formatField(child, __table__Schema, 'amount')"
-        :title="formatField(child, __table__Schema, 'name')"
-        :to="`/__table__/${child.id}`"
-      />
+      <DataList :row="child" :to="`/__table__/${child.id}`" :view="view" />
     </template>
   </ListPage>
 </template>

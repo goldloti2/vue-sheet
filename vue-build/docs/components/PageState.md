@@ -10,7 +10,7 @@
 <template>
   <v-container>
     <PageState :error="error" :loading="loading" spinner="linear">
-      <DataList v-for="row in data" :key="row.id" :title="row.$label" />
+      <DataList v-for="row in data" :key="row.id" :row="row" :view="view" />
     </PageState>
   </v-container>
 </template>

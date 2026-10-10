@@ -245,8 +245,8 @@ export function listedColumns (schema: TableSchema, keys: readonly string[] | un
   return (keys ?? []).map(key => columns.get(key)).filter(column => column !== undefined)
 }
 
-// 只知道欄位 key、還沒有 column 物件時用這個（例如列表頁只想挑幾個欄位顯示）
-export function formatField (row: object, schema: TableSchema, key: string): string {
+// 只知道欄位 key、還沒有 column 物件時用這個（rowLabel 用）
+function formatField (row: object, schema: TableSchema, key: string): string {
   const column = findColumn(schema, key)
   return column ? formatColumnValue(row, column) : ''
 }

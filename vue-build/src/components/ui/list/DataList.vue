@@ -1,23 +1,22 @@
-<script lang="ts" setup>
+<script generic="Row extends object" lang="ts" setup>
+  import type { RowView } from '@/schema/view'
   import { computed } from 'vue'
   import { useRouter } from 'vue-router'
   import ListField from '@/components/ui/list/ListField.vue'
   import { useLongPress } from '@/composables/list/useLongPress'
 
-  interface DataListProps {
-    title: string
-    topRight?: string
-    bottomLeft?: string
-    bottomRight?: string
-    // 轉好的 <img src>（用 schema/image.ts 的 imageSrc）；有給才顯示縮圖
-    image?: string | null
+  // 泛型元件的 props 型別要寫在 defineProps 裡，抽成 interface 會讓型別宣告輸出失敗
+  const { row, view, selectable = false, selectMode, to } = defineProps<{
+    row: Row
+    // 哪些欄位放哪個角（defineView）；🔲 view 的 actions 還沒畫
+    view: RowView<Row>
     to?: string
     selectable?: boolean
     selectMode?: boolean
     selected?: boolean
-  }
+  }>()
 
-  const { selectable = false, selectMode, to } = defineProps<DataListProps>()
+  const fields = computed(() => view(row))
 
   const emit = defineEmits<{
     longpress: [event: PointerEvent]
@@ -74,13 +73,13 @@
     @click="onClick"
   >
     <ListField
-      :bottom-left="bottomLeft"
-      :bottom-right="bottomRight"
-      :image="image"
+      :aside="fields.aside"
+      :image="fields.image"
       :select-mode="selectMode"
       :selected="selected"
-      :title="title"
-      :top-right="topRight"
+      :subtitle="fields.subtitle"
+      :summary="fields.summary"
+      :title="fields.title"
     />
   </component>
 </template>

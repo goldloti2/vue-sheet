@@ -34,7 +34,7 @@ interface PageAction {
 | `icon` | **一律要給**。底部動作列雖然只顯示文字，但形狀統一，同一個動作搬到別的位置不用補東西 |
 | `onClick` | 動作本體。要導覽就在裡面 `router.push`（理由見「設計取捨」） |
 | `confirm` | 有宣告就先跳出確認框，確定後才執行 `onClick` |
-| `display` | 列上的動作用（view 的 `actions`）：顯示成圖示或文字，預設為圖示。🔲 目前尚無元件讀取 |
+| `display` | 列上的動作用（見「列上的動作」）：顯示成圖示或文字，預設為圖示。🔲 目前尚無元件讀取 |
 
 ---
 
@@ -47,7 +47,7 @@ interface PageAction {
 | 螢幕最底端 | `useBottomActions(() => [...])` | 暫時取代底部導覽列，離開頁面自動還原。表單的取消／送出不用自己接，`useCreateForm`／`useEditForm` 會登記 |
 | 詳細頁的單一欄位 | `DataDetail`／`DetailPage` 的 `fieldActions` | 該欄的動作，右邊出現圖示、整格可點（見「欄位動作」） |
 | 子表區塊 | `ChildList` 的 `actions` prop | 排在「展開」旁邊，通常是新增 |
-| 列表的每一列 | — | 🔲 見 ROADMAP 的「deck 的 action 按鍵」 |
+| 列表的每一列 | view 的 `actions` | 🔲 見「列上的動作」 |
 
 - **每個位置都接收 `(PageAction | null)[]`**，`null`（不適用的動作）會被略過，所以頁面組陣列時不需要判斷。略過由最後畫按鈕的元件（`PageFab`、`ChildList`、`AppShell`）負責，中間的版面元件與登記機制一律原樣轉交（理由見「設計取捨」）
 - **陣列的順序即為顯示的順序**
@@ -85,7 +85,7 @@ interface PageAction {
 | `useAction(build)` | `ComputedRef<PageAction \| null>` | 供各表的 `use表名Actions` 使用。`build` 回傳一個動作或 `null`，資料變更時重新求值 |
 | `useRowAction(row, build)` | `ComputedRef<PageAction \| null>` | 供 detail 頁使用，將以列為參數的動作綁定至當前那一列。`row` 為 Ref；尚未載入時為 `null`，載入後以該列呼叫 `build` |
 
-欄位動作則直接以該列呼叫，無須包裝。
+欄位動作與列上的動作則直接以該列呼叫，無須包裝。
 
 ---
 
@@ -96,7 +96,7 @@ interface PageAction {
 - **呼叫端只提供自身具備的參數**：列表頁提供 `selectedIds`／`onDone`，需要新增預設值時提供 `defaults`。用不到的動作為 `null`
 - **回傳物件包含兩種項目**：
   - 不以列為參數的動作（`new`、`bulkDelete`）已以 `useAction` 包裝，型別為 `ComputedRef<PageAction | null>`，可直接交給位置
-  - 以列為參數的動作（`edit`、`delete`）為接收一列並回傳動作的函式。detail 頁以 `useRowAction` 綁定至當前那一列；日後列表的每一列可直接呼叫（見 ROADMAP 的「deck 的 action 按鍵」）。`fieldActions` 同樣以一列呼叫
+  - 以列為參數的動作（`edit`、`delete`）為接收一列並回傳動作的函式。detail 頁以 `useRowAction` 綁定至當前那一列；列表於 view 的 `actions` 中直接以該列呼叫（見「列上的動作」）。`fieldActions` 同樣以一列呼叫
 - **自訂的動作**（包括連續動作）亦定義於此：不以列為參數者以 `useAction(() => ({ … }))` 包裝，以列為參數者寫成 `(row) => …`。範本回傳物件的末尾附有連續動作的示範
 - **一個位置放哪幾個動作由頁面決定**：頁面取出需要的動作，組成陣列交給該位置
 
@@ -113,14 +113,16 @@ useAppBarActions(() => [deleteAction.value])
 <DetailPage :fab="[editAction]" :field-actions="fieldActions" … />
 ```
 
-列表頁的取用方式：
+列表頁的取用方式（列上的動作見「列上的動作」）：
 
 ```ts
-const { new: newAction, bulkDelete } = use__Table__Actions({
+const { new: newAction, bulkDelete, edit, delete: remove } = use__Table__Actions({
   selectedIds: selection.selectedIds,
   onDone: selection.clear,
 })
 useAppBarActions(() => [bulkDelete.value])
+
+const view = defineView(__table__Schema, { title: 'name', actions: row => [edit(row), remove(row)] })
 ```
 
 `delete` 為 JavaScript 的保留字，解構時須改名（例如 `remove`）。
@@ -139,6 +141,26 @@ const fieldActions: FieldActions<__Table__Row> = {
 ```
 
 - **欄位動作不是內建的**：ref 的「前往對方」跟開網址、改成今天一樣是 builder，要就列進去、不要就不列——沒有「空陣列代表內建」這種第三態
+
+---
+
+## 列上的動作
+
+🔲 view 已能定義並解析每一列的動作，但目前尚無元件將其呈現。
+
+每一列的動作與欄位一起定義於 view（見 [DataList](components/DataList.md) 的「view」）。自 `use表名Actions` 取出以列為參數的動作，以該列呼叫：
+
+```ts
+const { edit, delete: remove } = use__Table__Actions()
+const view = defineView(__table__Schema, {
+  title: 'name',
+  actions: row => [edit(row), remove(row)],
+})
+```
+
+- **陣列依位置排列，`null` 表示空位**：card 與 detail 標頭的前兩個置於左側、後兩個置於右側；deck 與 profile 略過空位。builder 判斷不適用而回傳的 `null` 亦同：card 中保留該格，deck 中略過
+- **`display`** 決定該動作顯示為圖示或文字
+- **deck 的規劃**：置於右下角欄位的下一列，由左往右排列、整組靠右；沒有動作時不佔高度；多選模式下隱藏。按鈕與整列的連結並列而非包在連結內，點擊按鈕不會進入 detail
 
 ---
 
@@ -208,10 +230,10 @@ if (values) {
 `confirm` 對每個動作都一樣、動作本體不需要知道結果，所以做成語法糖。`askFields` 的結果是動作要拿去用的，只能在 `onClick` 裡自己 `await`。
 
 **為什麼 builder 是一般函式而非 composable**
-同一個 builder 需用於 detail 頁當前那一筆（會變動的 Ref）與欄位動作，日後亦將用於列表的每一列（ROADMAP 的「deck 的 action 按鍵」）。若 builder 本身為 composable（接收 Ref、回傳 computed），每一列每次求值都會建立一個 computed，也違反 composable 僅於 setup 中呼叫的慣例。改為一般函式後，每次呼叫僅建立一個普通物件；只有交給 FAB 與 App Bar 的那一層需要隨資料更新，由 `useAction`／`useRowAction` 負責。
+同一個 builder 需用於 detail 頁當前那一筆（會變動的 Ref）、欄位動作，以及列表的每一列（view 的 `actions`）。若 builder 本身為 composable（接收 Ref、回傳 computed），每一列每次求值都會建立一個 computed，也違反 composable 僅於 setup 中呼叫的慣例。改為一般函式後，每次呼叫僅建立一個普通物件；只有交給 FAB 與 App Bar 的那一層需要隨資料更新，由 `useAction`／`useRowAction` 負責。
 
 **為什麼以列為參數的動作由頁面綁定，而非 `use表名Actions`**
-「綁定至當前那一列」僅在 detail 頁成立；日後列表的每一列則各自呼叫。若由 `use表名Actions` 負責綁定，它便必須得知自己供哪一種頁面使用，列表也無法取得可逐列呼叫的版本，同一個動作勢必定義兩份。因此 `use表名Actions` 只負責定義，綁定交由需要的頁面（`useRowAction`）處理。
+「綁定至當前那一列」僅在 detail 頁成立；列表的每一列則各自呼叫。若由 `use表名Actions` 負責綁定，它便必須得知自己供哪一種頁面使用，列表也無法取得可逐列呼叫的版本，同一個動作勢必定義兩份。因此 `use表名Actions` 只負責定義，綁定交由需要的頁面（`useRowAction`）處理。
 
 **為什麼刪除後自動離開**
 「刪除目前所顯示的那一列後離開該頁」在任何頁面皆成立，不應要求每個 detail 頁各自傳入 `leaveAfterAction`；若由頁面傳入，漏傳時仍可通過編譯，刪除後卻停留在「找不到這筆資料」的畫面。因此 `deleteAction` 在刪除後檢查目前的路由是否為該列的 detail 頁，若是則自動離開；`onDone` 僅用於其他額外的處理。

@@ -30,7 +30,7 @@ export function use__Table__Actions (options: __Table__ActionOptions = {}) {
   return {
     new: useAction(() => newAction(TABLE, newOptions)),
     bulkDelete: useAction(() => selectedIds ? bulkDeleteAction(TABLE, selectedIds.value, onDone) : null),
-    // 以列為參數的動作：detail 頁以 useRowAction 綁定至當前那一筆
+    // 以列為參數的動作：列表於 view 中直接呼叫，detail 頁以 useRowAction 綁定至當前那一筆
     edit: (row: __Table__Row) => editAction(TABLE, row),
     delete: (row: __Table__Row) => deleteAction(TABLE, row),
     fieldActions,

@@ -1,13 +1,14 @@
 <script lang="ts" setup>
   import { mdiCheckCircle, mdiCircleOutline } from '@mdi/js'
 
+  // 位置的名稱跟 view 一樣（schema/view.ts）：title 左上、subtitle 右上、summary 左下、aside 右下
   defineProps<{
     title: string
-    topRight?: string
-    bottomLeft?: string
-    bottomRight?: string
+    subtitle: string
+    summary: string
+    aside: string
     // 轉好的 <img src>；有值就在最左邊放一張縮圖
-    image?: string | null
+    image: string | null
     selectMode?: boolean
     selected?: boolean
   }>()
@@ -30,12 +31,12 @@
           <span class="list-item__title text-title-medium font-weight-bold">{{ title }}</span>
         </div>
 
-        <span class="list-item__field text-body-medium text-medium-emphasis list-item__field--right">{{ topRight }}</span>
+        <span class="list-item__field text-body-medium text-medium-emphasis list-item__field--right">{{ subtitle }}</span>
       </div>
 
       <div class="list-item__row">
-        <span class="list-item__field text-body-medium text-medium-emphasis list-item__field--left">{{ bottomLeft }}</span>
-        <span class="list-item__field text-body-medium text-medium-emphasis list-item__field--right">{{ bottomRight }}</span>
+        <span class="list-item__field text-body-medium text-medium-emphasis list-item__field--left">{{ summary }}</span>
+        <span class="list-item__field text-body-medium text-medium-emphasis list-item__field--right">{{ aside }}</span>
       </div>
     </div>
   </div>

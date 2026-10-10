@@ -20,7 +20,7 @@
 ### Schema 型別系統
 - `SchemaColumn` / `TableSchema` 型別，`type` 支援 `text`／`number`／`date`／`duration`／`ref`／`select`／`image`
 - `coerceRow`（後端字串 → 前端型別）與 `serializeRow`（反向）
-- `formatColumnValue` / `formatField` 顯示格式化
+- `formatColumnValue` 顯示格式化
 - `columnValues`（組送出用 payload）、`emptyRow`（新增表單起始值，套用欄位的 `default`）
 - `sortRows(rows, schema, sort?)`（使用者選的排序在前、`defaultSort` 接在後面當 tiebreaker）、`sortableColumns`、`sortByKey`（`schema/sort.ts`）；`groupRows`（多層分組）、`flattenGroups`（把分組攤回畫面順序）在 `schema/group.ts`
 - **`schema/` 放對 row 做事的純函數**（`types`／`sort`／`group`／`filter`／`validation`／`relations`／`image`），不碰 reactivity，所以 store、元件、composable 都能直接叫；`composables/data/` 只放反應式包裝（`useTable`／`useSearch`／`useFilter`）。各表的欄位定義在 `schema/tables/`（一張表一個檔），註冊表 `schema/index.ts` 留在根目錄當公開入口
@@ -91,7 +91,7 @@
 ### 動作系統
 說明見 [vue-build/docs/actions.md](vue-build/docs/actions.md)。
 - `PageAction` 型別（`{ key, label, icon, onClick, confirm?, display? }`），FAB、App Bar、底部動作列、detail 欄位動作共用同一種描述；內建 builder 的 label／icon 可用最後一個參數 `ActionLook` 覆寫，與行為的 options 分開
-- 通用 builder：`newAction` / `editAction` / `deleteAction` / `bulkDeleteAction` / `quickEditAction`，皆為一般函式，回傳一個 `PageAction`，不適用時回傳 `null`；不以列為參數者由 `use表名Actions` 以 `useAction` 包裝為 `ComputedRef<PageAction | null>`；以列為參數者（編輯、刪除）為函式，欄位動作直接以該列呼叫，detail 頁以 `useRowAction` 綁定至當前那一筆。刪除目前 detail 頁所顯示的那一筆時自動離開
+- 通用 builder：`newAction` / `editAction` / `deleteAction` / `bulkDeleteAction` / `quickEditAction`，皆為一般函式，回傳一個 `PageAction`，不適用時回傳 `null`；不以列為參數者由 `use表名Actions` 以 `useAction` 包裝為 `ComputedRef<PageAction | null>`；以列為參數者（編輯、刪除）為函式，列表的 view 與欄位動作直接以該列呼叫，detail 頁以 `useRowAction` 綁定至當前那一筆。刪除目前 detail 頁所顯示的那一筆時自動離開
 - 欄位動作（`DataDetail` 的 `fieldActions`，欄位 key → `(row) => PageAction | null`，一欄一個、整格可點）：`goToRefAction`（ref 前往對方）／`openUrlAction`（開新分頁）／`setFieldAction`（立即改成某個值，可帶 confirm）
 - 需要確認的動作宣告 `confirm` 就好，`useActionRunner` 先 `await confirm()` 再跑，錯誤進 snackbar；頁面不用擺 `ConfirmDialog`
 - `confirm()` / `choose()` / `askFields()`：是／否、幾條出路（回傳按下去那顆的 key，取消是 `null`）、問幾個欄位；都是 module-level 狀態 + `AppShell` 掛一個實例 + promise，前兩個共用同一個 `ConfirmDialog`；`quickEditAction` 用後者把選取的多筆改成同一個值（欄位由設計者定，只選一筆時顯示現值）
@@ -191,7 +191,7 @@
 | map | — | 把座標標在 Google 地圖上，暫不考慮 |
 | onboarding | — | 導覽頁，暫不考慮 |
 
-**視圖（view）**：deck、profile、card、gallery 與 detail 標頭共用同一套「欄位與位置的對應」，實作於 `schema/view.ts`。`defineView(schema, {…})` 與 `defineCardView(schema, {…})` 回傳一個函式，傳入一列即回傳各位置的內容與該列的動作；欄位定義在建立時即查找完畢。view 定義於頁面並交給版面元件，schema 本身不含 view。🔲 尚未套用於任何元件：
+**視圖（view）**：deck、profile、card、gallery 與 detail 標頭共用同一套「欄位與位置的對應」，實作於 `schema/view.ts`。`defineView(schema, {…})` 與 `defineCardView(schema, {…})` 回傳一個函式，傳入一列即回傳各位置的內容與該列的動作；欄位定義在建立時即查找完畢。view 定義於頁面並交給版面元件，schema 本身不含 view。目前僅 deck（`DataList`）已套用，🔲 `actions` 尚未呈現：
 - 一組位置（`FieldGroup`）：`title`、`subtitle`、`image`、`summary`，以及僅 deck 使用的 `aside`。每個位置皆可省略。可填入欄位 key，或每列皆有的 `id`、`$label`（`keyof RowBase`）；需合併多個欄位，或顯示父列、子列的資訊時，應宣告為 `virtualColumns`
 - deck 的四角：`title` 左上、`subtitle` 右上、`summary` 左下、`aside` 右下，`image` 為左側縮圖
 - card 使用兩組（`defineCardView`）：`header` 為第 1 層（`image` 作為頭像），`body` 為第 2、3 層（`image` 作為大圖，`summary` 為摘要）。detail 標頭即僅有 `body` 一組

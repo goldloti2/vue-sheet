@@ -1,33 +1,37 @@
 # ListField
 
-`DataList` 內部的兩列四角排版（含多選勾選圖示）。**一般不用直接用**——它被抽出來只是為了讓 `DataList` 的連結版與非連結版共用同一份內容，沒有自己的邊框、內距、點擊行為。
+`DataList` 內部的排版：左側為縮圖，右側為兩列四角（含多選的勾選圖示）。**一般不需要直接使用**：`DataList` 先以 view 將一列解析為字串（`view(row)`，見 [DataList](DataList.md)），再交由本元件呈現。本元件不含邊框、內距與點擊行為，也不處理 row 與 schema。
 
 ## Usage
 
 ```vue
 <script lang="ts" setup>
   import ListField from '@/components/ui/list/ListField.vue'
+
+  const fields = computed(() => view(row))
 </script>
 
 <template>
   <ListField
-    bottom-left="文字3"
-    bottom-right="文字4"
-    :select-mode="selectMode"
-    :selected="selected"
-    title="文字1"
-    top-right="文字2"
+    :aside="fields.aside"
+    :image="fields.image"
+    :subtitle="fields.subtitle"
+    :summary="fields.summary"
+    :title="fields.title"
   />
 </template>
 ```
 
 ## Props
 
+位置的名稱與 view 相同。
+
 | prop | 型別 | 說明 |
 | --- | --- | --- |
-| `title` | `string` | **必填**，左上 |
-| `topRight` | `string?` | 右上 |
-| `bottomLeft` | `string?` | 左下 |
-| `bottomRight` | `string?` | 右下 |
+| `title` | `string` | 左上 |
+| `subtitle` | `string` | 右上 |
+| `summary` | `string` | 左下 |
+| `aside` | `string` | 右下 |
+| `image` | `string \| null` | 左側 48×48 的縮圖，須為已轉換的 src；為 `null` 時不顯示 |
 | `selectMode` | `boolean?` | 顯示勾選圈圈 |
 | `selected` | `boolean?` | 勾選圈圈是否為已選狀態 |

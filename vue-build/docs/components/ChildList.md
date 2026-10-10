@@ -17,17 +17,18 @@
     >
       <!-- slot 拿到的是截斷後的那幾列，卡片就自己 v-for -->
       <template #default="{ rows: children }">
-        <DataList v-for="child in children" :key="child.id" :title="child.$label" :to="`/__table__/${child.id}`" />
+        <DataList v-for="child in children" :key="child.id" :row="child" :to="`/__table__/${child.id}`" :view="childView" />
       </template>
     </ChildList>
   </template>
 </DetailPage>
 ```
 
-`newChild` 是這張子表的新增動作，預設值指向目前這個父列：
+`newChild` 是這張子表的新增動作，預設值指向目前這個父列；`childView` 指定子列顯示的欄位（見 [DataList](DataList.md) 的「view」）：
 
 ```ts
 const { new: newChild } = use__Table__Actions({ defaults: () => ({ __parent__: id.value }) })
+const childView = defineView(__table__Schema, { title: '$label' })
 ```
 
 ## Props

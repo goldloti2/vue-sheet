@@ -24,7 +24,7 @@ declare module 'vue-router' {
   }
 }
 
-export const loginPath = '/login'
+const loginPath = '/login'
 
 // 每個網址最後停在哪裡。跟 KeepAlive 是同一件事的兩半：元件狀態歸 KeepAlive（也是以 fullPath 為 key），
 // 視窗的捲動位置不是元件狀態，所以記在這裡。上限跟 KeepAlive 的 max 一樣，滿了先丟最舊的

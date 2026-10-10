@@ -14,7 +14,7 @@ function searchText (row: object, columns: readonly AnyColumn[]): string {
 }
 
 // 依空白切詞，雙引號包起來的當一個詞；引號沒閉合就把剩下的整段當一個詞
-export function searchTerms (query: string): string[] {
+function searchTerms (query: string): string[] {
   const terms: string[] = []
   const pattern = /"([^"]*)"?|(\S+)/g
 

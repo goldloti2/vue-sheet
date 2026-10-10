@@ -1,7 +1,7 @@
 // token 裡的 message：{ user, exp }，以 base64url 編碼（格式見 docs/auth.md）。
 // 正式流程裡前端不解析 token，只有假後端會用到這裡
 
-export interface TokenMessage {
+interface TokenMessage {
   user: string
   // 秒
   exp: number

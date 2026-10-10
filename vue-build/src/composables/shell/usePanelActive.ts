@@ -1,7 +1,7 @@
 import type { InjectionKey, Ref } from 'vue'
 import { inject, shallowRef } from 'vue'
 
-export type PanelActive = Readonly<Ref<boolean>>
+type PanelActive = Readonly<Ref<boolean>>
 
 // TabView 的每個面板各 provide 一份「我是不是當前頁籤」，由 TabViewPanel 給（provide 以元件為單位）
 export const panelActiveKey: InjectionKey<PanelActive> = Symbol('panelActive')

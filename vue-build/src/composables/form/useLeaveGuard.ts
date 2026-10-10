@@ -15,7 +15,7 @@ export function useLeaveGuard (dirty: () => boolean): void {
 }
 
 // 離開前要不要問：前面的步驟已經寫了東西（離開等於整條收回）、或這張表單改過
-export function leaveConfirmText (): string | undefined {
+function leaveConfirmText (): string | undefined {
   if (hasEarlierSteps.value) {
     return '是否放棄未儲存的變更（包含之前的變更）？'
   }

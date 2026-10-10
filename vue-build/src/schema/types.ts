@@ -32,8 +32,8 @@ interface ColumnTypes {
   select: { value: string | null, extra: { options: string[], allowCustom?: boolean, suggestFromData?: boolean } }
 }
 
-export type ColumnType = keyof ColumnTypes
-export type ColumnValue<T extends ColumnType> = ColumnTypes[T]['value']
+type ColumnType = keyof ColumnTypes
+type ColumnValue<T extends ColumnType> = ColumnTypes[T]['value']
 type ColumnExtra<T extends ColumnType> = ColumnTypes[T] extends { extra: infer Extra } ? Extra : object
 
 // 框架端不知道也不在乎是哪張表的 Row，所以預設是 any：key 退化成 string、value 的 row 退化成 any。

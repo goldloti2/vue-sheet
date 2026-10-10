@@ -26,12 +26,12 @@ export function useListOrder (table: TableKey, ids: MaybeRefOrGetter<string[]>):
   })
 }
 
-export interface Siblings {
+interface Siblings {
   prev: string | null
   next: string | null
 }
 
-export interface SiblingNav {
+interface SiblingNav {
   siblings: ComputedRef<Siblings>
   goPrev: () => void
   goNext: () => void

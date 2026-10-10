@@ -16,7 +16,7 @@ export interface ColumnFilter {
 export type Filters = Record<string, ColumnFilter>
 
 // schema.searchable 裡的欄位，搜尋列比 text / ref，其餘型別歸篩選抽屜
-export function isFilterable (column: AnyColumn): boolean {
+function isFilterable (column: AnyColumn): boolean {
   return ['date', 'duration', 'number', 'select'].includes(column.type)
 }
 
@@ -25,7 +25,7 @@ export function filterableColumns (schema: TableSchema): AnyColumn[] {
   return listedColumns(schema, schema.searchable).filter(column => isFilterable(column))
 }
 
-export interface PresentValues {
+interface PresentValues {
   // options 裡在資料出現過的，照 options 順序
   known: string[]
   // 資料裡有、options 沒有的（allowCustom 打的、Sheet 手動改的），出現次數多的在前，同次數依字串
@@ -69,7 +69,7 @@ export function hasActiveFilter (filters: Filters): boolean {
 }
 
 // select 的比對鍵：空值（跟 coerceRow 一樣把空字串當空）是 null，其餘轉字串
-export function selectKey (value: unknown): string | null {
+function selectKey (value: unknown): string | null {
   return isEmpty(value) ? null : String(value)
 }
 

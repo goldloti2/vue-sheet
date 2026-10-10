@@ -11,7 +11,7 @@ export interface AskFieldsOptions {
   defaults?: Record<string, ColumnDefault<unknown>>
 }
 
-export interface FieldsDialogState {
+interface FieldsDialogState {
   open: boolean
   title: string
   schema: TableSchema | null
@@ -102,10 +102,6 @@ export function confirmFields (): void {
   if (validate()) {
     settle(pick(fieldsDialog.form, fieldsDialog.keys))
   }
-}
-
-export function cancelFields (): void {
-  settle(null)
 }
 
 // 按過一次確定之後才即時更新錯誤，跟表單頁一致

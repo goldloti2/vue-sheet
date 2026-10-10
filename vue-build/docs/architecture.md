@@ -54,7 +54,7 @@ src/
     auth/              token 的讀寫（見 docs/auth.md）
   schema/              對 row 做事的純函數（見 schema.md）：types（型別、coerce／format）、
                        sort、group、filter、validation、relations（關聯圖）、image、
-                       index（註冊表：代稱 → schema）
+                       view（列的版面：欄位與位置的對應）、index（註冊表：代稱 → schema）
     tables/            每張表的欄位定義，一張表一個檔
   config/              app.ts（App 名稱、登入方式）、navigation.ts（導覽列項目）
   router/index.ts      路由實例、登入檢查、轉場方向判定、leaveAfterAction / pushWithDefaults

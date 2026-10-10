@@ -191,10 +191,10 @@
 | map | — | 把座標標在 Google 地圖上，暫不考慮 |
 | onboarding | — | 導覽頁，暫不考慮 |
 
-**視圖（view）**：deck、profile、card、gallery 與 detail 標頭共用同一套「欄位與位置的對應」，型別定義於 `schema/view.ts`（🔲 尚未套用）。view 定義於頁面並交給版面元件，schema 本身不含 view：
+**視圖（view）**：deck、profile、card、gallery 與 detail 標頭共用同一套「欄位與位置的對應」，實作於 `schema/view.ts`。`defineView(schema, {…})` 與 `defineCardView(schema, {…})` 回傳一個函式，傳入一列即回傳各位置的內容與該列的動作；欄位定義在建立時即查找完畢。view 定義於頁面並交給版面元件，schema 本身不含 view。🔲 尚未套用於任何元件：
 - 一組位置（`FieldGroup`）：`title`、`subtitle`、`image`、`summary`，以及僅 deck 使用的 `aside`。每個位置皆可省略。可填入欄位 key，或每列皆有的 `id`、`$label`（`keyof RowBase`）；需合併多個欄位，或顯示父列、子列的資訊時，應宣告為 `virtualColumns`
 - deck 的四角：`title` 左上、`subtitle` 右上、`summary` 左下、`aside` 右下，`image` 為左側縮圖
-- card 使用兩組：`header` 為第 1 層（`image` 作為頭像），`body` 為第 2、3 層（`image` 作為大圖，`summary` 為摘要）。detail 標頭即僅有 `body` 一組
+- card 使用兩組（`defineCardView`）：`header` 為第 1 層（`image` 作為頭像），`body` 為第 2、3 層（`image` 作為大圖，`summary` 為摘要）。detail 標頭即僅有 `body` 一組
 - 動作 `actions: (row) => (PageAction | null)[]`，與欄位定義於同一個 view。依位置排列：card 與 detail 標頭的前兩個置於左側、後兩個置於右側，`null` 表示空位；deck 與 profile 會略過空位。`PageAction` 新增 `display: 'icon' | 'text'`
 
 **deck 的 action 按鍵**：在右下角欄位的下一列，由左往右排列、整組靠右。沒有 action 時整列不佔高度；多選模式下藏起來。

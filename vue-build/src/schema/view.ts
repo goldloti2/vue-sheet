@@ -1,5 +1,7 @@
-import type { RowBase, RowKey } from './types'
+import type { RowBase, RowKey, TableSchema } from './types'
 import type { PageAction } from '@/composables/actions/useTableActions'
+import { imageSrc } from './image'
+import { findColumn, formatColumnValue } from './types'
 
 // 視圖：一列資料的哪些欄位放到版面的哪個位置，加上這一列的動作。定義在頁面、交給版面元件（見 ROADMAP 的「頁面類型」）
 
@@ -7,7 +9,7 @@ import type { PageAction } from '@/composables/actions/useTableActions'
 type ViewKey<Row extends object> = RowKey<Row> | keyof RowBase
 
 // 一組位置。沒給的位置就是空的；要組合多個欄位就宣告成 virtualColumns
-export interface FieldGroup<Row extends object> {
+interface FieldGroup<Row extends object> {
   title?: ViewKey<Row>
   subtitle?: ViewKey<Row>
   image?: ViewKey<Row>
@@ -17,7 +19,7 @@ export interface FieldGroup<Row extends object> {
 }
 
 // 依位置排：card 與 detail 標頭的前兩個在左、後兩個在右，null 是空位；deck 與 profile 會跳過空位
-export type RowActions<Row extends object> = (row: Row) => (PageAction | null)[]
+type RowActions<Row extends object> = (row: Row) => (PageAction | null)[]
 
 interface ResolvedGroup {
   title: string
@@ -35,4 +37,59 @@ export type CardView<Row extends object> = (row: Row) => {
   header: ResolvedGroup
   body: ResolvedGroup
   actions: (PageAction | null)[]
+}
+
+function noActions (): (PageAction | null)[] {
+  return []
+}
+
+// 欄位在建立時查好，之後每一列只剩讀值與格式化。schema 沒定義的（id、$label）直接轉字串
+function textReader (schema: TableSchema, key: string | undefined): (row: object) => string {
+  if (!key) {
+    return () => ''
+  }
+  const column = findColumn(schema, key)
+  if (column) {
+    return row => formatColumnValue(row, column)
+  }
+  return row => {
+    const value = (row as Record<string, unknown>)[key]
+    return value === null || value === undefined ? '' : String(value)
+  }
+}
+
+function imageReader (key: string | undefined): (row: object) => string | null {
+  if (!key) {
+    return () => null
+  }
+  return row => imageSrc((row as Record<string, unknown>)[key])
+}
+
+function compileGroup<Row extends object> (schema: TableSchema, group: FieldGroup<Row> = {}): (row: Row) => ResolvedGroup {
+  const title = textReader(schema, group.title)
+  const subtitle = textReader(schema, group.subtitle)
+  const image = imageReader(group.image)
+  const summary = textReader(schema, group.summary)
+  const aside = textReader(schema, group.aside)
+
+  return row => ({ title: title(row), subtitle: subtitle(row), image: image(row), summary: summary(row), aside: aside(row) })
+}
+
+export function defineView<Row extends object> (
+  schema: TableSchema<Row>,
+  view: FieldGroup<Row> & { actions?: RowActions<Row> },
+): RowView<Row> {
+  const group = compileGroup(schema, view)
+  const actions = view.actions ?? noActions
+  return row => ({ ...group(row), actions: actions(row) })
+}
+
+export function defineCardView<Row extends object> (
+  schema: TableSchema<Row>,
+  view: { header?: FieldGroup<Row>, body?: FieldGroup<Row>, actions?: RowActions<Row> },
+): CardView<Row> {
+  const header = compileGroup(schema, view.header)
+  const body = compileGroup(schema, view.body)
+  const actions = view.actions ?? noActions
+  return row => ({ header: header(row), body: body(row), actions: actions(row) })
 }

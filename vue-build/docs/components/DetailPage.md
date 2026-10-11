@@ -17,15 +17,15 @@
 
   const { id, row, loading, error } = useRecordPage<__Table__Row>('__table__')
 
-  const { delete: deleteActions, edit: editActions, fieldActions } = use__Table__Actions({ row })
-  useAppBarActions(() => deleteActions.value)
+  const { delete: deleteAction, edit: editAction, fieldActions } = use__Table__Actions({ row })
+  useAppBarActions(() => [deleteAction.value])
 </script>
 
 <template>
   <DetailPage
     :id="id"
     :error="error"
-    :fab="editActions"
+    :fab="[editAction]"
     :field-actions="fieldActions"
     :loading="loading"
     :row="row"
@@ -45,8 +45,8 @@
 | `row` | `Row \| null` | **必填**，`null` 時顯示「找不到這筆資料」 |
 | `loading` | `boolean?` | 載入中 |
 | `error` | `string \| null?` | 載入失敗的訊息 |
-| `fieldActions` | `FieldActions?` | 欄位 key → 動作，每欄一個、整格可點 |
-| `fab` | `PageAction[]?` | 右下角的 FAB，通常是編輯 |
+| `fieldActions` | `FieldActions<Row>?` | 欄位 key → 動作，每欄一個、整格可點 |
+| `fab` | `(PageAction \| null)[]?` | 右下角的 FAB，通常是編輯；`null` 略過 |
 
 ## Slots
 

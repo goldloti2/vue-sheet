@@ -20,18 +20,18 @@
 
   // 不要多選就不傳 selectedIds / onDone，也不用把 selection 交給 ListPage；
   // defaults 也可省略，要讓新增表單依當下頁面狀態預填時傳 getter
-  const { new: newActions, bulkDelete } = use__Table__Actions({
+  const { new: newAction, bulkDelete } = use__Table__Actions({
     selectedIds: selection.selectedIds,
     onDone: selection.clear,
   })
-  useAppBarActions(() => bulkDelete.value)
+  useAppBarActions(() => [bulkDelete.value])
 </script>
 
 <template>
   <!-- 載入狀態、FAB、列表順序（detail 頁的上/下一筆）都由 ListPage 處理 -->
   <ListPage
     :error="error"
-    :fab="newActions"
+    :fab="[newAction]"
     :loading="loading"
     :rows="rows"
     :selection="selection"

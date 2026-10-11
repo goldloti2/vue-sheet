@@ -23,10 +23,10 @@
     row: Row | null
     loading?: boolean
     error?: string | null
-    // 欄位 key → 動作；每欄只用第一個（見 DataDetail）
-    fieldActions?: FieldActions
+    // 欄位 key → 動作，每欄一個（見 DataDetail）
+    fieldActions?: FieldActions<Row>
     // 右下角的 FAB，通常是編輯
-    fab?: PageAction[]
+    fab?: (PageAction | null)[]
   }>()
 
   // 左右滑動換上下一筆；RecordNav 的兩顆箭頭是同一份順序

@@ -18,13 +18,13 @@
   const { id, row, loading, error } = useRecordPage<__Parent__Row>('__parent__')
 
   // 從這裡新增的子列預設就掛在這個父列底下
-  const { new: newActions } = use__Table__Actions({ defaults: () => ({ __parent__: id.value }) })
+  const { new: newAction } = use__Table__Actions({ defaults: () => ({ __parent__: id.value }) })
 </script>
 
 <template>
   <ListPage
     :error="error"
-    :fab="newActions"
+    :fab="[newAction]"
     :loading="loading"
     :rows="row?.$__table_____parent__ ?? []"
     table="__table__"

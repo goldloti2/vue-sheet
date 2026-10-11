@@ -47,13 +47,13 @@
 
   const appBarActions = shallowRef<PageAction[]>([])
   provide(appBarActionsKey, actions => {
-    appBarActions.value = actions
+    appBarActions.value = actions.filter(action => action !== null)
   })
 
   // 註冊了底部動作就暫時取代導覽列（表單頁用），離開頁面自動還原
   const bottomActions = shallowRef<PageAction[]>([])
   provide(bottomActionsKey, actions => {
-    bottomActions.value = actions
+    bottomActions.value = actions.filter(action => action !== null)
   })
 
   // 多選模式的出口。不是 null 就代表頁面正在多選，搜尋那些鈕先讓位（見 template）

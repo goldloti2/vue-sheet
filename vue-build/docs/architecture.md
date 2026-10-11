@@ -1,6 +1,6 @@
 # 前端架構
 
-程式碼怎麼分、頁面之間怎麼接力：模組結構、KeepAlive 的規則、動作完成後的導覽與連續流程。
+程式碼怎麼分、頁面之間怎麼接力：模組結構、KeepAlive 的規則、動作完成後的導覽、離開表單前的確認。動作本身（含連續動作與快速編輯對話框）見 [actions.md](actions.md)。
 
 > **前置**：先看過 [schema.md](schema.md) 會比較好懂（這裡常提到 schema 與 row 上的 getter）。
 
@@ -45,7 +45,7 @@ src/
     navigation/        路由接力：useRouteId、useListOrder、useFlow
     list/              列表互動：useMultiSelect、useLongPress
     page/              頁面的資料層：useRecordPage、useListPage
-    actions/           useTableActions：PageAction 型別 + 通用動作 builder
+    actions/           useTableActions：PageAction 型別、通用動作 builder、useAction／useRowAction
     auth/              useLogin（登入頁的資料層）
   stores/tables/       共用快取、待推送佇列、row 上的 getter（見 store.md）
   services/            appScript.ts 是對後端唯一的出入口（VITE_APPS_SCRIPT_URL 沒設
@@ -102,65 +102,14 @@ leaveAfterAction('/表名')   // 走瀏覽器返回；沒有 App 內上一頁時
 
 ---
 
-## 連續動作（流程）
-
-好幾個步驟要一氣呵成時（新增父表那筆後直接進它的 detail、或接著新增子表那筆），用 `useFlow` 串成一段 async 程式碼：
-
-```ts
-onClick: () => runFlow(async () => {
-  const row = await runStep<ParentRow>('/parent/new', { status: '已下單' })
-  router.replace(`/parent/${row.id}`)
-})
-```
-
-- **`runStep(to, defaults?)`** 用 `replace` 開一張表單、等它送出成功、拿回建好或改好的那筆。`defaults` 走 `history.state`，跟 `useNewAction` 同一條通道，所以只能放普通值（不能 reactive、不能函式）
-- **表單不用改**：送出成功後先問 `resumeStep()`，有步驟在等就交棒、頁面不離開；沒有就照舊 `leaveAfterAction`。這是 `useCreateForm`／`useEditForm` 裡唯一為流程多出的分岔
-- **任何導覽都算放棄**：守衛放行後 `router.afterEach` 會 reject 等待中的步驟，`runFlow` 接到 `FlowCancelled` 就 `rollbackFlow()`，整條流程的快取與佇列改動一次還原
-- **連接器拋錯**（不是取消）也會 rollback，另外用 snackbar 報錯並 `leaveAfterAction('/')` 把人帶離——那一步的表單多半已經送出，留在上面會讓人以為失敗而重按
-- **流程進行中不能推送**：`flush()` 拒絕執行（同步鈕本來就因為表單開著而停用，見 [store.md](store.md)）
-- **流程掛在起點那張表**的 `use表名Actions` 底下，跨表也一樣
-- **流程不能套疊**：存檔點只有一格，第二個 `beginFlow` 直接拋錯
-
-連接器只有兩條規則：**只用 `runStep` 導覽到表單；結尾一定要有一個離開的導覽。**
-
-### 離開前先問
+## 離開表單前先問
 
 由 `useLeaveGuard` 的 `router.beforeEach` 統一處理——返回鍵、導覽列、改網址、表單底部的取消全走同一條（取消鈕自己不問，否則會問兩次）。要不要問看兩件事：
 
-- **在流程第二步之後一律問**，文案是「是否放棄未儲存的變更（包含之前的變更）？」——這張表單可能一個字都還沒填，但前面的步驟已經寫了東西，離開等於整條收回
+- **在[連續動作](actions.md#連續動作流程)第二步之後一律問**，文案是「是否放棄未儲存的變更（包含之前的變更）？」——這張表單可能一個字都還沒填，但前面的步驟已經寫了東西，離開等於整條收回
 - **不在流程裡**就看表單有沒有改動（`useCreateForm`／`useEditForm` 登記的 `dirty` getter）
 
 說不就回傳 `false` 擋下導覽，頁面原地不動；瀏覽器返回鍵被擋下時 vue-router 會自己把歷史位置撥回來。`runStep` 自己的導覽不會誤觸（它是等 `replace` 完成才登記的），送出成功後的離開也不會被問（`resumeStep` 已經清掉等待中的步驟）。
-
-### 步驟的三種型態
-
-只有第一種需要上面那套機制：
-
-| 種類 | 例子 | 需要什麼 |
-| --- | --- | --- |
-| 導覽型 | 開新增／編輯表單 | `runStep`：`history.state` 送預設值過去、module 變數把結果送回來 |
-| 對話框型 | 選日期的小視窗 | `askFields`：一個普通的 promise，確定時 resolve、取消是 `null` |
-| 立即型 | 日期改成今天 | 什麼都不用，就是一次 `store.update` |
-
----
-
-## 快速編輯對話框
-
-只想改一兩欄、不值得開整頁表單時用（改狀態、補日期、多筆改成同一個值）。開一個對話框只問那幾欄，按確定才寫回去：
-
-```ts
-const values = await askFields<Row>(schema, ['status'], { rows: [current] })
-if (values) {
-  store.update(table, current.id, values)
-}
-```
-
-- 回傳 `Promise<Partial<Row> | null>`，取消是 `null`。獨立於流程，也能在流程裡當一步用
-- 內容就是 `DataForm` 加 `only` prop 只顯示那幾欄：輸入元件、驗證、錯誤顯示全部沿用。驗證只跑被問到的欄位，不然沒問到的必填欄位會被算成錯
-- **初始值三層**：`options.rows` 剛好一筆且那欄非空 → 現值；否則 `options.defaults[key]`（值或函式）；都沒有 → 空。**不套 schema 的 `default`**——那是新增表單的初始值，改現有資料時不該冒出來。多筆時不顯示現值，那是「填一次、全部改成同一個值」的用法
-- 通用的用法包成 `useQuickEditAction(table, keys, selectedIds, { label, icon, defaults, onDone })`：多選模式下出現，確定後對每個 id 各跑一次 `store.update`（不另開 op 種類，佇列的合併規則直接適用）
-- 只是要問是／否就用 `confirm(title, text): Promise<boolean>`，動作的 `confirm` 宣告與離開守衛都用它；要給兩條以上的出路用 `choose(title, text, choices): Promise<string | null>`（同一個對話框實例，見 [ConfirmDialog.md](components/ConfirmDialog.md)）
-- 一次要問的欄位放在同一個對話框。連續動作是給「一步的結果決定下一步」用的，欄位之間沒有相依，拆開只是多按幾次確定
 
 ---
 
@@ -196,18 +145,3 @@ if (values) {
 
 **為什麼離開中的頁面還在運轉**
 KeepAlive 的 `deactivate` 只搬 DOM，不會暫停元件的 effect；而 `onDeactivated` 是 post-render，比 pre-flush 的 `watch` 還晚。所以在整段離場動畫期間，舊頁面仍然會對外部變化重新計算、重新渲染——而外面的世界已經換頁了。這是「返回時閃一下錯誤內容」這一整類問題的唯一根源，上面那五條規則都是為它而存在。流進離開中頁面的東西只有兩種：路由參數（讀一次就固定）與共用快取（讓它變）。
-
-**為什麼流程的第一步 `push`、之後 `replace`**
-push 是為了保住發起流程的那一頁，replace 是讓做完的表單不留在歷史裡。結果是歷史永遠只有「起點 → 目前這一步」兩筆：任何一步按返回或取消都回到起點，流程結束後也能從終點返回起點。全部用 replace 的話起點會被第一步吃掉，取消就無處可去。
-
-**為什麼流程是 async 程式碼，不是序列化的步驟鏈**
-序列化的鏈表達不了對話框型與立即型的步驟，也沒辦法在中途做判斷。而序列化唯一的好處是「重整後流程還在」，這在這套設計裡反而不是好處——任何導覽都算放棄，重整更是。
-
-**為什麼流程不能套疊**
-存檔點只有一格，內層的 `beginFlow` 會蓋掉外層。從 UI 上其實套不進去——流程中途使用者只會在表單頁上，能按的只有那一步自己的取消／送出——會發生只有一種情況：連接器在兩步之間跑去非表單的頁面。所以直接拋錯（外層的存檔點完好，內層那個動作被 runner 接住報錯）。
-
-**為什麼流程掛在起點那張表**
-頁面只從一個地方取動作（`use表名Actions`），歸屬規則必須明確，而「起點」是唯一不含糊的說法——跨表流程從哪張表發起就掛在哪張表。
-
-**為什麼對話框是 module-level 的單一實例**
-跟 `notify` 同一個模式：module-level 狀態 + `AppShell` 掛一個 `FieldsDialog`，promise 由確定／取消 resolve，整個 App 只有一個實例，再叫一次會先把上一個當作取消。`router.afterEach` 會把開著的對話框關掉並 resolve `null`——掛在 `AppShell` 上的對話框會跨路由存活，不關的話換頁後它還開著。

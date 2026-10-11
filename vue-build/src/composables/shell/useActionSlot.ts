@@ -4,7 +4,7 @@ import { inject, onActivated, onDeactivated, onMounted, onUnmounted, watch } fro
 import { usePanelActive } from '@/composables/shell/usePanelActive'
 
 export type SlotSetter<Value> = (value: Value) => void
-export type ActionSlotSetter = SlotSetter<PageAction[]>
+export type ActionSlotSetter = SlotSetter<(PageAction | null)[]>
 
 // 把頁面的東西登記到 `AppShell` 上的某一塊，不在畫面上（被 KeepAlive 收起來、或所在頁籤不是當前）就還原成 empty
 export function registerSlot<Value> (key: InjectionKey<SlotSetter<Value>>, source: () => Value, empty: Value): void {
@@ -69,6 +69,6 @@ export function registerSlot<Value> (key: InjectionKey<SlotSetter<Value>>, sourc
 }
 
 // 動作版：App Bar、底部列
-export function registerActions (key: InjectionKey<ActionSlotSetter>, source: () => PageAction[]): void {
+export function registerActions (key: InjectionKey<ActionSlotSetter>, source: () => (PageAction | null)[]): void {
   registerSlot(key, source, [])
 }

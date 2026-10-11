@@ -16,8 +16,8 @@
   // 網址上的 id + 那一筆；載入狀態與左右滑動換筆都由 DetailPage 處理
   const { id, row, loading, error } = useRecordPage<__Table__Row>('__table__')
 
-  const { delete: deleteActions, edit: editActions, fieldActions } = use__Table__Actions({ row })
-  useAppBarActions(() => deleteActions.value)
+  const { delete: deleteAction, edit: editAction, fieldActions } = use__Table__Actions({ row })
+  useAppBarActions(() => [deleteAction.value])
 </script>
 
 <template>
@@ -25,7 +25,7 @@
   <DetailPage
     :id="id"
     :error="error"
-    :fab="editActions"
+    :fab="[editAction]"
     :field-actions="fieldActions"
     :loading="loading"
     :row="row"

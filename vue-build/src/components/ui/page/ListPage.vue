@@ -21,7 +21,7 @@
     // 有給才綁長按多選（useListPage 的 selection）
     selection?: MultiSelect
     // 右下角的 FAB，通常是新增
-    fab?: PageAction[]
+    fab?: (PageAction | null)[]
   }>()
 
   defineSlots<{

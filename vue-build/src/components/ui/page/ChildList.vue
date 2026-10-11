@@ -9,7 +9,7 @@
     rows: readonly Row[]
     limit?: number
     to?: string
-    actions?: PageAction[]
+    actions?: (PageAction | null)[]
     emptyText?: string
   }>(), {
     limit: 5,
@@ -22,6 +22,8 @@
   }>()
 
   const shown = computed(() => props.limit > 0 ? props.rows.slice(0, props.limit) : [...props.rows])
+
+  const shownActions = computed(() => (props.actions ?? []).filter(action => action !== null))
 
   const runAction = useRunAction()
 </script>
@@ -36,11 +38,11 @@
 
     <div v-else class="text-medium-emphasis">{{ emptyText }}</div>
 
-    <div v-if="to || actions?.length" class="d-flex ga-2 justify-end mt-2">
+    <div v-if="to || shownActions.length > 0" class="d-flex ga-2 justify-end mt-2">
       <v-btn v-if="to" text="展開" :to="to" variant="text" />
 
       <v-btn
-        v-for="action in actions"
+        v-for="action in shownActions"
         :key="action.key"
         :text="action.label"
         variant="text"

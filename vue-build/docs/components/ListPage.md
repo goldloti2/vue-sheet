@@ -14,17 +14,17 @@
 <script lang="ts" setup>
   const { rows, loading, error, selection } = useListPage<__Table__Row>('__table__', __table__Schema)
 
-  const { new: newActions, bulkDelete } = use__Table__Actions({
+  const { new: newAction, bulkDelete } = use__Table__Actions({
     selectedIds: selection.selectedIds,
     onDone: selection.clear,
   })
-  useAppBarActions(() => bulkDelete.value)
+  useAppBarActions(() => [bulkDelete.value])
 </script>
 
 <template>
   <ListPage
     :error="error"
-    :fab="newActions"
+    :fab="[newAction]"
     :loading="loading"
     :rows="rows"
     :selection="selection"
@@ -52,7 +52,7 @@
 | `loading` | `boolean?` | 載入中（長條進度列） |
 | `error` | `string \| null?` | 載入失敗的訊息 |
 | `selection` | `MultiSelect?` | 給了才綁長按多選（`useListPage` 的 `selection`） |
-| `fab` | `PageAction[]?` | 右下角的 FAB，通常是新增 |
+| `fab` | `(PageAction \| null)[]?` | 右下角的 FAB，通常是新增；`null` 略過 |
 
 ## Slots
 
@@ -64,7 +64,7 @@
 ### 表格式
 
 ```vue
-<ListPage :error="error" :fab="newActions" :loading="loading" :rows="rows" table="__table__">
+<ListPage :error="error" :fab="[newAction]" :loading="loading" :rows="rows" table="__table__">
   <template #rows="{ rows: list }">
     <DataTable :columns="['name', 'amount']" :row-to="(row) => `/__table__/${row.id}`" :rows="list" :schema="__table__Schema" />
   </template>
@@ -80,7 +80,7 @@
 ```vue
 <TabView v-model="selectedStatus" :tabs="statusTabs">
   <template #default="{ tab }">
-    <ListPage :error="error" :fab="newActions" :groups="groupedFor(tab)" :loading="loading" :selection="selection" table="__table__">
+    <ListPage :error="error" :fab="[newAction]" :groups="groupedFor(tab)" :loading="loading" :selection="selection" table="__table__">
       <template #default="{ row, props: itemProps }">
         <DataList v-bind="itemProps" :title="row.$label" :to="`/__table__/${row.id}`" />
       </template>

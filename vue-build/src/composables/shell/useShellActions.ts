@@ -8,14 +8,14 @@ import { registerActions, registerSlot } from '@/composables/shell/useActionSlot
 export const appBarActionsKey: InjectionKey<ActionSlotSetter> = Symbol('appBarActions')
 
 // App Bar 右側的動作。數量多的話 AppShell 會自動收成下拉選單，這裡不用管
-export function useAppBarActions (source: () => PageAction[]): void {
+export function useAppBarActions (source: () => (PageAction | null)[]): void {
   registerActions(appBarActionsKey, source)
 }
 
 export const bottomActionsKey: InjectionKey<ActionSlotSetter> = Symbol('bottomActions')
 
 // 螢幕最底端的動作列。註冊了就暫時取代導覽列，離開頁面自動還原
-export function useBottomActions (source: () => PageAction[]): void {
+export function useBottomActions (source: () => (PageAction | null)[]): void {
   registerActions(bottomActionsKey, source)
 }
 

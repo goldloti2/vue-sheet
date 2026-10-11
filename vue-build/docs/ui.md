@@ -2,7 +2,7 @@
 
 畫面長什麼樣、動作擺在哪裡、搜尋與篩選怎麼運作。外觀仿 AppSheet，以手機優先。
 
-> **前置**：動作與 KeepAlive 的機制見 [architecture.md](architecture.md)；每個元件的用法見 [components/](components/)。
+> **前置**：動作見 [actions.md](actions.md)，KeepAlive 的機制見 [architecture.md](architecture.md)；每個元件的用法見 [components/](components/)。
 
 > **標記**：沒有標記＝已經實作。🔶 部分實作、🔲 尚未實作。詳細進度見 [ROADMAP.md](../../ROADMAP.md)。
 
@@ -74,19 +74,16 @@
 
 ## 動作擺在哪裡
 
-| 位置 | 怎麼註冊 | 用途 |
-| --- | --- | --- |
-| 右下角 FAB | `<PageFab :actions="...">` | 主要動作。≤2 顆固定顯示，≥3 顆收合成 speed-dial |
-| App Bar 右側 | `useAppBarActions()` | 次要動作。≤2 顆直接顯示，≥3 顆收成「⋮」下拉。多選的「取消」是例外，永遠在外面、在同步鈕左邊（`useMultiSelect` 自己登記） |
-| 螢幕最底端 | `useBottomActions()` | 暫時取代底部導覽列，離開頁面自動還原。表單的取消／送出不用自己接，`useCreateForm`／`useEditForm` 會登記 |
-| 詳細頁的單一欄位 | `DataDetail` 的 `fieldActions` | 該欄的動作，右邊出現圖示、整格可點 |
+| 位置 | 用途 |
+| --- | --- |
+| 右下角 FAB | 主要動作，例如新增、編輯 |
+| App Bar 右側 | 次要動作，例如刪除、批次刪除 |
+| 螢幕最底端 | 表單頁的取消／送出，暫時取代底部導覽列 |
+| 詳細頁的單一欄位 | 該欄的動作，例如前往 ref 的對方、開網址 |
+| 子表區塊的右下角 | 排在「展開」旁邊，通常是新增子列 |
+| 🔲 列表的每一列 | 見 ROADMAP 的「deck 的 action 按鍵」 |
 
-- **四處共用同一種 `PageAction`**：`{ key, label, icon, onClick, confirm? }`。頁面自己決定用哪幾個、放哪裡
-- **`icon` 一律要給**——底部動作列雖然只顯示文字，但形狀統一，同一個動作搬到別的位置不用補東西
-- **內建 builder**（新增／編輯／刪除／批次刪除／ref 前往／開網址）的 `label` 與 `icon` 都有預設，要換就傳 `ActionLook`（`{ label?, icon? }`）覆寫。自訂的動作沒有預設，在各表的 `use表名Actions.ts` 裡宣告時自己給
-- **欄位動作不是內建的**：ref 的「前往對方」跟開網址、改成今天一樣是 builder（`useGoToRefAction`／`useOpenUrlAction`／`useSetFieldAction`），要就列進去、不要就不列——沒有「空陣列代表內建」這種第三態
-- **一次只有一個頁面的動作算數**：被 `<KeepAlive>` 收起來的頁面、以及 `TabView` 裡不是當前頁籤的面板，動作與 FAB 都會自動讓開（見 [TabView.md](components/TabView.md)），頁面自己不用判斷
-- **需要確認的動作只要宣告 `confirm: { title, text }`**，不用自己擺 `ConfirmDialog`：`AppShell` 提供的 `runAction` 會先 `await confirm()`，說好才跑 `onClick`；`onClick` 拋錯一律進 snackbar
+怎麼把動作放上去、動作的描述方式、內建 builder、連續動作與快速編輯對話框，見 [actions.md](actions.md)。
 
 ---
 
@@ -209,9 +206,3 @@ App Bar 在轉場動畫的 `.page-transition-viewport` 之外，不會被 `trans
 
 **為什麼每一塊都是單一 setter**
 三塊都走同一個 `registerActions`（`useActionSlot.ts`），同一時間只認一個頁面的動作。所以一定要靠 `isActive` 擋住被 KeepAlive 快取的頁面——它們仍然是全速運轉的（見 [architecture.md](architecture.md#keepalive-的規則)），動作一變就會蓋掉當前頁面的。
-
-**為什麼 `confirm` 是宣告式、`askFields` 不是**
-`confirm` 對每個動作都一樣、動作本體不需要知道結果，所以做成語法糖。`askFields` 的結果是動作要拿去用的，只能在 `onClick` 裡自己 `await`。
-
-**ref 欄位那格為什麼是按鈕不是連結**
-從 `<RouterLink>` 變成 `<button>` 之後中鍵開新分頁沒了，跟 `PageAction` 沒有 `to` 是同一個取捨（見 [schema.md](schema.md#設計取捨)）。導覽用 `push`，回來時 detail 還在。

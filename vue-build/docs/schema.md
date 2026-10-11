@@ -169,7 +169,7 @@ row.$child_parent  // 指向這一列的子列陣列
 
 - **顯示**：任何地方都顯示對方的名字（對方 schema 的 `labelColumn`），不是 id
 - **表單**：`DataForm` 做成可搜尋的下拉清單（`v-autocomplete`），對方整張表載進共用快取
-- **從詳細頁點過去**：在 `fieldActions` 列一個 `useGoToRefAction`
+- **從詳細頁點過去**：在 `fieldActions` 列一個 `goToRefAction`
 - **兩邊都走得到**：子列用 `row.$欄位key`、父列用 `row.$子表_欄位key`（照子表的 `defaultSort` 排）
 - **不驗證目標存不存在**：選擇器只選得到現有的列
 
@@ -239,7 +239,7 @@ select 兩個可選開關：
 三層疊出來，後面的蓋前面的：
 
 1. **schema 的 `default`** — 跟來源無關的固定值。可以是值或函式，函式在打開表單那一刻才求值（`() => new Date()`）
-2. **導覽帶來的 `history.state.defaults`** — 從哪裡按新增決定。`useNewAction(table, defaults)` 收 getter，按下去的當下才求值
+2. **導覽帶來的 `history.state.defaults`** — 從哪裡按新增決定。`newAction(table, { defaults })` 收 getter，按下去的當下才求值
 3. **`useCreateForm` 的第三個參數** — 頁面自己算得出來的
 
 > 初始值整件事只存在於前端：後端沒有欄位層的 schema，不會幫沒給的欄位填任何東西（`create` 沒送到的欄位就是留空）——跟「合法性驗證只在前端做」是同一條線。
@@ -277,9 +277,6 @@ Sheet 本來就能手動打開來亂改，後端擋合法性也擋不完整，�
 
 **為什麼 `TableSchema<Row>` 只做單向檢查**
 Row 介面仍然要手寫（虛擬欄位的 `readonly xxx`、store 掛的 `readonly $欄位key?`），泛型不會反過來從 schema 產生介面——那需要兩段式 builder 加跨表的延遲查表，schema 就不再是一眼看完的物件字面值，不值得。框架端一律用不帶參數的 `TableSchema`，它的 Row 預設是 `any`；不用 `object` 是因為 `keyof Row` 讓 TS 把 Row 判成逆變，`TableSchema<XxxRow>` 會塞不進 `TableSchema<object>`。
-
-**為什麼 `PageAction` 只有 `onClick`、沒有宣告式的 `to`**
-求值時機：action 物件在頁面 setup 時就建好，寫進 `to` 的值那時就定型，切了頁籤再按新增會帶到舊狀態。統一成一種也免得兩個都設時變成「導覽 + 執行」兩件事一起發生。代價是動作渲染成 `<button>` 而非 `<a>`，失去中鍵開新分頁與連結的無障礙語意——這個 App 的動作都在 FAB 與 App Bar 上，用不太到。
 
 **為什麼預設值走 `history.state` 而不是 query param**
 不讓值出現在網址上；比全域變數好的地方是**值綁在那一筆歷史紀錄上**，不會殘留下來汙染之後不相關的表單。

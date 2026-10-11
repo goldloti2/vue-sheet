@@ -36,7 +36,7 @@
 ### 跨表關聯
 - `schema/relations.ts` 掃 schema 的 `ref` 欄位自動產生關聯圖，新增關聯只要標 `type: 'ref'`
 - store 在每列掛每個 ref 欄位的 `$欄位key`（父列），`formatColumnValue` 遇到 ref 就顯示對方的 `$label`，所以 detail／表格／列表／選擇器全都顯示名字、沒有 ref 專用元件
-- `DataForm` 的 `ref` 欄位是父表整表的可搜尋下拉清單（`v-autocomplete`），每列文字與搜尋比對都是對方的 `$label`；「前往對方」是欄位動作 `useGoToRefAction`，頁面自己列
+- `DataForm` 的 `ref` 欄位是父表整表的可搜尋下拉清單（`v-autocomplete`），每列文字與搜尋比對都是對方的 `$label`；「前往對方」是欄位動作 `goToRefAction`，頁面自己列
 - store 也在每張父表的列掛 `$子表_欄位key`（指向這列的子列陣列，照子表 `defaultSort` 排），零設定；虛擬欄位與頁面直接讀它，不用另外查。名字帶 ref 欄位，所以同一張子表兩個 ref 指向同一張父表（平行邊）各自一個 getter，不會撞
 - `ensureLoaded(table)` 會把父表與子表一起載（擋循環）
 - 連帶刪除：ref 欄位標 `onDelete: 'cascade'`，父列被刪時 `store.removeMany` 順著關聯圖把子列也刪掉（多層遞迴，走同一條 `patch`＋`enqueue`）；`ensureLoaded` 會把 cascade 的子表一起載
@@ -89,19 +89,20 @@
 - **排序與分組二選一**，框架不介入：分組會把原本的順序壓成組內順序，所以頁面自己在 `sort` 不是 null 時把 `groups` 換成 `rows`（有分組的列表頁就是這樣）。排序一改，`ListPage` 發布的列表順序跟著改，詳細頁的上下一筆自動一致
 
 ### 動作系統
-- `PageAction` 型別（`{ key, label, icon, onClick, confirm? }`），FAB、App Bar、底部動作列、detail 欄位動作共用同一種描述；內建 builder 的 label／icon 可用 `ActionLook` 覆寫
-- 通用 builder：`useNewAction` / `useEditAction` / `useDeleteAction` / `useBulkDeleteAction` / `useQuickEditAction`，一律回傳 `ComputedRef<PageAction[]>`
-- 欄位動作（`DataDetail` 的 `fieldActions`，一欄一個、整格可點）：`useGoToRefAction`（ref 前往對方）／`useOpenUrlAction`（開新分頁）／`useSetFieldAction`（立即改成某個值，可帶 confirm）
+說明見 [vue-build/docs/actions.md](vue-build/docs/actions.md)。
+- `PageAction` 型別（`{ key, label, icon, onClick, confirm? }`），FAB、App Bar、底部動作列、detail 欄位動作共用同一種描述；內建 builder 的 label／icon 可用最後一個參數 `ActionLook` 覆寫，與行為的 options 分開
+- 通用 builder：`newAction` / `editAction` / `deleteAction` / `bulkDeleteAction` / `quickEditAction`，皆為一般函式，回傳一個 `PageAction`，不適用時回傳 `null`；`use表名Actions` 以 `useAction`（或 detail 頁當前那一筆用的 `useRowAction`）包成 `ComputedRef<PageAction | null>`，欄位動作直接呼叫
+- 欄位動作（`DataDetail` 的 `fieldActions`，欄位 key → `(row) => PageAction | null`，一欄一個、整格可點）：`goToRefAction`（ref 前往對方）／`openUrlAction`（開新分頁）／`setFieldAction`（立即改成某個值，可帶 confirm）
 - 需要確認的動作宣告 `confirm` 就好，`useActionRunner` 先 `await confirm()` 再跑，錯誤進 snackbar；頁面不用擺 `ConfirmDialog`
-- `confirm()` / `choose()` / `askFields()`：是／否、幾條出路（回傳按下去那顆的 key，取消是 `null`）、問幾個欄位；都是 module-level 狀態 + `AppShell` 掛一個實例 + promise，前兩個共用同一個 `ConfirmDialog`；`useQuickEditAction` 用後者把選取的多筆改成同一個值（欄位由設計者定，只選一筆時顯示現值）
-- 每張表的動作（含批次刪除）一律從 `use表名Actions(options)` 取，用不到的是空陣列
+- `confirm()` / `choose()` / `askFields()`：是／否、幾條出路（回傳按下去那顆的 key，取消是 `null`）、問幾個欄位；都是 module-level 狀態 + `AppShell` 掛一個實例 + promise，前兩個共用同一個 `ConfirmDialog`；`quickEditAction` 用後者把選取的多筆改成同一個值（欄位由設計者定，只選一筆時顯示現值）
+- 每張表的動作（含批次刪除）一律從 `use表名Actions(options)` 取，每一項是一個動作，用不到的是 `null`；一個位置放哪幾個由頁面組成陣列，各位置接收 `(PageAction | null)[]` 並略過 `null`
 - `useAppBarActions()` 用 provide/inject 把動作註冊到 App Bar，數量多自動收成下拉選單
 - `useBottomActions()` 把動作註冊到螢幕最底端，暫時取代導覽列（表單頁的取消／送出）；兩者共用 `useActionSlot` 的 KeepAlive 防護
 - `PageFab` 依數量自動在固定顯示與 speed-dial 之間切換
 
 ### 表單與多選
 - `useCreateForm` / `useEditForm` 收掉新增與編輯的重複邏輯（起始值、載入、送出、導覽、錯誤狀態），取消／送出也由它們自己掛上底部動作列，頁面只剩「這是哪張表」
-- 新增表單的預設值三層：schema 的 `default` → `useNewAction` 經 `history.state` 帶來的 → `useCreateForm` 的參數
+- 新增表單的預設值三層：schema 的 `default` → `newAction` 經 `history.state` 帶來的 → `useCreateForm` 的參數
 - 前端驗證：`schema/validation.ts` 的 `validateRow`（內建 `required`／`min`／`max`／`select` 選項，其他規則由欄位的 `validate(value, row)` 自訂）一份，form 層與 `askFields` 送出前逐欄提示、store 的 `create`／`update` 寫入前再擋一次（拋錯、不動快取）；後端只做結構完整性，分工見 [vue-build/docs/schema.md](vue-build/docs/schema.md)
 - `useMultiSelect` + `useLongPress`：長按進入多選，選取狀態由「有沒有選取任何一筆」推導；`itemProps(id)` 是每列要綁的那一包（`selectable`／`selectMode`／`selected`／長按與點選），列表元件與分組列表共用同一份
 - 分組或分頁籤的列表也走 `ListPage`：一個頁籤一個 `ListPage`，各自算狀態、FAB 與列表順序，靠面板訊號決定哪份生效，頁面不用知道當前是哪個頁籤
@@ -111,13 +112,13 @@
 - 批次刪除走動作的 `confirm`
 
 ### 連續動作
-設計與實作見 [vue-build/docs/architecture.md](vue-build/docs/architecture.md)。
+設計與實作見 [vue-build/docs/actions.md](vue-build/docs/actions.md)，離開前的確認見 [vue-build/docs/architecture.md](vue-build/docs/architecture.md)。
 - 流程存檔點 `beginFlow` / `commitFlow` / `rollbackFlow`：把一段流程的快取與佇列改動一次還原；套疊直接拋錯，流程進行中 `flush` 會被擋下
 - `useFlow.ts`：`runFlow`（外殼：存檔點 + commit / rollback）、`runStep`（開表單等送出）、`resumeStep`（表單交棒）、`FlowCancelled`、`hasEarlierSteps`
 - `router.afterEach` 中止等待中的步驟（reject）並回滾；`useCreateForm`／`useEditForm` 送出成功後先問 `resumeStep`
 - 第一步 `push`、之後 `replace`
 - 離開前先問：`useLeaveGuard` 的 `router.beforeEach`，返回鍵／導覽列／改網址／底部取消全走同一條；第二步之後一律問，否則看表單有沒有改動
-- 範本 `table/use__Table__Actions.ts` 末尾有寫法示範；專案端的第一條流程見 production 分支的 PROJECT-ROADMAP
+- 範本 `table/use__Table__Actions.ts` 的回傳物件末尾有寫法示範（註解），說明見 [vue-build/docs/actions.md](vue-build/docs/actions.md) 的「連續動作（流程）」；專案端的第一條流程見 production 分支的 PROJECT-ROADMAP
 - 三件刻意不做的（返回＝回到上一步、編輯表單的預設值通道、進度指示）見「決定不做」
 
 ### 路由
@@ -188,7 +189,7 @@
 | map | 把座標標在 Google 地圖上，暫不考慮 |
 | onboarding | 導覽頁，暫不考慮 |
 
-**deck 的 action 按鍵**：在右下角欄位的下一列，以圖示由右往左排列。沒有 action 時整列不佔高度；多選模式下藏起來。
+**deck 的 action 按鍵**：在右下角欄位的下一列，由左往右排列、整組靠右。沒有 action 時整列不佔高度；多選模式下藏起來。
 
 **card** 跟 deck 不同的地方是一張張分開的卡片（有間隔），不是連在一起的清單。點卡片進 detail，不支援長按多選。分大小兩種：
 - **小**：左側圓形頭像，中間主標題與副標題，右側 ⋮ 選單收 action

@@ -7,9 +7,10 @@
 > | 想知道 | 看哪裡 |
 > | --- | --- |
 > | 欄位型別、驗證、初始值、虛擬欄位、跨表關聯 | [docs/schema.md](../docs/schema.md) |
-> | 動作擺哪裡、搜尋與篩選、列表與多選 | [docs/ui.md](../docs/ui.md) |
+> | 搜尋與篩選、列表與多選 | [docs/ui.md](../docs/ui.md) |
+> | 動作擺哪裡、內建 builder、連續動作、快速編輯對話框 | [docs/actions.md](../docs/actions.md) |
 > | 某個元件的 props 與注意事項 | [docs/components/](../docs/components/) |
-> | KeepAlive 的規則、連續動作、快速編輯對話框 | [docs/architecture.md](../docs/architecture.md) |
+> | KeepAlive 的規則、離開表單前的確認 | [docs/architecture.md](../docs/architecture.md) |
 > | 資料何時寫回 Sheet、推送與同步 | [docs/store.md](../docs/store.md) |
 
 ## 佔位字串

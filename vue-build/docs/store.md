@@ -43,7 +43,7 @@ store.removeMany(table, ids)     // 從快取移除多筆
 
 **這四個都是同步的**——只動快取與待推送佇列，不碰網路。真正送出去是 `flush()` 的事，由使用者按推送鈕觸發。
 
-一般頁面連這四個都用不到：新增／編輯用 `useCreateForm`／`useEditForm`，刪除用 `useDeleteAction`／`useBulkDeleteAction`，內部都接好了。
+一般頁面連這四個都用不到：新增／編輯用 `useCreateForm`／`useEditForm`，刪除用 `deleteAction`／`bulkDeleteAction`，內部都接好了。
 
 ### 三個結構各管一件事
 
@@ -122,7 +122,7 @@ mutateBatch([
 
 ## 流程存檔點
 
-給[連續動作](architecture.md#連續動作流程)用的：中途取消要整條流程一起取消，但不能動到跟流程無關的待推送變更。
+給[連續動作](actions.md#連續動作流程)用的：中途取消要整條流程一起取消，但不能動到跟流程無關的待推送變更。
 
 ```ts
 store.beginFlow()     // 開存檔點

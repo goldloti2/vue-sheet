@@ -17,7 +17,8 @@ npx eslint src && npx vue-tsc --build --force   # 提交前跑這兩個
 | --- | --- |
 | 加一張自己的表 | [template/README.md](template/README.md)（複製哪些檔、改哪幾處） |
 | 搞懂一張表怎麼描述 | [docs/schema.md](docs/schema.md) |
-| 排一個頁面、擺動作 | [docs/ui.md](docs/ui.md) + [docs/components/](docs/components/) |
+| 排一個頁面 | [docs/ui.md](docs/ui.md) + [docs/components/](docs/components/) |
+| 擺動作、串連續動作 | [docs/actions.md](docs/actions.md) |
 | 知道資料怎麼流動、什麼時候才寫進 Sheet | [docs/store.md](docs/store.md) |
 | 改框架本身 | [docs/architecture.md](docs/architecture.md) |
 
@@ -27,8 +28,9 @@ npx eslint src && npx vue-tsc --build --force   # 提交前跑這兩個
 | --- | --- |
 | [docs/schema.md](docs/schema.md) | 資料表慣例、欄位、跨表關聯、驗證、預設值 |
 | [docs/store.md](docs/store.md) | 讀寫資料流、共用快取、待推送佇列、流程存檔點、離線 |
-| [docs/architecture.md](docs/architecture.md) | 模組結構、KeepAlive 的規則、完成動作後的導覽與連續流程 |
-| [docs/ui.md](docs/ui.md) | 外殼與導覽、列表、動作擺在哪裡、搜尋與篩選 |
+| [docs/architecture.md](docs/architecture.md) | 模組結構、KeepAlive 的規則、完成動作後的導覽、離開表單前的確認 |
+| [docs/ui.md](docs/ui.md) | 外殼與導覽、列表、搜尋與篩選、排序 |
+| [docs/actions.md](docs/actions.md) | 動作的描述、位置與執行、內建 builder、連續動作、快速編輯對話框 |
 | [docs/components/](docs/components/) | 每個共用 UI 元件一份用法說明 |
 | [docs/perf.md](docs/perf.md) | 附錄：列表效能的實測數字、量測方法與判讀方式 |
 | [template/README.md](template/README.md) | 初次設定、新增一張表要複製與修改哪些檔案 |

@@ -10,7 +10,7 @@
 <DetailPage … table="__parent__">
   <template #default="{ row: parent }">
     <ChildList
-      :actions="newChild"
+      :actions="[newChild]"
       :rows="parent.$__table_____parent__"
       title="子表"
       :to="`/__parent__/${parent.id}/__table__`"
@@ -38,7 +38,7 @@ const { new: newChild } = use__Table__Actions({ defaults: () => ({ __parent__: i
 | `rows` | `readonly Row[]` | **必填**，全部子列（父列上的 `$子表_欄位key` getter，已照子表的 `defaultSort` 排好）。超過 `limit` 的只是沒顯示，不是沒傳進來——筆數也是照這個算 |
 | `limit` | `number?` | 預設 5，最多先顯示幾列；`0` 就是全部列完 |
 | `to` | `string?` | 「展開」要去的頁面。給了就一直顯示那顆鈕，不管有沒有超過 `limit`（位置固定，使用者不用猜今天有沒有） |
-| `actions` | `PageAction[]?` | 排在「展開」旁邊的右下角，通常是「新增」 |
+| `actions` | `(PageAction \| null)[]?` | 排在「展開」旁邊的右下角，通常是「新增」；`null` 略過 |
 | `emptyText` | `string?` | 一列都沒有時顯示，預設「還沒有資料」 |
 
 ## Slots

@@ -1,4 +1,4 @@
-<script lang="ts" setup>
+<script generic="Row extends object" lang="ts" setup>
   import type { FieldActions, PageAction } from '@/composables/actions/useTableActions'
   import type { TableSchema } from '@/schema/types'
   import { computed } from 'vue'
@@ -11,14 +11,14 @@
     label: string
     value: string
     image?: string | null
-    action?: PageAction
+    action?: PageAction | null
   }
 
   const props = defineProps<{
     schema: TableSchema
-    row: object
-    // 欄位 key → 動作；每欄只用第一個。沒列的欄位就沒有動作，ref 的前往也要自己列（useGoToRefAction）
-    fieldActions?: FieldActions
+    row: Row
+    // 欄位 key → 動作，每欄一個。沒列的欄位就沒有動作，ref 的前往也要自己列（goToRefAction）
+    fieldActions?: FieldActions<Row>
   }>()
 
   // 真實與虛擬欄位一視同仁，照 detailOrder 排
@@ -30,7 +30,7 @@
       label: column.label,
       value: formatColumnValue(row, column),
       image: column.type === 'image' ? imageSrc((row as Record<string, unknown>)[column.key]) : null,
-      action: props.fieldActions?.[column.key]?.value[0],
+      action: props.fieldActions?.[column.key]?.(row),
     }))
 
     if (!props.schema.detailOrder) {

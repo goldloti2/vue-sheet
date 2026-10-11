@@ -7,9 +7,11 @@
   import { useOverlayOpen } from '@/composables/shell/useOverlay'
   import { usePanelActive } from '@/composables/shell/usePanelActive'
 
-  defineProps<{
-    actions: PageAction[]
+  const { actions } = defineProps<{
+    actions: (PageAction | null)[]
   }>()
+
+  const shown = computed(() => actions.filter(action => action !== null))
 
   const { mainRect } = useLayout()
 
@@ -43,10 +45,10 @@
 
 <template>
   <Teleport to="body">
-    <div v-if="isActive && !overlayOpen && actions.length > 0" class="page-fab" :style="offsetStyle">
-      <template v-if="actions.length <= 2">
+    <div v-if="isActive && !overlayOpen && shown.length > 0" class="page-fab" :style="offsetStyle">
+      <template v-if="shown.length <= 2">
         <v-fab
-          v-for="action in actions"
+          v-for="action in shown"
           :key="action.key"
           :aria-label="action.label"
           color="primary"
@@ -76,7 +78,7 @@
           scrim
           transition="slide-y-reverse-transition"
         >
-          <div v-for="action in actions" :key="action.key" class="fab-action">
+          <div v-for="action in shown" :key="action.key" class="fab-action">
             <span class="fab-action__label text-label-large">{{ action.label }}</span>
 
             <v-btn

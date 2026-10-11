@@ -1,5 +1,22 @@
 # 版本紀錄
 
+## v1.2
+
+- **動作的寫法改版**：內建 builder 改為一般函式，回傳單一動作，不適用時回傳 `null`；各表 `use表名Actions` 的每一項亦為單一動作，同一位置放置哪些動作由頁面組成陣列決定。編輯、刪除等以列為參數的動作改為函式，detail 頁以 `useRowAction` 綁定至當前那一筆。說明集中於新增的 [vue-build/docs/actions.md](vue-build/docs/actions.md)
+- 於 detail 頁刪除當前那一筆後，自動返回上一頁
+- 移除內部 helper 不必要的 export
+
+### 不相容的變更
+
+依 v1.1 範本撰寫的表需配合修改，修改方式可對照 `vue-build/template/` 的 `table/use__Table__Actions.ts` 與 `pages/`：
+
+- 內建 builder 的名稱去掉開頭的 `use`（例如 `useEditAction` → `editAction`），並改為一般函式。`use表名Actions` 中不以列為參數的動作以 `useAction` 包裝
+- `use表名Actions` 不再接收 `row`：`edit`、`delete` 改為接收一列並回傳動作的函式，detail 頁改寫為 `useRowAction(row, edit)`
+- 具預設外觀的 builder，外觀（`label`、`icon`）一律改為最後一個參數
+- 頁面交給各位置時須自行組成陣列：`:fab="[editAction]"`、`useAppBarActions(() => [deleteAction.value])`
+- `fieldActions` 改為「欄位 key → `(row) => PageAction | null`」
+- 部分內部型別與函式不再 export（例如 `PageActions`、`ColumnType`、`AuthMethod`）
+
 ## v1.1
 
 - **登入**（選用）：前端有登入頁與導向（`config/app.ts` 的 `authMethod`），後端是可替換的認證模組（`Config.gs` 的 `AUTH`）。附帳號密碼的示範模組：密碼加鹽雜湊、token 有 HMAC 簽章、效期 30 天並自動續期。見 [docs/auth.md](docs/auth.md)

@@ -4,13 +4,20 @@
   import { computed, ref, useTemplateRef } from 'vue'
   import { useRunAction } from '@/composables/shell/useActionRunner'
 
-  // view 的列上動作：row 依陣列順序由左往右排列、整組靠右；menu 收於 ⋮ 選單。null 略過（見 docs/actions.md）
+  // view 的列上動作：（見 docs/actions.md）
+  // row 依陣列順序由左往右排列、整組靠右；
+  // menu 收於 ⋮ 選單；
+  // slots 為左右各兩格，null 保留為空格。row 與 menu 略過 null
   const { actions, variant = 'row' } = defineProps<{
     actions: (PageAction | null)[]
-    variant?: 'row' | 'menu'
+    variant?: 'row' | 'menu' | 'slots'
   }>()
 
   const shown = computed(() => actions.filter(action => action !== null))
+
+  // slots 僅取前四格
+  const items = computed(() => variant === 'slots' ? actions.slice(0, 4) : shown.value)
+  const visible = computed(() => items.value.some(action => action !== null))
 
   const runAction = useRunAction()
 
@@ -28,7 +35,7 @@
 </script>
 
 <template>
-  <div v-if="shown.length > 0" class="view-actions">
+  <div v-if="visible" class="view-actions" :class="{ 'view-actions--slots': variant === 'slots' }">
     <template v-if="variant === 'menu'">
       <button
         ref="menuButton"
@@ -53,19 +60,24 @@
       </v-menu>
     </template>
 
-    <template v-else>
+    <!-- slots 的第 3 格起靠右；空格以等寬的空白保留位置 -->
+    <template v-for="(action, index) in items" v-else :key="action?.key ?? `empty-${index}`">
       <button
-        v-for="action in shown"
-        :key="action.key"
+        v-if="action"
         :aria-label="action.display === 'text' ? undefined : action.label"
         class="view-actions__button"
-        :class="{ 'view-actions__button--text': action.display === 'text' }"
+        :class="{
+          'view-actions__button--text': action.display === 'text',
+          'view-actions__right': variant === 'slots' && index === 2,
+        }"
         type="button"
         @click="runAction(action)"
       >
-        <span v-if="action.display === 'text'" class="text-label-large">{{ action.label }}</span>
+        <span v-if="action.display === 'text'" class="view-actions__label text-label-large">{{ action.label }}</span>
         <v-icon v-else :icon="action.icon" size="20" />
       </button>
+
+      <span v-else class="view-actions__empty" :class="{ 'view-actions__right': index === 2 }" />
     </template>
   </div>
 </template>
@@ -75,6 +87,19 @@
   display: flex;
   justify-content: flex-end;
   gap: 4px;
+}
+
+.view-actions--slots {
+  justify-content: flex-start;
+}
+
+.view-actions__right {
+  margin-left: auto;
+}
+
+.view-actions__empty {
+  width: 32px;
+  height: 32px;
 }
 
 /* 使用原生 button 而非 v-btn：列數達上千時 v-btn 的實例成本過高（見 docs/components/ViewActions.md） */
@@ -95,5 +120,10 @@
 .view-actions__button--text {
   padding: 0 8px;
   color: rgb(var(--v-theme-primary));
+}
+
+/* 行高的上下留白依字型而不對稱，中文字會偏上；裁至大寫字母頂端與基線之間再置中 */
+.view-actions__label {
+  text-box: trim-both cap alphabetic;
 }
 </style>

@@ -54,7 +54,7 @@
 
 | slot | scope | 說明 |
 | --- | --- | --- |
-| `default` | `{ row, props }` | 每一列。`props` 是多選要綁的那一包（`selectable`／`selectMode`／`selected`／長按與點選事件），`v-bind` 到 `DataList` 或 `DataProfile` 上就好；沒給 `selection` 時是空物件 |
+| `default` | `{ row, props }` | 每一列。`props` 是多選要綁的那一包（`selectable`／`selectMode`／`selected`／長按與點選事件），`v-bind` 到 `DataList`、`DataProfile` 或 `DataCard` 上就好；沒給 `selection` 時是空物件 |
 | `rows` | `{ rows }` | 整批一次給，表格式列表用。有這個 slot 就不走 `default`，也沒有多選綁定（`DataTable` 本來就沒有多選） |
 
 ### 表格式

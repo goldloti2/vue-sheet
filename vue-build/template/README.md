@@ -52,6 +52,7 @@
 | `table/use__Table__Actions.ts` | `src/composables/actions/use__Table__Actions.ts` | 該表的新增／編輯／刪除動作集合 |
 | `pages/list.vue` | `src/pages/__table__/index.vue` | 列表頁 → `/__table__` |
 | `pages/profile-list.vue` | `src/pages/__table__/index.vue` | **選用**：以 profile 呈現的列表頁 |
+| `pages/card-list.vue` | `src/pages/__table__/index.vue` | **選用**：以 card 呈現的列表頁 |
 | `pages/detail.vue` | `src/pages/__table__/[id]/index.vue` | 詳細頁 → `/__table__/:id` |
 | `pages/new.vue` | `src/pages/__table__/new.vue` | 新增表單 → `/__table__/new` |
 | `pages/edit.vue` | `src/pages/__table__/[id]/edit.vue` | 編輯表單 → `/__table__/:id/edit` |

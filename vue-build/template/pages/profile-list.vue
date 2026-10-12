@@ -1,6 +1,6 @@
 <!-- 選用：以 profile 呈現的列表頁，同樣複製到 src/pages/__table__/index.vue
      卡片的版面與動作的呈現見 docs/components/DataProfile.md；
-     搜尋、篩選、分組與頁籤見 docs/ui.md -->
+     搜尋、篩選、多選、分組與頁籤見 docs/ui.md -->
 <route lang="json5">
 { meta: { title: '範本' } }
 </route>
@@ -11,13 +11,19 @@
   import ListPage from '@/components/ui/page/ListPage.vue'
   import { use__Table__Actions } from '@/composables/actions/use__Table__Actions'
   import { useListPage } from '@/composables/page/useListPage'
+  import { useAppBarActions } from '@/composables/shell/useShellActions'
   import { __table__Schema } from '@/schema/tables/__table__'
   import { defineView } from '@/schema/view'
 
-  // 整表 → 篩選 → 搜尋（放大鏡、篩選與排序鈕自動登記到 App Bar）
-  const { rows, loading, error } = useListPage<__Table__Row>('__table__', __table__Schema)
+  // 整表 → 篩選 → 搜尋（放大鏡、篩選與排序鈕自動登記到 App Bar）+ 長按多選
+  const { rows, loading, error, selection } = useListPage<__Table__Row>('__table__', __table__Schema)
 
-  const { new: newAction, edit, delete: remove } = use__Table__Actions()
+  // 不要多選就不傳 selectedIds / onDone，也不用把 selection 交給 ListPage
+  const { new: newAction, bulkDelete, edit, delete: remove } = use__Table__Actions({
+    selectedIds: selection.selectedIds,
+    onDone: selection.clear,
+  })
+  useAppBarActions(() => [bulkDelete.value])
 
   // profile 僅使用 title（上）、subtitle（下）與 image（左側圓形頭像，有圖片欄位時指定）；
   // actions 收於右側的 ⋮ 選單
@@ -35,10 +41,12 @@
     :fab="[newAction]"
     :loading="loading"
     :rows="rows"
+    :selection="selection"
     table="__table__"
   >
-    <template #default="{ row }">
-      <DataProfile :row="row" :to="`/__table__/${row.id}`" :view="view" />
+    <!-- props 是每列多選要綁的那一包 -->
+    <template #default="{ row, props: itemProps }">
+      <DataProfile v-bind="itemProps" :row="row" :to="`/__table__/${row.id}`" :view="view" />
     </template>
   </ListPage>
 </template>

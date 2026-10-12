@@ -3,8 +3,7 @@
   import { computed } from 'vue'
   import ListField from '@/components/ui/list/ListField.vue'
   import ViewActions from '@/components/ui/view/ViewActions.vue'
-  import { useLongPress } from '@/composables/list/useLongPress'
-  import { useRowLink } from '@/composables/navigation/useRowLink'
+  import { useRowClick } from '@/composables/list/useRowClick'
 
   // 泛型元件的 props 型別要寫在 defineProps 裡，抽成 interface 會讓型別宣告輸出失敗
   const { row, view, selectable = false, selectMode, to } = defineProps<{
@@ -27,33 +26,13 @@
     toggle: []
   }>()
 
-  const longPress = useLongPress(event => emit('longpress', event))
-  const { href, navigate } = useRowLink(() => to)
-
-  function onClick (event: MouseEvent) {
-    longPress.onClick(event)
-    if (event.defaultPrevented) {
-      return
-    }
-
-    if (selectMode) {
-      event.preventDefault()
-      emit('toggle')
-      return
-    }
-
-    navigate(event)
-  }
-
-  // 沒開多選功能就不要綁長按用的 pointer 監聽，普通文字選取/拖曳行為維持原生
-  const pointerHandlers = computed(() => selectable
-    ? {
-      onPointercancel: longPress.onPointercancel,
-      onPointerdown: longPress.onPointerdown,
-      onPointerleave: longPress.onPointerleave,
-      onPointerup: longPress.onPointerup,
-    }
-    : {})
+  const { href, onClick, pointerHandlers } = useRowClick({
+    to: () => to,
+    selectable: () => selectable,
+    selectMode: () => selectMode,
+    onLongpress: event => emit('longpress', event),
+    onToggle: () => emit('toggle'),
+  })
 </script>
 
 <template>

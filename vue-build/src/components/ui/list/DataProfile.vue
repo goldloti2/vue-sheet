@@ -1,26 +1,62 @@
 <script generic="Row extends object" lang="ts" setup>
   import type { RowView } from '@/schema/view'
+  import { mdiCheckCircle, mdiCircleOutline } from '@mdi/js'
   import { computed } from 'vue'
   import ViewActions from '@/components/ui/view/ViewActions.vue'
-  import { useRowLink } from '@/composables/navigation/useRowLink'
+  import { useRowClick } from '@/composables/list/useRowClick'
 
   // 泛型元件的 props 型別須寫於 defineProps 內，抽成 interface 會使型別宣告輸出失敗
-  const { row, view, to } = defineProps<{
+  const { row, view, selectable = false, selectMode, to } = defineProps<{
     row: Row
     // 僅使用 title、subtitle、image 三個位置與這一列的動作（defineView）
     view: RowView<Row>
     to?: string
+    selectable?: boolean
+    selectMode?: boolean
+    selected?: boolean
+  }>()
+
+  const emit = defineEmits<{
+    longpress: [event: PointerEvent]
+    toggle: []
   }>()
 
   const fields = computed(() => view(row))
 
-  const { href, navigate } = useRowLink(() => to)
+  const { href, onClick, pointerHandlers } = useRowClick({
+    to: () => to,
+    selectable: () => selectable,
+    selectMode: () => selectMode,
+    onLongpress: event => emit('longpress', event),
+    onToggle: () => emit('toggle'),
+  })
 </script>
 
 <template>
-  <div class="profile-item">
+  <div
+    class="profile-item"
+    :class="{
+      'profile-item--selected': selectMode && selected,
+      'profile-item--no-select': selectable,
+    }"
+  >
     <!-- 有 to 時為 <a>，否則為純顯示的一張卡片。::after 覆蓋整張卡片，⋮ 以外的區域皆屬於連結 -->
-    <component :is="to ? 'a' : 'div'" class="profile-item__link" :href="href" @click="navigate">
+    <component
+      :is="to ? 'a' : 'div'"
+      class="profile-item__link"
+      :draggable="selectable ? 'false' : undefined"
+      :href="href"
+      v-bind="pointerHandlers"
+      @click="onClick"
+    >
+      <!-- 多選模式下，勾選圖示置於頭像左側 -->
+      <v-icon
+        v-if="selectMode"
+        :color="selected ? 'primary' : undefined"
+        :icon="selected ? mdiCheckCircle : mdiCircleOutline"
+        size="20"
+      />
+
       <img v-if="fields.image" alt="" class="profile-item__avatar" :src="fields.image">
 
       <div class="profile-item__text">
@@ -29,7 +65,8 @@
       </div>
     </component>
 
-    <ViewActions :actions="fields.actions" class="profile-item__actions" variant="menu" />
+    <!-- 多選模式下隱藏 ⋮ -->
+    <ViewActions v-if="!selectMode" :actions="fields.actions" class="profile-item__actions" variant="menu" />
   </div>
 </template>
 
@@ -91,5 +128,15 @@
 .profile-item__actions {
   position: relative;
   z-index: 1;
+}
+
+.profile-item--no-select {
+  -webkit-user-drag: none;
+  user-select: none;
+}
+
+/* 主色淡底疊於卡片的底色之上 */
+.profile-item--selected {
+  background: linear-gradient(rgba(var(--v-theme-primary), 0.08), rgba(var(--v-theme-primary), 0.08)), rgb(var(--v-theme-surface));
 }
 </style>

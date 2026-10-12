@@ -64,7 +64,7 @@
 - 佇列只在記憶體、不寫進 `localStorage`（決定不做的理由與代價見「決定不做」）
 
 ### 共用元件庫
-- 列表：`DataList`（卡片式單列，含長按多選）、`DataProfile`（profile 的單張卡片，動作收於 ⋮ 選單）、`ListField`、`CountLabel`（名稱 + 筆數的小標籤，分組標題與子表區塊共用）、`GroupedList`（多層可收合分組，標題帶筆數）、`DataTable`（表格式，也用於 detail 頁內嵌子表格；`columns` 可指虛擬欄位）
+- 列表：`DataList`（卡片式單列，含長按多選）、`DataProfile`（profile 的單張卡片，動作收於 ⋮ 選單，含長按多選）、`ListField`、`CountLabel`（名稱 + 筆數的小標籤，分組標題與子表區塊共用）、`GroupedList`（多層可收合分組，標題帶筆數）、`DataTable`（表格式，也用於 detail 頁內嵌子表格；`columns` 可指虛擬欄位）
 - 詳細：`DataDetail`（欄位區，虛擬欄位自動顯示）、`DetailField`
 - 表單：`DataForm`（依 `column.type` 自動選輸入元件）
 - 整頁版型：`PageState`（載入中／載入失敗／找不到資料，全 App 唯一一份，資料到手才畫 slot）、`FormPage`（新增／編輯頁，內部包 `PageState`，另外處理送出失敗）、`DetailPage`（詳細頁：欄位區 + 左右滑動換筆 + 上下筆箭頭 + FAB）、`ListPage`（列表頁：逐列渲染卡片、`#rows` slot 整批給表格、或 `groups` 交給 `GroupedList`，加上 FAB 與發布列表順序，分組時先 `flattenGroups`）、`ChildList`（詳細頁裡的子表區塊：標題帶筆數、顯示上限、空狀態，右下角一列「展開」與頁面給的動作）。這些都是泛型元件，slot 的 `row` 帶著呼叫端的 Row 型別
@@ -199,7 +199,7 @@
 
 **deck 的 action 按鍵**（✅ `ViewActions`）：置於右下角欄位的下一列，由左往右排列、整組靠右。沒有 action 時不佔高度；多選模式下隱藏。按鈕為原生 `<button>` 加圖示，不使用 `v-btn`（考量列數多時的實例成本，見 [vue-build/docs/components/ViewActions.md](vue-build/docs/components/ViewActions.md)）。🔲 尚未依 [vue-build/docs/perf.md](vue-build/docs/perf.md) 的方法量測加入動作列前後的差異
 
-**profile 與 card** 跟 deck 不同的地方是一張張分開的卡片（有間隔），不是連在一起的清單。點卡片進 detail，不支援長按多選。
+**profile 與 card** 跟 deck 不同的地方是一張張分開的卡片（有間隔），不是連在一起的清單。點卡片進 detail，支援長按多選。
 - **profile**（✅ `DataProfile`）：左側圓形頭像，中間主標題與副標題，右側 ⋮ 選單收 action。沒有圖片時不顯示頭像；只有一個 action 時亦收入選單。選單於第一次按下 ⋮ 時才建立（ViewActions 的 `variant="menu"`），每列平時僅有一顆原生按鈕。間隔由卡片自身負責，`ListPage` 未加 `layout` 參數，待 gallery 需要格狀排列時再加入
 - **card**：上下四層，沒有內容的那層整層藏起來
   1. 圓形頭像 + 主標題與副標題（沒有選單）

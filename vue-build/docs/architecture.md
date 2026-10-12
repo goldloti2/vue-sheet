@@ -43,8 +43,8 @@ src/
     shell/             跟 AppShell 溝通：useActionSlot（登記機制）、useShellActions（App Bar／
                        底部／多選出口）、useListControls、useAppBarTabs、usePanelActive、
                        useOverlay、useActionRunner、useDialogs（confirm／notify）、useAskFields
-    navigation/        路由接力：useRouteId、useListOrder、useFlow；列表的連結：useRowLink
-    list/              列表互動：useMultiSelect、useLongPress
+    navigation/        路由接力：useRouteId、useListOrder、useFlow
+    list/              列表互動：useMultiSelect、useLongPress、useRowClick
     page/              頁面的資料層：useRecordPage、useListPage
     actions/           useTableActions：PageAction 型別、通用動作 builder、useAction／useRowAction
     auth/              useLogin（登入頁的資料層）

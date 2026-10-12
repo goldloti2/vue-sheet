@@ -159,7 +159,7 @@ const view = defineView(__table__Schema, {
 - **陣列依位置排列，`null` 表示空位**：card 與 detail 標頭的前兩個置於左側、後兩個置於右側；deck 與 profile 略過空位。builder 判斷不適用而回傳的 `null` 亦同：card 中保留該格，deck 與 profile 中略過
 - **`display`** 決定該動作顯示為圖示或文字
 - **deck**：由 [ViewActions](components/ViewActions.md) 呈現於右下角欄位的下一列，由左往右排列、整組靠右；沒有動作時不佔高度；多選模式下隱藏。按鈕與整列的連結並列而非包在連結內，點擊按鈕不會進入 detail
-- **profile**：由 ViewActions 的 `variant="menu"` 收入卡片右側的 ⋮ 選單，只有一個動作時亦同；沒有動作時不顯示 ⋮。⋮ 與卡片的連結並列，點擊 ⋮ 不會進入 detail（見 [DataProfile](components/DataProfile.md)）
+- **profile**：由 ViewActions 的 `variant="menu"` 收入卡片右側的 ⋮ 選單，只有一個動作時亦同；沒有動作時不顯示 ⋮；多選模式下隱藏。⋮ 與卡片的連結並列，點擊 ⋮ 不會進入 detail（見 [DataProfile](components/DataProfile.md)）
 - 🔲 card 與 detail 標頭的左右各兩格，尚未實作（見 ROADMAP 的「頁面類型」）
 
 ---

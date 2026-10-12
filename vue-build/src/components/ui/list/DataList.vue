@@ -1,10 +1,10 @@
 <script generic="Row extends object" lang="ts" setup>
   import type { RowView } from '@/schema/view'
   import { computed } from 'vue'
-  import { useRouter } from 'vue-router'
   import ListField from '@/components/ui/list/ListField.vue'
   import ViewActions from '@/components/ui/view/ViewActions.vue'
   import { useLongPress } from '@/composables/list/useLongPress'
+  import { useRowLink } from '@/composables/navigation/useRowLink'
 
   // 泛型元件的 props 型別要寫在 defineProps 裡，抽成 interface 會讓型別宣告輸出失敗
   const { row, view, selectable = false, selectMode, to } = defineProps<{
@@ -28,10 +28,7 @@
   }>()
 
   const longPress = useLongPress(event => emit('longpress', event))
-  const router = useRouter()
-
-  // 連結是自己組 href 的 <a>，不是 RouterLink（理由見 docs/components/DataList.md）
-  const href = computed(() => to ? router.options.history.base + to : undefined)
+  const { href, navigate } = useRowLink(() => to)
 
   function onClick (event: MouseEvent) {
     longPress.onClick(event)
@@ -45,13 +42,7 @@
       return
     }
 
-    // 帶修飾鍵或不是左鍵時交給瀏覽器，開新分頁／新視窗才會照原生行為
-    if (!to || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
-      return
-    }
-
-    event.preventDefault()
-    void router.push(to)
+    navigate(event)
   }
 
   // 沒開多選功能就不要綁長按用的 pointer 監聽，普通文字選取/拖曳行為維持原生

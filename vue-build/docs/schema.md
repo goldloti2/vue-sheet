@@ -116,7 +116,7 @@ export const orderSchema: TableSchema<OrderRow> = {
 顯示時一律用 `imageSrc(value)`（`schema/image.ts`）轉成 `<img src>`：Drive 走 `https://drive.google.com/thumbnail?id=<id>&sz=w<寬>`（沿用瀏覽器已登入的 Google 帳號，不用後端、沒有 CORS），SVG 轉成 `data:image/svg+xml,`。
 
 - **詳細頁自動顯示圖片**（`DataDetail` → `DetailField`），不用多做什麼
-- **列表縮圖於 view 中指定**：`defineView(schema, { image: 'photo', … })`，由 `DataList` 轉換為 src；未指定則不顯示（見 [DataList](components/DataList.md)）
+- **列表縮圖於 view 中指定**：`defineView(schema, { image: 'photo', … })`，由 view 轉換為 src，`DataList` 顯示為縮圖、`DataProfile` 顯示為圓形頭像；未指定則不顯示（見 [DataList](components/DataList.md)、[DataProfile](components/DataProfile.md)）
 - **表單就是純文字欄位**：貼網址、Drive 連結或整段 SVG。上傳到 Drive 還沒做
 - **不進搜尋與篩選**
 

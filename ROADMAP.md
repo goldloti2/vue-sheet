@@ -64,7 +64,7 @@
 - 佇列只在記憶體、不寫進 `localStorage`（決定不做的理由與代價見「決定不做」）
 
 ### 共用元件庫
-- 列表：`DataList`（卡片式單列，含長按多選）、`ListField`、`CountLabel`（名稱 + 筆數的小標籤，分組標題與子表區塊共用）、`GroupedList`（多層可收合分組，標題帶筆數）、`DataTable`（表格式，也用於 detail 頁內嵌子表格；`columns` 可指虛擬欄位）
+- 列表：`DataList`（卡片式單列，含長按多選）、`DataProfile`（profile 的單張卡片，動作收於 ⋮ 選單）、`ListField`、`CountLabel`（名稱 + 筆數的小標籤，分組標題與子表區塊共用）、`GroupedList`（多層可收合分組，標題帶筆數）、`DataTable`（表格式，也用於 detail 頁內嵌子表格；`columns` 可指虛擬欄位）
 - 詳細：`DataDetail`（欄位區，虛擬欄位自動顯示）、`DetailField`
 - 表單：`DataForm`（依 `column.type` 自動選輸入元件）
 - 整頁版型：`PageState`（載入中／載入失敗／找不到資料，全 App 唯一一份，資料到手才畫 slot）、`FormPage`（新增／編輯頁，內部包 `PageState`，另外處理送出失敗）、`DetailPage`（詳細頁：欄位區 + 左右滑動換筆 + 上下筆箭頭 + FAB）、`ListPage`（列表頁：逐列渲染卡片、`#rows` slot 整批給表格、或 `groups` 交給 `GroupedList`，加上 FAB 與發布列表順序，分組時先 `flattenGroups`）、`ChildList`（詳細頁裡的子表區塊：標題帶筆數、顯示上限、空狀態，右下角一列「展開」與頁面給的動作）。這些都是泛型元件，slot 的 `row` 帶著呼叫端的 Row 型別
@@ -181,7 +181,7 @@
 | table | table | ✅ `DataTable` |
 | detail | detail | ✅ 詳細頁；🔲 標頭區塊，見下方 |
 | form | form | ✅ 新增／編輯頁 |
-| card（小） | **profile** | 🔲 見下方 |
+| card（小） | **profile** | ✅ `DataProfile`，見下方 |
 | card（大） | **card** | 🔲 見下方 |
 | gallery | gallery | 🔲 圖片 + 標題的格狀排列 |
 | chart | chart | 🔲 使用者選幾個欄位當軸，畫圓餅圖、折線圖、長條圖。屬於後期才做的項目 |
@@ -191,7 +191,7 @@
 | map | — | 把座標標在 Google 地圖上，暫不考慮 |
 | onboarding | — | 導覽頁，暫不考慮 |
 
-**視圖（view）**：deck、profile、card、gallery 與 detail 標頭共用同一套「欄位與位置的對應」，實作於 `schema/view.ts`。`defineView(schema, {…})` 與 `defineCardView(schema, {…})` 回傳一個函式，傳入一列即回傳各位置的內容與該列的動作；欄位定義在建立時即查找完畢。view 定義於頁面並交給版面元件，schema 本身不含 view。目前僅 deck（`DataList`）已套用：
+**視圖（view）**：deck、profile、card、gallery 與 detail 標頭共用同一套「欄位與位置的對應」，實作於 `schema/view.ts`。`defineView(schema, {…})` 與 `defineCardView(schema, {…})` 回傳一個函式，傳入一列即回傳各位置的內容與該列的動作；欄位定義在建立時即查找完畢。view 定義於頁面並交給版面元件，schema 本身不含 view。目前 deck（`DataList`）與 profile（`DataProfile`）已套用，兩者可共用同一個 view：
 - 一組位置（`FieldGroup`）：`title`、`subtitle`、`image`、`summary`，以及僅 deck 使用的 `aside`。每個位置皆可省略。可填入欄位 key，或每列皆有的 `id`、`$label`（`keyof RowBase`）；需合併多個欄位，或顯示父列、子列的資訊時，應宣告為 `virtualColumns`
 - deck 的四角：`title` 左上、`subtitle` 右上、`summary` 左下、`aside` 右下，`image` 為左側縮圖
 - card 使用兩組（`defineCardView`）：`header` 為第 1 層（`image` 作為頭像），`body` 為第 2、3 層（`image` 作為大圖，`summary` 為摘要）。detail 標頭即僅有 `body` 一組
@@ -200,7 +200,7 @@
 **deck 的 action 按鍵**（✅ `ViewActions`）：置於右下角欄位的下一列，由左往右排列、整組靠右。沒有 action 時不佔高度；多選模式下隱藏。按鈕為原生 `<button>` 加圖示，不使用 `v-btn`（考量列數多時的實例成本，見 [vue-build/docs/components/ViewActions.md](vue-build/docs/components/ViewActions.md)）。🔲 尚未依 [vue-build/docs/perf.md](vue-build/docs/perf.md) 的方法量測加入動作列前後的差異
 
 **profile 與 card** 跟 deck 不同的地方是一張張分開的卡片（有間隔），不是連在一起的清單。點卡片進 detail，不支援長按多選。
-- **profile**：左側圓形頭像，中間主標題與副標題，右側 ⋮ 選單收 action
+- **profile**（✅ `DataProfile`）：左側圓形頭像，中間主標題與副標題，右側 ⋮ 選單收 action。沒有圖片時不顯示頭像；只有一個 action 時亦收入選單。選單於第一次按下 ⋮ 時才建立（ViewActions 的 `variant="menu"`），每列平時僅有一顆原生按鈕。間隔由卡片自身負責，`ListPage` 未加 `layout` 參數，待 gallery 需要格狀排列時再加入
 - **card**：上下四層，沒有內容的那層整層藏起來
   1. 圓形頭像 + 主標題與副標題（沒有選單）
   2. 圖片

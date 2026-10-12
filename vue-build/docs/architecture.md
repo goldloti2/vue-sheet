@@ -31,10 +31,10 @@ src/
   components/ui/     共用元件庫，用法見 docs/components/
     shell/             AppShell、PageFab、FilterPanel、SortPanel、TableChips、TabView
     dialog/            AppDialog、ConfirmDialog、FieldsDialog
-    list/              DataList、ListField、GroupedList、DataTable、CountLabel
+    list/              DataList、DataProfile、ListField、GroupedList、DataTable、CountLabel
     record/            DataDetail、DetailField、DataForm、RecordNav
     page/              整頁的版型：PageState（載入中／失敗／找不到）、FormPage、DetailPage、ListPage、ChildList
-    view/              ViewActions（view 的列上動作，DataList 與日後的 profile、card 共用）
+    view/              ViewActions（view 的列上動作，DataList、DataProfile 與日後的 card 共用）
     auth/              PasswordLoginForm（登入頁上的表單，依登入方式替換；登入頁本身在 pages/login.vue）
   composables/
     data/              讀資料的反應式包裝：useTable（整表／排序過／單筆）、useSearch、useFilter
@@ -43,7 +43,7 @@ src/
     shell/             跟 AppShell 溝通：useActionSlot（登記機制）、useShellActions（App Bar／
                        底部／多選出口）、useListControls、useAppBarTabs、usePanelActive、
                        useOverlay、useActionRunner、useDialogs（confirm／notify）、useAskFields
-    navigation/        路由接力：useRouteId、useListOrder、useFlow
+    navigation/        路由接力：useRouteId、useListOrder、useFlow；列表的連結：useRowLink
     list/              列表互動：useMultiSelect、useLongPress
     page/              頁面的資料層：useRecordPage、useListPage
     actions/           useTableActions：PageAction 型別、通用動作 builder、useAction／useRowAction

@@ -177,14 +177,14 @@
 
 | AppSheet | 本框架的名稱 | 現況 |
 | --- | --- | --- |
-| deck | deck | ✅ 卡片式列表（`DataList`），含每列的 action 按鍵（`ViewActions`） |
-| table | table | ✅ `DataTable` |
-| detail | detail | ✅ 詳細頁；🔲 標頭區塊，見下方 |
-| form | form | ✅ 新增／編輯頁 |
+| deck | **deck** | ✅ 卡片式列表（`DataList`），含每列的 action 按鍵（`ViewActions`） |
+| table | **table** | ✅ `DataTable` |
+| detail | **detail** | ✅ 詳細頁；🔲 標頭區塊，見下方 |
+| form | **form** | ✅ 新增／編輯頁 |
 | card（小） | **profile** | ✅ `DataProfile`，見下方 |
 | card（大） | **card** | ✅ `DataCard`，見下方 |
-| gallery | gallery | 🔲 圖片 + 標題的格狀排列 |
-| chart | chart | 🔲 使用者選幾個欄位當軸，畫圓餅圖、折線圖、長條圖。屬於後期才做的項目 |
+| gallery | **gallery** | 🔲 圖片 + 標題的格狀排列 |
+| chart | **chart** | 🔲 使用者選幾個欄位當軸，畫圓餅圖、折線圖、長條圖。屬於後期才做的項目 |
 | dashboard（分頁） | **tab** | ✅ `TabView` |
 | dashboard（全部顯示、連動） | **dashboard** | 🔲 見下方 |
 | calendar | — | 把資料當成事件放上日曆（通常靠日期與時間欄位），暫不考慮 |

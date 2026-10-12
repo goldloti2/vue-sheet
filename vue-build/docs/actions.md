@@ -34,7 +34,7 @@ interface PageAction {
 | `icon` | **一律要給**。底部動作列雖然只顯示文字，但形狀統一，同一個動作搬到別的位置不用補東西 |
 | `onClick` | 動作本體。要導覽就在裡面 `router.push`（理由見「設計取捨」） |
 | `confirm` | 有宣告就先跳出確認框，確定後才執行 `onClick` |
-| `display` | 列上的動作用（見「列上的動作」）：顯示成圖示或文字，預設為圖示。🔲 目前尚無元件讀取 |
+| `display` | 列上的動作用（見「列上的動作」）：顯示為圖示或文字，預設為圖示 |
 
 ---
 
@@ -47,7 +47,7 @@ interface PageAction {
 | 螢幕最底端 | `useBottomActions(() => [...])` | 暫時取代底部導覽列，離開頁面自動還原。表單的取消／送出不用自己接，`useCreateForm`／`useEditForm` 會登記 |
 | 詳細頁的單一欄位 | `DataDetail`／`DetailPage` 的 `fieldActions` | 該欄的動作，右邊出現圖示、整格可點（見「欄位動作」） |
 | 子表區塊 | `ChildList` 的 `actions` prop | 排在「展開」旁邊，通常是新增 |
-| 列表的每一列 | view 的 `actions` | 🔲 見「列上的動作」 |
+| 列表的每一列 | view 的 `actions` | 該列的動作，deck 置於右下角欄位的下一列（見「列上的動作」） |
 
 - **每個位置都接收 `(PageAction | null)[]`**，`null`（不適用的動作）會被略過，所以頁面組陣列時不需要判斷。略過由最後畫按鈕的元件（`PageFab`、`ChildList`、`AppShell`）負責，中間的版面元件與登記機制一律原樣轉交（理由見「設計取捨」）
 - **陣列的順序即為顯示的順序**
@@ -146,8 +146,6 @@ const fieldActions: FieldActions<__Table__Row> = {
 
 ## 列上的動作
 
-🔲 view 已能定義並解析每一列的動作，但目前尚無元件將其呈現。
-
 每一列的動作與欄位一起定義於 view（見 [DataList](components/DataList.md) 的「view」）。自 `use表名Actions` 取出以列為參數的動作，以該列呼叫：
 
 ```ts
@@ -160,7 +158,8 @@ const view = defineView(__table__Schema, {
 
 - **陣列依位置排列，`null` 表示空位**：card 與 detail 標頭的前兩個置於左側、後兩個置於右側；deck 與 profile 略過空位。builder 判斷不適用而回傳的 `null` 亦同：card 中保留該格，deck 中略過
 - **`display`** 決定該動作顯示為圖示或文字
-- **deck 的規劃**：置於右下角欄位的下一列，由左往右排列、整組靠右；沒有動作時不佔高度；多選模式下隱藏。按鈕與整列的連結並列而非包在連結內，點擊按鈕不會進入 detail
+- **deck**：由 [ViewActions](components/ViewActions.md) 呈現於右下角欄位的下一列，由左往右排列、整組靠右；沒有動作時不佔高度；多選模式下隱藏。按鈕與整列的連結並列而非包在連結內，點擊按鈕不會進入 detail
+- 🔲 profile 的 ⋮ 選單，以及 card 與 detail 標頭的左右各兩格，尚未實作（見 ROADMAP 的「頁面類型」）
 
 ---
 

@@ -34,6 +34,7 @@ src/
     list/              DataList、ListField、GroupedList、DataTable、CountLabel
     record/            DataDetail、DetailField、DataForm、RecordNav
     page/              整頁的版型：PageState（載入中／失敗／找不到）、FormPage、DetailPage、ListPage、ChildList
+    view/              ViewActions（view 的列上動作，DataList 與日後的 profile、card 共用）
     auth/              PasswordLoginForm（登入頁上的表單，依登入方式替換；登入頁本身在 pages/login.vue）
   composables/
     data/              讀資料的反應式包裝：useTable（整表／排序過／單筆）、useSearch、useFilter

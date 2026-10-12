@@ -2,7 +2,7 @@
 
 詳細頁的整頁版型：載入狀態、欄位區、左右滑動換上下一筆、底部的上下筆箭頭、右下角 FAB，一次接好。頁面只要說「這是哪張表、哪一筆、有哪些動作」。
 
-搭 `useRecordPage(table)` 用，它回傳的 `id`／`row`／`loading`／`error` 直接對應這裡的 prop；`row` 另外餵給 `use表名Actions({ row })`，動作才知道操作的是哪一筆。
+搭配 `useRecordPage(table)` 使用，其回傳的 `id`／`row`／`loading`／`error` 直接對應此處的 prop；`row` 另外交給 `useRowAction`，將 `use表名Actions` 中以列為參數的動作（編輯、刪除）綁定至這一筆（見 [actions.md](../actions.md#各表的-use表名actions)）。
 
 ## Usage
 
@@ -11,13 +11,16 @@
   import type { __Table__Row } from '@/schema/tables/__table__'
   import DetailPage from '@/components/ui/page/DetailPage.vue'
   import { use__Table__Actions } from '@/composables/actions/use__Table__Actions'
+  import { useRowAction } from '@/composables/actions/useTableActions'
   import { useRecordPage } from '@/composables/page/useRecordPage'
   import { useAppBarActions } from '@/composables/shell/useShellActions'
   import { __table__Schema } from '@/schema/tables/__table__'
 
   const { id, row, loading, error } = useRecordPage<__Table__Row>('__table__')
 
-  const { delete: deleteAction, edit: editAction, fieldActions } = use__Table__Actions({ row })
+  const { delete: remove, edit, fieldActions } = use__Table__Actions()
+  const editAction = useRowAction(row, edit)
+  const deleteAction = useRowAction(row, remove)
   useAppBarActions(() => [deleteAction.value])
 </script>
 

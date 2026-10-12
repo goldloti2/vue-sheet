@@ -9,6 +9,7 @@
   import type { __Table__Row } from '@/schema/tables/__table__'
   import DetailPage from '@/components/ui/page/DetailPage.vue'
   import { use__Table__Actions } from '@/composables/actions/use__Table__Actions'
+  import { useRowAction } from '@/composables/actions/useTableActions'
   import { useRecordPage } from '@/composables/page/useRecordPage'
   import { useAppBarActions } from '@/composables/shell/useShellActions'
   import { __table__Schema } from '@/schema/tables/__table__'
@@ -16,7 +17,10 @@
   // 網址上的 id + 那一筆；載入狀態與左右滑動換筆都由 DetailPage 處理
   const { id, row, loading, error } = useRecordPage<__Table__Row>('__table__')
 
-  const { delete: deleteAction, edit: editAction, fieldActions } = use__Table__Actions({ row })
+  // 以列為參數的動作以 useRowAction 綁定至這一筆；刪除這一筆後會自動離開
+  const { delete: remove, edit, fieldActions } = use__Table__Actions()
+  const editAction = useRowAction(row, edit)
+  const deleteAction = useRowAction(row, remove)
   useAppBarActions(() => [deleteAction.value])
 </script>
 

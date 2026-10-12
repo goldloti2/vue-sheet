@@ -4,7 +4,7 @@ import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue'
 import { mdiChevronRightCircle, mdiClose, mdiContentSave, mdiDelete, mdiOpenInNew, mdiPencil, mdiPlus } from '@mdi/js'
 import { computed, toValue } from 'vue'
 import { askFields } from '@/composables/shell/useAskFields'
-import router, { pushWithDefaults } from '@/router'
+import router, { leaveAfterAction, pushWithDefaults } from '@/router'
 import { schemas } from '@/schema'
 import { useTablesStore } from '@/stores/tables'
 
@@ -42,13 +42,13 @@ export function useAction (build: () => PageAction | null): ComputedRef<PageActi
   return computed(build)
 }
 
-// detail 頁用：當前那一筆的動作，還沒載到（或沒給 row）就是 null
-export function useRowAction<Row> (row: Ref<Row | null> | undefined, build: (row: Row) => PageAction | null): ComputedRef<PageAction | null> {
-  return useAction(() => row?.value ? build(row.value) : null)
+// 供 detail 頁使用：將以列為參數的動作綁定至當前那一筆，尚未載入時為 null
+export function useRowAction<Row> (row: Ref<Row | null>, build: (row: Row) => PageAction | null): ComputedRef<PageAction | null> {
+  return useAction(() => row.value ? build(row.value) : null)
 }
 
 // 以下的 builder 都是一般函式：吃當下的值、回傳一個動作，不適用就回傳 null。
-// 各表的 use表名Actions 用 useAction／useRowAction 包起來；detail 的 fieldActions 直接呼叫
+// 不以列為參數者由各表的 use表名Actions 以 useAction 包裝；以列為參數者直接以一列呼叫，detail 頁再以 useRowAction 綁定
 
 export interface NewActionOptions {
   defaults?: MaybeRefOrGetter<Record<string, unknown>>
@@ -81,7 +81,7 @@ export function editAction (table: TableKey, row: { id: string }, look: ActionLo
   }
 }
 
-// onDone 是刪完要做什麼：detail 頁通常是 leaveAfterAction，列表頁是清選取
+// 刪除的若是目前 detail 頁所顯示的那一筆，會自動離開；onDone 用於其他額外的處理
 export function deleteAction (table: TableKey, row: { id: string }, onDone?: () => void, look: ActionLook = {}): PageAction {
   return {
     key: 'delete',
@@ -91,6 +91,9 @@ export function deleteAction (table: TableKey, row: { id: string }, onDone?: () 
     onClick: async () => {
       await useTablesStore().remove(table, row.id)
       onDone?.()
+      if (router.currentRoute.value.path === `/${table}/${row.id}`) {
+        leaveAfterAction(`/${table}`)
+      }
     },
   }
 }

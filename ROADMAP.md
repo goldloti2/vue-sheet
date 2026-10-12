@@ -91,7 +91,7 @@
 ### 動作系統
 說明見 [vue-build/docs/actions.md](vue-build/docs/actions.md)。
 - `PageAction` 型別（`{ key, label, icon, onClick, confirm? }`），FAB、App Bar、底部動作列、detail 欄位動作共用同一種描述；內建 builder 的 label／icon 可用最後一個參數 `ActionLook` 覆寫，與行為的 options 分開
-- 通用 builder：`newAction` / `editAction` / `deleteAction` / `bulkDeleteAction` / `quickEditAction`，皆為一般函式，回傳一個 `PageAction`，不適用時回傳 `null`；`use表名Actions` 以 `useAction`（或 detail 頁當前那一筆用的 `useRowAction`）包成 `ComputedRef<PageAction | null>`，欄位動作直接呼叫
+- 通用 builder：`newAction` / `editAction` / `deleteAction` / `bulkDeleteAction` / `quickEditAction`，皆為一般函式，回傳一個 `PageAction`，不適用時回傳 `null`；不以列為參數者由 `use表名Actions` 以 `useAction` 包裝為 `ComputedRef<PageAction | null>`；以列為參數者（編輯、刪除）為函式，欄位動作直接以該列呼叫，detail 頁以 `useRowAction` 綁定至當前那一筆。刪除目前 detail 頁所顯示的那一筆時自動離開
 - 欄位動作（`DataDetail` 的 `fieldActions`，欄位 key → `(row) => PageAction | null`，一欄一個、整格可點）：`goToRefAction`（ref 前往對方）／`openUrlAction`（開新分頁）／`setFieldAction`（立即改成某個值，可帶 confirm）
 - 需要確認的動作宣告 `confirm` 就好，`useActionRunner` 先 `await confirm()` 再跑，錯誤進 snackbar；頁面不用擺 `ConfirmDialog`
 - `confirm()` / `choose()` / `askFields()`：是／否、幾條出路（回傳按下去那顆的 key，取消是 `null`）、問幾個欄位；都是 module-level 狀態 + `AppShell` 掛一個實例 + promise，前兩個共用同一個 `ConfirmDialog`；`quickEditAction` 用後者把選取的多筆改成同一個值（欄位由設計者定，只選一筆時顯示現值）

@@ -69,21 +69,21 @@ interface PageAction {
 | --- | --- | --- |
 | `newAction(table, { defaults? }?, look?)` | `PageAction` | 開啟新增表單。`defaults` 可為值、ref 或 getter，於按下時求值，經 `history.state` 帶入表單 |
 | `editAction(table, row, look?)` | `PageAction` | 開啟該列的編輯表單 |
-| `deleteAction(table, row, onDone?, look?)` | `PageAction` | 確認後刪除該列（含 cascade 的子列），完成後呼叫 `onDone`。detail 頁傳入 `leaveAfterAction`，列表上則不需要 |
+| `deleteAction(table, row, onDone?, look?)` | `PageAction` | 確認後刪除該列（含 cascade 的子列），完成後呼叫 `onDone`。若刪除的是目前 detail 頁所顯示的那一列，會自動以 `leaveAfterAction` 離開 |
 | `bulkDeleteAction(table, ids, onDone?, look?)` | `PageAction \| null` | 確認後刪除選取的各列，完成後呼叫 `onDone`（列表頁用來清除選取）；未選取任何一列時為 `null` |
 | `quickEditAction(table, keys, ids, { label, icon, key?, defaults?, onDone? })` | `PageAction \| null` | 以對話框詢問 `keys` 這幾欄，將選取的各列改為同一個值；未選取任何一列時為 `null`（見「快速編輯對話框」） |
 | `goToRefAction(row, key, refTable, look?)` | `PageAction \| null` | 前往 ref 欄位指向的那一列；欄位為空時為 `null` |
 | `openUrlAction(row, key, look?)` | `PageAction \| null` | 以新分頁開啟該欄的網址；不是 http(s) 網址時為 `null` |
 | `setFieldAction(table, row, key, value, { label, icon, confirm? })` | `PageAction` | 立即將該欄改為 `value()`。`value` 為函式，於按下時求值（例如 `() => new Date()`） |
 
-交給 FAB、App Bar 等位置的動作要隨資料更新，在各表的 `use表名Actions` 中以下列兩個函式包裝：
+交給 FAB、App Bar 等位置的動作須隨資料更新，以下列兩個函式包裝：
 
 | 函式 | 回傳 | 說明 |
 | --- | --- | --- |
-| `useAction(build)` | `ComputedRef<PageAction \| null>` | `build` 回傳一個動作或 `null`，資料改變時重新求值 |
-| `useRowAction(row, build)` | `ComputedRef<PageAction \| null>` | detail 頁當前那一列用。`row` 為 Ref；尚未載入或未提供時為 `null`，否則以當前那一列呼叫 `build` |
+| `useAction(build)` | `ComputedRef<PageAction \| null>` | 供各表的 `use表名Actions` 使用。`build` 回傳一個動作或 `null`，資料變更時重新求值 |
+| `useRowAction(row, build)` | `ComputedRef<PageAction \| null>` | 供 detail 頁使用，將以列為參數的動作綁定至當前那一列。`row` 為 Ref；尚未載入時為 `null`，載入後以該列呼叫 `build` |
 
-欄位動作則直接呼叫 builder，不需要包裝。
+欄位動作則直接以該列呼叫，無須包裝。
 
 ---
 
@@ -91,21 +91,37 @@ interface PageAction {
 
 每張表的動作一律從 `use表名Actions(options)` 取，範本為 [template/table/use__Table__Actions.ts](../template/table/use__Table__Actions.ts)。
 
-- **呼叫端只給自己有的東西**：列表頁給 `selectedIds`／`onDone`，detail 頁給 `row`，新增的預設值給 `defaults`。用不到的動作是 `null`
-- **回傳物件的每一項是一個動作**（`ComputedRef<PageAction | null>`），以 `useAction` 或 `useRowAction` 包好；`fieldActions` 則是一般物件
-- **自訂的動作**（包括連續動作）也寫在這裡，以 `useAction(() => ({ … }))` 包起來。範本的回傳物件末尾有連續動作的示範
+- **呼叫端只提供自身具備的參數**：列表頁提供 `selectedIds`／`onDone`，需要新增預設值時提供 `defaults`。用不到的動作為 `null`
+- **回傳物件包含兩種項目**：
+  - 不以列為參數的動作（`new`、`bulkDelete`）已以 `useAction` 包裝，型別為 `ComputedRef<PageAction | null>`，可直接交給位置
+  - 以列為參數的動作（`edit`、`delete`）為接收一列並回傳動作的函式。detail 頁以 `useRowAction` 綁定至當前那一列；日後列表的每一列可直接呼叫（見 ROADMAP 的「deck 的 action 按鍵」）。`fieldActions` 同樣以一列呼叫
+- **自訂的動作**（包括連續動作）亦定義於此：不以列為參數者以 `useAction(() => ({ … }))` 包裝，以列為參數者寫成 `(row) => …`。範本回傳物件的末尾附有連續動作的示範
 - **一個位置放哪幾個動作由頁面決定**：頁面取出需要的動作，組成陣列交給該位置
 
 detail 頁的取用方式：
 
 ```ts
-const { delete: deleteAction, edit: editAction, fieldActions } = use__Table__Actions({ row })
+const { delete: remove, edit, fieldActions } = use__Table__Actions()
+const editAction = useRowAction(row, edit)
+const deleteAction = useRowAction(row, remove)
 useAppBarActions(() => [deleteAction.value])
 ```
 
 ```vue
 <DetailPage :fab="[editAction]" :field-actions="fieldActions" … />
 ```
+
+列表頁的取用方式：
+
+```ts
+const { new: newAction, bulkDelete } = use__Table__Actions({
+  selectedIds: selection.selectedIds,
+  onDone: selection.clear,
+})
+useAppBarActions(() => [bulkDelete.value])
+```
+
+`delete` 為 JavaScript 的保留字，解構時須改名（例如 `remove`）。
 
 ---
 
@@ -190,7 +206,13 @@ if (values) {
 `confirm` 對每個動作都一樣、動作本體不需要知道結果，所以做成語法糖。`askFields` 的結果是動作要拿去用的，只能在 `onClick` 裡自己 `await`。
 
 **為什麼 builder 是一般函式而非 composable**
-同一個 builder 要用在 detail 頁當前那一筆（會變動的 Ref）與欄位動作，日後也要用在列表的每一列（ROADMAP 的「deck 的 action 按鍵」）。若 builder 本身是 composable（接收 Ref、回傳 computed），每一列每次求值都會建立一個 computed，也違反 composable 只在 setup 中呼叫的慣例。改為一般函式後，每次呼叫只建立一個普通物件；只有交給 FAB 與 App Bar 的那一層需要隨資料更新，由各表的 `use表名Actions` 以 `useAction`／`useRowAction` 負責。
+同一個 builder 需用於 detail 頁當前那一筆（會變動的 Ref）與欄位動作，日後亦將用於列表的每一列（ROADMAP 的「deck 的 action 按鍵」）。若 builder 本身為 composable（接收 Ref、回傳 computed），每一列每次求值都會建立一個 computed，也違反 composable 僅於 setup 中呼叫的慣例。改為一般函式後，每次呼叫僅建立一個普通物件；只有交給 FAB 與 App Bar 的那一層需要隨資料更新，由 `useAction`／`useRowAction` 負責。
+
+**為什麼以列為參數的動作由頁面綁定，而非 `use表名Actions`**
+「綁定至當前那一列」僅在 detail 頁成立；日後列表的每一列則各自呼叫。若由 `use表名Actions` 負責綁定，它便必須得知自己供哪一種頁面使用，列表也無法取得可逐列呼叫的版本，同一個動作勢必定義兩份。因此 `use表名Actions` 只負責定義，綁定交由需要的頁面（`useRowAction`）處理。
+
+**為什麼刪除後自動離開**
+「刪除目前所顯示的那一列後離開該頁」在任何頁面皆成立，不應要求每個 detail 頁各自傳入 `leaveAfterAction`；若由頁面傳入，漏傳時仍可通過編譯，刪除後卻停留在「找不到這筆資料」的畫面。因此 `deleteAction` 在刪除後檢查目前的路由是否為該列的 detail 頁，若是則自動離開；`onDone` 僅用於其他額外的處理。
 
 **為什麼 `use表名Actions` 的每一項是單一動作，而非陣列**
 一個位置放哪幾個動作是頁面的決定，所以由頁面組陣列（`[editAction.value, deleteAction.value]`）。不適用的動作以 `null` 表示，由接收的位置略過；`null` 的處理集中在框架的幾個位置元件中，頁面與 `use表名Actions` 都不需要判斷。早期的 builder 一律回傳 `ComputedRef<PageAction[]>`，以空陣列表示不適用，但這讓單一動作也必須包成陣列，而且陣列的名稱與內容（只有一個動作）不一致。

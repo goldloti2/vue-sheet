@@ -46,7 +46,7 @@ const childView = defineView(__table__Schema, { title: '$label' })
 
 | slot | scope | 說明 |
 | --- | --- | --- |
-| `default` | `{ rows }` | **截斷後**的那幾列（不是全部）。要卡片就自己 `v-for` 一串 `DataList`，要表格就整批餵給 `DataTable`；型別跟著 `:rows` 走 |
+| `default` | `{ rows }` | **截斷後**的那幾列（不是全部）。要卡片就自己 `v-for` 一串 `DataList`（或 `DataProfile`、`DataCard`；`DataGallery` 須再以 `ListLayout layout="grid"` 包住），要表格就整批餵給 `DataTable`；型別跟著 `:rows` 走 |
 
 給的是整批而不是一列一次，就是為了讓 `DataTable` 也放得進來：
 

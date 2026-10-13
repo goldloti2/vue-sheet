@@ -62,7 +62,28 @@
 
 ## 列表
 
-- **卡片式為主**（適合瀏覽），也支援表格式（適合比對欄位）：`ListPage` 的 `#rows` slot 整批交給 `DataTable`。表格沒有多選——要批次操作就用卡片
+### 版面的種類
+
+每一列的呈現方式由放進 `ListPage` slot 的元件決定；哪個欄位放在哪個位置則由頁面定義的 view 指定（`defineView`，card 為 `defineCardView`，見 [DataList](components/DataList.md#view)）。同一個 view 可交給 deck、profile 或 gallery，換版面不需改寫欄位的對應。
+
+| 版面 | 元件 | 外觀 | 該列的動作 | 適合 |
+| --- | --- | --- | --- | --- |
+| deck | [DataList](components/DataList.md) | 連成一串的列，左側縮圖，四個角各一個欄位 | 右下角欄位的下一列，一排按鈕 | 一般的瀏覽，一列可看到較多欄位 |
+| profile | [DataProfile](components/DataProfile.md) | 分開的卡片，左側圓形頭像，中間標題與副標 | 右側的 ⋮ 選單 | 以人或物為主體、資訊精簡的表 |
+| card | [DataCard](components/DataCard.md) | 分開的卡片，上下四層：頭像與標題、大圖、標題與摘要、動作 | 第 4 層，左右各兩格 | 圖片與說明並重的表 |
+| gallery | [DataGallery](components/DataGallery.md) | 格狀排列的方格，正方形圖片加上標題與副標，手機上為兩欄 | 右下角的 ⋮ 選單 | 以圖片為主的表 |
+| table | [DataTable](components/DataTable.md) | 表格 | 無 | 比對多個欄位 |
+
+- **gallery 須搭配 `ListPage` 的 `layout="grid"`**，其餘維持預設的 `list`（見 [ListLayout](components/ListLayout.md)）。分組時每一組各自排列，組的標題一律佔一整行
+- **table 走 `ListPage` 的 `#rows` slot**，整批交給 `DataTable`。表格沒有多選——要批次操作就用其他版面
+- **deck、profile、card、gallery 皆支援長按多選**，接法相同：`v-bind` 上 `ListPage` slot 給的 `props`。多選模式下各版面的動作皆隱藏
+- **排序與分組與版面無關**：順序來自 `useListPage`（`defaultSort` 或使用者選的排序）與 `groupRows`，各版面皆依同一順序呈現；gallery 為由左往右、再由上往下
+- **間距、陰影與點擊、選取的樣式為各版面共用**，定義於 `src/styles/list.css`（見 [ListLayout](components/ListLayout.md) 的「共用的樣式」）
+- 範本見 `template/pages/` 的 `list.vue`（deck）、`profile-list.vue`、`card-list.vue`、`gallery-list.vue`
+
+詳細頁另有選用的標頭區塊（[DetailHeader](components/DetailHeader.md)），結構為 card 去掉第 1 層，由 `DetailPage` 的 `header` 開啟。
+
+### 列表的行為
 - **用 `<KeepAlive>` 保留展開狀態**（`GroupedList` 的收合、多選、搜尋字串…），注意事項見 [architecture.md](architecture.md#keepalive-的規則)。捲動位置不是元件狀態，由 router 另外記（回到看過的頁面會回到原本的位置，新頁面從頂端開始）
 - **長按進入多選模式**：選取狀態一有內容就自動進入、清空就自動離開，不另外存一個 boolean
 - **多選的出口是 App Bar 右上的「取消」**：`useMultiSelect()` 自己登記「怎麼退出」，按鈕的樣子跟位置由 `AppShell` 決定（跟放大鏡一樣）。它固定在同步鈕左邊，而且**不會被收進「⋮」**——收進去就等於沒有出口

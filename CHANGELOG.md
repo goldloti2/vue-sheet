@@ -1,5 +1,22 @@
 # 版本紀錄
 
+## v1.3
+
+- **視圖（view）**：頁面以 `defineView`（card 為 `defineCardView`）指定一列的哪些欄位放在版面的哪個位置，以及該列的動作；格式化依欄位型別自動處理。說明見 [vue-build/docs/components/DataList.md](vue-build/docs/components/DataList.md) 的「view」
+- **列表的版面**：除 deck（`DataList`）外，新增 profile（`DataProfile`）、card（`DataCard`）與 gallery（`DataGallery`）。皆以 view 呈現，並支援長按多選；gallery 搭配 `ListPage` 新增的 `layout="grid"`，手機上為兩欄。各版面的比較見 [vue-build/docs/ui.md](vue-build/docs/ui.md) 的「版面的種類」，範本見 `vue-build/template/pages/`
+- **每一列的動作**：view 的 `actions` 依版面呈現於 deck 的下一列、profile 與 gallery 的 ⋮ 選單，或 card 的左右各兩格。`PageAction` 新增 `display`，可選擇以圖示或文字顯示
+- **詳細頁的標頭區塊**（選用）：`DetailPage` 新增 `header`，於整頁最上方顯示大圖、標題、副標、摘要與動作
+- 列表共用的間距、陰影與點擊、選取的樣式集中於 `vue-build/src/styles/list.css`
+- 分組的列表中，卡片的陰影不再被裁切
+- 動作選單（包含 App Bar 的 ⋮）的圖示與其他位置同樣深淺，並縮小與文字的間距
+
+### 不相容的變更
+
+依 v1.2 範本撰寫的列表頁需配合修改，修改方式可對照 `vue-build/template/pages/` 的 `list.vue` 與 `child-list.vue`：
+
+- `DataList` 改為接收 `row` 與 `view`，原本各位置的 prop（`title`、`topRight`、`bottomLeft`、`bottomRight`、`image`）移除。各欄位的位置改於頁面以 `defineView` 指定，例如 `defineView(schema, { title: 'name', subtitle: 'date', summary: 'amount' })`
+- `formatField` 不再 export，格式化改由 view 處理
+
 ## v1.2
 
 - **動作的寫法改版**：內建 builder 改為一般函式，回傳單一動作，不適用時回傳 `null`；各表 `use表名Actions` 的每一項亦為單一動作，同一位置放置哪些動作由頁面組成陣列決定。編輯、刪除等以列為參數的動作改為函式，detail 頁以 `useRowAction` 綁定至當前那一筆。說明集中於新增的 [vue-build/docs/actions.md](vue-build/docs/actions.md)

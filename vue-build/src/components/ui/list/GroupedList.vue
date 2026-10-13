@@ -1,12 +1,16 @@
 <script generic="Row extends { id: string }" lang="ts" setup>
   import type { RowGroup } from '@/schema/group'
   import CountLabel from '@/components/ui/list/CountLabel.vue'
+  import ListLayout from '@/components/ui/list/ListLayout.vue'
 
   const props = withDefaults(defineProps<{
     groups: RowGroup<Row>[]
     path?: string
+    // 每組底下各筆的排法；組的標題一律佔一整行（見 ListLayout）
+    layout?: 'list' | 'grid'
   }>(), {
     path: '',
+    layout: 'list',
   })
 
   defineSlots<{
@@ -32,7 +36,7 @@
           </v-list-item>
         </template>
 
-        <GroupedList :groups="group.subgroups" :path="`${props.path}/${group.label}`">
+        <GroupedList :groups="group.subgroups" :layout="props.layout" :path="`${props.path}/${group.label}`">
           <template #default="slotProps">
             <slot v-bind="slotProps" />
           </template>
@@ -44,9 +48,11 @@
           <CountLabel :count="group.rows.length" :label="group.label" />
         </v-list-subheader>
 
-        <template v-for="row in group.rows" :key="row.id">
-          <slot :row="row" />
-        </template>
+        <ListLayout :layout="props.layout">
+          <template v-for="row in group.rows" :key="row.id">
+            <slot :row="row" />
+          </template>
+        </ListLayout>
       </template>
     </template>
   </v-list>

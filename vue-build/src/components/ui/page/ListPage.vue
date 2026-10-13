@@ -5,6 +5,7 @@
   import type { RowGroup } from '@/schema/group'
   import { computed } from 'vue'
   import GroupedList from '@/components/ui/list/GroupedList.vue'
+  import ListLayout from '@/components/ui/list/ListLayout.vue'
   import PageState from '@/components/ui/page/PageState.vue'
   import PageFab from '@/components/ui/shell/PageFab.vue'
   import { useListOrder } from '@/composables/navigation/useListOrder'
@@ -22,6 +23,8 @@
     selection?: MultiSelect
     // 右下角的 FAB，通常是新增
     fab?: (PageAction | null)[]
+    // 各筆的排法：list 依序往下排（預設），grid 為格狀排列（gallery）
+    layout?: 'list' | 'grid'
   }>()
 
   defineSlots<{
@@ -40,7 +43,7 @@
   <div>
     <v-container>
       <PageState :error="error" :loading="loading" spinner="linear">
-        <GroupedList v-if="groups" :groups="groups">
+        <GroupedList v-if="groups" :groups="groups" :layout="layout">
           <template #default="{ row }">
             <slot :props="selection?.itemProps(row.id) ?? {}" :row="row" />
           </template>
@@ -48,9 +51,11 @@
 
         <slot v-else-if="$slots.rows" name="rows" :rows="rows ?? []" />
 
-        <template v-for="row in rows" v-else :key="row.id">
-          <slot :props="selection?.itemProps(row.id) ?? {}" :row="row" />
-        </template>
+        <ListLayout v-else :layout="layout">
+          <template v-for="row in rows" :key="row.id">
+            <slot :props="selection?.itemProps(row.id) ?? {}" :row="row" />
+          </template>
+        </ListLayout>
       </PageState>
     </v-container>
 

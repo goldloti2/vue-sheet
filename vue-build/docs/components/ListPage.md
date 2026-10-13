@@ -49,12 +49,13 @@
 | `error` | `string \| null?` | 載入失敗的訊息 |
 | `selection` | `MultiSelect?` | 給了才綁長按多選（`useListPage` 的 `selection`） |
 | `fab` | `(PageAction \| null)[]?` | 右下角的 FAB，通常是新增；`null` 略過 |
+| `layout` | `'list' \| 'grid'?` | 各筆的排法，預設 `'list'`（依序往下排）；gallery 用 `'grid'`（格狀排列）。分組時一併轉交給 `GroupedList`，見 [ListLayout](ListLayout.md) |
 
 ## Slots
 
 | slot | scope | 說明 |
 | --- | --- | --- |
-| `default` | `{ row, props }` | 每一列。`props` 是多選要綁的那一包（`selectable`／`selectMode`／`selected`／長按與點選事件），`v-bind` 到 `DataList`、`DataProfile` 或 `DataCard` 上就好；沒給 `selection` 時是空物件 |
+| `default` | `{ row, props }` | 每一列。`props` 是多選要綁的那一包（`selectable`／`selectMode`／`selected`／長按與點選事件），`v-bind` 到 `DataList`、`DataProfile`、`DataCard` 或 `DataGallery` 上就好；沒給 `selection` 時是空物件 |
 | `rows` | `{ rows }` | 整批一次給，表格式列表用。有這個 slot 就不走 `default`，也沒有多選綁定（`DataTable` 本來就沒有多選） |
 
 ### 表格式

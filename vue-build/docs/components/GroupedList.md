@@ -40,6 +40,7 @@
 | --- | --- | --- |
 | `groups` | `RowGroup<Row>[]` | **必填**，`groupRows()` 的回傳值 |
 | `path` | `string?` | 巢狀遞迴自己用的，外部不用傳 |
+| `layout` | `'list' \| 'grid'?` | 每組底下各筆的排法，預設 `'list'`；組的標題一律佔一整行，見 [ListLayout](ListLayout.md) |
 
 ## Slots
 

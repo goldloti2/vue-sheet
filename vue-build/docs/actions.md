@@ -47,7 +47,7 @@ interface PageAction {
 | 螢幕最底端 | `useBottomActions(() => [...])` | 暫時取代底部導覽列，離開頁面自動還原。表單的取消／送出不用自己接，`useCreateForm`／`useEditForm` 會登記 |
 | 詳細頁的單一欄位 | `DataDetail`／`DetailPage` 的 `fieldActions` | 該欄的動作，右邊出現圖示、整格可點（見「欄位動作」） |
 | 子表區塊 | `ChildList` 的 `actions` prop | 排在「展開」旁邊，通常是新增 |
-| 列表的每一列 | view 的 `actions` | 該列的動作，deck 置於右下角欄位的下一列，profile 收於右側的 ⋮ 選單（見「列上的動作」） |
+| 列表的每一列 | view 的 `actions` | 該列的動作，deck 置於右下角欄位的下一列，profile 收於右側的 ⋮ 選單，gallery 收於右下角的 ⋮ 選單（見「列上的動作」） |
 | 詳細頁的標頭 | `DetailPage` 的 `header`（view 的 `actions`） | 這一筆的動作，置於標頭圖片下方的左右各兩格（見「列上的動作」） |
 
 - **每個位置都接收 `(PageAction | null)[]`**，`null`（不適用的動作）會被略過，所以頁面組陣列時不需要判斷。略過由最後畫按鈕的元件（`PageFab`、`ChildList`、`AppShell`）負責，中間的版面元件與登記機制一律原樣轉交（理由見「設計取捨」）
@@ -157,10 +157,11 @@ const view = defineView(__table__Schema, {
 })
 ```
 
-- **陣列依位置排列，`null` 表示空位**：card 與 detail 標頭的前兩個置於左側、後兩個置於右側；deck 與 profile 略過空位。builder 判斷不適用而回傳的 `null` 亦同：card 與 detail 標頭中保留該格，deck 與 profile 中略過
+- **陣列依位置排列，`null` 表示空位**：card 與 detail 標頭的前兩個置於左側、後兩個置於右側；deck、profile 與 gallery 略過空位。builder 判斷不適用而回傳的 `null` 亦同：card 與 detail 標頭中保留該格，deck、profile 與 gallery 中略過
 - **`display`** 決定該動作顯示為圖示或文字
 - **deck**：由 [ViewActions](components/ViewActions.md) 呈現於右下角欄位的下一列，由左往右排列、整組靠右；沒有動作時不佔高度；多選模式下隱藏。按鈕與整列的連結並列而非包在連結內，點擊按鈕不會進入 detail
 - **profile**：由 ViewActions 的 `variant="menu"` 收入卡片右側的 ⋮ 選單，只有一個動作時亦同；沒有動作時不顯示 ⋮；多選模式下隱藏。⋮ 與卡片的連結並列，點擊 ⋮ 不會進入 detail（見 [DataProfile](components/DataProfile.md)）
+- **gallery**：與 profile 相同，收入 ⋮ 選單，置於格子的右下角（見 [DataGallery](components/DataGallery.md)）
 - **card**：由 ViewActions 的 `variant="slots"` 呈現於第 4 層，前兩個靠左、後兩個靠右，`null` 保留為空格，超過四個的部分不顯示；四格皆為 `null` 時整層隱藏；多選模式下隱藏。點擊按鈕不會進入 detail，按鈕之間的空白處仍屬於連結（見 [DataCard](components/DataCard.md)）
 - **detail 標頭**：與 card 相同，由 ViewActions 的 `variant="slots"` 呈現於標頭圖片（或文字）的下方。標頭於資料載入後才渲染，`row` 必定存在，因此直接呼叫以列為參數的動作，不需經過 `useRowAction`（見 [DetailHeader](components/DetailHeader.md)）
 
@@ -244,7 +245,7 @@ if (values) {
 一個位置放哪幾個動作是頁面的決定，所以由頁面組陣列（`[editAction.value, deleteAction.value]`）。不適用的動作以 `null` 表示，由接收的位置略過；`null` 的處理集中在框架的幾個位置元件中，頁面與 `use表名Actions` 都不需要判斷。早期的 builder 一律回傳 `ComputedRef<PageAction[]>`，以空陣列表示不適用，但這讓單一動作也必須包成陣列，而且陣列的名稱與內容（只有一個動作）不一致。
 
 **為什麼 `null` 由畫按鈕的元件處理，而非中間層**
-不同位置對 `null` 的解讀不同：FAB、App Bar、子表區塊、deck 與 profile 會略過它，card 與 detail 標頭則把它當成空格、保留位置（見 ROADMAP 的「頁面類型」）。只有最後畫按鈕的元件知道 `null` 在該處代表什麼，若在版面元件或登記機制等中間層統一過濾，空格的資訊就會遺失。
+不同位置對 `null` 的解讀不同：FAB、App Bar、子表區塊、deck、profile 與 gallery 會略過它，card 與 detail 標頭則把它當成空格、保留位置（見 ROADMAP 的「頁面類型」）。只有最後畫按鈕的元件知道 `null` 在該處代表什麼，若在版面元件或登記機制等中間層統一過濾，空格的資訊就會遺失。
 
 **為什麼流程的第一步 `push`、之後 `replace`**
 push 是為了保住發起流程的那一頁，replace 是讓做完的表單不留在歷史裡。結果是歷史永遠只有「起點 → 目前這一步」兩筆：任何一步按返回或取消都回到起點，流程結束後也能從終點返回起點。全部用 replace 的話起點會被第一步吃掉，取消就無處可去。

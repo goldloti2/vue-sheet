@@ -48,7 +48,7 @@
       </button>
 
       <v-menu v-if="menuMounted" v-model="menuOpen" :activator="menuButton ?? undefined">
-        <v-list density="compact">
+        <v-list class="action-menu" density="compact">
           <v-list-item
             v-for="action in shown"
             :key="action.key"

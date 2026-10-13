@@ -33,6 +33,6 @@ view 的列上動作（`actions`）的呈現元件，依 `variant` 提供三種�
 
 ## 備註
 
-- **`display`**：適用於 `row` 與 `slots`。`'text'` 以主色文字顯示；其餘（含未指定）以圖示顯示，並以 `label` 作為 `aria-label`。`menu` 一律同時顯示圖示與文字
+- **`display`**：適用於 `row` 與 `slots`。`'text'` 以主色文字顯示；其餘（含未指定）以圖示顯示，並以 `label` 作為 `aria-label`。`menu` 一律同時顯示圖示與文字；選單帶有 `action-menu` class，圖示與文字的間距縮小為 20px，圖示不套用 `v-list-item` 預設的中等強調透明度，與其他位置的圖示同樣深淺。App Bar 的 ⋮ 選單亦帶有此 class，樣式定義於 `src/styles/list.css`
 - **`menu` 的選單於第一次按下 ⋮ 時才掛上**：每列僅有一顆原生按鈕，`v-menu` 在該列第一次開啟時才建立，之後的開關交由 `v-menu` 綁定於該按鈕的事件處理。上千列的列表因此不會有上千個 `v-menu` 實例
 - **按鈕為原生 `<button>` 加 `v-icon`，而非 `v-btn`**：deck 可能有上千列，`v-btn` 的實例成本較高；且即使未設定 `to`，`v-btn` 仍會呼叫 vue-router 的 `useLink`，開發版中每次導覽都會因此重新計算。按鈕不帶波紋等效果

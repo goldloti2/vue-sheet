@@ -34,16 +34,16 @@
 
 <template>
   <div
-    class="gallery-item"
+    class="gallery-item list-row list-card"
     :class="{
-      'gallery-item--selected': selectMode && selected,
-      'gallery-item--no-select': selectable,
+      'list-row--selected': selectMode && selected,
+      'list-row--no-select': selectable,
     }"
   >
     <!-- 有 to 時為 <a>，否則為純顯示的一格。::after 覆蓋整格，⋮ 以外的區域皆屬於連結 -->
     <component
       :is="to ? 'a' : 'div'"
-      class="gallery-item__link"
+      class="gallery-item__link list-row-link"
       :draggable="selectable ? 'false' : undefined"
       :href="href"
       v-bind="pointerHandlers"
@@ -72,36 +72,24 @@
     </component>
 
     <!-- 置於文字區右下；多選模式下隱藏 -->
-    <ViewActions v-if="!selectMode" :actions="fields.actions" class="gallery-item__actions" variant="menu" />
+    <ViewActions v-if="!selectMode" :actions="fields.actions" class="gallery-item__actions list-row-above-link" variant="menu" />
   </div>
 </template>
 
 <style scoped>
 /* 整格為 3:4：上方為寬度撐滿的正方形圖片，下方剩餘的 1/4 為文字區 */
 .gallery-item {
-  position: relative;
   box-sizing: border-box;
   aspect-ratio: 3 / 4;
   overflow: hidden;
   /* 畫面外的格子不排版也不繪製；高度由 aspect-ratio 依欄寬決定，不需替代值 */
   content-visibility: auto;
-  background: rgb(var(--v-theme-surface));
-  border: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
-  box-shadow: var(--list-card-shadow);
 }
 
 .gallery-item__link {
   display: flex;
   flex-direction: column;
   height: 100%;
-  color: inherit;
-  text-decoration: none;
-}
-
-.gallery-item__link::after {
-  content: '';
-  position: absolute;
-  inset: 0;
 }
 
 .gallery-item__check {
@@ -148,21 +136,10 @@
   white-space: nowrap;
 }
 
-/* 文字區右下，距右緣與底緣各 2px。須疊於連結的 ::after 之上才能點擊 */
+/* 文字區右下，距右緣與底緣各 2px；疊於連結之上由 list-row-above-link 負責 */
 .gallery-item__actions {
   position: absolute;
   right: 2px;
   bottom: 2px;
-  z-index: 1;
-}
-
-.gallery-item--no-select {
-  -webkit-user-drag: none;
-  user-select: none;
-}
-
-/* 主色淡底疊於卡片的底色之上 */
-.gallery-item--selected {
-  background: linear-gradient(rgba(var(--v-theme-primary), 0.08), rgba(var(--v-theme-primary), 0.08)), rgb(var(--v-theme-surface));
 }
 </style>

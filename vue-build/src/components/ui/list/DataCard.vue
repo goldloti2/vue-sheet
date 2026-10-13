@@ -54,17 +54,17 @@
 
 <template>
   <div
-    class="card-item"
+    class="card-item list-row list-card"
     :class="{
-      'card-item--selected': selectMode && selected,
-      'card-item--no-select': selectable,
+      'list-row--selected': selectMode && selected,
+      'list-row--no-select': selectable,
     }"
     :style="{ containIntrinsicSize: `auto ${estimatedHeight}px` }"
   >
     <!-- 有 to 時為 <a>，否則為純顯示的一張卡片。::after 覆蓋整張卡片，動作按鈕以外的區域皆屬於連結 -->
     <component
       :is="to ? 'a' : 'div'"
-      class="card-item__link"
+      class="card-item__link list-row-link"
       :draggable="selectable ? 'false' : undefined"
       :href="href"
       v-bind="pointerHandlers"
@@ -98,35 +98,23 @@
     </component>
 
     <!-- 按鈕與連結並列，不包在 <a> 內，點擊按鈕不會進入 detail -->
-    <ViewActions v-if="hasActions" :actions="fields.actions" class="card-item__actions" variant="slots" />
+    <ViewActions v-if="hasActions" :actions="fields.actions" class="card-item__actions list-row-above-link" variant="slots" />
   </div>
 </template>
 
 <style scoped>
 .card-item {
-  position: relative;
   box-sizing: border-box;
   width: 100%;
   margin-bottom: var(--list-card-gap);
   overflow: hidden;
   /* 畫面外的卡片不排版也不繪製；替代高度由 estimatedHeight 依出現的層算出 */
   content-visibility: auto;
-  background: rgb(var(--v-theme-surface));
-  border: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
-  border-radius: 12px;
-  box-shadow: var(--list-card-shadow);
+  border-radius: var(--list-card-radius);
 }
 
 .card-item__link {
   display: block;
-  color: inherit;
-  text-decoration: none;
-}
-
-.card-item__link::after {
-  content: '';
-  position: absolute;
-  inset: 0;
 }
 
 .card-item__check {
@@ -188,26 +176,13 @@
   -webkit-box-orient: vertical;
 }
 
-/* 第 4 層：須疊於連結的 ::after 之上才能點擊；8px 上下內距 + 32px 按鈕 = 48px。
-   整列寬度皆為動作列，僅按鈕接收點擊，空白處仍落在連結上 */
+/* 第 4 層：8px 上下內距 + 32px 按鈕 = 48px。整列寬度皆為動作列，僅按鈕接收點擊，空白處仍落在連結上 */
 .card-item__actions {
-  position: relative;
-  z-index: 1;
   padding: 8px;
   pointer-events: none;
 }
 
 .card-item__actions :deep(button) {
   pointer-events: auto;
-}
-
-.card-item--no-select {
-  -webkit-user-drag: none;
-  user-select: none;
-}
-
-/* 主色淡底疊於卡片的底色之上 */
-.card-item--selected {
-  background: linear-gradient(rgba(var(--v-theme-primary), 0.08), rgba(var(--v-theme-primary), 0.08)), rgb(var(--v-theme-surface));
 }
 </style>

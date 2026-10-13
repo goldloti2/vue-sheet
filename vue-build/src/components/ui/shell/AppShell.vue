@@ -261,7 +261,7 @@
           <v-btn aria-label="更多動作" :icon="mdiDotsVertical" v-bind="menuProps" />
         </template>
 
-        <v-list>
+        <v-list class="action-menu">
           <v-list-item
             v-for="action in appBarActions"
             :key="action.key"

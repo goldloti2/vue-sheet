@@ -66,5 +66,5 @@ gallery 式列表的**單一格**：上方為正方形圖片，下方為標題�
 - **整格固定為 3:4**：寬度由欄寬決定，圖片為正方形，其下剩餘的高度為文字區。手機上文字區約 50–60px，可容納標題與副標各一行
 - **連結與 DataList 相同**：自行組 `href` 的 `<a>`，不使用 `RouterLink`，與 DataList、DataProfile、DataCard 共用 `useRowClick`（理由見 [DataList](DataList.md) 的備註）。⋮ 與連結並列，點擊 ⋮ 不會進入 detail
 - **勾選圖示疊於圖片左上角**：多選模式下出現，帶有卡片底色的圓形背景；被選取的格子疊上一層主色淡底
-- **外框為直角**：帶有外框與偏向右下的陰影，間隔由 `ListLayout` 的格線負責。間距與陰影為共用的 CSS 變數（見 [ListLayout](ListLayout.md) 的「卡片的間距與陰影」）
+- **外框為直角**：帶有外框與偏向右下的陰影，間隔由 `ListLayout` 的格線負責。間距、陰影與點擊、選取的樣式定義於 `src/styles/list.css`，與其他列表元件共用（見 [ListLayout](ListLayout.md) 的「共用的樣式」）
 - **`content-visibility: auto`**：畫面外的格子不進行排版與繪製。高度由 `aspect-ratio` 依欄寬決定，不需 `contain-intrinsic-size` 的替代值

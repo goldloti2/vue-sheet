@@ -58,7 +58,7 @@ src/
                        view（列的版面：欄位與位置的對應）、index（註冊表：代稱 → schema）
     tables/            每張表的欄位定義，一張表一個檔
   config/              app.ts（App 名稱、登入方式）、navigation.ts（導覽列項目）
-  styles/              全域的 CSS：list.css（列表中卡片的間距與陰影，見 docs/components/ListLayout.md）
+  styles/              全域的 CSS：list.css（列表中一列與卡片共用的樣式，見 docs/components/ListLayout.md；動作選單的樣式，見 docs/components/ViewActions.md）
   router/index.ts      路由實例、登入檢查、轉場方向判定、leaveAfterAction / pushWithDefaults
   pages/               檔案即路由
 ```

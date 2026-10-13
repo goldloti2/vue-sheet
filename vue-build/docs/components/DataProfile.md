@@ -67,5 +67,5 @@ view 的定義方式見 [DataList](DataList.md#view)。本元件僅使用以下�
 
 - **連結與 DataList 相同**：自行組 `href` 的 `<a>`，不使用 `RouterLink`，與 DataList、[DataCard](DataCard.md) 共用 `useRowClick`（理由見 [DataList](DataList.md) 的備註）。⋮ 按鈕與連結並列，不包在 `<a>` 內，點擊 ⋮ 不會進入 detail
 - **勾選圖示置於頭像左側**：多選模式下勾選圖示出現於卡片最左側，沒有圖片時則直接接在標題左側；被選取的卡片疊上一層主色淡底
-- **間隔由元件自身負責**：卡片帶有下方間距、圓角、外框與偏向右下的陰影，`ListPage` 與 `GroupedList` 不需另外設定。間距與陰影為共用的 CSS 變數（見 [ListLayout](ListLayout.md) 的「卡片的間距與陰影」）
+- **間隔由元件自身負責**：卡片帶有下方間距、圓角、外框與偏向右下的陰影，`ListPage` 與 `GroupedList` 不需另外設定。間距、圓角、陰影與點擊、選取的樣式定義於 `src/styles/list.css`，與其他列表元件共用（見 [ListLayout](ListLayout.md) 的「共用的樣式」）
 - **`content-visibility: auto`**：畫面外的卡片不進行排版與繪製。`contain-intrinsic-size: auto 68px` 為尚未量得實際高度前的替代值；卡片的版型若大幅變動，此數值須一併調整

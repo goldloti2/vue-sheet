@@ -37,17 +37,17 @@
 
 <template>
   <div
-    class="list-item"
+    class="list-item list-row"
     :class="{
-      'list-item--selected': selectMode && selected,
-      'list-item--no-select': selectable,
+      'list-row--selected': selectMode && selected,
+      'list-row--no-select': selectable,
       'list-item--with-actions': showActions,
     }"
   >
     <!-- 有 to 時為 <a>（中鍵與 ctrl 點擊維持原生行為），否則為純顯示的一列。::after 覆蓋整列，動作列的空白處亦屬於連結 -->
     <component
       :is="to ? 'a' : 'div'"
-      class="list-item__link"
+      class="list-item__link list-row-link"
       :draggable="selectable ? 'false' : undefined"
       :href="href"
       v-bind="pointerHandlers"
@@ -65,13 +65,12 @@
     </component>
 
     <!-- 按鈕與連結並列，不包在 <a> 內，點擊按鈕不會進入 detail，也不會觸發長按 -->
-    <ViewActions v-if="showActions" :actions="fields.actions" class="list-item__actions" />
+    <ViewActions v-if="showActions" :actions="fields.actions" class="list-item__actions list-row-above-link" />
   </div>
 </template>
 
 <style scoped>
 .list-item {
-  position: relative;
   box-sizing: border-box;
   width: 100%;
   padding: 12px 16px;
@@ -90,30 +89,11 @@
 
 .list-item__link {
   display: block;
-  color: inherit;
-  text-decoration: none;
 }
 
-.list-item__link::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-}
-
-/* 須疊於連結的 ::after 之上才能點擊；寬度僅包住按鈕，左側空白才會落在連結上 */
+/* 寬度僅包住按鈕，左側空白才會落在連結上 */
 .list-item__actions {
-  position: relative;
-  z-index: 1;
   width: fit-content;
   margin: 4px 0 0 auto;
-}
-
-.list-item--no-select {
-  -webkit-user-drag: none;
-  user-select: none;
-}
-
-.list-item--selected {
-  background-color: rgba(var(--v-theme-primary), 0.08);
 }
 </style>

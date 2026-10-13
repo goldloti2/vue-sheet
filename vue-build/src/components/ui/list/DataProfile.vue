@@ -34,16 +34,16 @@
 
 <template>
   <div
-    class="profile-item"
+    class="profile-item list-row list-card"
     :class="{
-      'profile-item--selected': selectMode && selected,
-      'profile-item--no-select': selectable,
+      'list-row--selected': selectMode && selected,
+      'list-row--no-select': selectable,
     }"
   >
     <!-- 有 to 時為 <a>，否則為純顯示的一張卡片。::after 覆蓋整張卡片，⋮ 以外的區域皆屬於連結 -->
     <component
       :is="to ? 'a' : 'div'"
-      class="profile-item__link"
+      class="profile-item__link list-row-link"
       :draggable="selectable ? 'false' : undefined"
       :href="href"
       v-bind="pointerHandlers"
@@ -66,13 +66,12 @@
     </component>
 
     <!-- 多選模式下隱藏 ⋮ -->
-    <ViewActions v-if="!selectMode" :actions="fields.actions" class="profile-item__actions" variant="menu" />
+    <ViewActions v-if="!selectMode" :actions="fields.actions" class="list-row-above-link" variant="menu" />
   </div>
 </template>
 
 <style scoped>
 .profile-item {
-  position: relative;
   display: flex;
   align-items: center;
   gap: 4px;
@@ -83,10 +82,7 @@
   /* 畫面外的卡片不排版也不繪製；68px 為尚未量得實際高度前的替代值 */
   content-visibility: auto;
   contain-intrinsic-size: auto 68px;
-  background: rgb(var(--v-theme-surface));
-  border: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
-  border-radius: 12px;
-  box-shadow: var(--list-card-shadow);
+  border-radius: var(--list-card-radius);
 }
 
 .profile-item__link {
@@ -95,14 +91,6 @@
   align-items: center;
   gap: 12px;
   min-width: 0;
-  color: inherit;
-  text-decoration: none;
-}
-
-.profile-item__link::after {
-  content: '';
-  position: absolute;
-  inset: 0;
 }
 
 .profile-item__avatar {
@@ -122,21 +110,5 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-/* 須疊於連結的 ::after 之上才能點擊 */
-.profile-item__actions {
-  position: relative;
-  z-index: 1;
-}
-
-.profile-item--no-select {
-  -webkit-user-drag: none;
-  user-select: none;
-}
-
-/* 主色淡底疊於卡片的底色之上 */
-.profile-item--selected {
-  background: linear-gradient(rgba(var(--v-theme-primary), 0.08), rgba(var(--v-theme-primary), 0.08)), rgb(var(--v-theme-surface));
 }
 </style>

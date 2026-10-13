@@ -1,8 +1,61 @@
-/* 列表中卡片（profile、card、gallery）共用的間距與陰影（見 docs/components/ListLayout.md） */
+/* 列表中的一列與卡片（deck、profile、card、gallery）共用的樣式（見 docs/components/ListLayout.md），以及動作選單的樣式 */
 :root {
   /* 卡片之間的距離。分組展開的動畫期間，下方的陰影須落於其中，因此不可小於 --list-card-shadow-extent */
   --list-card-gap: 8px;
+  /* profile 與 card 的圓角；gallery 為直角，不套用 */
+  --list-card-radius: 12px;
   --list-card-shadow: 2px 3px 6px rgba(0, 0, 0, 0.16);
   /* 陰影往右下擴出的距離（偏移 + 模糊）。GroupedList 的左右外擴與 ListLayout 的下方內距以此為準，調整陰影時須一併調整 */
   --list-card-shadow-extent: 8px;
+}
+
+/* 一列（DataList、DataProfile、DataCard、DataGallery）的根元素，配合 useRowClick 的點擊與選取 */
+.list-row {
+  position: relative;
+}
+
+/* 有 to 時為 <a>，::after 覆蓋整列，動作以外的區域皆屬於連結 */
+.list-row-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.list-row-link::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+}
+
+/* 疊於連結的 ::after 之上才能點擊；元件可另以絕對定位擺放 */
+.list-row-above-link {
+  position: relative;
+  z-index: 1;
+}
+
+/* 開啟長按多選時，禁止文字選取與拖曳 */
+.list-row--no-select {
+  -webkit-user-drag: none;
+  user-select: none;
+}
+
+/* 主色淡底以 background-image 疊於該列原本的底色之上；元件的底色須以 background-color 指定，不可用 background 簡寫 */
+.list-row--selected {
+  background-image: linear-gradient(rgba(var(--v-theme-primary), 0.08), rgba(var(--v-theme-primary), 0.08));
+}
+
+/* profile、card、gallery 的卡片外觀：底色、外框與陰影；圓角與間距由各元件決定 */
+.list-card {
+  background-color: rgb(var(--v-theme-surface));
+  border: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
+  box-shadow: var(--list-card-shadow);
+}
+
+/* 動作選單（ViewActions 的 menu、App Bar 的 ⋮）。v-list-item 預設的圖示與文字間距為 32px，
+   圖示為中等強調的透明度；此處縮小間距，圖示則與其他位置同樣深淺 */
+.action-menu {
+  --v-list-prepend-gap: 20px;
+}
+
+.action-menu .v-list-item__prepend > .v-icon {
+  opacity: 1;
 }

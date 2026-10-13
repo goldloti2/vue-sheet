@@ -1,6 +1,6 @@
 # DetailPage
 
-詳細頁的整頁版型：載入狀態、欄位區、左右滑動換上下一筆、底部的上下筆箭頭、右下角 FAB，一次接好。頁面只要說「這是哪張表、哪一筆、有哪些動作」。
+詳細頁的整頁版型：載入狀態、選用的標頭區塊、欄位區、左右滑動換上下一筆、底部的上下筆箭頭、右下角 FAB，一次接好。頁面只要說「這是哪張表、哪一筆、有哪些動作」。
 
 搭配 `useRecordPage(table)` 使用，其回傳的 `id`／`row`／`loading`／`error` 直接對應此處的 prop；`row` 另外交給 `useRowAction`，將 `use表名Actions` 中以列為參數的動作（編輯、刪除）綁定至這一筆（見 [actions.md](../actions.md#各表的-use表名actions)）。
 
@@ -50,6 +50,7 @@
 | `error` | `string \| null?` | 載入失敗的訊息 |
 | `fieldActions` | `FieldActions<Row>?` | 欄位 key → 動作，每欄一個、整格可點 |
 | `fab` | `(PageAction \| null)[]?` | 右下角的 FAB，通常是編輯；`null` 略過 |
+| `header` | `RowView<Row>?` | 選用，整頁最上方的標頭區塊（`defineView` 的回傳值），置於 `top` slot 之上，見 [DetailHeader](DetailHeader.md) |
 
 ## Slots
 

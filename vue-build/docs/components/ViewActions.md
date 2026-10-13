@@ -6,9 +6,9 @@ view 的列上動作（`actions`）的呈現元件，依 `variant` 提供三種�
 | --- | --- | --- |
 | `row`（預設） | 依陣列順序由左往右排列、整組靠右 | deck |
 | `menu` | 收入 ⋮ 選單，依陣列順序由上往下排列，每項顯示圖示與 `label` | profile |
-| `slots` | 左右各兩格：前兩個靠左、後兩個靠右，`null` 保留為空格，超過四個的部分不顯示 | card |
+| `slots` | 左右各兩格：前兩個靠左、後兩個靠右，`null` 保留為空格，超過四個的部分不顯示 | card、detail 標頭 |
 
-**一般不需要直接使用**：[DataList](DataList.md) 已將 `row` 置於右下角欄位的下一列，並在多選模式下隱藏；[DataProfile](DataProfile.md) 已將 `menu` 置於卡片右側；[DataCard](DataCard.md) 已將 `slots` 置於第 4 層。detail 標頭的左右各兩格日後亦使用 `slots`（見 ROADMAP 的「頁面類型」）。
+**一般不需要直接使用**：[DataList](DataList.md) 已將 `row` 置於右下角欄位的下一列，並在多選模式下隱藏；[DataProfile](DataProfile.md) 已將 `menu` 置於卡片右側；[DataCard](DataCard.md) 已將 `slots` 置於第 4 層，[DetailHeader](DetailHeader.md) 已將 `slots` 置於圖片下方。
 
 ## Usage
 

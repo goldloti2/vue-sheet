@@ -2,9 +2,11 @@
   import type { FieldActions, PageAction } from '@/composables/actions/useTableActions'
   import type { TableKey } from '@/schema'
   import type { TableSchema } from '@/schema/types'
+  import type { RowView } from '@/schema/view'
   import { Touch as vTouch } from 'vuetify/directives'
   import PageState from '@/components/ui/page/PageState.vue'
   import DataDetail from '@/components/ui/record/DataDetail.vue'
+  import DetailHeader from '@/components/ui/record/DetailHeader.vue'
   import RecordNav from '@/components/ui/record/RecordNav.vue'
   import PageFab from '@/components/ui/shell/PageFab.vue'
   import { useSiblingNav } from '@/composables/navigation/useListOrder'
@@ -27,6 +29,8 @@
     fieldActions?: FieldActions<Row>
     // 右下角的 FAB，通常是編輯
     fab?: (PageAction | null)[]
+    // 選用：整頁最上方的標頭區塊（defineView，見 DetailHeader）
+    header?: RowView<Row>
   }>()
 
   // 左右滑動換上下一筆；RecordNav 的兩顆箭頭是同一份順序
@@ -38,6 +42,8 @@
     <PageState :empty="!row" :error="error" :loading="loading">
       <!-- PageState 已經擋掉 null 了，這層只是讓型別看得出來 -->
       <template v-if="row">
+        <DetailHeader v-if="header" :row="row" :view="header" />
+
         <slot name="top" :row="row" />
 
         <DataDetail :field-actions="fieldActions" :row="row" :schema="schema" />

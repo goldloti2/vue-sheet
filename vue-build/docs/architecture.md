@@ -32,7 +32,7 @@ src/
     shell/             AppShell、PageFab、FilterPanel、SortPanel、TableChips、TabView
     dialog/            AppDialog、ConfirmDialog、FieldsDialog
     list/              DataList、DataProfile、DataCard、ListField、GroupedList、DataTable、CountLabel
-    record/            DataDetail、DetailField、DataForm、RecordNav
+    record/            DataDetail、DetailField、DetailHeader、DataForm、RecordNav
     page/              整頁的版型：PageState（載入中／失敗／找不到）、FormPage、DetailPage、ListPage、ChildList
     view/              ViewActions（view 的列上動作，DataList、DataProfile、DataCard 共用）
     auth/              PasswordLoginForm（登入頁上的表單，依登入方式替換；登入頁本身在 pages/login.vue）

@@ -25,7 +25,7 @@
 </script>
 
 <template>
-  <v-list open-strategy="single">
+  <v-list class="grouped-list" open-strategy="single">
     <template v-for="group in props.groups" :key="`${props.path}/${group.label}`">
       <v-list-group v-if="'subgroups' in group" :value="`${props.path}/${group.label}`">
         <template #activator="{ props: activatorProps }">
@@ -57,3 +57,17 @@
     </template>
   </v-list>
 </template>
+
+<style scoped>
+/* v-list 預設 overflow: auto，會裁切 profile、card、gallery 往右下的陰影；巢狀的各層皆適用 */
+.grouped-list {
+  overflow: visible;
+}
+
+/* 展開與收合的動畫期間，Vuetify 會於此層暫設 overflow: hidden。左右各外擴陰影的範圍再以內距抵銷，
+   內容的位置與寬度不變，裁切範圍則涵蓋陰影 */
+.grouped-list :deep(.v-list-group__items) {
+  margin-inline: calc(-1 * var(--list-card-shadow-extent));
+  padding-inline: var(--list-card-shadow-extent);
+}
+</style>

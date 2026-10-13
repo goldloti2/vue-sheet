@@ -87,7 +87,7 @@
   content-visibility: auto;
   background: rgb(var(--v-theme-surface));
   border: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
-  box-shadow: 2px 3px 6px rgba(0, 0, 0, 0.16);
+  box-shadow: var(--list-card-shadow);
 }
 
 .gallery-item__link {

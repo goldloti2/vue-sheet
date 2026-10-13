@@ -46,4 +46,9 @@
 
 | slot | 參數 | 說明 |
 | --- | --- | --- |
-| `default` | `{ row }` | 每一列怎麼畫，通常放 `DataList` |
+| `default` | `{ row }` | 每一列怎麼畫，通常放 `DataList`；亦可放 `DataProfile`、`DataCard` 或 `DataGallery`（後者須搭配 `layout="grid"`） |
+
+## 備註
+
+- **`v-list` 的 `overflow` 改為 `visible`**：`v-list` 預設為 `overflow: auto`，而卡片的寬度恰好撐滿它，profile、card、gallery 往右下的陰影會被裁切。巢狀的各層皆套用
+- **分組內容左右各外擴陰影的範圍**：展開與收合的動畫期間，Vuetify 會於 `.v-list-group__items` 暫設 `overflow: hidden`，無法移除（否則尚未展開的內容會溢出）。因此該層以負的 `margin-inline` 外擴、再以 `padding-inline` 抵銷，兩者皆為 `--list-card-shadow-extent`（見 [ListLayout](ListLayout.md) 的「卡片的間距與陰影」）。內容的位置與寬度不變，裁切範圍則涵蓋陰影；下方的陰影落在各元件的下方間距內（gallery 由 `ListLayout` 的格線提供）

@@ -17,6 +17,8 @@
 .list-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-  gap: 8px;
+  gap: var(--list-card-gap);
+  /* 分組展開的動畫期間，最後一列的陰影亦落在裁切範圍內 */
+  padding-bottom: var(--list-card-shadow-extent);
 }
 </style>

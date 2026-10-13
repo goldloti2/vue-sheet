@@ -79,14 +79,14 @@
   box-sizing: border-box;
   width: 100%;
   padding: 12px 8px 12px 16px;
-  margin-bottom: 8px;
+  margin-bottom: var(--list-card-gap);
   /* 畫面外的卡片不排版也不繪製；68px 為尚未量得實際高度前的替代值 */
   content-visibility: auto;
   contain-intrinsic-size: auto 68px;
   background: rgb(var(--v-theme-surface));
   border: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
   border-radius: 12px;
-  box-shadow: 2px 3px 6px rgba(0, 0, 0, 0.16);
+  box-shadow: var(--list-card-shadow);
 }
 
 .profile-item__link {

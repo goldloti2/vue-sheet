@@ -1,0 +1,8 @@
+/* 列表中卡片（profile、card、gallery）共用的間距與陰影（見 docs/components/ListLayout.md） */
+:root {
+  /* 卡片之間的距離。分組展開的動畫期間，下方的陰影須落於其中，因此不可小於 --list-card-shadow-extent */
+  --list-card-gap: 8px;
+  --list-card-shadow: 2px 3px 6px rgba(0, 0, 0, 0.16);
+  /* 陰影往右下擴出的距離（偏移 + 模糊）。GroupedList 的左右外擴與 ListLayout 的下方內距以此為準，調整陰影時須一併調整 */
+  --list-card-shadow-extent: 8px;
+}

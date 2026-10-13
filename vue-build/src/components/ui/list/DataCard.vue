@@ -107,14 +107,14 @@
   position: relative;
   box-sizing: border-box;
   width: 100%;
-  margin-bottom: 8px;
+  margin-bottom: var(--list-card-gap);
   overflow: hidden;
   /* 畫面外的卡片不排版也不繪製；替代高度由 estimatedHeight 依出現的層算出 */
   content-visibility: auto;
   background: rgb(var(--v-theme-surface));
   border: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
   border-radius: 12px;
-  box-shadow: 2px 3px 6px rgba(0, 0, 0, 0.16);
+  box-shadow: var(--list-card-shadow);
 }
 
 .card-item__link {

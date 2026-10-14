@@ -5,12 +5,16 @@ import { sortByKey } from './sort'
 export interface GroupLevel<Row> {
   // 排序用；分開於 label 是為了避免依顯示字串排序出錯（例如「10月」< 「2月」）
   sortKey: (row: Row) => string | number
-  label: (row: Row) => string
+  // 回傳 null 表示這一列於此層不再往下分：同一組中這類的列併成一個沒有標題的子組
+  label: (row: Row) => string | null
 }
 
+// label 為 null 者為沒有標題的子組（見 GroupLevel 的 label）
 export type RowGroup<Row>
-  = | { label: string, rows: Row[] }
+  = | { label: string | null, rows: Row[] }
     | { label: string, subgroups: RowGroup<Row>[] }
+
+type FlatGroup<Row> = { label: string, rows: Row[] } | { label: null, rows: Row[] }
 
 function buildGroups<Row> (rows: readonly Row[], levels: readonly GroupLevel<Row>[]): RowGroup<Row>[] {
   const [level, ...restLevels] = levels
@@ -18,9 +22,20 @@ function buildGroups<Row> (rows: readonly Row[], levels: readonly GroupLevel<Row
     return []
   }
 
-  const groups: { label: string, rows: Row[] }[] = []
+  const groups: FlatGroup<Row>[] = []
+  // 不再往下分的列不論是否相鄰，皆併入同一個子組，位置為第一次出現之處
+  let untitled: { label: null, rows: Row[] } | undefined
   for (const row of rows) {
     const label = level.label(row)
+    if (label === null) {
+      if (!untitled) {
+        untitled = { label: null, rows: [] }
+        groups.push(untitled)
+      }
+      untitled.rows.push(row)
+      continue
+    }
+
     const lastGroup = groups.at(-1)
     if (lastGroup?.label === label) {
       lastGroup.rows.push(row)
@@ -33,10 +48,10 @@ function buildGroups<Row> (rows: readonly Row[], levels: readonly GroupLevel<Row
     return groups
   }
 
-  return groups.map(group => ({
-    label: group.label,
-    subgroups: buildGroups(group.rows, restLevels),
-  }))
+  // 下一層全部為 null 時，仍保留為可收合的一組，底下只有一個沒有標題的子組
+  return groups.map(group => group.label === null
+    ? group
+    : { label: group.label, subgroups: buildGroups(group.rows, restLevels) })
 }
 
 // 依多層分組鍵把 rows 分成巢狀分組（由外到內）。levels 依序疊加穩定排序，

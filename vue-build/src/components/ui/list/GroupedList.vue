@@ -44,7 +44,8 @@
       </v-list-group>
 
       <template v-else>
-        <v-list-subheader class="bg-surface-light">
+        <!-- label 為 null 的子組沒有標題，直接列出各列（見 GroupLevel 的 label） -->
+        <v-list-subheader v-if="group.label !== null" class="bg-surface-light">
           <CountLabel :count="group.rows.length" :label="group.label" />
         </v-list-subheader>
 

@@ -34,6 +34,28 @@
 </template>
 ```
 
+## 不再往下分的列
+
+`label` 可回傳 `null`，表示這一列於此層不再往下分：
+
+- **這些列併成一個沒有標題的子組**（不論是否相鄰），置於第一次出現之處；同一組中其餘的列照常分組
+- **整組皆為 `null` 時，外層的那一組仍可收合**，展開後直接列出各列，不出現下一層的標題。例如外層有一組「待處理」，與其他組一樣可收合，底下不再依月份細分
+- **排序仍依每一層的 `sortKey`**：回傳 `null` 的列在該層的 `sortKey` 依然生效，須給出合理的值
+
+```ts
+const groupLevels: GroupLevel<Row>[] = [
+  {
+    sortKey: row => isPending(row) ? -1 : (row.date?.getFullYear() ?? 0),
+    label: row => isPending(row) ? '待處理' : (row.date ? `${row.date.getFullYear()}年` : '未知'),
+  },
+  {
+    // 年份一併計入，跨年的列（例如「待處理」這組）才不會排錯
+    sortKey: row => row.date ? row.date.getFullYear() * 12 + row.date.getMonth() : 0,
+    label: row => isPending(row) ? null : (row.date ? `${row.date.getMonth() + 1}月` : '未知'),
+  },
+]
+```
+
 ## Props
 
 | prop | 型別 | 說明 |

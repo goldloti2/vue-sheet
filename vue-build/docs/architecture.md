@@ -41,7 +41,8 @@ src/
                        （比對與排序本身是 schema/ 底下的純函數）
     form/              表單頁：useTableForm、useLeaveGuard、useSyncHold
     shell/             跟 AppShell 溝通：useActionSlot（登記機制）、useShellActions（App Bar／
-                       底部／多選出口）、useListControls、useAppBarTabs、usePanelActive、
+                       底部／多選出口）、useListControls、useSharedListControls（TabView 底下
+                       的列表共用搜尋）、useAppBarTabs、usePanelActive、
                        useOverlay、useActionRunner、useDialogs（confirm／notify）、useAskFields
     navigation/        路由接力：useRouteId、useListOrder、useFlow
     list/              列表互動：useMultiSelect、useLongPress、useRowClick
@@ -60,7 +61,7 @@ src/
   config/              app.ts（App 名稱、登入方式）、navigation.ts（導覽列項目）
   styles/              全域的 CSS：list.css（列表中一列與卡片共用的樣式，見 docs/components/ListLayout.md；動作選單的樣式，見 docs/components/ViewActions.md）
   router/index.ts      路由實例、登入檢查、轉場方向判定、leaveAfterAction / pushWithDefaults
-  pages/               檔案即路由
+  pages/               檔案即路由；任意層的 _ref/ 只供其他頁面引用，不產生路由
 ```
 
 頁面的檔名直接對應網址：
@@ -71,6 +72,7 @@ src/
 | `pages/表名/new.vue` | `/表名/new` 新增 |
 | `pages/表名/[id]/index.vue` | `/表名/:id` 詳細 |
 | `pages/表名/[id]/edit.vue` | `/表名/:id/edit` 編輯 |
+| `pages/表名/_ref/*.vue` | 不產生路由，只供其他頁面引用（例如自頁籤頁拆出的列表）；`vite.config.mts` 的路由插件以 `exclude: ['src/pages/**/_ref/**']` 排除 |
 
 > **注意**：同一個動態片段不能同時有 `[id].vue` 檔案和 `[id]/` 資料夾——unplugin-vue-router 會把前者當成後者的 parent layout，子路由要靠 `<router-view>` 才顯示。一律用資料夾寫法。
 

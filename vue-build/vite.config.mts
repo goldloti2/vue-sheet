@@ -7,7 +7,8 @@ import Vuetify, { transformAssetUrls } from 'vite-plugin-vuetify'
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [VueRouter({ dts: 'src/typed-router.d.ts' }), Vue({
+  // pages 中任意層的 _ref/ 只供其他頁面引用，不產生路由（見 docs/dashboard.md）
+  plugins: [VueRouter({ dts: 'src/typed-router.d.ts', exclude: ['src/pages/**/_ref/**'] }), Vue({
     template: { transformAssetUrls },
   }), // https://github.com/vuetifyjs/vuetify-loader/tree/master/packages/vite-plugin#readme
   Vuetify({

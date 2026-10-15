@@ -12,6 +12,7 @@ export interface __Table__Row extends RowBase {
   name: string | null
   amount: number | null
   date: Date | null
+  status: string | null
 }
 
 export const __table__Schema: TableSchema<__Table__Row> = {
@@ -28,15 +29,17 @@ export const __table__Schema: TableSchema<__Table__Row> = {
     { key: 'name', label: '名稱', type: 'text', required: true },
     { key: 'amount', label: '金額', type: 'number', min: 0 },
     { key: 'date', label: '日期', type: 'date' },
+    // select 的選項也是 pages/tab-list.vue 的頁籤；不需要依狀態分頁籤時可整欄刪除
+    { key: 'status', label: '狀態', type: 'select', options: ['進行中', '已完成'] },
   ],
   // 以下都可省略。順序類的省略就沿用 columns 的順序
   // 能搜尋／篩選的欄位：text／ref 進搜尋列，其餘進篩選抽屜；順序就是抽屜第一層的順序
-  searchable: ['name', 'date', 'amount'],
+  searchable: ['name', 'date', 'amount', 'status'],
   // 能排序的欄位，順序就是排序面板的順序
   sortable: ['date', 'amount'],
   defaultSort: [
     { key: 'date', direction: 'asc' },
   ],
-  detailOrder: ['name', 'amount', 'date'],
-  formOrder: ['name', 'amount', 'date'],
+  detailOrder: ['name', 'status', 'amount', 'date'],
+  formOrder: ['name', 'status', 'amount', 'date'],
 }

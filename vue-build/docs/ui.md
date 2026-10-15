@@ -127,7 +127,7 @@ const data = useSearch(query, rows, schema)
 - **全部小寫比對**，不做全半形正規化
 - **效能**：每列的可搜尋文字只在 rows 變時重算，敲字只做 `includes`
 - **換頁自動收起**；回到還帶著 query 的頁面（KeepAlive）會自動重開，讓搜尋欄跟被過濾的列表一致
-- **有頁籤的頁**先搜再依頁籤切，所以一個 query 跨所有頁籤
+- **有頁籤的頁**：各頁籤的列表放在 `TabView` 中時，搜尋字串由 `TabView` 統一登記、跨所有頁籤共用（見下方「同一頁面中的多張表」）
 
 ---
 
@@ -161,30 +161,27 @@ const data = useSearch(query, useFilter(filters, allRows, schema), schema)
 
 抽屜連同背後的遮罩蓋住整個畫面，**開著時 App Bar 上的東西都碰不到**（包括搜尋列與 ← 關閉），要先關掉抽屜才能操作別的。右側抽屜是篩選與排序共用的，一次只顯示一種——因為要換另一種就得先關掉它，互斥不用另外寫邏輯擋。
 
-### 一頁好幾張表
+### 同一頁面中的多張表
 
-頁籤各接一張表時（見 [TabView.md](components/TabView.md)），對每張表傳 `{ search: false }` 關掉 `useListPage` 的自動登記，改由頁面登記一次、`tables` 給多個元素。query 是全頁一條，所以自己開一個 ref、每張表都傳同一條進去（不傳的話每張表會各自生一條，只有登記的那張搜得到）：
+**將各列表放入 `TabView` 的頁籤即可，不需另行登記**（見 [TabView.md](components/TabView.md)）。`TabView` provide 一份「共用的列表控制」（`useSharedListControls`），其中的 `useListPage` 不自行登記，改為加入此控制：
 
-```ts
-const query = ref('')
-const parents = useListPage<ParentRow>('parent', parentSchema, { search: false, query })
-const children = useListPage<ChildRow>('child', childSchema, { search: false, query })
+- **搜尋字串共用一條**：輸入一次，各頁籤的列表皆隨之過濾
+- **同一張表共用一份篩選與排序**：例如各頁籤為同一張表依狀態切分的列表（以 `useListPage` 的 `scope` 只留該狀態的列），條件套用於所有頁籤，抽屜中該表只有一個 chip
+- **不同的表各有一份**，同時生效；抽屜第一層的上方多出一排表的 chip
+- **其中沒有列表時不登記**，App Bar 不出現放大鏡
+- 頁籤的值與某張表的 `tableLabel` 相符時，抽屜開啟時先停在該表
 
-useListControls(query, {
-  tables: [
-    { schema: parentSchema, filters: parents.filters, rows: parents.allRows, sort: parents.sort },
-    { schema: childSchema, filters: children.filters, rows: children.allRows, sort: children.sort },
-  ],
-  current: selectedTab,
-})
-```
+抽屜的行為：
 
-- **每張表各自一份 `Filters`、同時生效**：各面板拿自己那份餵 `useFilter`，切頁籤不會把條件帶過去
-- **搜尋字串全頁共用一份**，所以打一次字每個面板都跟著過濾
-- **第一層上方多一排表的 chip**（標籤是 `schema.tableLabel`）決定現在編哪一張；只有一張表就不顯示
-- **`current` 是頁面的頁籤 `v-model`**（值對得上 `tableLabel`），抽屜打開時先停在那張表，使用者還是可以自己切；關掉抽屜就忘掉，下次打開重新跟著頁籤
-- **篩選鈕的主色標記掃所有表**；「清除」只清當前那張，要全部清掉就按 ←（關閉搜尋）
-- **排序面板用同一批表**（只列有給 `sort` 的），chip 也是同一排
+- **第一層的上方有一排表的 chip**（標籤為 `schema.tableLabel`），決定目前編輯哪一張表；只有一張表時不顯示。關閉抽屜即重置，下次開啟時重新依頁籤決定
+- **篩選鈕的主色標記涵蓋所有表**；「清除」僅清除目前的那一張，全部清除須按 ←（關閉搜尋）
+- **排序面板使用同一批表**（僅列出可排序者），chip 亦為同一排
+
+**同一張表依狀態切分的頁籤頁**：將列表拆成只供引用的元件，置於該表資料夾的 `_ref/`（不產生路由），以 `scope` 只留該狀態的列；頁籤頁僅保留 `TabView`，每個頁籤放一個列表並傳入狀態。`scope` 位於篩選與搜尋之前，各頁籤僅比對各自的部分，合計的工作量與「整張表搜尋一次再切分」相同。範本見 `template/pages/tab-list.vue` 與 `template/pages/_ref/list.vue`。
+
+**拆出的列表以 props 接受條件**，同一個元件可用於不同頁面，例如另一頁只列某一種狀態。常用且意義固定的條件宜定為專屬的 prop（如 `status`）；需要任意條件時，另提供通用的 `scope` prop，於元件內與專屬的條件合併。
+
+**不使用 `TabView` 時，由頁面手動登記**：各表的 `useListPage` 關閉自動登記，並共用頁面建立的一條搜尋字串，由頁面以 `useListControls` 一次登記全部的表。寫法見 [ListPage.md](components/ListPage.md#手動登記多張表)。
 
 ---
 

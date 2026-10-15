@@ -1,6 +1,7 @@
 <script lang="ts" setup>
   import TabViewPanel from '@/components/ui/shell/TabViewPanel.vue'
   import { useAppBarTabs } from '@/composables/shell/useAppBarTabs'
+  import { provideSharedListControls } from '@/composables/shell/useSharedListControls'
 
   const props = defineProps<{
     tabs: string[]
@@ -10,6 +11,9 @@
 
   // 頁籤列畫在 App Bar 底下，這裡只留內容區
   useAppBarTabs(() => ({ tabs: props.tabs, current: model }))
+
+  // 各頁籤中的列表共用一條搜尋字串，同一張表共用篩選與排序，由此統一登記（見 docs/dashboard.md）。
+  provideSharedListControls(model)
 </script>
 
 <template>

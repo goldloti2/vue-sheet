@@ -54,6 +54,8 @@
 | `pages/profile-list.vue` | `src/pages/__table__/index.vue` | **選用**：以 profile 呈現的列表頁 |
 | `pages/card-list.vue` | `src/pages/__table__/index.vue` | **選用**：以 card 呈現的列表頁 |
 | `pages/gallery-list.vue` | `src/pages/__table__/index.vue` | **選用**：以 gallery 呈現的列表頁 |
+| `pages/tab-list.vue` | `src/pages/__table__/index.vue` | **選用**：依 select 欄位（範本為 `status`）分頁籤的列表頁，各頁籤放 `_ref/list.vue` |
+| `pages/_ref/list.vue` | `src/pages/__table__/_ref/__Table__List.vue` | **選用**：只供其他頁面引用的列表（不產生路由），以 `status`／`scope` 傳入條件；供 `tab-list.vue`、dashboard 或其他頁面使用 |
 | `pages/detail.vue` | `src/pages/__table__/[id]/index.vue` | 詳細頁 → `/__table__/:id` |
 | `pages/new.vue` | `src/pages/__table__/new.vue` | 新增表單 → `/__table__/new` |
 | `pages/edit.vue` | `src/pages/__table__/[id]/edit.vue` | 編輯表單 → `/__table__/:id/edit` |

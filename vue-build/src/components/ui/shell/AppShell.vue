@@ -2,6 +2,7 @@
   import type { PageAction } from '@/composables/actions/useTableActions'
   import type { AppBarTabs } from '@/composables/shell/useAppBarTabs'
   import type { ListControls } from '@/composables/shell/useListControls'
+  import type { AppBarHeading } from '@/composables/shell/useShellActions'
   import { mdiArrowLeft, mdiClose, mdiDotsVertical, mdiFilterVariant, mdiLogout, mdiMagnify, mdiRefresh, mdiSort } from '@mdi/js'
   import { computed, onBeforeUnmount, onMounted, provide, shallowRef, watch } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
@@ -15,7 +16,7 @@
   import { choose, confirm, confirmDialog, notice, notify, pickChoice } from '@/composables/shell/useDialogs'
   import { listControlsKey } from '@/composables/shell/useListControls'
   import { overlayOpenKey } from '@/composables/shell/useOverlay'
-  import { appBarActionsKey, appBarSelectionKey, bottomActionsKey } from '@/composables/shell/useShellActions'
+  import { appBarActionsKey, appBarHeadingKey, appBarSelectionKey, bottomActionsKey } from '@/composables/shell/useShellActions'
   import { appName, authMethod } from '@/config/app'
   import { navigationCount } from '@/router'
   import { hasActiveFilter } from '@/schema/filter'
@@ -40,7 +41,13 @@
   const route = useRoute()
   const router = useRouter()
 
-  const title = computed(() => route.meta.title ?? appName)
+  // 頁面可暫時取代標題與左側的按鈕（useAppBarHeading，例如 dashboard 的面板展開時）
+  const heading = shallowRef<AppBarHeading | null>(null)
+  provide(appBarHeadingKey, value => {
+    heading.value = value
+  })
+
+  const title = computed(() => heading.value?.title ?? route.meta.title ?? appName)
 
   // 登入頁這類整頁自己排版的頁面：App Bar、側邊欄、底部導覽列都不顯示
   const showShell = computed(() => route.meta.shell !== false)
@@ -131,8 +138,8 @@
   // 動作的執行與確認框都在這裡，頁面只負責註冊動作
   const runAction = provideActionRunner()
 
-  // 導覽列的目的地不用返回按鈕；其他方式進來的頁面（例如點列表項目進 detail）都算
-  const showBack = computed(() => !props.navItems.some(item => item.to === route.path))
+  // 導覽列的目的地不用返回按鈕；其他方式進來的頁面（例如點列表項目進 detail）都算。頁面取代了標題時一律顯示
+  const showBack = computed(() => heading.value !== null || !props.navItems.some(item => item.to === route.path))
 
   const store = useTablesStore()
   const syncing = shallowRef(false)
@@ -185,7 +192,9 @@
   onBeforeUnmount(() => window.removeEventListener('beforeunload', warnUnsaved))
 
   function handleLeadingIconClick () {
-    if (showBack.value) {
+    if (heading.value) {
+      heading.value.back()
+    } else if (showBack.value) {
       if (navigationCount.value > 1) {
         router.back()
       }

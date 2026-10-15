@@ -10,6 +10,7 @@
   import RecordNav from '@/components/ui/record/RecordNav.vue'
   import PageFab from '@/components/ui/shell/PageFab.vue'
   import { useSiblingNav } from '@/composables/navigation/useListOrder'
+  import { usePanelFullPage } from '@/composables/shell/usePanelActive'
 
   defineSlots<{
     // 這張表額外要放的東西，擺在欄位下面。兩個 slot 都是資料到手才渲染，所以 row 一定不是 null
@@ -33,12 +34,13 @@
     header?: RowView<Row>
   }>()
 
-  // 左右滑動換上下一筆；RecordNav 的兩顆箭頭是同一份順序
+  // 左右滑動換上下一筆；RecordNav 的兩顆箭頭是同一份順序。兩者皆只在以整頁呈現時啟用（dashboard 的面板中停用）
   const { swipe } = useSiblingNav(props.table, () => props.id)
+  const fullPage = usePanelFullPage()
 </script>
 
 <template>
-  <div v-touch="swipe">
+  <div v-touch="fullPage ? swipe : {}">
     <PageState :empty="!row" :error="error" :loading="loading">
       <!-- PageState 已經擋掉 null 了，這層只是讓型別看得出來 -->
       <template v-if="row">
@@ -53,7 +55,7 @@
       </template>
     </PageState>
 
-    <RecordNav :id="id" :table="table" />
+    <RecordNav v-if="fullPage" :id="id" :table="table" />
 
     <PageFab :actions="fab ?? []" />
   </div>

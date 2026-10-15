@@ -1,11 +1,14 @@
 <script lang="ts" setup>
   import type { DashboardContext, DashboardPanelEntry } from '@/components/ui/panel/dashboardContext'
   import type { PanelRequest, PanelSize } from '@/components/ui/panel/placePanels'
+  import type { PageAction } from '@/composables/actions/useTableActions'
   import { computed, onBeforeUnmount, onMounted, provide, shallowReactive, shallowRef, useTemplateRef } from 'vue'
+  import { useRouter } from 'vue-router'
   import { AUTO_ROWS_MAX, dashboardKey } from '@/components/ui/panel/dashboardContext'
   import { placePanels } from '@/components/ui/panel/placePanels'
   import { useCompactLayout } from '@/composables/shell/useCompactLayout'
   import { provideSharedListControls } from '@/composables/shell/useSharedListControls'
+  import { appBarActionsKey, useAppBarActions, useAppBarHeading } from '@/composables/shell/useShellActions'
   import { schemas } from '@/schema'
 
   // 同時顯示多個面板（見 docs/dashboard.md）：方格排版、關注點，以及各面板列表共用的搜尋、篩選與排序
@@ -85,9 +88,60 @@
 
   const cell = computed(() => (contentWidth.value - (cols.value - 1) * GAP) / cols.value)
 
+  // 展開：以同一個網址推入一筆 history，於 state 記下面板；返回鍵或 ← 即回到前一筆而縮回。
+  // 網址不變，KeepAlive 不會重建此頁（見 docs/dashboard.md 的「展開」）
+  const router = useRouter()
+  const ownPath = router.currentRoute.value.fullPath
+  const expanded = shallowRef<string | null>(null)
+
+  // 依目前這一筆 history 的 state 決定是否展開；KeepAlive 收起來時其他頁面的導覽不理會
+  function syncExpanded () {
+    if (router.currentRoute.value.fullPath !== ownPath) {
+      return
+    }
+    const value = router.options.history.state.dashboardPanel
+    const entry = panels.find(panel => panel.name === value)
+    expanded.value = entry?.framed ? entry.name : null
+    if (expanded.value) {
+      focused.value = expanded.value
+    }
+  }
+  onMounted(syncExpanded)
+  onBeforeUnmount(router.afterEach(syncExpanded))
+
+  // 由面板小外殼上的展開鈕呼叫
+  function expand (name: string) {
+    const entry = panels.find(panel => panel.name === name)
+    if (!entry?.framed) {
+      return
+    }
+    focused.value = name
+    const { path, query, hash } = router.currentRoute.value
+    void router.push({ path, query, hash, state: { dashboardPanel: name }, force: true })
+  }
+
+  function collapse () {
+    router.back()
+  }
+
+  const focusedEntry = computed(() => panels.find(entry => entry.name === focused.value))
+
+  // App Bar 的動作：平時沒有；關注面板多選中或已展開時，為該面板自己的動作。
+  // 面板中的登記交到這裡（只有關注面板的會進來），由此統一決定
+  const panelActions = shallowRef<(PageAction | null)[]>([])
+  useAppBarActions(() => expanded.value || focusedEntry.value?.selecting.value ? panelActions.value : [])
+  provide(appBarActionsKey, actions => {
+    panelActions.value = actions
+  })
+
+  // 展開時 App Bar 顯示 ← 與面板的標題
+  useAppBarHeading(() => expanded.value ? { title: focusedEntry.value?.title ?? '', back: collapse } : null)
+
   const context: DashboardContext = {
     focused,
     focus,
+    expanded,
+    expand,
     register,
     placement: name => computed(() => placements.value.get(name)),
     cellSize: cell,
@@ -102,15 +156,18 @@
   })
   provideSharedListControls(focusedTableLabel)
 
-  const gridStyle = computed(() => ({
-    gridTemplateColumns: `repeat(${cols.value}, minmax(0, 1fr))`,
-    gridAutoRows: `${Math.max(cell.value, 0)}px`,
-    gap: `${GAP}px`,
-  }))
+  // 展開時不排方格，展開的面板與一般頁面相同
+  const gridStyle = computed(() => expanded.value
+    ? {}
+    : ({
+      gridTemplateColumns: `repeat(${cols.value}, minmax(0, 1fr))`,
+      gridAutoRows: `${Math.max(cell.value, 0)}px`,
+      gap: `${GAP}px`,
+    }))
 </script>
 
 <template>
-  <div ref="root" class="dashboard" :data-layout="compact ? 'mobile' : 'desktop'">
+  <div ref="root" class="dashboard" :class="{ 'dashboard--expanded': expanded }" :data-layout="compact ? 'mobile' : 'desktop'">
     <div class="dashboard__grid" :style="gridStyle">
       <slot />
     </div>
@@ -124,5 +181,13 @@
 
 .dashboard__grid {
   display: grid;
+}
+
+.dashboard--expanded {
+  padding: 0;
+}
+
+.dashboard--expanded .dashboard__grid {
+  display: block;
 }
 </style>

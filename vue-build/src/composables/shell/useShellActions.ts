@@ -19,6 +19,19 @@ export function useBottomActions (source: () => (PageAction | null)[]): void {
   registerActions(bottomActionsKey, source)
 }
 
+export interface AppBarHeading {
+  title: string
+  back: () => void
+}
+
+export const appBarHeadingKey: InjectionKey<SlotSetter<AppBarHeading | null>> = Symbol('appBarHeading')
+
+// 暫時取代 App Bar 左側的標題與按鈕：顯示 ← 與給定的標題，按下 ← 時呼叫 back（例如 dashboard 的面板展開時）。
+// null 時照常顯示路由的標題，左側按鈕依頁面是否為導覽列的目的地而定
+export function useAppBarHeading (source: () => AppBarHeading | null): void {
+  registerSlot(appBarHeadingKey, source, null)
+}
+
 export const appBarSelectionKey: InjectionKey<SlotSetter<(() => void) | null>> = Symbol('appBarSelection')
 
 // 多選模式的出口：給「怎麼退出」，不是 null 就代表現在在多選。按鈕長怎樣由 AppShell 決定（跟放大鏡一樣），

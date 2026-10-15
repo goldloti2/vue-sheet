@@ -5,7 +5,7 @@
   import { useLayout } from 'vuetify'
   import { useRunAction } from '@/composables/shell/useActionRunner'
   import { useOverlayOpen } from '@/composables/shell/useOverlay'
-  import { usePanelActive, usePanelFab } from '@/composables/shell/usePanelActive'
+  import { usePanelActive, usePanelFullPage } from '@/composables/shell/usePanelActive'
 
   const { actions } = defineProps<{
     actions: (PageAction | null)[]
@@ -27,8 +27,8 @@
   // dashboard 的面板另外只在展開時允許
   const cached = shallowRef(true)
   const panelActive = usePanelActive()
-  const panelFab = usePanelFab()
-  const isActive = computed(() => cached.value && panelActive.value && panelFab.value)
+  const fullPage = usePanelFullPage()
+  const isActive = computed(() => cached.value && panelActive.value && fullPage.value)
 
   onActivated(() => {
     cached.value = true

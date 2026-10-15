@@ -14,9 +14,10 @@ export function usePanelActive (): PanelActive {
   return inject(panelActiveKey, ALWAYS_ACTIVE)
 }
 
-// DashboardPanel 提供：面板中的 FAB 是否可掛出（dashboard 中僅於展開時）。不在面板中時永遠可以
-export const panelFabKey: InjectionKey<PanelActive> = Symbol('panelFab')
+// DashboardPanel 提供：面板是否以整頁呈現（dashboard 中僅於展開時）。不在面板中時永遠是。
+// 只適合整頁的東西讀它：FAB、DetailPage 的上下一筆箭頭與左右滑動
+export const panelFullPageKey: InjectionKey<PanelActive> = Symbol('panelFullPage')
 
-export function usePanelFab (): PanelActive {
-  return inject(panelFabKey, ALWAYS_ACTIVE)
+export function usePanelFullPage (): PanelActive {
+  return inject(panelFullPageKey, ALWAYS_ACTIVE)
 }

@@ -45,9 +45,13 @@ function rememberScroll (fullPath: string): void {
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes,
-  // 回到看過的頁面就回到原本的位置（返回鍵有瀏覽器自己記的，優先用），沒看過的一律從頂端開始
-  scrollBehavior (to, _from, savedPosition) {
-    return { top: savedPosition?.top ?? scrollPositions.get(to.fullPath) ?? 0 }
+  // 回到看過的頁面就回到原本的位置（返回鍵有瀏覽器自己記的，優先用），沒看過的一律從頂端開始。
+  // 同一個網址推入新的一筆（例如 dashboard 展開面板）也從頂端開始
+  scrollBehavior (to, from, savedPosition) {
+    if (savedPosition) {
+      return { top: savedPosition.top }
+    }
+    return { top: to.fullPath === from.fullPath ? 0 : (scrollPositions.get(to.fullPath) ?? 0) }
   },
 })
 

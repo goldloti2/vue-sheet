@@ -1,6 +1,6 @@
 # Dashboard（設計稿）
 
-> 🔶 部分實作。本文件為設計，實作完成後改寫為用法說明，或移入 ROADMAP。已完成：多個列表共用搜尋、`useListPage` 的 `scope`、`_ref/` 的路由排除，以及第 1 階段（`DashboardPage`、`DashboardPanel` 的方格排版、小外殼與關注點、共用的搜尋、平時隱藏 FAB 與 App Bar 的動作），見「與現有機制的關係」中標為 ✅ 者。尚未實作：展開、互動、多選的鎖定、面板過窄時的窄版。
+> 🔶 部分實作。本文件為設計，實作完成後改寫為用法說明，或移入 ROADMAP。已完成：多個列表共用搜尋、`useListPage` 的 `scope`、`_ref/` 的路由排除，第 1 階段（`DashboardPage`、`DashboardPanel` 的方格排版、小外殼與關注點、共用的搜尋、平時隱藏 FAB 與 App Bar 的動作）與第 2 階段（展開），見「與現有機制的關係」中標為 ✅ 者。尚未實作：互動、多選的鎖定、面板過窄時的窄版。
 
 dashboard 同時顯示多個面板，與一次只顯示一個面板的 tab（`TabPage`）相對。以 `interactive` 開關決定面板之間是否連動：
 
@@ -213,7 +213,7 @@ CSS grid 遇到座標重疊時直接讓面板疊在一起，既不警告亦不�
 
 ## 小外殼與關注點
 
-每個面板預設有一個小外殼（標題列，標題為 `DashboardPanel` 的 `title`），可由設計者關閉。小外殼不放動作，只用來標示關注點：
+每個面板預設有一個小外殼（標題列，標題為 `DashboardPanel` 的 `title`），可由設計者關閉。小外殼除右側的「展開」鈕外不放動作，用來標示關注點：
 
 - **點擊面板的任何地方即成為關注點**，以外框顏色標示
 - **預設的關注點為第一個有小外殼的面板**
@@ -224,9 +224,11 @@ App Bar 依狀態顯示：
 
 | 狀態 | App Bar |
 | --- | --- |
-| 平時 | 搜尋（含篩選、排序）與「展開」鈕 |
+| 平時 | 搜尋（含篩選、排序） |
 | 關注面板在多選模式 | 該面板的多選動作（例如批次刪除）與「取消」 |
-| 面板已展開 | 該面板完整的外殼：動作、FAB、多選，與一般頁面相同 |
+| 面板已展開 | 該面板完整的外殼：← 鈕與面板的標題、動作、FAB、多選，與一般頁面相同 |
+
+- **App Bar 的動作由 `DashboardPage` 統一決定**：`DashboardPage` provide `appBarActionsKey`，面板中的 `useAppBarActions` 交出的動作皆先交到此處（只有關注面板的會生效），再依上表決定是否顯示，由 `DashboardPage` 自己登記一次。「展開」鈕放在各面板的小外殼而非 App Bar，未關注的面板亦可直接展開
 
 ---
 
@@ -253,9 +255,11 @@ App Bar 依狀態顯示：
 
 ## 展開
 
-「展開」將關注面板就地放大，佔滿整個內容區，其他面板暫時隱藏：
+按下小外殼上的「展開」鈕，該面板成為關注點並就地放大，佔滿整個內容區，其他面板暫時隱藏：
 
-- **展開時推入一筆 history**，按返回鍵即縮回；App Bar 左上角顯示 ← 鈕，作用與返回鍵相同
+- **展開時以同一個網址推入一筆 history**，於該筆的 state 記下展開的面板；按返回鍵回到前一筆即縮回。App Bar 左上角顯示 ← 鈕，作用與返回鍵相同
+- **是否展開一律依目前這一筆 history 的 state 決定**：`DashboardPage` 於每次導覽完成後（`router.afterEach`）與掛載時讀取，按下「展開」鈕只推入 history，不直接改變狀態。因此瀏覽器的下一頁會再次展開，自展開的面板進入詳細頁再返回時仍為展開，重新整理後亦維持
+- **網址不變，KeepAlive 不重建此頁**：KeepAlive 以 `fullPath` 為 key，推入的一筆與原本的網址相同，面板中的狀態（分組的收合、多選、搜尋字串等）皆保留。router 的 `scrollBehavior` 對網址相同的推入回到頂端，返回時仍依瀏覽器記下的位置還原
 - **展開期間，該面板與一般頁面相同**：FAB、App Bar 的動作、多選、`DetailPage` 的上下一筆箭頭與左右滑動皆恢復
 - **互動的狀態保留**：例如子表面板展開後，仍只顯示所選父列的子列
 - **App Bar 的標題沿用面板的名稱**（`DashboardPanel` 的 `title`），與小外殼上的標題相同。頁面以元件 import 時讀不到自己 `<route>` 的 `meta.title`，`_ref/` 中的列表亦無路由，因此標題一律由 dashboard 給定
@@ -298,10 +302,12 @@ App Bar 依狀態顯示：
 | 現有機制 | dashboard 中的處理 |
 | --- | --- |
 | `TabPanel` provide 的「是否為當前面板」（`panelActiveKey`） | ✅ `DashboardPanel` provide 同一份，「當前」改為關注面板；`useListControls` 等登記因此自動跟著關注點 |
-| `useAppBarActions` | 🔶 僅於該面板多選中或已展開時生效：`DashboardPanel` 包一層 `appBarActionsKey` 與 `appBarSelectionKey`，平時改交出空的（多選的部分已完成，展開待做） |
-| `PageFab` | 🔶 僅於該面板已展開時顯示：讀取 `usePanelFab()`（`DashboardPanel` provide，平時為 false 的部分已完成，展開待做） |
+| `useAppBarActions` | ✅ 僅於關注面板多選中或已展開時生效：`DashboardPage` provide `appBarActionsKey` 收下面板的動作，由自己統一登記；`DashboardPanel` 包一層 `appBarSelectionKey`，記下面板是否在多選（見「小外殼與關注點」） |
+| App Bar 的標題與 ← 鈕 | ✅ 新增 `useAppBarHeading()`：登記時以給定的標題與返回動作取代路由的標題與 ← 鈕。`DashboardPage` 於展開時登記面板的標題與縮回 |
+| `PageFab` | ✅ 僅於該面板已展開時顯示：讀取 `usePanelFullPage()`（`DashboardPanel` provide「是否已展開」，不在面板中時一律為 true） |
 | `useRowClick` | 開啟互動時，點擊一列改為選取，不導覽；四個列表元件另加「目前選取」的樣式 |
-| `DetailPage` 的 `RecordNav`（`position: fixed`）與左右滑動 | 面板中停用，展開時恢復 |
+| `DetailPage` 的 `RecordNav`（`position: fixed`）與左右滑動 | ✅ 同樣讀取 `usePanelFullPage()`：面板中停用，展開時恢復 |
+| router 的 `scrollBehavior` | ✅ 網址相同的推入（展開）回到頂端（見「展開」） |
 | `DetailPage` 沒有資料時顯示「找不到這筆資料」 | 面板中尚無選取時，改為只顯示欄位名稱（見「哪些面板會連動」） |
 | `useListPage` 的自動登記 | 🔶 讀取「共用的列表控制」（`TabPage` 與 `DashboardPage` 皆 provide）：不自行登記，改用共用的 `query` 並將表交由外層統一登記（`TabPage` 部分已完成）；於 dashboard 中 `rows` 另經互動的篩選 |
 | `TabPage` | ✅ 改為 provide「共用的列表控制」，各頁籤的列表自動共用搜尋（見「多個列表共用搜尋」） |

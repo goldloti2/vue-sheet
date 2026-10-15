@@ -16,7 +16,7 @@ export const currentTabKey: InjectionKey<Readonly<Ref<string | null>>> = Symbol(
 
 const NO_TAB: Readonly<Ref<string | null>> = shallowRef(null)
 
-// 頁籤列掛在 App Bar 底下（extension），不跟著內容捲動。頁面不直接用，由 TabView 登記
+// 頁籤列掛在 App Bar 底下（extension），不跟著內容捲動。頁面不直接用，由 TabPage 登記
 export function useAppBarTabs (source: () => AppBarTabs): void {
   registerSlot(appBarTabsKey, source, null)
 }

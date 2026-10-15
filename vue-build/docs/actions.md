@@ -53,7 +53,7 @@ interface PageAction {
 - **每個位置都接收 `(PageAction | null)[]`**，`null`（不適用的動作）會被略過，所以頁面組陣列時不需要判斷。略過由最後畫按鈕的元件（`PageFab`、`ChildList`、`AppShell`）負責，中間的版面元件與登記機制一律原樣轉交（理由見「設計取捨」）
 - **陣列的順序即為顯示的順序**
 - **`useAppBarActions`／`useBottomActions` 接收 getter**，回傳值改變時自動重新登記，通常寫成 `() => [xxx.value]`
-- **一次只有一個頁面的動作算數**：被 `<KeepAlive>` 收起來的頁面、以及 `TabView` 裡不是當前頁籤的面板，動作與 FAB 都會自動讓開（見 [TabView.md](components/TabView.md)），頁面自己不用判斷
+- **一次只有一個頁面的動作算數**：被 `<KeepAlive>` 收起來的頁面、以及 `TabPage` 裡不是當前頁籤的面板，動作與 FAB 都會自動讓開（見 [TabPage.md](components/TabPage.md)），頁面自己不用判斷
 
 ---
 

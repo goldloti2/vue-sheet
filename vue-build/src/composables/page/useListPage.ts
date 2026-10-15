@@ -12,7 +12,7 @@ import { useSharedListControls } from '@/composables/shell/useSharedListControls
 
 export interface ListPageOptions<Row> {
   // 一頁接好幾張表時關掉，改由頁面自己 useListControls 一次登記全部（見 docs/ui.md）。
-  // 傳 false 時完全由頁面手動處理：不自行登記，也不加入 TabView 等容器的共用控制
+  // 傳 false 時完全由頁面手動處理：不自行登記，也不加入 TabPage 等容器的共用控制
   search?: boolean
   // 同上，每張表傳同一條進來，搜尋才會同時作用在每張表上。不給就自己生一條
   query?: Ref<string>
@@ -22,7 +22,7 @@ export interface ListPageOptions<Row> {
 
 // 列表頁的資料層：整表 → scope → 篩選 → 搜尋，加上長按多選。
 // rows 是畫面該顯示的那些；allRows 是沒過濾的整表（篩選抽屜的選項從它來）。
-// 位於 TabView 或 DashboardPage 之內時，搜尋字串、篩選與排序取自容器共用的那份，不自行登記
+// 位於 TabPage 或 DashboardPage 之內時，搜尋字串、篩選與排序取自容器共用的那份，不自行登記
 export function useListPage<Row extends { id: string }> (
   table: TableKey,
   schema: TableSchema,

@@ -1,4 +1,4 @@
-# TabView
+# TabPage
 
 頁籤 + 內容區。切換時內容依頁籤順序左右滑動（往右邊的頁籤＝新內容從右進、舊的往左出），跟頁面轉場是同一組動畫。
 
@@ -6,14 +6,14 @@
 
 每個頁籤都會被渲染成獨立的面板，看過的會留在 DOM 裡（`v-show` 隱藏），所以各自保有捲動位置與展開狀態。內容不必同構——頁籤只是容器，各放各的。
 
-**面板知道自己是不是當前頁籤**：這個元件在每個頁籤外面包一層 `TabViewPanel`，`provide` 一份「現在輪到我沒」。`PageFab`、`useAppBarActions`／`useBottomActions`、`useListOrder` 都會讀它，所以面板裡直接放整個列表（含自己的 FAB、App Bar 動作）是可以的，不是當前頁籤的那些不會掛出去。不在 `TabView` 裡的頁面一律算當前，現有頁面零改動。
+**面板知道自己是不是當前頁籤**：這個元件在每個頁籤外面包一層 `TabPanel`，`provide` 一份「現在輪到我沒」。`PageFab`、`useAppBarActions`／`useBottomActions`、`useListOrder` 都會讀它，所以面板裡直接放整個列表（含自己的 FAB、App Bar 動作）是可以的，不是當前頁籤的那些不會掛出去。不在 `TabPage` 裡的頁面一律算當前，現有頁面零改動。
 
 **要用哪一個訊號**：兩個都來自頁面的頁籤 `v-model`，差別在問題不同——
 
 | 你的程式在哪 | 用什麼 | 問的是 |
 | --- | --- | --- |
 | 掛在某個面板裡（元件、或面板內元件呼叫的 composable） | `usePanelActive()` | 「**我**是不是當前面板」 |
-| 在面板外面（頁面層的 composable、`TabView` 外的東西） | `useCurrentTab()` | 「現在選的是哪個頁籤」 |
+| 在面板外面（頁面層的 composable、`TabPage` 外的東西） | `useCurrentTab()` | 「現在選的是哪個頁籤」 |
 
 同一條規則不要同時接兩個：面板外的東西 `inject` 不到面板，面板裡的東西也不知道自己叫什麼頁籤，所以照位置挑一個就好。`useMultiSelect` 是頁面層，走 `useCurrentTab()`。
 
@@ -40,8 +40,8 @@
 ## 備註
 
 - 只要頁籤列、不要內容區的話，直接用 Vuetify 的 `v-tabs`，不用這個元件（自己擺的 `v-tabs` 會跟著內容捲動）
-- 一個畫面同時掛兩個 `TabView` 會互相蓋掉頁籤列（App Bar 的 extension 只有一份）
-- **不可嵌套**：`TabView` 與 `DashboardPage` 不可互相嵌套，亦不可嵌套自身。列表只會加入最近的容器，兩層又各自登記 App Bar，搜尋會互相蓋掉；開發模式下於 console 警告
+- 一個畫面同時掛兩個 `TabPage` 會互相蓋掉頁籤列（App Bar 的 extension 只有一份）
+- **不可嵌套**：`TabPage` 與 `DashboardPage` 不可互相嵌套，亦不可嵌套自身。列表只會加入最近的容器，兩層又各自登記 App Bar，搜尋會互相蓋掉；開發模式下於 console 警告
 - **頁籤中的列表自動共用搜尋**：本元件 provide 一份「共用的列表控制」，各頁籤中的 `useListPage` 不自行登記，改為加入此控制；搜尋字串共用一條，同一張表共用一份篩選與排序，不同的表各有一份，由本元件統一登記一次（見 [ui.md](../ui.md#同一頁面中的多張表)）。其中沒有列表時不登記
 - **各頁籤可放不同的表**（例如兩張表的列表），亦可放自其他 `.vue` 檔 import 的列表：各面板掛出各自的 FAB 與 App Bar 動作，搜尋與篩選如上自動共用
 - **同一個頁籤裡的內容仍然共用一組動作**。「不同頁籤不同 FAB」若頁籤只是同一張表的篩選（面板沒有分開），就由頁面自己 `computed(() => 目前頁籤 === 'A' ? actionsA : actionsB)` 餵給 `PageFab`

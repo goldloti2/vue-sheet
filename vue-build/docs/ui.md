@@ -13,7 +13,7 @@
 ```
 ┌─────────────────────────────────┐
 │ ←   標題         🔍 ⇅  ⋮   ⟳    │  App Bar
-│ ─────── 頁籤列 ───────           │  extension（有 TabView 時才出現）
+│ ─────── 頁籤列 ───────           │  extension（有 TabPage 時才出現）
 ├─────────────────────────────────┤
 │                                 │
 │   內容區                        │  ← 側邊欄  篩選／排序抽屜 →
@@ -37,7 +37,7 @@
 | **篩選鈕** | 同上 | 在搜尋輸入框內最右側 |
 | **排序鈕** | 同上 | 放大鏡右邊。表有給 `sort` 才出現；多選時跟搜尋一起讓位 |
 | **同步鈕** | `AppShell` | 永遠在最右邊，不屬於任何頁面 |
-| **頁籤列** | `TabView` | 掛在 App Bar 底下的 extension，不跟著內容捲動 |
+| **頁籤列** | `TabPage` | 掛在 App Bar 底下的 extension，不跟著內容捲動 |
 | **內容區** | `pages/*.vue` | 換頁時左右滑動的就是這一塊 |
 | **側邊欄** | `AppShell` | 左側滑出，蓋在 App Bar 之上。目前只有「登出」（`config/app.ts` 的 `authMethod` 不是 `'none'` 時才有） |
 | **篩選／排序抽屜** | `AppShell` + `FilterPanel`／`SortPanel` | 右側滑出（篩選是兩層）。蓋在 App Bar 之上。抽屜本身歸 `AppShell`，面板只放內容，一次顯示一種 |
@@ -88,8 +88,8 @@
 - **長按進入多選模式**：選取狀態一有內容就自動進入、清空就自動離開，不另外存一個 boolean
 - **多選的出口是 App Bar 右上的「取消」**：`useMultiSelect()` 自己登記「怎麼退出」，按鈕的樣子跟位置由 `AppShell` 決定（跟放大鏡一樣）。它固定在同步鈕左邊，而且**不會被收進「⋮」**——收進去就等於沒有出口
 - **多選時搜尋鈕先讓位**：那個狀態下畫面上該有的是對選取項目的動作，不是找東西。`AppShell` 靠「有沒有登記取消」判斷現在是不是多選
-- **離開就取消選取**：換頁（列表是 KeepAlive 的，靠 `onDeactivated`）與換頁籤都會清空，頁面不用做任何事。頁籤的訊號來自 `TabView` 登記給 `AppShell` 的那份（`useCurrentTab()`），所以同一張表的頁籤、各自一張表的面板走的是同一條路
-- **頁籤列固定在 App Bar 底下**（`TabView` 登記給 `AppShell` 的 extension），不跟著內容捲動
+- **離開就取消選取**：換頁（列表是 KeepAlive 的，靠 `onDeactivated`）與換頁籤都會清空，頁面不用做任何事。頁籤的訊號來自 `TabPage` 登記給 `AppShell` 的那份（`useCurrentTab()`），所以同一張表的頁籤、各自一張表的面板走的是同一條路
+- **頁籤列固定在 App Bar 底下**（`TabPage` 登記給 `AppShell` 的 extension），不跟著內容捲動
 
 ---
 
@@ -121,7 +121,7 @@
 - **全部小寫比對**，不做全半形正規化
 - **效能**：每列的可搜尋文字只在 rows 變時重算，敲字只做 `includes`
 - **換頁自動收起**；回到還帶著 query 的頁面（KeepAlive）會自動重開，讓搜尋欄跟被過濾的列表一致
-- **有頁籤的頁**：各頁籤的列表放在 `TabView` 中時，搜尋字串由 `TabView` 統一登記、跨所有頁籤共用（見下方「同一頁面中的多張表」）
+- **有頁籤的頁**：各頁籤的列表放在 `TabPage` 中時，搜尋字串由 `TabPage` 統一登記、跨所有頁籤共用（見下方「同一頁面中的多張表」）
 
 ---
 
@@ -151,7 +151,7 @@
 
 ### 同一頁面中的多張表
 
-**將各列表放入 `TabView` 的頁籤即可，不需另行登記**（見 [TabView.md](components/TabView.md)）。`TabView` provide 一份「共用的列表控制」（`useSharedListControls`），其中的 `useListPage` 不自行登記，改為加入此控制：
+**將各列表放入 `TabPage` 的頁籤即可，不需另行登記**（見 [TabPage.md](components/TabPage.md)）。`TabPage` provide 一份「共用的列表控制」（`useSharedListControls`），其中的 `useListPage` 不自行登記，改為加入此控制：
 
 - **搜尋字串共用一條**：輸入一次，各頁籤的列表皆隨之過濾
 - **同一張表共用一份篩選與排序**：例如各頁籤為同一張表依狀態切分的列表（以 `useListPage` 的 `scope` 只留該狀態的列），條件套用於所有頁籤，抽屜中該表只有一個 chip
@@ -165,11 +165,11 @@
 - **篩選鈕的主色標記涵蓋所有表**；「清除」僅清除目前的那一張，全部清除須按 ←（關閉搜尋）
 - **排序面板使用同一批表**（僅列出可排序者），chip 亦為同一排
 
-**同一張表依狀態切分的頁籤頁**：將列表拆成只供引用的元件，置於該表資料夾的 `_ref/`（不產生路由），以 `scope` 只留該狀態的列；頁籤頁僅保留 `TabView`，每個頁籤放一個列表並傳入狀態。`scope` 位於篩選與搜尋之前，各頁籤僅比對各自的部分，合計的工作量與「整張表搜尋一次再切分」相同。範本見 `template/pages/tab-list.vue` 與 `template/pages/_ref/list.vue`。
+**同一張表依狀態切分的頁籤頁**：將列表拆成只供引用的元件，置於該表資料夾的 `_ref/`（不產生路由），以 `scope` 只留該狀態的列；頁籤頁僅保留 `TabPage`，每個頁籤放一個列表並傳入狀態。`scope` 位於篩選與搜尋之前，各頁籤僅比對各自的部分，合計的工作量與「整張表搜尋一次再切分」相同。範本見 `template/pages/tab-list.vue` 與 `template/pages/_ref/list.vue`。
 
 **拆出的列表以 props 接受條件**，同一個元件可用於不同頁面，例如另一頁只列某一種狀態。常用且意義固定的條件宜定為專屬的 prop（如 `status`）；需要任意條件時，另提供通用的 `scope` prop，於元件內與專屬的條件合併。
 
-**不使用 `TabView` 時，由頁面手動登記**：各表的 `useListPage` 關閉自動登記，並共用頁面建立的一條搜尋字串，由頁面以 `useListControls` 一次登記全部的表。寫法見 [ListPage.md](components/ListPage.md#手動登記多張表)。
+**不使用 `TabPage` 時，由頁面手動登記**：各表的 `useListPage` 關閉自動登記，並共用頁面建立的一條搜尋字串，由頁面以 `useListControls` 一次登記全部的表。寫法見 [ListPage.md](components/ListPage.md#手動登記多張表)。
 
 ---
 

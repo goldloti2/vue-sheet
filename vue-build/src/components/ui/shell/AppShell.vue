@@ -62,7 +62,7 @@
     cancelSelect.value = cancel
   })
 
-  // 頁籤列（TabView 登記的）掛在 App Bar 底下，所以不會跟著內容捲走
+  // 頁籤列（TabPage 登記的）掛在 App Bar 底下，所以不會跟著內容捲走
   const tabs = shallowRef<AppBarTabs | null>(null)
   provide(appBarTabsKey, value => {
     tabs.value = value

@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-  import TabViewPanel from '@/components/ui/shell/TabViewPanel.vue'
+  import TabPanel from '@/components/ui/panel/TabPanel.vue'
   import { useAppBarTabs } from '@/composables/shell/useAppBarTabs'
   import { provideSharedListControls } from '@/composables/shell/useSharedListControls'
 
@@ -21,12 +21,12 @@
   <v-window v-model="model" :mandatory="false" :show-arrows="false" :touch="false">
     <v-window-item v-for="tab in tabs" :key="tab" :value="tab">
       <!-- 包一層才能告訴面板裡的頁面「現在輪到我沒」，FAB 與 App Bar 動作靠它避免互相蓋掉 -->
-      <TabViewPanel :active="tab === model">
+      <TabPanel :active="tab === model">
         <!-- 每個頁籤的內容不一定同構，所以先找同名的具名 slot，沒有才退回 default -->
         <slot :name="tab" :tab="tab">
           <slot :tab="tab" />
         </slot>
-      </TabViewPanel>
+      </TabPanel>
     </v-window-item>
   </v-window>
 </template>

@@ -2,7 +2,7 @@
   import type { PageAction } from '@/composables/actions/useTableActions'
   import type { TableKey } from '@/schema'
   import { computed, inject, onBeforeUnmount, onMounted, provide, shallowRef, useTemplateRef, watch } from 'vue'
-  import { AUTO_ROWS_MAX, dashboardKey } from '@/components/ui/dashboard/dashboardContext'
+  import { AUTO_ROWS_MAX, dashboardKey } from '@/components/ui/panel/dashboardContext'
   import { panelActiveKey, panelFabKey } from '@/composables/shell/usePanelActive'
   import { appBarActionsKey, appBarSelectionKey } from '@/composables/shell/useShellActions'
 
@@ -30,7 +30,7 @@
   const active = computed(() => dashboard.focused.value === name)
   const placement = dashboard.placement(name)
 
-  // 面板中的登記（usePanelActive 的使用者）只在關注面板生效，與 TabView 的頁籤同一套機制
+  // 面板中的登記（usePanelActive 的使用者）只在關注面板生效，與 TabPage 的頁籤同一套機制
   provide(panelActiveKey, active)
   // FAB 僅於展開時出現（展開尚未實作）
   provide(panelFabKey, computed(() => false))

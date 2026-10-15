@@ -121,7 +121,7 @@ contain-intrinsic-size: auto 72px;
 
 - **掛載頁的 386ms `enter hook`**：Vue 建 1306 列 × 約 3 個元件實例。只有「別建那麼多」能解
 - **快取頁的 167ms 排版**：773 個列盒子，同上
-- **快取頁的 70ms JS**：還沒拆解過。嫌疑是 KeepAlive 啟用那一串（`useListOrder` 重新發布幾百個 id、`useListControls` 重新登記、`TabView` 那套），以及列表頁 template 裡每次 render 都重跑的過濾／分組函式（寫成函式而不是 computed 的話）
+- **快取頁的 70ms JS**：還沒拆解過。嫌疑是 KeepAlive 啟用那一串（`useListOrder` 重新發布幾百個 id、`useListControls` 重新登記、`TabPage` 那套），以及列表頁 template 裡每次 render 都重跑的過濾／分組函式（寫成函式而不是 computed 的話）
 
 可能的下一步，照效益排序：
 
@@ -130,7 +130,7 @@ contain-intrinsic-size: auto 72px;
 | 虛擬捲動 | 只渲染可見範圍的列 | 大。Vuetify 的 `v-virtual-scroll` 會把捲動軸搬進容器裡，`scrollBehavior` 的捲動位置還原、App Bar 的行為、分組標題都要重做；自己做視窗式虛擬捲動則需要固定列高 |
 | 漸進渲染 | 先畫 100 列，捲到底再長 | 中。不用固定列高、保留視窗捲動，但「捲到很深再回來」還是會回到原本的成本 |
 | 收起來的群組不渲染 | `GroupedList` 自己記哪幾組開著，收起來的內容用 `v-if` 拿掉（見下方） | 小，只動一個元件、不改 UI。但只幫到有分組的頁面，單一組很大時也沒用 |
-| `TabView` 只掛當前面板 | 看過的頁籤目前會一直留在 DOM 裡 | 中，會失去面板狀態（捲動位置、展開狀態） |
+| `TabPage` 只掛當前面板 | 看過的頁籤目前會一直留在 DOM 裡 | 中，會失去面板狀態（捲動位置、展開狀態） |
 | 頁面裡的過濾／分組改 computed | 頁面自己的事，順手 | 小 |
 
 **收起來的群組現在其實全部都建了**：`v-list-group` 在 `v-list` 的 `itemsRegistration` 是預設的 `'render'` 時，收起來的內容照樣渲染、只用 `v-show` 藏起來（`VListGroup.js` 的 `renderWhenClosed`）。所以分組全收著，每一列的元件實例還是全建好了，收合只省到排版（`display: none` 本來就不排版），省不到上面那塊最大的 `enter hook`。改成不展開就不建之後，首次掛載只剩群組頭加上展開的那一組。

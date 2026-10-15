@@ -2,7 +2,7 @@
 
 > 🔶 部分實作。本文件為設計，實作完成後改寫為用法說明，或移入 ROADMAP。已完成：多個列表共用搜尋、`useListPage` 的 `scope`、`_ref/` 的路由排除，以及第 1 階段（`DashboardPage`、`DashboardPanel` 的方格排版、小外殼與關注點、共用的搜尋、平時隱藏 FAB 與 App Bar 的動作），見「與現有機制的關係」中標為 ✅ 者。尚未實作：展開、互動、多選的鎖定、面板過窄時的窄版。
 
-dashboard 同時顯示多個面板，與一次只顯示一個面板的 tab（`TabView`）相對。以 `interactive` 開關決定面板之間是否連動：
+dashboard 同時顯示多個面板，與一次只顯示一個面板的 tab（`TabPage`）相對。以 `interactive` 開關決定面板之間是否連動：
 
 - **關**：各面板各自獨立，點擊一列即照常換頁
 - **開**：點擊一列改為「選取」，與它直接相關的面板跟著改變內容，不換頁。手機上亦同：即使相關的面板不在畫面內，點擊仍只選取
@@ -80,7 +80,7 @@ dashboard 同時顯示多個面板，與一次只顯示一個面板的 tab（`Ta
 | 刪除當前那一筆後自動離開 | 僅於網址為 `/表/id` 時觸發，dashboard 中不觸發 |
 | 頁面中的換頁（例如前往編輯頁） | 照常換頁，離開 dashboard；此類動作僅於展開時出現 |
 
-- **不支援含有 `TabView` 的頁面**：`TabView` 與 `DashboardPage` 不可互相嵌套，亦不可嵌套自身（開發模式下於 console 警告）。`TabView` 將頁籤列登記於 App Bar，dashboard 的多個面板無法共用；兩者皆 provide 共用的列表控制，列表只會加入最近的一層，兩層又各自登記搜尋。這類頁面將頁籤以外的部分拆成單純的列表，由頁籤頁與 dashboard 各自使用（見下方「只供嵌入的頁面」與「多個列表共用搜尋」）
+- **不支援含有 `TabPage` 的頁面**：`TabPage` 與 `DashboardPage` 不可互相嵌套，亦不可嵌套自身（開發模式下於 console 警告）。`TabPage` 將頁籤列登記於 App Bar，dashboard 的多個面板無法共用；兩者皆 provide 共用的列表控制，列表只會加入最近的一層，兩層又各自登記搜尋。這類頁面將頁籤以外的部分拆成單純的列表，由頁籤頁與 dashboard 各自使用（見下方「只供嵌入的頁面」與「多個列表共用搜尋」）
 - **列表順序的發布**：`ListPage` 發布該表目前的列表順序，供詳細頁的上下一筆使用。自 dashboard 進入詳細頁時，上下一筆依面板中的順序（例如僅於所選父列的子列之間切換）
 
 ### 只供嵌入的頁面
@@ -91,14 +91,14 @@ dashboard 同時顯示多個面板，與一次只顯示一個面板的 tab（`Ta
 
 ### 多個列表共用搜尋
 
-`TabView` 與 `DashboardPage` 皆 provide 一份「共用的列表控制」：一條共用的 `query`，以及收集各列表的表的登記處。其中的 `useListPage` 據此決定行為：
+`TabPage` 與 `DashboardPage` 皆 provide 一份「共用的列表控制」：一條共用的 `query`，以及收集各列表的表的登記處。其中的 `useListPage` 據此決定行為：
 
 | `useListPage` 所在之處 | 行為 |
 | --- | --- |
-| `TabView` 或 `DashboardPage` 之內 | 不自行登記；使用共用的 `query`，並將自己的表交由外層。外層統一登記一次 `useListControls`，App Bar 只有一個放大鏡，篩選抽屜中各表各有一個 chip |
+| `TabPage` 或 `DashboardPage` 之內 | 不自行登記；使用共用的 `query`，並將自己的表交由外層。外層統一登記一次 `useListControls`，App Bar 只有一個放大鏡，篩選抽屜中各表各有一個 chip |
 | 其他（例如作為獨立的頁面） | 照現行方式自行登記 |
 
-因此列表本身不需知道自己被放在何處，頁籤頁與 dashboard 亦不需自行撰寫 provide：拆出的單純列表放進 `TabView` 即自動共用搜尋，維持「一條搜尋字串套用於所有頁籤」。
+因此列表本身不需知道自己被放在何處，頁籤頁與 dashboard 亦不需自行撰寫 provide：拆出的單純列表放進 `TabPage` 即自動共用搜尋，維持「一條搜尋字串套用於所有頁籤」。
 
 - **同一張表的篩選與排序亦共用一份**：多個列表屬於同一張表時，自外層取得的是同一份篩選條件與排序，抽屜中該表只有一個 chip，條件套用於所有使用該表的列表
 
@@ -108,7 +108,7 @@ dashboard 同時顯示多個面板，與一次只顯示一個面板的 tab（`Ta
 
 | 事項 | `pages/parent/index.vue`（頁籤頁） | `pages/parent/_ref/ParentList.vue`（列表） |
 | --- | --- | --- |
-| 頁籤（依狀態切分） | ✅ `TabView` 列出各狀態，每個頁籤放一個 `ParentList` 並傳入 `status` | |
+| 頁籤（依狀態切分） | ✅ `TabPage` 列出各狀態，每個頁籤放一個 `ParentList` 並傳入 `status` | |
 | 路由的標題（`<route>`） | ✅ | |
 | 取得資料 | | ✅ `useListPage` |
 | 只留該狀態的列 | | ✅ `useListPage` 的 `scope` |
@@ -121,8 +121,8 @@ dashboard 同時顯示多個面板，與一次只顯示一個面板的 tab（`Ta
 範本見 `template/pages/tab-list.vue`（頁籤頁）與 `template/pages/_ref/list.vue`（列表）。
 
 - **`scope` 於篩選與搜尋之前縮小範圍**：資料依序經過「整表 → `scope` → 篩選 → 搜尋 → 分組」。各頁籤先只留自己的列再比對，各頁籤的資料合起來恰為整張表，搜尋的總工作量與拆分前相同；若改為各自搜尋整張表再切分，工作量會成為頁籤數的倍數。dashboard 的互動篩選（依所選的父列篩出子列）亦位於這一步
-- **搜尋、篩選與排序的登記由 `TabView` 負責**（見「多個列表共用搜尋」），兩個檔案皆不登記；實際的過濾由各列表的 `useListPage` 進行
-- **FAB 屬於列表**：預設的狀態直接取自 `status` prop。各頁籤皆有 FAB，`TabView` 僅讓當前頁籤者生效；於 dashboard 中僅展開時出現
+- **搜尋、篩選與排序的登記由 `TabPage` 負責**（見「多個列表共用搜尋」），兩個檔案皆不登記；實際的過濾由各列表的 `useListPage` 進行
+- **FAB 屬於列表**：預設的狀態直接取自 `status` prop。各頁籤皆有 FAB，`TabPage` 僅讓當前頁籤者生效；於 dashboard 中僅展開時出現
 - **同一個列表於 dashboard 中直接嵌入**，不給 `status` 即為整張表
 
 **顯示速度**（推算，實作後須依 [perf.md](perf.md) 的方法量測）：
@@ -297,14 +297,14 @@ App Bar 依狀態顯示：
 
 | 現有機制 | dashboard 中的處理 |
 | --- | --- |
-| `TabViewPanel` provide 的「是否為當前面板」（`panelActiveKey`） | ✅ `DashboardPanel` provide 同一份，「當前」改為關注面板；`useListControls` 等登記因此自動跟著關注點 |
+| `TabPanel` provide 的「是否為當前面板」（`panelActiveKey`） | ✅ `DashboardPanel` provide 同一份，「當前」改為關注面板；`useListControls` 等登記因此自動跟著關注點 |
 | `useAppBarActions` | 🔶 僅於該面板多選中或已展開時生效：`DashboardPanel` 包一層 `appBarActionsKey` 與 `appBarSelectionKey`，平時改交出空的（多選的部分已完成，展開待做） |
 | `PageFab` | 🔶 僅於該面板已展開時顯示：讀取 `usePanelFab()`（`DashboardPanel` provide，平時為 false 的部分已完成，展開待做） |
 | `useRowClick` | 開啟互動時，點擊一列改為選取，不導覽；四個列表元件另加「目前選取」的樣式 |
 | `DetailPage` 的 `RecordNav`（`position: fixed`）與左右滑動 | 面板中停用，展開時恢復 |
 | `DetailPage` 沒有資料時顯示「找不到這筆資料」 | 面板中尚無選取時，改為只顯示欄位名稱（見「哪些面板會連動」） |
-| `useListPage` 的自動登記 | 🔶 讀取「共用的列表控制」（`TabView` 與 `DashboardPage` 皆 provide）：不自行登記，改用共用的 `query` 並將表交由外層統一登記（`TabView` 部分已完成）；於 dashboard 中 `rows` 另經互動的篩選 |
-| `TabView` | ✅ 改為 provide「共用的列表控制」，各頁籤的列表自動共用搜尋（見「多個列表共用搜尋」） |
+| `useListPage` 的自動登記 | 🔶 讀取「共用的列表控制」（`TabPage` 與 `DashboardPage` 皆 provide）：不自行登記，改用共用的 `query` 並將表交由外層統一登記（`TabPage` 部分已完成）；於 dashboard 中 `rows` 另經互動的篩選 |
+| `TabPage` | ✅ 改為 provide「共用的列表控制」，各頁籤的列表自動共用搜尋（見「多個列表共用搜尋」） |
 | `useListPage` 的選項 | ✅ 新增選用的 `scope`，於篩選與搜尋之前縮小範圍；dashboard 的互動篩選亦經由此步驟（見「範例：拆分含頁籤的列表頁」） |
 | 路由插件 | ✅ `exclude` 加入 `src/pages/**/_ref/**`（見「只供嵌入的頁面」） |
 | `useRouteId` | 先讀取 `DashboardPanel` provide 的 id，沒有時才讀網址 |

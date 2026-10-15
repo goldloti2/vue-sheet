@@ -1,13 +1,13 @@
 <!-- 選用：依 select 欄位分頁籤的列表頁，同樣複製到 src/pages/__table__/index.vue
      各頁籤的列表為 _ref/list.vue（複製到 src/pages/__table__/_ref/__Table__List.vue）；
-     搜尋、篩選與排序由 TabView 統一登記並跨頁籤共用，見 docs/ui.md 的「同一頁面中的多張表」與 docs/components/TabView.md -->
+     搜尋、篩選與排序由 TabPage 統一登記並跨頁籤共用，見 docs/ui.md 的「同一頁面中的多張表」與 docs/components/TabPage.md -->
 <route lang="json5">
 { meta: { title: '範本' } }
 </route>
 
 <script lang="ts" setup>
   import { ref } from 'vue'
-  import TabView from '@/components/ui/shell/TabView.vue'
+  import TabPage from '@/components/ui/panel/TabPage.vue'
   import { __table__Schema } from '@/schema/tables/__table__'
   import StatusList from './_ref/__Table__List.vue'
 
@@ -18,9 +18,9 @@
 </script>
 
 <template>
-  <TabView v-model="selectedStatus" :tabs="statusTabs">
+  <TabPage v-model="selectedStatus" :tabs="statusTabs">
     <template #default="{ tab }">
       <StatusList :status="tab" />
     </template>
-  </TabView>
+  </TabPage>
 </template>

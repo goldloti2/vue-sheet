@@ -71,8 +71,8 @@
 - 詳細頁的順序分工：欄位照 schema 的 `detailOrder`，區塊（`ChildList` 之類）照頁面的 slot——`#top` 在欄位上面、default 在下面。插在特定欄位中間刻意不支援，那種版面直接不用 `DetailPage`（它的 template 只有二十行，零件都是現成的）
 - 子表區塊的「展開」是**一個真的頁面**（`/父表/:id/子表`，範本 `template/pages/child-list.vue`，一條關聯一份、約 20 行），不是就地展開版面。這樣返回鍵、轉場、App Bar 標題都是現成的，而且 `ListPage` 會發布這份順序——從父列底下點進某一筆，上／下一筆走的是同一個父列的子列
 - 狀態只在兩個地方出現：產生它的 composable，和畫它的 `page/` 那層版型。`DataList`／`DataForm`／`DataDetail` 這些內容元件都不碰 loading／error
-- 其他：`ViewActions`（view 的列上動作：一排按鈕、⋮ 選單或左右各兩格）、`PageFab`、`TabView`、`RecordNav`、`AppDialog`、`ConfirmDialog`、`FieldsDialog`（只顯示幾欄的 `DataForm`）
-- `TabView` 的頁籤列登記給 `AppShell` 畫在 App Bar 的 extension，所以固定在最上面；每個頁籤外面包一層 `TabViewPanel`，`provide` 一份「我是不是當前頁籤」（`panelActiveKey`）。看過的面板會一直掛著（`v-window` 用 `v-show` 切），而 `PageFab`、`registerSlot`（App Bar／底部動作）、`useListOrder` 的「活著」判斷都是 `KeepAlive 狀態 && 當前面板`，所以一個頁籤放一整張表的列表、各自掛自己的 FAB 與動作是可以的。不在 `TabView` 裡就一律算當前，現有頁面零改動。動作那兩個 watch 刻意分成 `pre`（讓場的清）與 `post`（進場的設），同一輪切換時順序才不會反過來變成空的
+- 其他：`ViewActions`（view 的列上動作：一排按鈕、⋮ 選單或左右各兩格）、`PageFab`、`TabPage`、`RecordNav`、`AppDialog`、`ConfirmDialog`、`FieldsDialog`（只顯示幾欄的 `DataForm`）
+- `TabPage` 的頁籤列登記給 `AppShell` 畫在 App Bar 的 extension，所以固定在最上面；每個頁籤外面包一層 `TabPanel`，`provide` 一份「我是不是當前頁籤」（`panelActiveKey`）。看過的面板會一直掛著（`v-window` 用 `v-show` 切），而 `PageFab`、`registerSlot`（App Bar／底部動作）、`useListOrder` 的「活著」判斷都是 `KeepAlive 狀態 && 當前面板`，所以一個頁籤放一整張表的列表、各自掛自己的 FAB 與動作是可以的。不在 `TabPage` 裡就一律算當前，現有頁面零改動。動作那兩個 watch 刻意分成 `pre`（讓場的清）與 `post`（進場的設），同一輪切換時順序才不會反過來變成空的
 
 ### 搜尋、篩選與排序
 - **哪些欄位能搜尋、能排序是表層級的 key 清單**（`searchable: ['name', 'date', …]`／`sortable: [...]`，真實與虛擬欄位都能列），跟 `detailOrder`／`formOrder`／`defaultSort` 同一種形狀；欄位本身只描述資料（key／label／型別／必填／選項／驗證）。**清單的順序就是篩選抽屜與排序面板上的順序**，型別是 `RowKey<Row>[]`，打錯 key TS 會擋
@@ -108,7 +108,7 @@
 - 分組或分頁籤的列表也走 `ListPage`：一個頁籤一個 `ListPage`，各自算狀態、FAB 與列表順序，靠面板訊號決定哪份生效，頁面不用知道當前是哪個頁籤
 - 列表頁的資料層 `useListPage(table, schema)`：整表 → 排序 → 篩選 → 搜尋（順手登記 App Bar 的放大鏡與排序鈕）＋ 多選，一次回傳（含 `sort`，頁面用它決定還要不要分組）；一頁接好幾張表時傳 `search: false`，改由頁面自己登記，再傳 `query` 讓每張表共用同一條搜尋字串
 - 多選的出口：`useMultiSelect` 把「怎麼退出」登記到 `appBarSelectionKey`（只給一個函式，按鈕長怎樣歸 `AppShell`，跟放大鏡同一種分工），頁面零設定。那顆鈕釘在同步鈕左邊、**不收進「⋮」**（收進去就沒有明顯出口），而且「有沒有登記」就是「現在是不是多選模式」——多選時搜尋鈕先讓位，把空間留給對選取項目的動作
-- 離開就取消選取：`onDeactivated`（KeepAlive 的列表換頁時）與 `useCurrentTab()`（換頁籤時）自動清，頁面零設定。頁籤訊號取自 `TabView` 登記給 `AppShell` 的那份，頁面層與面板層讀到同一個，所以兩種頁籤形狀不用各寫一套
+- 離開就取消選取：`onDeactivated`（KeepAlive 的列表換頁時）與 `useCurrentTab()`（換頁籤時）自動清，頁面零設定。頁籤訊號取自 `TabPage` 登記給 `AppShell` 的那份，頁面層與面板層讀到同一個，所以兩種頁籤形狀不用各寫一套
 - 批次刪除走動作的 `confirm`
 
 ### 連續動作
@@ -185,7 +185,7 @@
 | card（大） | **card** | ✅ `DataCard`，見下方 |
 | gallery | **gallery** | ✅ `DataGallery`，圖片 + 標題的格狀排列，見下方 |
 | chart | **chart** | 🔲 使用者選幾個欄位當軸，畫圓餅圖、折線圖、長條圖；另含文字統計（例如依某欄位分組計數，以「標籤＋數字」的格子呈現）。以 SVG 繪製，依面板寬度縮放。屬於後期才做的項目 |
-| dashboard（分頁） | **tab** | ✅ `TabView` |
+| dashboard（分頁） | **tab** | ✅ `TabPage` |
 | dashboard（全部顯示、連動） | **dashboard** | 🔶 設計完成，地基已實作，見下方 |
 | calendar | — | 把資料當成事件放上日曆（通常靠日期與時間欄位），暫不考慮 |
 | map | — | 把座標標在 Google 地圖上，暫不考慮 |
@@ -218,12 +218,12 @@
 - 有圖片時：寬度貼齊畫面兩側，固定 16:9、裁切填滿，高度以 `40vh` 為上限；文字為白色，底下墊一層由透明至深色的漸層
 - 沒有圖片時：背景透明，寬度與欄位區相同，高度僅為文字的高度
 
-**tab**：一次只顯示一個面板，用頁籤切換。就是現有的 `TabView`。
+**tab**：一次只顯示一個面板，用頁籤切換。就是現有的 `TabPage`。
 
 **dashboard**（🔶 設計稿見 [vue-build/docs/dashboard.md](vue-build/docs/dashboard.md)）：所有面板同時出現。手機與電腦皆以方格座標二維排版（手機寬 6 格、電腦寬 24 格），每個面板可指定寬與高的格數，或交由自動排版。用一個 `interactive` 開關決定面板之間要不要連動：
 - **關**：各面板各自獨立
 - **開**：面板之間會連動，例如在 list 點一個項目，旁邊的 detail 就顯示那一項，而不是換頁
-- 地基已完成：多個列表共用搜尋（`TabView` 已採用）、`useListPage` 的 `scope`、`_ref/` 的路由排除；`DashboardPage` 與 `DashboardPanel` 尚未實作
+- 地基已完成：多個列表共用搜尋（`TabPage` 已採用）、`useListPage` 的 `scope`、`_ref/` 的路由排除；`DashboardPage` 與 `DashboardPanel` 尚未實作
 
 ### 列表效能（剩下的部分）
 - 🔲 見 [vue-build/docs/perf.md](vue-build/docs/perf.md) 的「還沒做的」

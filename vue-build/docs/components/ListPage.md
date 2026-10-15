@@ -4,7 +4,7 @@
 
 搭配 `useListPage(table, schema)` 使用：其依序處理整表 → `scope` → 篩選 → 搜尋，並提供長按多選，回傳的 `rows`／`loading`／`error`／`selection` 直接對應本元件的 prop。選用的 `scope`（`row => boolean`）於篩選與搜尋之前只留部分的列，例如頁籤的狀態。
 
-**搜尋與排序來自該 composable，而非本元件**：`useListPage` 內部呼叫 `useListControls`，因此使用它時 App Bar 即出現放大鏡、篩選鈕與排序鈕（欄位須列於 `searchable`／`sortable`）。位於 `TabView` 之內時，改為加入 `TabView` 的共用控制，不自行登記；不需要搜尋，或同一頁面須手動登記多張表時，傳入 `{ search: false }`，見下方「手動登記多張表」。
+**搜尋與排序來自該 composable，而非本元件**：`useListPage` 內部呼叫 `useListControls`，因此使用它時 App Bar 即出現放大鏡、篩選鈕與排序鈕（欄位須列於 `searchable`／`sortable`）。位於 `TabPage` 之內時，改為加入 `TabPage` 的共用控制，不自行登記；不需要搜尋，或同一頁面須手動登記多張表時，傳入 `{ search: false }`，見下方「手動登記多張表」。
 
 **選了排序就別再分組**：回傳的 `sort` 不是 null 時把 `groups` 換成 `rows`，見 [ui.md 的排序](../ui.md#排序)。
 
@@ -60,11 +60,11 @@ const groups = computed(() => sort.value ? undefined : groupRows(rows.value, gro
 </ListPage>
 ```
 
-**頁籤**：將列表拆成只供引用的元件（`_ref/`），每個頁籤放一個，各自以 `useListPage` 的 `scope` 只留該頁籤的列；搜尋、篩選與排序由 `TabView` 統一登記並跨頁籤共用（見 [ui.md](../ui.md#同一頁面中的多張表)，範本為 `template/pages/tab-list.vue` 與 `template/pages/_ref/list.vue`）。每個頁籤各有一個 `ListPage`，各自計算 FAB、多選與列表順序，只有當前頁籤那份會生效（靠 `TabViewPanel` 的訊號）。發布順序時會先 `flattenGroups`，與畫面上的先後一致。
+**頁籤**：將列表拆成只供引用的元件（`_ref/`），每個頁籤放一個，各自以 `useListPage` 的 `scope` 只留該頁籤的列；搜尋、篩選與排序由 `TabPage` 統一登記並跨頁籤共用（見 [ui.md](../ui.md#同一頁面中的多張表)，範本為 `template/pages/tab-list.vue` 與 `template/pages/_ref/list.vue`）。每個頁籤各有一個 `ListPage`，各自計算 FAB、多選與列表順序，只有當前頁籤那份會生效（靠 `TabPanel` 的訊號）。發布順序時會先 `flattenGroups`，與畫面上的先後一致。
 
 ## 手動登記多張表
 
-不使用 `TabView` 而同一頁面有多張表的列表時，各表的 `useListPage` 傳入 `{ search: false }` 以關閉自動登記，改由頁面以 `useListControls` 登記一次，`tables` 列出多個元素。搜尋字串為全頁共用的一條，須由頁面建立一個 ref 並傳入每張表（未傳入時各表會各自建立一條，僅登記的那一張可被搜尋）：
+不使用 `TabPage` 而同一頁面有多張表的列表時，各表的 `useListPage` 傳入 `{ search: false }` 以關閉自動登記，改由頁面以 `useListControls` 登記一次，`tables` 列出多個元素。搜尋字串為全頁共用的一條，須由頁面建立一個 ref 並傳入每張表（未傳入時各表會各自建立一條，僅登記的那一張可被搜尋）：
 
 ```ts
 const query = ref('')
@@ -82,7 +82,7 @@ useListControls(query, {
 
 - **每張表各有一份 `Filters`，同時生效**：各列表以各自的那一份交給 `useFilter`，切換表時條件不會互相帶入
 - **`current` 為頁面目前所在的表**（值與 `tableLabel` 相符），抽屜開啟時先停在該表，使用者仍可自行切換
-- 傳入 `{ search: false }` 的列表，即使位於 `TabView` 之內，亦不加入其共用控制
+- 傳入 `{ search: false }` 的列表，即使位於 `TabPage` 之內，亦不加入其共用控制
 
 ## 備註
 

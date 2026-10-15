@@ -29,11 +29,13 @@
 ```
 src/
   components/ui/     共用元件庫，用法見 docs/components/
-    shell/             AppShell、PageFab、FilterPanel、SortPanel、TableChips、TabView
+    shell/             AppShell、PageFab、FilterPanel、SortPanel、TableChips
     dialog/            AppDialog、ConfirmDialog、FieldsDialog
     list/              DataList、DataProfile、DataCard、DataGallery、ListLayout、ListField、GroupedList、DataTable、CountLabel
     record/            DataDetail、DetailField、DetailHeader、DataForm、RecordNav
     page/              整頁的版型：PageState（載入中／失敗／找不到）、FormPage、DetailPage、ListPage、ChildList
+    panel/             裝著好幾個面板的頁面：TabPage、TabPanel（頁籤）、DashboardPage、DashboardPanel（dashboard）
+                       與其排版 placePanels、dashboardContext
     view/              ViewActions（view 的列上動作，DataList、DataProfile、DataCard、DataGallery 與 DetailHeader 共用）
     auth/              PasswordLoginForm（登入頁上的表單，依登入方式替換；登入頁本身在 pages/login.vue）
   composables/
@@ -41,7 +43,7 @@ src/
                        （比對與排序本身是 schema/ 底下的純函數）
     form/              表單頁：useTableForm、useLeaveGuard、useSyncHold
     shell/             跟 AppShell 溝通：useActionSlot（登記機制）、useShellActions（App Bar／
-                       底部／多選出口）、useListControls、useSharedListControls（TabView 底下
+                       底部／多選出口）、useListControls、useSharedListControls（TabPage 底下
                        的列表共用搜尋）、useAppBarTabs、usePanelActive、
                        useOverlay、useActionRunner、useDialogs（confirm／notify）、useAskFields
     navigation/        路由接力：useRouteId、useListOrder、useFlow
@@ -121,7 +123,7 @@ src/
 
 | 型態 | 範本 | 資料層 + 版型 | 頁面自己寫什麼 |
 | --- | --- | --- | --- |
-| **列表**（list） | `pages/list.vue` | `useListPage` + `ListPage` | 每列四個角、要不要多選、FAB 放什麼；分組給 `groups`（`GroupedList`）、表格走 `#rows` slot（`DataTable`），頁籤自己包 `TabView` |
+| **列表**（list） | `pages/list.vue` | `useListPage` + `ListPage` | 每列四個角、要不要多選、FAB 放什麼；分組給 `groups`（`GroupedList`）、表格走 `#rows` slot（`DataTable`），頁籤自己包 `TabPage` |
 | **詳細**（detail） | `pages/detail.vue` | `useRecordPage` + `DetailPage` | 欄位動作、slot 裡的子表格或說明 |
 | **表單**（form） | `pages/new.vue`、`pages/edit.vue` | `useCreateForm`／`useEditForm` + `FormPage` | 幾乎不用寫，欄位與順序都在 schema |
 | **總覽**（dashboard） | 🔲 還沒有 | — | 目前沒有具體需求，保留位置 |

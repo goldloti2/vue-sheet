@@ -1,9 +1,9 @@
 <script lang="ts" setup>
-  import type { DashboardContext, DashboardPanelEntry } from '@/components/ui/dashboard/dashboardContext'
-  import type { PanelRequest, PanelSize } from '@/components/ui/dashboard/placePanels'
+  import type { DashboardContext, DashboardPanelEntry } from '@/components/ui/panel/dashboardContext'
+  import type { PanelRequest, PanelSize } from '@/components/ui/panel/placePanels'
   import { computed, onBeforeUnmount, onMounted, provide, shallowReactive, shallowRef, useTemplateRef } from 'vue'
-  import { AUTO_ROWS_MAX, dashboardKey } from '@/components/ui/dashboard/dashboardContext'
-  import { placePanels } from '@/components/ui/dashboard/placePanels'
+  import { AUTO_ROWS_MAX, dashboardKey } from '@/components/ui/panel/dashboardContext'
+  import { placePanels } from '@/components/ui/panel/placePanels'
   import { useCompactLayout } from '@/composables/shell/useCompactLayout'
   import { provideSharedListControls } from '@/composables/shell/useSharedListControls'
   import { schemas } from '@/schema'

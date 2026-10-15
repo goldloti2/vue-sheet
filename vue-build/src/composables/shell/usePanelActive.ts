@@ -3,7 +3,7 @@ import { inject, shallowRef } from 'vue'
 
 type PanelActive = Readonly<Ref<boolean>>
 
-// TabView 的每個面板各 provide 一份「我是不是當前頁籤」，由 TabViewPanel 給（provide 以元件為單位）
+// TabPage 與 DashboardPage 的每個面板各 provide 一份「我是不是當前面板」，由 TabPanel／DashboardPanel 給（provide 以元件為單位）
 export const panelActiveKey: InjectionKey<PanelActive> = Symbol('panelActive')
 
 // 不在頁籤裡的頁面永遠算當前，共用同一個常數就好

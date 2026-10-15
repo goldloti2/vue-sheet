@@ -34,7 +34,7 @@ export function useMultiSelect () {
   // 離開頁面就取消（列表是 KeepAlive 的，不清的話回來還停在上次的多選模式）
   onDeactivated(clear)
 
-  // 換頁籤也算離開。頁籤是 TabView 登記給 AppShell 的，所以頁面層跟面板層都讀得到同一份
+  // 換頁籤也算離開。頁籤是 TabPage 登記給 AppShell 的，所以頁面層跟面板層都讀得到同一份
   watch(useCurrentTab(), clear)
 
   // 每一列多選時需要的物件都綁一起，給 DataList 用 v-bind 一次接上（列表元件與分組列表都同一份）

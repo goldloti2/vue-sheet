@@ -205,7 +205,7 @@
 </script>
 
 <template>
-  <v-app-bar v-if="showShell">
+  <v-app-bar v-if="showShell" class="shell-app-bar">
     <!-- 搜尋模式：整條 App Bar 換成返回鍵 + 輸入框，標題與動作先讓位 -->
     <template v-if="searchOpen && controls">
       <v-app-bar-nav-icon aria-label="關閉搜尋" :icon="mdiArrowLeft" @click="closeSearch" />
@@ -355,7 +355,7 @@
 
   <v-snackbar v-model="notice.open" :color="notice.color">{{ notice.text }}</v-snackbar>
 
-  <v-navigation-drawer v-if="showShell" v-model="drawer" order="-1">
+  <v-navigation-drawer v-if="showShell" v-model="drawer" class="shell-nav-drawer" order="-1">
     <v-list v-if="authMethod !== 'none'" nav>
       <v-list-item :prepend-icon="mdiLogout" title="登出" @click="logout" />
     </v-list>
@@ -365,7 +365,7 @@
     <slot />
   </v-main>
 
-  <v-bottom-navigation v-if="showShell && bottomActions.length > 0" grow>
+  <v-bottom-navigation v-if="showShell && bottomActions.length > 0" class="shell-bottom-bar" grow>
     <v-btn
       v-for="action in bottomActions"
       :key="action.key"
@@ -375,7 +375,7 @@
     </v-btn>
   </v-bottom-navigation>
 
-  <v-bottom-navigation v-else-if="showShell" :model-value="route.path">
+  <v-bottom-navigation v-else-if="showShell" class="shell-bottom-bar" :model-value="route.path">
     <v-btn
       v-for="item in navItems"
       :key="item.to"
@@ -388,3 +388,18 @@
     </v-btn>
   </v-bottom-navigation>
 </template>
+
+<style scoped>
+/* 換頁動畫中不隨頁面滑動，直接換成新的（見 App.vue） */
+.shell-app-bar {
+  view-transition-name: app-bar;
+}
+
+.shell-nav-drawer {
+  view-transition-name: nav-drawer;
+}
+
+.shell-bottom-bar {
+  view-transition-name: bottom-bar;
+}
+</style>

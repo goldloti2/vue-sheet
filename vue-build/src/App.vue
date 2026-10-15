@@ -2,7 +2,6 @@
   import { useRoute } from 'vue-router'
   import AppShell from '@/components/ui/shell/AppShell.vue'
   import { navItems } from '@/config/navigation'
-  import { transitionDir } from '@/router'
 
   const route = useRoute()
 </script>
@@ -10,54 +9,88 @@
 <template>
   <v-app>
     <AppShell :nav-items="navItems">
-      <!-- 方向掛在這裡而不是 transition 的 name 上，理由見 docs/architecture.md 的設計取捨 -->
-      <div class="page-transition-viewport" :data-dir="transitionDir">
-        <router-view v-slot="{ Component }">
-          <transition name="page">
-            <keep-alive :max="50">
-              <component :is="Component" :key="route.fullPath" />
-            </keep-alive>
-          </transition>
-        </router-view>
-      </div>
+      <!-- 換頁動畫由 router 以 View Transitions 處理（見 docs/architecture.md 的設計取捨） -->
+      <router-view v-slot="{ Component }">
+        <keep-alive :max="50">
+          <component :is="Component" :key="route.fullPath" />
+        </keep-alive>
+      </router-view>
     </AppShell>
   </v-app>
 </template>
 
 <style>
-.page-transition-viewport {
-  position: relative;
-  overflow-x: hidden;
-  overflow-y: hidden;
+/* 換頁動畫：整個畫面的截圖依 <html> 的 data-dir 左右滑動 */
+::view-transition-old(root),
+::view-transition-new(root) {
+  mix-blend-mode: normal;
+  animation-duration: 0.3s;
+  animation-timing-function: cubic-bezier(0.25, 0.8, 0.5, 1);
+  animation-fill-mode: both;
 }
 
-.page-enter-active,
-.page-leave-active {
-  transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.5, 1);
+:root[data-dir='forward']::view-transition-old(root) {
+  animation-name: page-to-left;
 }
 
-/* 離場的那一頁疊在進場那頁上面，否則它會把進場的推到下面去 */
-.page-leave-active {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
+:root[data-dir='forward']::view-transition-new(root) {
+  animation-name: page-from-right;
 }
 
-/* 位移量由 viewport 的 data-dir 決定，取的是動畫那一帧的值 */
-[data-dir='forward'] .page-enter-from {
-  transform: translateX(100%);
+:root[data-dir='back']::view-transition-old(root) {
+  animation-name: page-to-right;
 }
 
-[data-dir='forward'] .page-leave-to {
-  transform: translateX(-100%);
+:root[data-dir='back']::view-transition-new(root) {
+  animation-name: page-from-left;
 }
 
-[data-dir='back'] .page-enter-from {
-  transform: translateX(-100%);
+@keyframes page-to-left {
+  to {
+    transform: translateX(-100%);
+  }
 }
 
-[data-dir='back'] .page-leave-to {
-  transform: translateX(100%);
+@keyframes page-from-right {
+  from {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes page-to-right {
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes page-from-left {
+  from {
+    transform: translateX(-100%);
+  }
+}
+
+/* 外殼（App Bar、抽屜、底部列、FAB、上下一筆）各自命名而不在整個畫面的截圖中，直接換成新的、不滑動 */
+::view-transition-group(app-bar),
+::view-transition-group(nav-drawer),
+::view-transition-group(bottom-bar),
+::view-transition-group(page-fab),
+::view-transition-group(record-prev),
+::view-transition-group(record-next),
+::view-transition-new(app-bar),
+::view-transition-new(nav-drawer),
+::view-transition-new(bottom-bar),
+::view-transition-new(page-fab),
+::view-transition-new(record-prev),
+::view-transition-new(record-next) {
+  animation: none;
+}
+
+::view-transition-old(app-bar),
+::view-transition-old(nav-drawer),
+::view-transition-old(bottom-bar),
+::view-transition-old(page-fab),
+::view-transition-old(record-prev),
+::view-transition-old(record-next) {
+  display: none;
 }
 </style>

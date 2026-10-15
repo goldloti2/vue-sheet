@@ -65,7 +65,7 @@ src/
   services/        對後端唯一的出入口（.env 沒填網址就走 mock/ 的假後端，填了就打真的）
   schema/          對 row 做事的純函數（型別、排序、分組、篩選、驗證、關聯圖）；tables/ 底下是每張表的欄位定義
   config/          App 名稱與導覽列項目
-  router/          路由實例與轉場方向判定
+  router/          路由實例、換頁動畫與方向判定
   pages/           檔案即路由
 mock/              假後端用的 CSV
 template/          新增一張表要複製的檔案

@@ -6,8 +6,8 @@
 
 // Composables
 import type { HistoryState, RouteLocationNormalized, RouteLocationRaw } from 'vue-router'
-import { shallowRef, watch } from 'vue'
-import { createRouter, createWebHistory } from 'vue-router'
+import { nextTick, shallowRef, watch } from 'vue'
+import { createRouter, createWebHistory, START_LOCATION } from 'vue-router'
 import { routes } from 'vue-router/auto-routes'
 import { siblingDirection } from '@/composables/navigation/useListOrder'
 import { authMethod } from '@/config/app'
@@ -84,13 +84,54 @@ watch(token, value => {
 // 用來判斷「返回」要不要相信瀏覽器歷史紀錄——count > 1 才代表真的有上一頁在 App 裡
 export const navigationCount = shallowRef(0)
 
-// 頁面切換動畫方向，`App.vue` 把它掛成轉場容器的 data-dir（CSS 也在那裡）。判定分四層，優先度由上往下：
-//   1. 兩端都是導覽項目 → 依導覽列上的排列順序（右邊的算前進）
-//   2. 只有目的地是導覽項目 → 一律後退（從內頁回到頂層就是往外）
-//   3. 同一個路由換 id，而且兩筆都在列表發布的順序裡 → 依它們在列表中的先後
-//   4. 其他 → 看瀏覽器歷史是往前還是往後（點連結/action 是前進，返回鍵是後退）
-export const transitionDir = shallowRef<'forward' | 'back'>('forward')
+// 換頁動畫（View Transitions，CSS 在 App.vue；流程見 docs/architecture.md）：舊畫面截好才繼續導覽，DOM 更新後放行
+let pending: { transition: ViewTransition, done: () => void } | null = null
 
+function canAnimate (): boolean {
+  return 'startViewTransition' in document && !window.matchMedia('(prefers-reduced-motion: reduce)').matches
+}
+
+function settle (skip: boolean): void {
+  if (!pending) {
+    return
+  }
+  const { transition, done } = pending
+  pending = null
+  if (skip) {
+    transition.skipTransition()
+  }
+  done()
+}
+
+router.beforeResolve((_to, from) => {
+  // 上一次因重導而沒有走到 afterEach 時，略過那一次的動畫
+  settle(true)
+  if (from === START_LOCATION || !canAnimate()) {
+    return
+  }
+  return new Promise<void>(resolve => {
+    const transition = document.startViewTransition(() => new Promise<void>(done => {
+      pending = { transition, done }
+      resolve()
+    }))
+  })
+})
+
+// 導覽失敗時畫面沒變，略過動畫；成功時等 DOM 更新（捲動也已完成）後放行
+router.afterEach((_to, _from, failure) => {
+  if (failure) {
+    settle(true)
+  } else {
+    void nextTick(() => settle(false))
+  }
+})
+
+// 換頁動畫的方向，掛在 <html> 的 data-dir 上，於動畫開始時由 CSS 讀取。判定分五層，優先度由上往下：
+//   1. 網址相同（dashboard 的展開與縮回）→ 看瀏覽器歷史是往前還是往後
+//   2. 兩端都是導覽項目 → 依導覽列上的排列順序（右邊的算前進）
+//   3. 只有目的地是導覽項目 → 一律後退（從內頁回到頂層就是往外）
+//   4. 同一個路由換 id，而且兩筆都在列表發布的順序裡 → 依它們在列表中的先後
+//   5. 其他 → 看瀏覽器歷史是往前還是往後（點連結/action 是前進，返回鍵是後退）
 function navIndexOf (path: string): number {
   return navItems.findIndex(item => item.to === path)
 }
@@ -116,8 +157,7 @@ function historyPosition (): number {
 
 let lastPosition = historyPosition()
 
-// 放 afterEach：這時 history.state 已經更新，而且被中止或重導的導覽不會留下錯誤的方向。
-// afterEach 是同步的，仍然早於 Vue 的重新渲染，動畫不受影響
+// 放 afterEach：這時 history.state 已經更新，而且被中止或重導的導覽不會留下錯誤的方向
 router.afterEach((to, from) => {
   const position = historyPosition()
   const wentBack = position < lastPosition
@@ -125,14 +165,19 @@ router.afterEach((to, from) => {
 
   const toNav = navIndexOf(to.path)
   const fromNav = navIndexOf(from.path)
+  const historyDir = wentBack ? 'back' : 'forward'
 
-  if (toNav === -1) {
-    transitionDir.value = sameRecordDirection(to, from) ?? (wentBack ? 'back' : 'forward')
+  let dir: 'forward' | 'back'
+  if (to.fullPath === from.fullPath) {
+    dir = historyDir
+  } else if (toNav === -1) {
+    dir = sameRecordDirection(to, from) ?? historyDir
   } else if (fromNav === -1 || toNav === fromNav) {
-    transitionDir.value = 'back'
+    dir = 'back'
   } else {
-    transitionDir.value = toNav < fromNav ? 'back' : 'forward'
+    dir = toNav < fromNav ? 'back' : 'forward'
   }
+  document.documentElement.dataset.dir = dir
 
   // 登入後是 replace 掉登入頁，歷史上沒有 App 內的上一頁，所以重新從 1 算
   navigationCount.value = from.path === loginPath ? 1 : navigationCount.value + 1

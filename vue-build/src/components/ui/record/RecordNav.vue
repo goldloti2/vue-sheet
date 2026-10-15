@@ -11,8 +11,7 @@
 
   const { goNext, goPrev, siblings } = useSiblingNav(props.table, () => props.id)
 
-  // 跟 PageFab 同一個理由：頁面轉場中的 transform 會讓祖先變成 fixed 的定位基準，
-  // 不 teleport 出去按鈕就會跟著頁面橫移
+  // 與 PageFab 相同，teleport 到 body：頁面中的祖先帶有 transform 或 containment 時會成為 fixed 的定位基準
   const isActive = shallowRef(true)
   onActivated(() => {
     isActive.value = true
@@ -64,9 +63,11 @@
 
 .record-nav--left {
   left: 0;
+  view-transition-name: record-prev;
 }
 
 .record-nav--right {
   right: 0;
+  view-transition-name: record-next;
 }
 </style>

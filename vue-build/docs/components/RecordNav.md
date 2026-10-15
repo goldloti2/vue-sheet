@@ -64,6 +64,6 @@ detail 頁：
 ## 備註
 
 - 假設 detail 頁的路徑是 `/表名/:id`，也就是檔案式路由的既定慣例
-- 按鈕是 teleport 到 `body` 的，理由跟 `PageFab` 一樣：頁面轉場中的 `transform` 會讓祖先變成 `fixed` 的定位基準，不 teleport 就會跟著頁面橫移
+- 按鈕是 teleport 到 `body` 的，理由跟 `PageFab` 一樣：頁面中的祖先帶有 `transform` 或 containment（例如 dashboard 面板）時會成為 `fixed` 的定位基準，按鈕便不再貼著螢幕兩側。換頁動畫中按鈕另有 `view-transition-name`，不隨頁面滑動（見 [architecture.md](../architecture.md#設計取捨)）
 - `v-touch` 綁在哪個元素上決定手勢的有效範圍。**detail 頁裡如果有可橫向捲動的 `DataTable`，兩者會搶手勢**，需要的話把 `v-touch` 綁在更內層、避開表格的元素上
-- 換頁動畫的左右方向由 `router/index.ts` 的第 3 層規則決定（同路由換 id → 依列表順序），不需要另外設定
+- 換頁動畫的左右方向由 `router/index.ts` 的第 4 層規則決定（同路由換 id → 依列表順序），不需要另外設定

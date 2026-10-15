@@ -62,7 +62,7 @@ src/
     tables/            每張表的欄位定義，一張表一個檔
   config/              app.ts（App 名稱、登入方式）、navigation.ts（導覽列項目）
   styles/              全域的 CSS：list.css（列表中一列與卡片共用的樣式，見 docs/components/ListLayout.md；動作選單的樣式，見 docs/components/ViewActions.md）
-  router/index.ts      路由實例、登入檢查、轉場方向判定、leaveAfterAction / pushWithDefaults
+  router/index.ts      路由實例、登入檢查、換頁動畫與方向判定、leaveAfterAction / pushWithDefaults
   pages/               檔案即路由；任意層的 _ref/ 只供其他頁面引用，不產生路由
 ```
 
@@ -92,7 +92,7 @@ src/
 
 - **捲動位置不是元件狀態**，KeepAlive 管不到（它保留的是元件，視窗的捲動在元件外面）。router 自己記一份 `fullPath → scrollY`：`beforeEach` 存、`scrollBehavior` 還原，上限也是 50 筆。返回鍵優先用瀏覽器記的 `savedPosition`，沒看過的頁面回到頂端
 
-會有這些規則，是因為**離開中的頁面是全速運轉的**，理由見文末的設計取捨。
+會有這些規則，是因為**被快取的頁面是全速運轉的**，理由見文末的設計取捨。
 
 ---
 
@@ -137,13 +137,20 @@ src/
 ## 設計取捨
 
 **為什麼 KeepAlive 的 key 要帶完整網址**
-不帶的話，同一個路由換 id（`/表名/A` → `/表名/B`）對 Vue 而言是同一個元件、同一個 vnode，會就地更新而不觸發 `<transition>`，翻上／下一筆就完全沒有動畫。代價是 KeepAlive 從「每個元件一份」變成「每個網址一份」，所以要配 `max` 收斂；連續翻超過 50 筆不回列表的話，列表頁會被擠掉、展開狀態就沒了。
+不帶的話，同一個路由換 id（`/表名/A` → `/表名/B`）對 Vue 而言是同一個元件、同一個 vnode，會就地更新：頁面須自行跟著 id 重新載入，各筆的元件狀態也無法分開保留。帶完整網址後，一個實例只對應一個網址，路由參數對它而言是常數（見上方 `useRouteId` 的規則）。代價是 KeepAlive 從「每個元件一份」變成「每個網址一份」，所以要配 `max` 收斂；連續翻超過 50 筆不回列表的話，列表頁會被擠掉、展開狀態就沒了。
 
-**為什麼轉場方向是容器的 `data-dir`，不是 `<Transition>` 的 `name`**
-前進／後退的位移量寫成 `[data-dir='forward'] .page-leave-to { … }` 這種屬性選擇器，`name` 固定是 `page`。用兩個 name（`page-forward`／`page-back`）會踩到 `<Transition>` + `<KeepAlive>` 的坑：KeepAlive 重新啟用一個快取頁面時會把當下的 transition hooks 傳進子樹，所以**進場**的 class 永遠是對的；但**停用**那一側沒有這個傳遞，離場跑的是「那個 vnode 上次被啟用時掛的」那份 hooks，class 名稱因此是上一次的方向。實測過的症狀：導覽列最左邊那一頁永遠以 back 進場，於是它不管往哪裡去都用 `page-back-leave-to` 往右滑出。改成屬性之後 class 只有 `page-leave-*` 一種，位移量在動畫那一帧才從 DOM 讀，過期的 hooks 也不影響。
+**為什麼換頁動畫用 View Transitions，而非 `<Transition>`**
+`<Transition>` 須看到新舊兩個不同的元件才會播放。dashboard 的展開與縮回網址不變，KeepAlive 的 key 相同，前後是同一個元件，`<Transition>` 無從觸發。View Transitions 由瀏覽器截下 DOM 更新前後的畫面再播放動畫，不論前後是否為同一個元件，因此換頁與展開共用同一套。流程在 `router/index.ts`：
 
-**為什麼每個版型最外面都包一層 `div`**
-`<Transition>` 只動得了「root 是單一元素」的頁面。版型裡的 `PageState` 渲染出來是 fragment（進度條 + slot），直接當 root 的話那一頁不播動畫，而且 console 會出現 `renders non-element root node` 的警告。所以 `ListPage`／`DetailPage`／`FormPage` 都在外面包一層（細節見 [components/PageState.md](components/PageState.md)）。
+- **`beforeResolve` 開始動畫**：呼叫 `document.startViewTransition`，導覽等到舊畫面截好、update callback 被呼叫時才繼續。首次載入不播放
+- **`afterEach` 之後放行**：等 `nextTick`（新頁面的 DOM 已更新）才讓 update callback 結束，瀏覽器隨即截下新畫面。`scrollBehavior` 的捲動排在同一個 `nextTick` 之後的 microtask，早於截圖，因此新畫面已是捲好的位置。dashboard 於 `afterEach` 中改變展開狀態，同樣落在兩次截圖之間
+- **導覽失敗（被取消、被擋下）時略過動畫**：畫面沒變，滑動兩張相同的截圖沒有意義；因重導而沒有走到 `afterEach` 的那一次，於下一次的 `beforeResolve` 略過
+- **滑動的是整個畫面（`root`）的截圖**，而非替內容區命名：`root` 的截圖即為當下看到的畫面，不受捲動位置影響；單獨命名內容區時，元素的位置會隨捲動改變，截圖於動畫中會上下跳動
+- **外殼另外命名**：App Bar、左側抽屜、底部列、FAB、`RecordNav` 各有 `view-transition-name`，因此不在 `root` 的截圖中；舊的直接隱藏、新的不加動畫，與舊做法中「外殼不隨頁面滑動」相同
+- **方向掛在 `<html>` 的 `data-dir`**，於 `afterEach` 寫入，CSS 於動畫開始時才讀取（判定規則見 `router/index.ts`）
+- **不支援 View Transitions 的瀏覽器，或系統開啟「減少動態效果」時，不播放動畫**，直接切換
 
-**為什麼離開中的頁面還在運轉**
-KeepAlive 的 `deactivate` 只搬 DOM，不會暫停元件的 effect；而 `onDeactivated` 是 post-render，比 pre-flush 的 `watch` 還晚。所以在整段離場動畫期間，舊頁面仍然會對外部變化重新計算、重新渲染——而外面的世界已經換頁了。這是「返回時閃一下錯誤內容」這一整類問題的唯一根源，上面那五條規則都是為它而存在。流進離開中頁面的東西只有兩種：路由參數（讀一次就固定）與共用快取（讓它變）。
+舊做法（`<Transition>` + `<KeepAlive>`）另有兩個限制，改用 View Transitions 後皆不復存在：離場的一側套用的是該 vnode 上次啟用時的 transition hooks，方向須改以屬性選擇器讀取；頁面的 root 須為單一元素，因此三個版型都在外面包一層 `div`（仍保留，見 [components/PageState.md](components/PageState.md)）。
+
+**為什麼被快取的頁面還在運轉**
+KeepAlive 的 `deactivate` 只搬 DOM，不會暫停元件的 effect；而 `onDeactivated` 是 post-render，比 pre-flush 的 `watch` 還晚。所以被快取的頁面仍然會對外部變化重新計算、重新渲染——而外面的世界已經換頁了。舊的換頁動畫中，離場的頁面是活的 DOM，這直接造成「閃一下錯誤內容」；改用 View Transitions 後離場的一側是截圖，不再看得到，但頁面回到畫面時仍帶著背景期間算出的狀態，上面的規則都是為此而存在。流進被快取頁面的東西只有兩種：路由參數（讀一次就固定）與共用快取（讓它變）。

@@ -103,6 +103,7 @@
   position: fixed;
   right: 16px;
   z-index: 2001;
+  view-transition-name: page-fab;
   display: flex;
   flex-direction: column-reverse;
   gap: 12px;

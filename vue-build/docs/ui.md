@@ -204,7 +204,7 @@
 「取消／送出」永遠在拇指構得到的地方，不用把長表單捲到最後才按得到。而表單本來就是「要按到才算完成」的頁面，此時不該讓人分心去切分頁，所以它直接取代導覽列。
 
 **為什麼 App Bar 動作走 provide/inject、FAB 走 Teleport**
-App Bar 在轉場動畫的 `.page-transition-viewport` 之外，不會被 `transform` 影響，不需要真的搬 DOM；FAB 在頁面裡，得送出去才不會跟著頁面滑走。
+App Bar 屬於 `AppShell`，頁面只需把動作交給它，不需要真的搬 DOM；FAB 是 `position: fixed`，放在頁面裡時，祖先帶有 `transform` 或 containment（例如 dashboard 面板）便會成為它的定位基準，因此送到 `body`。換頁動畫中兩者皆另有 `view-transition-name`，不隨頁面滑動（見 [architecture.md](architecture.md#設計取捨)）。
 
 **為什麼每一塊都是單一 setter**
 三塊都走同一個 `registerActions`（`useActionSlot.ts`），同一時間只認一個頁面的動作。所以一定要靠 `isActive` 擋住被 KeepAlive 快取的頁面——它們仍然是全速運轉的（見 [architecture.md](architecture.md#keepalive-的規則)），動作一變就會蓋掉當前頁面的。

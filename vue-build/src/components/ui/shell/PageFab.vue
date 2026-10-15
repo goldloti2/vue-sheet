@@ -5,7 +5,7 @@
   import { useLayout } from 'vuetify'
   import { useRunAction } from '@/composables/shell/useActionRunner'
   import { useOverlayOpen } from '@/composables/shell/useOverlay'
-  import { usePanelActive } from '@/composables/shell/usePanelActive'
+  import { usePanelActive, usePanelFab } from '@/composables/shell/usePanelActive'
 
   const { actions } = defineProps<{
     actions: (PageAction | null)[]
@@ -23,10 +23,12 @@
   // 篩選抽屜這種蓋整頁的東西開著時先讓開，FAB 的 z-index 本來就在 layout 之上
   const overlayOpen = useOverlayOpen()
 
-  // 被 KeepAlive 收起來、或所在的頁籤面板不是當前的，都不掛出去，免得兩顆 FAB 疊在一起
+  // 被 KeepAlive 收起來、或所在的頁籤面板不是當前的，都不掛出去，免得兩顆 FAB 疊在一起；
+  // dashboard 的面板另外只在展開時允許
   const cached = shallowRef(true)
   const panelActive = usePanelActive()
-  const isActive = computed(() => cached.value && panelActive.value)
+  const panelFab = usePanelFab()
+  const isActive = computed(() => cached.value && panelActive.value && panelFab.value)
 
   onActivated(() => {
     cached.value = true

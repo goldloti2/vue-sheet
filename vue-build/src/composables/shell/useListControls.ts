@@ -20,7 +20,7 @@ export interface ListControls {
     // 每張表各自一份條件與排序、同時生效。單表的頁面給一個元素就好
     tables: ListTable[]
     // 頁面的頁籤（值對得上某張表的 tableLabel），抽屜打開時先停在那張表
-    current?: Ref<string>
+    current?: Readonly<Ref<string>>
   }
 }
 

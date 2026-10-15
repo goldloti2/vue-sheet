@@ -13,3 +13,10 @@ const ALWAYS_ACTIVE: PanelActive = shallowRef(true)
 export function usePanelActive (): PanelActive {
   return inject(panelActiveKey, ALWAYS_ACTIVE)
 }
+
+// DashboardPanel 提供：面板中的 FAB 是否可掛出（dashboard 中僅於展開時）。不在面板中時永遠可以
+export const panelFabKey: InjectionKey<PanelActive> = Symbol('panelFab')
+
+export function usePanelFab (): PanelActive {
+  return inject(panelFabKey, ALWAYS_ACTIVE)
+}

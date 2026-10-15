@@ -1,6 +1,6 @@
 # Dashboard（設計稿）
 
-> 🔶 部分實作。本文件為設計，實作完成後改寫為用法說明，或移入 ROADMAP。已完成的地基：多個列表共用搜尋（`TabView` 已 provide「共用的列表控制」）、`useListPage` 的 `scope`、`_ref/` 的路由排除，見「與現有機制的關係」中標為 ✅ 者；`DashboardPage`、`DashboardPanel` 本身尚未實作。
+> 🔶 部分實作。本文件為設計，實作完成後改寫為用法說明，或移入 ROADMAP。已完成：多個列表共用搜尋、`useListPage` 的 `scope`、`_ref/` 的路由排除，以及第 1 階段（`DashboardPage`、`DashboardPanel` 的方格排版、小外殼與關注點、共用的搜尋、平時隱藏 FAB 與 App Bar 的動作），見「與現有機制的關係」中標為 ✅ 者。尚未實作：展開、互動、多選的鎖定、面板過窄時的窄版。
 
 dashboard 同時顯示多個面板，與一次只顯示一個面板的 tab（`TabView`）相對。以 `interactive` 開關決定面板之間是否連動：
 
@@ -152,7 +152,7 @@ dashboard 同時顯示多個面板，與一次只顯示一個面板的 tab（`Ta
 偏離基準的常見情況，結論不變：較長的手機（例如 20:9，網頁中約 360×800）約 12 格高；開啟 125% 縮放的筆電（網頁中約 1536×864）`v-container` 的最大寬度降為 1000px，每格約 41px，約 16 格高。
 
 - **選用 6 與 24**：皆可二等分與三等分，24 另可四、六、八等分；兩者為 1:4，手機的半寬（3 格）於電腦上為 12 格。兩者每格的實際大小相近，「高幾格」於手機與電腦上的實際高度亦相近
-- **格子的高等於寬**：欄寬由 grid 將內容區等分而得；列高以 `cqw` 算出同一個值（`calc((100cqw - (欄數 - 1) × 間距) / 欄數)`，`DashboardPage` 為 container），兩個方向的間距亦相同，因此寬與高格數相同的面板必為正方形
+- **格子的高等於寬**：一格的邊長由內容區的寬度算出，欄寬與列高皆為此值，兩個方向的間距亦相同，因此寬與高格數相同的面板必為正方形（見「位置的計算」）
 - **手機或電腦的排版由單一的布林值決定**：框架提供一個 composable（例如 `useCompactLayout()`），dashboard 中所有與排版相關之處僅讀取此值，不直接使用 `useDisplay`。此值同時寫於 `DashboardPage` 的屬性（例如 `data-layout="mobile"`），CSS 以屬性選擇器切換 6 格或 24 格，JS 與 CSS 依同一個判斷。判斷規則只寫在該 composable 中，日後改為依內容區寬度或依裝置時只需修改一處
 - **初始的判斷規則暫定為 Vuetify `useDisplay()` 的 `mobile`**：依視窗寬度判斷，預設以 1145px 為界，視窗大小改變時即時更新。平板直放（例如寬 820px）會被視為手機，6 格時每格約 130px，過大；門檻日後再調整（見「待定事項」）。`platform` 僅於啟動時比對一次 user agent，且 iPadOS 預設送出 Mac 的 user agent，不適合用於判斷平板
 
@@ -175,46 +175,18 @@ const layout = {
 }
 ```
 
-- **以「只給大小、依順序排入」為主**：面板依出現的順序放入，從上一個面板的位置往後找第一個放得下的空位，不回頭填入上方的空洞，因此排列順序與撰寫順序一致（與 CSS grid 預設的自動排列相同）
-- **需要時另給左上角座標 `x`、`y`**（自 1 起算），用於自動排列做不到的特殊情況，例如上例的並排置中。手機上依內容撐高的面板高度不固定，`y` 座標無意義，手機通常只給大小
-- **座標重疊時於 console 警告，並往下移**：有座標的面板與已放好的面板重疊時，維持同一個 `x`，`y` 逐格下移至放得下為止，不向上移動
+- **依 `DashboardPanel` 宣告的順序逐一放入**：沒給座標的面板接在上一個面板的右側；需要時另給左上角座標 `x`、`y`（自 1 起算），用於自動排列做不到的特殊情況，例如上例的並排置中。只給 `y` 時從該列的開頭開始，只給 `x` 時與上一個面板同一列。手機上依內容撐高的面板高度不固定，`y` 座標無意義，手機通常只給大小
+- **重疊時移動後宣告的那一個**：先往右移（`x + 1`），超出右緣而放不下時，換到下一列的開頭（`y + 1`、`x` 回到 1），直到放得下為止。有給的座標因此被改動時，於 console 警告
 - **手機的自動**：寬填滿，高度依內容撐開，最多 8 格，超過即於面板內捲動。內容很少的面板不會撐到 8 格。16:9 的手機內容區約 9.6 格高，8 格約佔螢幕的 69%；20:9 的手機約 12 格高，8 格約佔 56%。兩者皆低於一個畫面，面板上下總留有空間捲動整頁
 - **電腦的自動**：固定寬 8 格、高 7 格，一個畫面可顯示 3×2 個面板（兩排共 14 格，內容區約 15 格高）。高度固定而非依內容撐開，同一排的面板才會對齊，第二排不致錯落。小外殼約佔一格，內容實際可用約 6 格（1920×1080 時約 340px，deck 約可顯示 4–5 列）
 - **面板在自己的框內捲動**；捲到底時繼續滑動會帶動整頁（瀏覽器預設的 scroll chaining，不另外阻擋）。固定與只控制高的面板，高度是否合適由設計者負責
 
 ### 位置的計算
 
-CSS grid 遇到座標重疊時直接讓面板疊在一起，既不警告亦不挪開，因此各面板的位置由 JS 依上述規則算出，CSS 僅照著繪製：
+CSS grid 遇到座標重疊時直接讓面板疊在一起，既不警告亦不挪開，因此各面板的位置由 JS 依上述規則算出（`placePanels`，純函式），CSS 僅照著繪製：
 
-```css
-/* 外層為容器，cqw 方有參照（元素無法參照自身的寬度） */
-.dashboard {
-  container-type: inline-size;
-}
-
-.dashboard-grid {
-  --cols: 6;
-  --gap: 8px;
-  display: grid;
-  grid-template-columns: repeat(var(--cols), 1fr);
-  /* 列高等於欄寬 */
-  grid-auto-rows: calc((100cqw - (var(--cols) - 1) * var(--gap)) / var(--cols));
-  gap: var(--gap);
-}
-
-/* 由 useCompactLayout() 的布林值決定此屬性 */
-.dashboard[data-layout="desktop"] .dashboard-grid {
-  --cols: 24;
-}
-```
-
-各面板以 inline style 放上算好的位置：
-
-```ts
-// 「x / span w」表示自第 x 條格線起跨 w 格
-{ gridColumn: `${x} / span ${w}`, gridRow: `${y} / span ${h}` }
-```
-
+- **格子的大小**：`DashboardPage` 以 `ResizeObserver` 量測內容區的寬度，扣除間距後等分為 6 或 24 格，得出一格的邊長；`grid-template-columns` 與 `grid-auto-rows` 皆以 inline style 指定，列高即為該邊長
+- **各面板的位置**：以 inline style 的 `grid-column` 與 `grid-row` 放上算好的起點與跨越的格數
 - **手機上依內容撐高的面板**：排版前不知其高度，以 `ResizeObserver` 量測內容的高度，換算為格數（無條件進位，最多 8 格）後交由計算；內容變動時（例如搜尋後列數變少）重新量測並重新排版。此類面板寬度必為填滿，一列只有它自己，高度改變只使其下方的面板整排上下移動，不打亂左右的排列
 
 ---
@@ -325,9 +297,9 @@ App Bar 依狀態顯示：
 
 | 現有機制 | dashboard 中的處理 |
 | --- | --- |
-| `TabViewPanel` provide 的「是否為當前面板」（`panelActiveKey`） | `DashboardPanel` provide 同一份，「當前」改為關注面板；`useListControls` 等登記因此自動跟著關注點 |
-| `useAppBarActions` | 僅於該面板多選中或已展開時生效 |
-| `PageFab` | 僅於該面板已展開時顯示 |
+| `TabViewPanel` provide 的「是否為當前面板」（`panelActiveKey`） | ✅ `DashboardPanel` provide 同一份，「當前」改為關注面板；`useListControls` 等登記因此自動跟著關注點 |
+| `useAppBarActions` | 🔶 僅於該面板多選中或已展開時生效：`DashboardPanel` 包一層 `appBarActionsKey` 與 `appBarSelectionKey`，平時改交出空的（多選的部分已完成，展開待做） |
+| `PageFab` | 🔶 僅於該面板已展開時顯示：讀取 `usePanelFab()`（`DashboardPanel` provide，平時為 false 的部分已完成，展開待做） |
 | `useRowClick` | 開啟互動時，點擊一列改為選取，不導覽；四個列表元件另加「目前選取」的樣式 |
 | `DetailPage` 的 `RecordNav`（`position: fixed`）與左右滑動 | 面板中停用，展開時恢復 |
 | `DetailPage` 沒有資料時顯示「找不到這筆資料」 | 面板中尚無選取時，改為只顯示欄位名稱（見「哪些面板會連動」） |

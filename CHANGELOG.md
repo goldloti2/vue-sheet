@@ -17,6 +17,10 @@
 - `DataList` 改為接收 `row` 與 `view`，原本各位置的 prop（`title`、`topRight`、`bottomLeft`、`bottomRight`、`image`）移除。各欄位的位置改於頁面以 `defineView` 指定，例如 `defineView(schema, { title: 'name', subtitle: 'date', summary: 'amount' })`
 - `formatField` 不再 export，格式化改由 view 處理
 
+### 版本後修正
+
+- `GroupedList` 的分組層 `label` 可回傳 `null`，表示該列於此層不再往下分：同一組中這類的列併成一個沒有標題的子組；整組皆為 `null` 時，外層的那一組仍可收合，展開後直接列出各列（見 [vue-build/docs/components/GroupedList.md](vue-build/docs/components/GroupedList.md)）
+
 ## v1.2
 
 - **動作的寫法改版**：內建 builder 改為一般函式，回傳單一動作，不適用時回傳 `null`；各表 `use表名Actions` 的每一項亦為單一動作，同一位置放置哪些動作由頁面組成陣列決定。編輯、刪除等以列為參數的動作改為函式，detail 頁以 `useRowAction` 綁定至當前那一筆。說明集中於新增的 [vue-build/docs/actions.md](vue-build/docs/actions.md)

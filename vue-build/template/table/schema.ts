@@ -2,8 +2,8 @@
 //
 // 更多欄位型別（select／ref／image…）、驗證、初始值、虛擬欄位、跨表關聯，
 // 見 docs/schema.md；每個設定的解釋寫在 src/schema/types.ts 的型別上。
-import type { RowBase, TableSchema } from './types'
-import { prefixedId } from './types'
+import type { RowBase, TableSchema } from '../types'
+import { prefixedId } from '../types'
 
 // id 與 $label 來自 RowBase，不放進 columns。
 // 虛擬欄位、ref 對應的 $欄位key（父列）、指向這張表的 $子表_欄位key（子列陣列）也要列在這裡（readonly），

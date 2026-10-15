@@ -6,37 +6,7 @@
 
 ## Usage
 
-```vue
-<script lang="ts" setup>
-  import type { __Table__Row } from '@/schema/tables/__table__'
-  import DetailPage from '@/components/ui/page/DetailPage.vue'
-  import { use__Table__Actions } from '@/composables/actions/use__Table__Actions'
-  import { useRowAction } from '@/composables/actions/useTableActions'
-  import { useRecordPage } from '@/composables/page/useRecordPage'
-  import { useAppBarActions } from '@/composables/shell/useShellActions'
-  import { __table__Schema } from '@/schema/tables/__table__'
-
-  const { id, row, loading, error } = useRecordPage<__Table__Row>('__table__')
-
-  const { delete: remove, edit, fieldActions } = use__Table__Actions()
-  const editAction = useRowAction(row, edit)
-  const deleteAction = useRowAction(row, remove)
-  useAppBarActions(() => [deleteAction.value])
-</script>
-
-<template>
-  <DetailPage
-    :id="id"
-    :error="error"
-    :fab="[editAction]"
-    :field-actions="fieldActions"
-    :loading="loading"
-    :row="row"
-    :schema="__table__Schema"
-    table="__table__"
-  />
-</template>
-```
+範本見 `template/pages/detail.vue`。
 
 ## Props
 

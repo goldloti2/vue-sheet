@@ -6,28 +6,7 @@
 
 ## Usage
 
-```vue
-<script lang="ts" setup>
-  import DataList from '@/components/ui/list/DataList.vue'
-  import { __table__Schema } from '@/schema/tables/__table__'
-  import { defineView } from '@/schema/view'
-
-  const view = defineView(__table__Schema, { title: 'name', subtitle: 'date', summary: 'amount' })
-</script>
-
-<template>
-  <DataList
-    :row="row"
-    :select-mode="selectMode"
-    selectable
-    :selected="selected"
-    to="/路徑"
-    :view="view"
-    @longpress="handleLongpress"
-    @toggle="handleToggle"
-  />
-</template>
-```
+範本見 `template/pages/list.vue`：列表頁中 `DataList` 放在 `ListPage` 的 slot 裡，並 `v-bind` 該 slot 給的多選綁定。
 
 ## view
 

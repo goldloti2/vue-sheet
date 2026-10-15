@@ -57,12 +57,7 @@ export const orderSchema: TableSchema<OrderRow> = {
 - **ID 同時是跨表關聯的外鍵**
 - **表頭用對外名稱**（使用者看得懂的那個名字），方便直接開 Sheet 檢查或手改資料
 
-欄位因此有兩個名字：程式裡用的 `key`（英文、好打、不會變），和 Sheet 上給人看的 `sheetHeader`。畫面上的 `label` 通常就是同一個對外名稱，所以 `sheetHeader` 省略時自動用 `label`；只有「Sheet 上的表頭跟畫面上想顯示的不一樣」時才需要分開寫：
-
-```ts
-{ key: 'title', label: '名稱', type: 'text' }                      // 表頭是「名稱」
-{ key: 'title', label: '名稱', sheetHeader: '訂單名稱', type: 'text' } // 表頭是「訂單名稱」
-```
+欄位因此有兩個名字：程式裡用的 `key`（英文、好打、不會變），和 Sheet 上給人看的 `sheetHeader`。畫面上的 `label` 通常就是同一個對外名稱，所以 `sheetHeader` 省略時自動用 `label`；只有「Sheet 上的表頭跟畫面上想顯示的不一樣」時才需要分開寫，例如畫面顯示「名稱」、Sheet 的表頭是「訂單名稱」時，另外加上 `sheetHeader: '訂單名稱'`。
 
 **寫回 Sheet 前，`serializeRow` 會幫一部分的值補上單引號**：寫進去的字串會被 Sheet 當成「使用者在那一格輸入」解析，有幾種形狀會讓那一格變成別的型別。只有這幾種補，其他值原樣送出；單引號是 Sheet 的純文字前綴，不算內容，讀回來時不含它。
 

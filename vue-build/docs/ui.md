@@ -112,13 +112,7 @@
 
 頁面登記後 App Bar 才出現放大鏡，按下去整條 App Bar 換成「←＋輸入框」（淺灰藥丸形），標題與動作先讓位。
 
-**列表頁不用自己接**——`useListPage(table, schema)` 內部就登記好了，回傳的 `rows` 已經是篩選＋搜尋過的。下面是它做的事，自己組版面時照這樣串：
-
-```ts
-const query = ref('')
-useListControls(query)
-const data = useSearch(query, rows, schema)
-```
+**列表頁不需自行串接**：`useListPage(table, schema)` 內部已登記，回傳的 `rows` 即為篩選與搜尋後的結果。其內部以 `useListControls` 登記一條搜尋字串（頁面的 ref），再以 `useSearch` 依該字串過濾；自行組版面時依同樣的方式串接。
 
 - **有登記才有放大鏡**，所以實務上只有列表頁有。詳細頁與表單頁刻意不放：App Bar 的搜尋代表「這一頁的主體是一份清單」，詳細頁裡的子表要找東西，請去那張表的列表頁
 - **`query` 是頁面的 ref**，`AppShell` 只負責讓使用者打字進去；過濾是頁面自己做的
@@ -133,13 +127,7 @@ const data = useSearch(query, rows, schema)
 
 ## 篩選
 
-登記時多給 `{ tables: [{ schema, filters, rows }] }`，輸入框內最右側就多一顆篩選鈕（有條件生效時主色），按下去從右側滑出抽屜。一樣，`useListPage` 已經連篩選一起登記好，這是它內部的樣子：
-
-```ts
-const filters = ref<Filters>({})
-useListControls(query, { tables: [{ schema, filters, rows: allRows, sort }] })
-const data = useSearch(query, useFilter(filters, allRows, schema), schema)
-```
+登記時多給 `{ tables: [{ schema, filters, rows }] }`，輸入框內最右側即多一顆篩選鈕（有條件生效時為主色），按下後自右側滑出抽屜。`useListPage` 已連同篩選一併登記：每張表一份 `filters`，與未過濾的整表一起交給 `useListControls`，資料再依序經過 `useFilter` 與 `useSearch`。
 
 順序是固定的：**整表 → `useFilter` → `useSearch` → 畫面**。篩選抽屜的選項要看整表（`allRows`）才列得出「資料裡出現過哪些值」，所以它吃的是還沒過濾的那份；搜尋放最外層最便宜（敲字只重跑 `includes`）。
 
@@ -204,11 +192,7 @@ const data = useSearch(query, useFilter(filters, allRows, schema), schema)
 | `select` | `options` 的宣告順序（狀態有先後，照字典序排不對）。`options` 沒有的值（`allowCustom` 打的）一律排最後 |
 | 其他 | 欄位值；`duration` 換算成秒、`date` 比時間、空值一律最後（不管升降） |
 
-**排序與分組是二選一的**：分組（`groupRows`）會把原本的順序壓成組內順序，所以使用者選了排序卻只看到每個月裡面重排，會很困惑。頁面自己判斷就好，框架不介入：
-
-```vue
-<ListPage :groups="sort ? undefined : groupedFor(tab)" :rows="sort ? rowsFor(tab) : undefined" … />
-```
+**排序與分組是二選一的**：分組（`groupRows`）會把原本的順序壓成組內順序，所以使用者選了排序卻只看到每個月裡面重排，會很困惑。頁面自行判斷，框架不介入：`useListPage` 回傳的 `sort` 有值時，交給 `ListPage` 的是 `rows` 而非 `groups`（寫法見 [ListPage.md](components/ListPage.md#分組與頁籤)）。
 
 排序一改，`ListPage` 發布給 `useListOrder` 的順序跟著改，所以詳細頁的上下一筆與左右滑動自動跟畫面一致。
 

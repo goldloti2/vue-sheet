@@ -96,11 +96,7 @@ src/
 
 ## 完成動作後的導覽
 
-新增／編輯／刪除完成後要離開頁面，用 `@/router` 的 `leaveAfterAction(fallback)`，**不要用 `router.push`**：
-
-```ts
-leaveAfterAction('/表名')   // 走瀏覽器返回；沒有 App 內上一頁時才 replace 到 fallback
-```
+新增／編輯／刪除完成後要離開頁面，用 `@/router` 的 `leaveAfterAction(fallback)`，**不要用 `router.push`**。它走瀏覽器的返回；沒有 App 內的上一頁時，才 replace 到 `fallback`（例如 `'/表名'`）。
 
 `push` 會把已經完成任務的表單頁留在歷史裡，按上一頁又回到它——編輯頁是舊表單，刪除後的 detail 更是已經不存在的資料。
 

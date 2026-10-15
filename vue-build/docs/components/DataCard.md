@@ -8,30 +8,7 @@ card 式列表的**單一張卡片**：上下共四層，沒有內容的那一�
 
 ## Usage
 
-```vue
-<script lang="ts" setup>
-  import DataCard from '@/components/ui/list/DataCard.vue'
-  import ListPage from '@/components/ui/page/ListPage.vue'
-  import { use__Table__Actions } from '@/composables/actions/use__Table__Actions'
-  import { __table__Schema } from '@/schema/tables/__table__'
-  import { defineCardView } from '@/schema/view'
-
-  const { edit, delete: remove } = use__Table__Actions()
-  const view = defineCardView(__table__Schema, {
-    header: { title: 'owner', image: 'avatar' },
-    body: { image: 'photo', title: 'name', subtitle: 'date', summary: 'note' },
-    actions: row => [{ ...edit(row), display: 'text' }, null, null, remove(row)],
-  })
-</script>
-
-<template>
-  <ListPage table="__table__" :rows="rows" :selection="selection">
-    <template #default="{ row, props: itemProps }">
-      <DataCard v-bind="itemProps" :row="row" :to="`/__table__/${row.id}`" :view="view" />
-    </template>
-  </ListPage>
-</template>
-```
+範本見 `template/pages/card-list.vue`，其中示範了 `defineCardView` 與第 4 層的左右各兩格（含文字按鈕與空格）。
 
 ## 四層
 

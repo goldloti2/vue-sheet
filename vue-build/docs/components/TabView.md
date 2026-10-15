@@ -21,23 +21,7 @@
 
 ## Usage
 
-```vue
-<script lang="ts" setup>
-  import { ref } from 'vue'
-  import TabView from '@/components/ui/shell/TabView.vue'
-
-  const tabs = ['選項1', '選項2']
-  const selected = ref(tabs[0])
-</script>
-
-<template>
-  <TabView v-model="selected" :tabs="tabs">
-    <template #default="{ tab }">
-      <v-container>內容{{ tab }}</v-container>
-    </template>
-  </TabView>
-</template>
-```
+範本見 `template/pages/tab-list.vue`：依 select 欄位分頁籤，每個頁籤放一個只供引用的列表（`template/pages/_ref/list.vue`）。
 
 ## Props
 

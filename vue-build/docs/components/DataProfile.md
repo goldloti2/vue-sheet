@@ -8,31 +8,7 @@ profile 式列表的**單一張卡片**：左側為圓形頭像，中間上下�
 
 ## Usage
 
-```vue
-<script lang="ts" setup>
-  import DataProfile from '@/components/ui/list/DataProfile.vue'
-  import ListPage from '@/components/ui/page/ListPage.vue'
-  import { use__Table__Actions } from '@/composables/actions/use__Table__Actions'
-  import { __table__Schema } from '@/schema/tables/__table__'
-  import { defineView } from '@/schema/view'
-
-  const { edit, delete: remove } = use__Table__Actions()
-  const view = defineView(__table__Schema, {
-    title: 'name',
-    subtitle: 'date',
-    image: 'photo',
-    actions: row => [edit(row), remove(row)],
-  })
-</script>
-
-<template>
-  <ListPage table="__table__" :rows="rows" :selection="selection">
-    <template #default="{ row, props: itemProps }">
-      <DataProfile v-bind="itemProps" :row="row" :to="`/__table__/${row.id}`" :view="view" />
-    </template>
-  </ListPage>
-</template>
-```
+範本見 `template/pages/profile-list.vue`。
 
 ## 使用的位置
 

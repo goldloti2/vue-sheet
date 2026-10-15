@@ -101,30 +101,11 @@ interface PageAction {
 - **自訂的動作**（包括連續動作）亦定義於此：不以列為參數者以 `useAction(() => ({ … }))` 包裝，以列為參數者寫成 `(row) => …`。範本回傳物件的末尾附有連續動作的示範
 - **一個位置放哪幾個動作由頁面決定**：頁面取出需要的動作，組成陣列交給該位置
 
-detail 頁的取用方式：
+取用方式見範本：
 
-```ts
-const { delete: remove, edit, fieldActions } = use__Table__Actions()
-const editAction = useRowAction(row, edit)
-const deleteAction = useRowAction(row, remove)
-useAppBarActions(() => [deleteAction.value])
-```
-
-```vue
-<DetailPage :fab="[editAction]" :field-actions="fieldActions" … />
-```
-
-列表頁的取用方式（列上的動作見「列上的動作」）：
-
-```ts
-const { new: newAction, bulkDelete, edit, delete: remove } = use__Table__Actions({
-  selectedIds: selection.selectedIds,
-  onDone: selection.clear,
-})
-useAppBarActions(() => [bulkDelete.value])
-
-const view = defineView(__table__Schema, { title: 'name', actions: row => [edit(row), remove(row)] })
-```
+- **detail 頁**（`template/pages/detail.vue`）：以 `useRowAction` 將 `edit`、`delete` 綁定至當前那一筆，編輯交給 `DetailPage` 的 `fab`，刪除以 `useAppBarActions` 放上 App Bar，`fieldActions` 交給 `DetailPage`
+- **列表頁**（`template/pages/list.vue`）：傳入多選的 `selectedIds` 與 `onDone`，新增交給 `ListPage` 的 `fab`，批次刪除以 `useAppBarActions` 放上 App Bar
+- **列上的動作**（`template/pages/profile-list.vue` 等）：於 view 的 `actions` 中以該列呼叫（見「列上的動作」）
 
 `delete` 為 JavaScript 的保留字，解構時須改名（例如 `remove`）。
 
@@ -147,15 +128,7 @@ const fieldActions: FieldActions<__Table__Row> = {
 
 ## 列上的動作
 
-每一列的動作與欄位一起定義於 view（見 [DataList](components/DataList.md) 的「view」）。自 `use表名Actions` 取出以列為參數的動作，以該列呼叫：
-
-```ts
-const { edit, delete: remove } = use__Table__Actions()
-const view = defineView(__table__Schema, {
-  title: 'name',
-  actions: row => [edit(row), remove(row)],
-})
-```
+每一列的動作與欄位一起定義於 view（見 [DataList](components/DataList.md) 的「view」）：自 `use表名Actions` 取出以列為參數的動作，於 view 的 `actions` 中以該列呼叫，回傳動作的陣列。範本見 `template/pages/profile-list.vue`、`gallery-list.vue`，左右各兩格的寫法見 `card-list.vue`。
 
 - **陣列依位置排列，`null` 表示空位**：card 與 detail 標頭的前兩個置於左側、後兩個置於右側；deck、profile 與 gallery 略過空位。builder 判斷不適用而回傳的 `null` 亦同：card 與 detail 標頭中保留該格，deck、profile 與 gallery 中略過
 - **`display`** 決定該動作顯示為圖示或文字
@@ -169,14 +142,7 @@ const view = defineView(__table__Schema, {
 
 ## 連續動作（流程）
 
-好幾個步驟要一氣呵成時（新增父表那筆後直接進它的 detail、或接著新增子表那筆），用 `useFlow` 串成一段 async 程式碼，整段包成一個動作：
-
-```ts
-onClick: () => runFlow(async () => {
-  const row = await runStep<ParentRow>('/parent/new', { status: '已下單' })
-  router.replace(`/parent/${row.id}`)
-})
-```
+好幾個步驟要一氣呵成時（新增父表那筆後直接進它的 detail、或接著新增子表那筆），用 `useFlow` 串成一段 async 程式碼，整段包成一個動作：動作的 `onClick` 呼叫 `runFlow`，其中依序 `await runStep(…)` 開啟各張表單並取回建好的那筆，最後換頁。範本見 `template/table/use__Table__Actions.ts` 末尾的 `newWithChild`（註解中）。
 
 - **`runStep(to, defaults?)`** 用 `replace` 開一張表單、等它送出成功、拿回建好或改好的那筆。`defaults` 走 `history.state`，跟 `newAction` 同一條通道，所以只能放普通值（不能 reactive、不能函式）
 - **表單不用改**：送出成功後先問 `resumeStep()`，有步驟在等就交棒、頁面不離開；沒有就照舊 `leaveAfterAction`。這是 `useCreateForm`／`useEditForm` 裡唯一為流程多出的分岔

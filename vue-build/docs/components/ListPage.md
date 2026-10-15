@@ -10,33 +10,7 @@
 
 ## Usage
 
-```vue
-<script lang="ts" setup>
-  const { rows, loading, error, selection } = useListPage<__Table__Row>('__table__', __table__Schema)
-  const view = defineView(__table__Schema, { title: 'name', summary: 'amount' })
-
-  const { new: newAction, bulkDelete } = use__Table__Actions({
-    selectedIds: selection.selectedIds,
-    onDone: selection.clear,
-  })
-  useAppBarActions(() => [bulkDelete.value])
-</script>
-
-<template>
-  <ListPage
-    :error="error"
-    :fab="[newAction]"
-    :loading="loading"
-    :rows="rows"
-    :selection="selection"
-    table="__table__"
-  >
-    <template #default="{ row, props: itemProps }">
-      <DataList v-bind="itemProps" :row="row" :to="`/__table__/${row.id}`" :view="view" />
-    </template>
-  </ListPage>
-</template>
-```
+範本見 `template/pages/list.vue`；以其他版面呈現時見同資料夾的 `profile-list.vue`、`card-list.vue`、`gallery-list.vue`，依狀態分頁籤時見 `tab-list.vue`。
 
 ## Props
 

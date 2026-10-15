@@ -6,24 +6,7 @@ detail 頁整頁最上方的**標頭區塊**，讓人一眼看到這一筆的重
 
 ## Usage
 
-```vue
-<script lang="ts" setup>
-  import { defineView } from '@/schema/view'
-
-  const { delete: remove, edit } = use__Table__Actions()
-  const header = defineView(__table__Schema, {
-    image: 'photo',
-    title: 'name',
-    subtitle: 'date',
-    summary: 'note',
-    actions: row => [{ ...edit(row), display: 'text' }, null, null, remove(row)],
-  })
-</script>
-
-<template>
-  <DetailPage :header="header" … />
-</template>
-```
+範本見 `template/pages/detail.vue`：以 `defineView` 定義後交給 `DetailPage` 的 `header`；範本僅指定標題與副標，`image` 與 `actions` 的用法見其註解及下方的「使用的位置」。
 
 ## 使用的位置
 

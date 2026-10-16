@@ -3,6 +3,7 @@
   import { mdiDotsVertical } from '@mdi/js'
   import { computed, ref, useTemplateRef } from 'vue'
   import { useRunAction } from '@/composables/shell/useActionRunner'
+  import { useDashboardSelection } from '@/composables/shell/useDashboardSelection'
 
   // view 的列上動作：（見 docs/actions.md）
   // row 依陣列順序由左往右排列、整組靠右；
@@ -18,6 +19,9 @@
   // slots 僅取前四格
   const items = computed(() => variant === 'slots' ? actions.slice(0, 4) : shown.value)
   const visible = computed(() => items.value.some(action => action !== null))
+
+  // dashboard 中文字按鈕另畫圖示，窄面板時改顯示圖示（見 docs/dashboard.md 的「面板內容的寬度」）；一般頁面不多建這個 v-icon
+  const inDashboard = useDashboardSelection() !== null
 
   const runAction = useRunAction()
 
@@ -64,7 +68,7 @@
     <template v-for="(action, index) in items" v-else :key="action?.key ?? `empty-${index}`">
       <button
         v-if="action"
-        :aria-label="action.display === 'text' ? undefined : action.label"
+        :aria-label="action.display === 'text' && !inDashboard ? undefined : action.label"
         class="view-actions__button"
         :class="{
           'view-actions__button--text': action.display === 'text',
@@ -73,7 +77,11 @@
         type="button"
         @click="runAction(action)"
       >
-        <span v-if="action.display === 'text'" class="view-actions__label text-label-large">{{ action.label }}</span>
+        <template v-if="action.display === 'text'">
+          <span class="view-actions__label text-label-large">{{ action.label }}</span>
+          <v-icon v-if="inDashboard" class="view-actions__text-icon" :icon="action.icon" size="20" />
+        </template>
+
         <v-icon v-else :icon="action.icon" size="20" />
       </button>
 
@@ -83,8 +91,10 @@
 </template>
 
 <style scoped>
+/* 放不下時換行（dashboard 的窄面板） */
 .view-actions {
   display: flex;
+  flex-wrap: wrap;
   justify-content: flex-end;
   gap: 4px;
 }
@@ -125,5 +135,37 @@
 /* 行高的上下留白依字型而不對稱，中文字會偏上；裁至大寫字母頂端與基線之間再置中 */
 .view-actions__label {
   text-box: trim-both cap alphabetic;
+}
+
+.view-actions__text-icon {
+  display: none;
+}
+
+/* dashboard 中 3 格以下的窄面板：文字按鈕改為與其他按鈕相同的圖示；整列靠左，slots 不分左右、不留空格（見 docs/dashboard.md 的「面板內容的寬度」） */
+@container dashboard-panel (width < 200px) {
+  .view-actions {
+    justify-content: flex-start;
+  }
+
+  .view-actions__right {
+    margin-left: 0;
+  }
+
+  .view-actions__empty {
+    display: none;
+  }
+
+  .view-actions__button--text {
+    padding: 0;
+    color: rgba(var(--v-theme-on-surface), var(--v-medium-emphasis-opacity));
+  }
+
+  .view-actions__button--text .view-actions__label {
+    display: none;
+  }
+
+  .view-actions__button--text .view-actions__text-icon {
+    display: inline-flex;
+  }
 }
 </style>

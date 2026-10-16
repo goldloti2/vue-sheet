@@ -38,7 +38,7 @@
 
     <div v-else class="text-medium-emphasis">{{ emptyText }}</div>
 
-    <div v-if="to || shownActions.length > 0" class="d-flex ga-2 justify-end mt-2">
+    <div v-if="to || shownActions.length > 0" class="d-flex flex-wrap ga-2 justify-end mt-2">
       <v-btn v-if="to" text="展開" :to="to" variant="text" />
 
       <v-btn

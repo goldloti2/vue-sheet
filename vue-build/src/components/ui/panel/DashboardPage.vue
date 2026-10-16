@@ -10,7 +10,7 @@
   import { provideDashboardSelection } from '@/composables/shell/useDashboardSelection'
   import { provideSharedListControls } from '@/composables/shell/useSharedListControls'
   import { appBarActionsKey, useAppBarActions, useAppBarHeading } from '@/composables/shell/useShellActions'
-  import { canAnimate } from '@/router'
+  import { beginTransition, canAnimate, markTransition } from '@/composables/shell/viewTransition'
   import { schemas } from '@/schema'
 
   // 同時顯示多個面板（見 docs/dashboard.md）：方格排版、關注點，以及各面板列表共用的搜尋、篩選與排序
@@ -168,20 +168,15 @@
       update()
       return
     }
-    const root = document.documentElement
-    root.dataset.transition = 'panel'
-    if (kind === 'fade') {
-      delete root.dataset.dir
-    } else {
-      root.dataset.dir = kind
-    }
+    markTransition('panel', kind === 'fade' ? null : kind)
     panelTransition.value = kind === 'fade' ? 'fade' : 'slide'
     await nextTick()
-    const viewTransition = document.startViewTransition(async () => {
-      update()
-      await nextTick()
-    })
-    void viewTransition.finished.finally(() => {
+
+    const pending = await beginTransition()
+    update()
+    await nextTick()
+    pending.finish()
+    void pending.finished.finally(() => {
       panelTransition.value = null
     })
   }

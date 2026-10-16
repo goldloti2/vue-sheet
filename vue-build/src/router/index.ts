@@ -4,12 +4,14 @@
  * Automatic routes for ./src/pages/*.vue
  */
 
+import type { PendingTransition } from '@/composables/shell/viewTransition'
 // Composables
 import type { HistoryState, RouteLocationNormalized, RouteLocationRaw } from 'vue-router'
 import { nextTick, shallowRef, watch } from 'vue'
 import { createRouter, createWebHistory, START_LOCATION } from 'vue-router'
 import { routes } from 'vue-router/auto-routes'
 import { siblingDirection } from '@/composables/navigation/useListOrder'
+import { beginTransition, canAnimate, markTransition } from '@/composables/shell/viewTransition'
 import { authMethod } from '@/config/app'
 import { navItems } from '@/config/navigation'
 import { token } from '@/services/auth/token'
@@ -84,38 +86,25 @@ watch(token, value => {
 // 用來判斷「返回」要不要相信瀏覽器歷史紀錄——count > 1 才代表真的有上一頁在 App 裡
 export const navigationCount = shallowRef(0)
 
-// 換頁動畫（View Transitions，CSS 在 App.vue；流程見 docs/architecture.md）：舊畫面截好才繼續導覽，DOM 更新後放行
-let pending: { transition: ViewTransition, done: () => void } | null = null
-
-// 換頁與 dashboard 面板內的轉場共用
-export function canAnimate (): boolean {
-  return 'startViewTransition' in document && !window.matchMedia('(prefers-reduced-motion: reduce)').matches
-}
+// 換頁動畫（零件見 composables/shell/viewTransition.ts）：舊畫面截好才繼續導覽，DOM 更新後放行
+let pending: PendingTransition | null = null
 
 function settle (skip: boolean): void {
-  if (!pending) {
-    return
-  }
-  const { transition, done } = pending
+  const current = pending
   pending = null
   if (skip) {
-    transition.skipTransition()
+    current?.skip()
+  } else {
+    current?.finish()
   }
-  done()
 }
 
-router.beforeResolve((_to, from) => {
+router.beforeResolve(async (_to, from) => {
   // 上一次因重導而沒有走到 afterEach 時，略過那一次的動畫
   settle(true)
-  if (from === START_LOCATION || !canAnimate()) {
-    return
+  if (from !== START_LOCATION && canAnimate()) {
+    pending = await beginTransition()
   }
-  return new Promise<void>(resolve => {
-    const transition = document.startViewTransition(() => new Promise<void>(done => {
-      pending = { transition, done }
-      resolve()
-    }))
-  })
 })
 
 // 導覽失敗時畫面沒變，略過動畫；成功時等 DOM 更新（捲動也已完成）後放行
@@ -178,9 +167,7 @@ router.afterEach((to, from) => {
   } else {
     dir = toNav < fromNav ? 'back' : 'forward'
   }
-  // data-transition 區分換頁與 dashboard 面板內的轉場，兩者的 CSS 不同（見 App.vue）
-  document.documentElement.dataset.transition = 'page'
-  document.documentElement.dataset.dir = dir
+  markTransition('page', dir)
 
   // 登入後是 replace 掉登入頁，歷史上沒有 App 內的上一頁，所以重新從 1 算
   navigationCount.value = from.path === loginPath ? 1 : navigationCount.value + 1

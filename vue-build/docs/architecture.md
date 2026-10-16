@@ -45,7 +45,8 @@ src/
     shell/             跟 AppShell 溝通：useActionSlot（登記機制）、useShellActions（App Bar／
                        底部／多選出口）、useListControls、useSharedListControls（TabPage 與
                        DashboardPage 底下的列表共用搜尋）、useDashboardSelection（dashboard 的
-                       互動）、useCompactLayout、useAppBarTabs、usePanelActive、
+                       互動）、useCompactLayout、viewTransition（換頁與面板內的轉場共用的零件）、
+                       useAppBarTabs、usePanelActive、
                        useOverlay、useActionRunner、useDialogs（confirm／notify）、useAskFields
     navigation/        路由接力：useRouteId、useListOrder、useFlow
     list/              列表互動：useMultiSelect、useLongPress、useRowClick
@@ -141,7 +142,7 @@ src/
 不帶的話，同一個路由換 id（`/表名/A` → `/表名/B`）對 Vue 而言是同一個元件、同一個 vnode，會就地更新：頁面須自行跟著 id 重新載入，各筆的元件狀態也無法分開保留。帶完整網址後，一個實例只對應一個網址，路由參數對它而言是常數（見上方 `useRouteId` 的規則）。代價是 KeepAlive 從「每個元件一份」變成「每個網址一份」，所以要配 `max` 收斂；連續翻超過 50 筆不回列表的話，列表頁會被擠掉、展開狀態就沒了。
 
 **為什麼換頁動畫用 View Transitions，而非 `<Transition>`**
-`<Transition>` 須看到新舊兩個不同的元件才會播放。dashboard 的展開與縮回網址不變，KeepAlive 的 key 相同，前後是同一個元件，`<Transition>` 無從觸發。View Transitions 由瀏覽器截下 DOM 更新前後的畫面再播放動畫，不論前後是否為同一個元件，因此換頁與展開共用同一套。流程在 `router/index.ts`：
+`<Transition>` 須看到新舊兩個不同的元件才會播放。dashboard 的展開與縮回網址不變，KeepAlive 的 key 相同，前後是同一個元件，`<Transition>` 無從觸發。View Transitions 由瀏覽器截下 DOM 更新前後的畫面再播放動畫，不論前後是否為同一個元件，因此換頁與展開共用同一套。共用的零件在 `composables/shell/viewTransition.ts`（是否播放、開始一次轉場並於截好舊畫面後交回「完成」與「略過」、寫入 `<html>` 的屬性），dashboard 面板內的轉場亦使用；換頁的流程在 `router/index.ts`：
 
 - **`beforeResolve` 開始動畫**：呼叫 `document.startViewTransition`，導覽等到舊畫面截好、update callback 被呼叫時才繼續。首次載入不播放
 - **`afterEach` 之後放行**：等 `nextTick`（新頁面的 DOM 已更新）才讓 update callback 結束，瀏覽器隨即截下新畫面。`scrollBehavior` 的捲動排在同一個 `nextTick` 之後的 microtask，早於截圖，因此新畫面已是捲好的位置。dashboard 於 `afterEach` 中改變展開狀態，同樣落在兩次截圖之間

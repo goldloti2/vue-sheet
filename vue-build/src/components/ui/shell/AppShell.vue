@@ -37,7 +37,7 @@
     navItems: () => [],
   })
 
-  const drawer = shallowRef(true)
+  const drawer = shallowRef(false)
   const route = useRoute()
   const router = useRouter()
 
@@ -355,7 +355,13 @@
 
   <v-snackbar v-model="notice.open" :color="notice.color">{{ notice.text }}</v-snackbar>
 
-  <v-navigation-drawer v-if="showShell" v-model="drawer" class="shell-nav-drawer" order="-1">
+  <v-navigation-drawer
+    v-if="showShell"
+    v-model="drawer"
+    class="shell-nav-drawer"
+    disable-resize-watcher
+    order="-1"
+  >
     <v-list v-if="authMethod !== 'none'" nav>
       <v-list-item :prepend-icon="mdiLogout" title="登出" @click="logout" />
     </v-list>

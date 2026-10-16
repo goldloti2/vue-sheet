@@ -39,7 +39,7 @@
 | **同步鈕** | `AppShell` | 永遠在最右邊，不屬於任何頁面 |
 | **頁籤列** | `TabPage` | 掛在 App Bar 底下的 extension，不跟著內容捲動 |
 | **內容區** | `pages/*.vue` | 換頁時左右滑動的就是這一塊 |
-| **側邊欄** | `AppShell` | 左側滑出，蓋在 App Bar 之上。目前只有「登出」（`config/app.ts` 的 `authMethod` 不是 `'none'` 時才有） |
+| **側邊欄** | `AppShell` | 左側滑出，蓋在 App Bar 之上。預設關閉，按漢堡選單開啟。目前只有「登出」（`config/app.ts` 的 `authMethod` 不是 `'none'` 時才有） |
 | **篩選／排序抽屜** | `AppShell` + `FilterPanel`／`SortPanel` | 右側滑出（篩選是兩層）。蓋在 App Bar 之上。抽屜本身歸 `AppShell`，面板只放內容，一次顯示一種 |
 | **FAB** | `PageFab` | 右下角浮動按鈕，主要動作 |
 | **底部導覽列** | `config/navigation.ts` | 切換主要頁面 |

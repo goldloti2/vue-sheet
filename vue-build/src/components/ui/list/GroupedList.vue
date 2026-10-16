@@ -91,9 +91,15 @@
   overflow: visible;
 }
 
+/* 展開箭頭與標題之間的間距：Vuetify 預設 32px，dashboard 的窄面板中會擠掉標題，改為 8px */
+.grouped-list :deep(.v-list-group__header) {
+  --v-list-prepend-gap: 8px;
+}
+
 /* 展開與收合的動畫期間，Vuetify 會於此層暫設 overflow: hidden。左右各外擴陰影的範圍再以內距抵銷，
-   內容的位置與寬度不變，裁切範圍則涵蓋陰影 */
+   內容的位置與寬度不變，裁切範圍則涵蓋陰影。Vuetify 另設 min-width: min-content，窄面板中會被不換行的標題撐寬，改回 0 */
 .grouped-list :deep(.v-list-group__items) {
+  min-width: 0;
   margin-inline: calc(-1 * var(--list-card-shadow-extent));
   padding-inline: var(--list-card-shadow-extent);
 }

@@ -1,6 +1,6 @@
 # Dashboard（設計稿）
 
-> 🔶 部分實作。本文件為設計，實作完成後改寫為用法說明，或移入 ROADMAP。已完成：多個列表共用搜尋、`useListPage` 的 `scope`、`_ref/` 的路由排除，第 1 階段（`DashboardPage`、`DashboardPanel` 的方格排版、小外殼與關注點、共用的搜尋、平時隱藏 FAB 與 App Bar 的動作）第 2 階段（展開）與第 3 階段（互動，含面板內的轉場），見「與現有機制的關係」中標為 ✅ 者。尚未實作：多選的鎖定、面板過窄時的窄版。
+> 🔶 部分實作。本文件為設計，實作完成後改寫為用法說明，或移入 ROADMAP。已完成：多個列表共用搜尋、`useListPage` 的 `scope`、`_ref/` 的路由排除，第 1 階段（`DashboardPage`、`DashboardPanel` 的方格排版、小外殼與關注點、共用的搜尋、平時隱藏 FAB 與 App Bar 的動作）第 2 階段（展開）與第 3 階段（互動，含面板內的轉場），見「與現有機制的關係」中標為 ✅ 者。尚未實作：多選的鎖定；面板過窄時，deck、card 與 detail 的窄版已完成，form、動作列與估計高度尚未實作。
 
 dashboard 同時顯示多個面板，與一次只顯示一個面板的 tab（`TabPage`）相對。以 `interactive` 開關決定面板之間是否連動：
 
@@ -193,19 +193,20 @@ CSS grid 遇到座標重疊時直接讓面板疊在一起，既不警告亦不�
 
 ## 面板內容的寬度
 
-`DashboardPanel` 為 container（`container-type: inline-size`），內容元件依面板的寬度以 container query 調整，而非依整個螢幕。一般頁面沒有面板，不會觸發以下的窄版，現有頁面不受影響。
+`DashboardPanel` 的內容區為名為 `dashboard-panel` 的 container（`container: dashboard-panel / inline-size`，不含小外殼），內容元件依面板的寬度以 `@container dashboard-panel (…)` 調整，而非依整個螢幕。一般頁面沒有這個 container，不會觸發以下的窄版，現有頁面不受影響。
 
 | 內容 | 面板過窄時 |
 | --- | --- |
 | table | 不處理，於面板內橫向捲動（表格本為檢視完整欄位而用） |
 | gallery | 不處理，格線本已依寬度減少欄數 |
 | 圖表 | 不處理，以 SVG 繪製，自行縮放 |
-| detail、form | 欄位的名稱與值由左右兩欄改為上下兩行；form 使用 Vuetify 的輸入框，實作時確認是否需要調整 |
+| detail | ✅ 欄位的名稱與值由左右兩欄改為上下兩行，名稱靠左 |
+| form | form 使用 Vuetify 的輸入框，實作時確認是否需要調整 |
 | profile | 不處理，標題與副標本已以刪節號截斷；⋮ 的選單 teleport 至 `body`，可超出面板 |
-| deck | 窄版：只顯示標題與副標，隱藏左下與右下 |
-| card | 窄版：省略第 3 層 |
+| deck | ✅ 窄版：只顯示標題與副標，兩者上下排列並靠左；隱藏左下與右下 |
+| card | ✅ 窄版：省略第 3 層 |
 
-- **3 格以下即為窄版**：deck 一列的 4 個圖示按鈕連同內距約 172px，card 約 160px；3 格（手機約 165–180px、電腦約 150–166px）放不下，4 格（約 200px 以上）可容納。手機與電腦每格的大小相近，以同一個門檻涵蓋兩者：container query 寫為寬度小於約 200px 時切換為窄版（container query 僅能使用長度），實作時以測試面板於瀏覽器中微調
+- **3 格以下即為窄版**：deck 一列的 4 個圖示按鈕連同內距約 172px，card 約 160px；3 格（手機約 165–180px、電腦約 150–166px）放不下，4 格（約 200px 以上）可容納。手機與電腦每格的大小相近，以同一個門檻涵蓋兩者：container query 寫為寬度小於 200px 時切換為窄版（container query 僅能使用長度，因此各元件各寫一次 `200px`，調整時須一併修改），之後以測試面板於瀏覽器中微調
 - **動作列放不下時，先將文字按鈕改為圖示，仍放不下再換行**：每個 `PageAction` 皆有 `icon`，文字按鈕同時繪出圖示與文字，以 container query 切換顯示何者（改為圖示時以 `label` 作為 `aria-label`）；換行以 `flex-wrap` 達成
 - **估計高度**（`contain-intrinsic-size`）：card 的高度主要來自 16:9 的大圖，改以 `cqw` 依寬度估算（例如 `calc(64px + 100cqw * 9 / 16 + …)`，實作時扣除外距與外框再校準），一般頁面中沒有容器時以視窗寬度計算；deck 與 profile 的高度取決於文字行數，窄版時以 container query 換用另一個固定值；gallery 已以 `aspect-ratio` 精確決定
 

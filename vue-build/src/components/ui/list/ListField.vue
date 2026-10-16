@@ -91,4 +91,19 @@
 .list-item__field--right {
   text-align: right;
 }
+
+/* dashboard 中 3 格以下的窄面板：只留標題與副標，上下排列並靠左（門檻見 docs/dashboard.md 的「面板內容的寬度」） */
+@container dashboard-panel (width < 200px) {
+  .list-item__row {
+    grid-template-columns: 1fr;
+  }
+
+  .list-item__row .list-item__field--right {
+    text-align: left;
+  }
+
+  .list-item__row + .list-item__row {
+    display: none;
+  }
+}
 </style>

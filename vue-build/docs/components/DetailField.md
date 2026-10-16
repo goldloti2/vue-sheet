@@ -22,3 +22,8 @@
 | `value` | `string` | **必填**，已格式化好的字串 |
 | `image` | `string \| null?` | 有給就顯示圖片而不是 `value` 的文字（`DataDetail` 對 `image` 欄位自動帶入） |
 | `action` | `(PageAction \| null)?` | 有給就整格可點，右邊顯示圖示；`null` 與沒給相同 |
+
+## 備註
+
+- **標籤與值兩欄固定 38:62**：以 `minmax(0, …)` 指定，不被內容撐開；沒有空白的長字串（網址、編號）於任意處換行
+- **dashboard 中的窄版**：所在面板寬度小於 200px（3 格以下）時，標籤與值改為上下兩行，標籤靠左（見 [dashboard.md](../dashboard.md) 的「面板內容的寬度」）。一般頁面不會觸發

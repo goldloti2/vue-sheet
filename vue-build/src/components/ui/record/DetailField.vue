@@ -74,4 +74,16 @@
   font: inherit;
   cursor: pointer;
 }
+
+/* dashboard 中 3 格以下的窄面板：名稱與值改為上下兩行，名稱靠左（門檻見 docs/dashboard.md 的「面板內容的寬度」） */
+@container dashboard-panel (width < 200px) {
+  .detail-field {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 2px;
+  }
+
+  .detail-field__label {
+    text-align: left;
+  }
+}
 </style>

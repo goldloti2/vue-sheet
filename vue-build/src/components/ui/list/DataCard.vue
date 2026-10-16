@@ -183,6 +183,13 @@
   -webkit-box-orient: vertical;
 }
 
+/* dashboard 中 3 格以下的窄面板：省略第 3 層（門檻見 docs/dashboard.md 的「面板內容的寬度」） */
+@container dashboard-panel (width < 200px) {
+  .card-item__body {
+    display: none;
+  }
+}
+
 /* 第 4 層：8px 上下內距 + 32px 按鈕 = 48px。整列寬度皆為動作列，僅按鈕接收點擊，空白處仍落在連結上 */
 .card-item__actions {
   padding: 8px;

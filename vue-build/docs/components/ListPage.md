@@ -88,3 +88,4 @@ useListControls(query, {
 
 - **版面真的不一樣才自己組**：總覽頁那種混合版面用不到這個元件，資料層仍然可以用 `useListPage`；那時要自己 `useListOrder(table, computed(() => 畫面上的順序))`，因為只有頁面知道實際排列
 - 空列表就是空的，不會顯示「找不到資料」——那是單筆頁面的狀態（見 [PageState](PageState.md)）
+- **內容區為不具名的 container**（`container-type: inline-size`）：列表元件以 `cqw` 依寬度估計畫面外各列的高度（見 [DataCard](DataCard.md) 的備註）。不具名，不影響 dashboard 以 `@container dashboard-panel` 判斷的窄版

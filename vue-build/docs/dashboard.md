@@ -1,6 +1,6 @@
 # Dashboard（設計稿）
 
-> 🔶 部分實作。本文件為設計，實作完成後改寫為用法說明，或移入 ROADMAP。已完成：多個列表共用搜尋、`useListPage` 的 `scope`、`_ref/` 的路由排除，第 1 階段（`DashboardPage`、`DashboardPanel` 的方格排版、小外殼與關注點、共用的搜尋、平時隱藏 FAB 與 App Bar 的動作）第 2 階段（展開）、第 3 階段（互動，含面板內的轉場），以及多選的鎖定、面板過窄時 deck、card、detail 的窄版與動作列，見「與現有機制的關係」與「面板內容的寬度」中標為 ✅ 者。尚未實作：form 的窄版、估計高度。
+> 🔶 部分實作。本文件為設計，實作完成後改寫為用法說明，或移入 ROADMAP。已完成：多個列表共用搜尋、`useListPage` 的 `scope`、`_ref/` 的路由排除，第 1 階段（`DashboardPage`、`DashboardPanel` 的方格排版、小外殼與關注點、共用的搜尋、平時隱藏 FAB 與 App Bar 的動作）第 2 階段（展開）、第 3 階段（互動，含面板內的轉場），以及多選的鎖定、面板過窄時 deck、card、detail 的窄版、動作列與估計高度，見「與現有機制的關係」與「面板內容的寬度」中標為 ✅ 者。尚未實作：form 的窄版。
 
 dashboard 同時顯示多個面板，與一次只顯示一個面板的 tab（`TabPage`）相對。以 `interactive` 開關決定面板之間是否連動：
 
@@ -208,7 +208,7 @@ CSS grid 遇到座標重疊時直接讓面板疊在一起，既不警告亦不�
 
 - **3 格以下即為窄版**：deck 一列的 4 個圖示按鈕連同內距約 172px，card 約 160px；3 格（手機約 165–180px、電腦約 150–166px）放不下，4 格（約 200px 以上）可容納。手機與電腦每格的大小相近，以同一個門檻涵蓋兩者：container query 寫為寬度小於 200px 時切換為窄版（container query 僅能使用長度，因此各元件各寫一次 `200px`，調整時須一併修改），之後以測試面板於瀏覽器中微調
 - ✅ **動作列放不下時，先將文字按鈕改為圖示，仍放不下再換行**：每個 `PageAction` 皆有 `icon`。`ViewActions`（deck、card 與詳細頁標頭的動作）於 dashboard 中為文字按鈕另繪圖示，窄版時以 container query 改顯示圖示，外觀與其他圖示按鈕相同，`aria-label` 一律為 `label`；窄版的動作列一律靠左，card 的四格不分左右、不保留空格；一般頁面不多繪這個圖示，以免上千列的列表多出同樣數量的元件。換行以 `flex-wrap` 達成，`ChildList` 右下角的按鈕列亦會換行
-- **估計高度**（`contain-intrinsic-size`）：card 的高度主要來自 16:9 的大圖，改以 `cqw` 依寬度估算（例如 `calc(64px + 100cqw * 9 / 16 + …)`，實作時扣除外距與外框再校準），一般頁面中沒有容器時以視窗寬度計算；deck 與 profile 的高度取決於文字行數，窄版時以 container query 換用另一個固定值；gallery 已以 `aspect-ratio` 精確決定
+- ✅ **估計高度**（`contain-intrinsic-size`）：card 的高度主要來自 16:9 的大圖，以 `100cqw * 9 / 16` 依寬度估算。`ListPage` 的內容區為不具名的 container，`100cqw` 即卡片的寬度，一般頁面與面板中皆準確；窄版省略的第 3 層不計入。deck 窄版時標題與副標上下排列，高度與原本的兩列相近，沿用同一個值；profile 窄版時版型不變；gallery 已以 `aspect-ratio` 精確決定
 
 ---
 

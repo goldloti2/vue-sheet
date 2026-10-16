@@ -48,5 +48,5 @@ card 式列表的**單一張卡片**：上下共四層，沒有內容的那一�
 - **連結與 DataList 相同**：自行組 `href` 的 `<a>`，不使用 `RouterLink`，與 DataList、DataProfile 共用 `useRowClick`（理由見 [DataList](DataList.md) 的備註）。第 4 層與連結並列，不包在 `<a>` 內；第 4 層本身不接收點擊，僅按鈕接收，因此按鈕之間的空白處仍屬於連結
 - **勾選圖示疊於卡片左上角**：多選模式下以絕對定位疊於左上角，不受各層有無內容影響；圖示帶有卡片底色的圓形背景，疊在大圖上亦可辨識。被選取的卡片疊上一層主色淡底
 - **間隔由元件自身負責**：卡片帶有下方間距、圓角、外框與偏向右下的陰影，`ListPage` 與 `GroupedList` 不需另外設定。間距、圓角、陰影與點擊、選取的樣式定義於 `src/styles/list.css`，與其他列表元件共用（見 [ListLayout](ListLayout.md) 的「共用的樣式」）
-- **`content-visibility: auto`**：畫面外的卡片不進行排版與繪製。因各層可隱藏、卡片高度差異大，`contain-intrinsic-size` 不寫死，而是依出現的層加總出替代高度，以 inline style 指定（第 1 層 64px、第 2 層以 180px 估計、第 3 層依出現的欄位、第 4 層 48px）。各層的版型若大幅變動，此計算須一併調整
-- **dashboard 中的窄版**：所在面板寬度小於 200px（3 格以下）時，省略第 3 層（見 [dashboard.md](../dashboard.md) 的「面板內容的寬度」）。一般頁面不會觸發
+- **`content-visibility: auto`**：畫面外的卡片不進行排版與繪製。因各層可隱藏、卡片高度差異大，`contain-intrinsic-size` 不寫死，而是依出現的層加總出替代高度（第 1 層 64px、第 2 層為 16:9 的大圖、第 3 層依出現的欄位、第 4 層 48px）。各層的高度以 CSS 變數於 inline style 傳入，大圖以 `100cqw * 9 / 16` 依卡片寬度估算——`ListPage` 的內容區為不具名的 container，`100cqw` 即卡片的寬度；不在 `ListPage` 中時退回以視窗寬度估算。各層的版型若大幅變動，此計算須一併調整
+- **dashboard 中的窄版**：所在面板寬度小於 200px（3 格以下）時，省略第 3 層，替代高度亦不計入（見 [dashboard.md](../dashboard.md) 的「面板內容的寬度」）。一般頁面不會觸發

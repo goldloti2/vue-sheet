@@ -51,7 +51,7 @@
 
 <template>
   <div>
-    <v-container>
+    <v-container class="list-page__container">
       <PageState :error="error" :loading="loading" spinner="linear">
         <GroupedList v-if="groups" :groups="groups" :layout="layout">
           <template #default="{ row }">
@@ -72,3 +72,10 @@
     <PageFab :actions="fab ?? []" />
   </div>
 </template>
+
+<style scoped>
+/* 列表元件以 cqw 依寬度估計畫面外各列的高度（見 DataCard），以內容區為準；不具名，不影響 dashboard 的窄版判斷 */
+.list-page__container {
+  container-type: inline-size;
+}
+</style>

@@ -39,12 +39,16 @@
   const hasActions = computed(() => !selectMode && fields.value.actions.slice(0, 4).some(action => action !== null))
 
   // 尚未量得實際高度前的替代值，依出現的層加總（各層高度見樣式）
-  const estimatedHeight = computed(() => {
+  const estimateStyle = computed(() => {
     const body = fields.value.body
     const bodyHeight = hasBody.value
       ? 24 + (body.title ? 24 : 0) + (body.subtitle ? 20 : 0) + (body.summary ? 24 : 0)
       : 0
-    return (hasHeader.value ? 64 : 0) + (body.image ? 180 : 0) + bodyHeight + (hasActions.value ? 48 : 0)
+    return {
+      '--card-fixed-height': `${(hasHeader.value ? 64 : 0) + (hasActions.value ? 48 : 0)}px`,
+      '--card-body-height': `${bodyHeight}px`,
+      '--card-image-ratio': body.image ? '1' : '0',
+    }
   })
 
   const { href, onClick, pointerHandlers } = useRowClick({
@@ -66,7 +70,7 @@
       'list-row--current': current,
       'list-row--no-select': selectable,
     }"
-    :style="{ containIntrinsicSize: `auto ${estimatedHeight}px` }"
+    :style="estimateStyle"
   >
     <!-- 有 to 時為 <a>，否則為純顯示的一張卡片。::after 覆蓋整張卡片，動作按鈕以外的區域皆屬於連結 -->
     <component
@@ -115,8 +119,10 @@
   width: 100%;
   margin-bottom: var(--list-card-gap);
   overflow: hidden;
-  /* 畫面外的卡片不排版也不繪製；替代高度由 estimatedHeight 依出現的層算出 */
+  /* 畫面外的卡片不排版也不繪製。替代高度＝第 1、4 層＋第 3 層＋16:9 的大圖；100cqw 為 ListPage 內容區的寬度，即卡片的寬度。
+     第 3 層另以 --card-body-shown 覆寫（窄版時為 0），行內樣式的 --card-body-height 才不會蓋過 container query */
   content-visibility: auto;
+  contain-intrinsic-size: auto calc(var(--card-fixed-height) + var(--card-body-shown, var(--card-body-height)) + var(--card-image-ratio) * 100cqw * 9 / 16);
   border-radius: var(--list-card-radius);
 }
 
@@ -185,6 +191,10 @@
 
 /* dashboard 中 3 格以下的窄面板：省略第 3 層（門檻見 docs/dashboard.md 的「面板內容的寬度」） */
 @container dashboard-panel (width < 200px) {
+  .card-item {
+    --card-body-shown: 0px;
+  }
+
   .card-item__body {
     display: none;
   }

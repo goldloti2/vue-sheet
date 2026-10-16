@@ -1,5 +1,6 @@
 <script generic="Row extends { id: string }" lang="ts" setup>
   import type { RowGroup } from '@/schema/group'
+  import { computed, ref, watch } from 'vue'
   import CountLabel from '@/components/ui/list/CountLabel.vue'
   import ListLayout from '@/components/ui/list/ListLayout.vue'
 
@@ -22,21 +23,46 @@
       ? group.subgroups.reduce((total, subgroup) => total + countRows(subgroup), 0)
       : group.rows.length
   }
+
+  function valueOf (group: RowGroup<Row>): string {
+    return `${props.path}/${group.label}`
+  }
+
+  // 這一層只有一組時固定展開、不可收合（例如篩選後只剩一年）；組數改變時重新判斷
+  const opened = ref<string[]>([])
+  const locked = computed(() => {
+    const [only, ...rest] = props.groups
+    return only && rest.length === 0 && 'subgroups' in only ? valueOf(only) : null
+  })
+  watch(locked, value => {
+    if (value !== null) {
+      opened.value = [value]
+    }
+  }, { immediate: true })
+
+  // 固定展開的那一組：拿掉切換用的點擊，標題列不再是可點的項目
+  function headerProps (group: RowGroup<Row>, activatorProps: Record<string, unknown>) {
+    return valueOf(group) === locked.value ? { ...activatorProps, onClick: undefined, link: false } : activatorProps
+  }
 </script>
 
 <template>
-  <v-list class="grouped-list" open-strategy="single">
-    <template v-for="group in props.groups" :key="`${props.path}/${group.label}`">
-      <v-list-group v-if="'subgroups' in group" :value="`${props.path}/${group.label}`">
+  <v-list v-model:opened="opened" class="grouped-list" open-strategy="single">
+    <template v-for="group in props.groups" :key="valueOf(group)">
+      <v-list-group
+        v-if="'subgroups' in group"
+        :collapse-icon="valueOf(group) === locked ? '' : undefined"
+        :value="valueOf(group)"
+      >
         <template #activator="{ props: activatorProps }">
-          <v-list-item v-bind="activatorProps" class="bg-surface-light">
+          <v-list-item v-bind="headerProps(group, activatorProps)" class="bg-surface-light">
             <template #title>
               <CountLabel :count="countRows(group)" :label="group.label" />
             </template>
           </v-list-item>
         </template>
 
-        <GroupedList :groups="group.subgroups" :layout="props.layout" :path="`${props.path}/${group.label}`">
+        <GroupedList :groups="group.subgroups" :layout="props.layout" :path="valueOf(group)">
           <template #default="slotProps">
             <slot v-bind="slotProps" />
           </template>

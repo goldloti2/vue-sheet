@@ -38,14 +38,16 @@
 </template>
 
 <style scoped>
+/* 兩欄以 minmax(0, …) 固定比例，不被內容撐開；沒有空白的長字串（網址、編號）於任意處換行 */
 .detail-field {
   display: grid;
   box-sizing: border-box;
-  grid-template-columns: 38fr 62fr;
+  grid-template-columns: minmax(0, 38fr) minmax(0, 62fr);
   align-items: baseline;
   column-gap: 12px;
   width: 100%;
   padding: 12px 16px;
+  overflow-wrap: anywhere;
 }
 
 .detail-field__label {
@@ -73,6 +75,10 @@
   color: inherit;
   font: inherit;
   cursor: pointer;
+}
+
+.detail-field__action > span {
+  min-width: 0;
 }
 
 /* dashboard 中 3 格以下的窄面板：名稱與值改為上下兩行，名稱靠左（門檻見 docs/dashboard.md 的「面板內容的寬度」） */

@@ -19,18 +19,23 @@ export interface DashboardSelection {
   parentScope: (table: TableKey) => ((row: object) => boolean) | null
 }
 
-const dashboardSelectionKey: InjectionKey<DashboardSelection> = Symbol('dashboardSelection')
+// recordId 與 parentScope 另收面板的 via（DashboardPanel 的 prop），由 useDashboardSelection 綁定
+interface SelectionState extends Omit<DashboardSelection, 'recordId' | 'parentScope'> {
+  recordId: (table: TableKey, via?: string) => string
+  parentScope: (table: TableKey, via?: string) => ((row: object) => boolean) | null
+}
+
+const dashboardSelectionKey: InjectionKey<SelectionState> = Symbol('dashboardSelection')
+// 面板經由哪個 ref 欄位連動，DashboardPanel provide
+export const dashboardViaKey: InjectionKey<string | undefined> = Symbol('dashboardVia')
 
 type Fields = Record<string, unknown>
 
-function linked (table: TableKey, side: 'childTable' | 'parentTable') {
-  return relations.filter(relation => relation[side] === table && relation.childTable !== relation.parentTable)
-}
-
-// 每張父表只取第一個指向它的 ref 欄位
-function parentRelations (table: TableKey) {
-  return linked(table, 'childTable').filter((relation, index, list) =>
-    list.findIndex(candidate => candidate.parentTable === relation.parentTable) === index)
+// 自己指向自己的 ref 欄位不連動；給了 via 時只取該欄位
+function linked (table: TableKey, side: 'childTable' | 'parentTable', via?: string) {
+  return relations.filter(relation => relation[side] === table
+    && relation.childTable !== relation.parentTable
+    && (!via || relation.column === via))
 }
 
 // DashboardPage 呼叫
@@ -65,12 +70,13 @@ export function provideDashboardSelection (interactive: () => boolean): void {
     }
   }
 
-  function recordId (table: TableKey): string {
+  // 子表有多個 ref 欄位指向這張表時，未給 via 即取第一個
+  function recordId (table: TableKey, via?: string): string {
     const own = selected.get(table)
     if (own) {
       return own
     }
-    for (const relation of linked(table, 'parentTable')) {
+    for (const relation of linked(table, 'parentTable', via)) {
       const childId = selected.get(relation.childTable)
       const parentId = childId ? rowOf(relation.childTable, childId)?.[relation.column] : null
       if (typeof parentId === 'string' && parentId) {
@@ -80,15 +86,23 @@ export function provideDashboardSelection (interactive: () => boolean): void {
     return ''
   }
 
-  function parentScope (table: TableKey) {
-    const conditions = parentRelations(table).flatMap(relation => {
+  // 同一張父表的多個 ref 欄位任一等於所選父列即可（例如轉出或轉入帳戶）；不同父表的條件須同時成立
+  function parentScope (table: TableKey, via?: string) {
+    const conditions = new Map<TableKey, { parentId: string, columns: string[] }>()
+    for (const relation of linked(table, 'childTable', via)) {
       const parentId = selected.get(relation.parentTable)
-      return parentId ? [{ column: relation.column, parentId }] : []
-    })
-    if (conditions.length === 0) {
+      if (parentId) {
+        const condition = conditions.get(relation.parentTable) ?? { parentId, columns: [] }
+        condition.columns.push(relation.column)
+        conditions.set(relation.parentTable, condition)
+      }
+    }
+    if (conditions.size === 0) {
       return null
     }
-    return (row: object) => conditions.every(({ column, parentId }) => (row as Fields)[column] === parentId)
+    const list = [...conditions.values()]
+    return (row: object) => list.every(({ parentId, columns }) =>
+      columns.some(column => (row as Fields)[column] === parentId))
   }
 
   // 選取的那一筆被刪除時，自動取消
@@ -109,7 +123,16 @@ export function provideDashboardSelection (interactive: () => boolean): void {
   })
 }
 
-// 不在 dashboard 之內時為 null
+// 不在 dashboard 之內時為 null；recordId 與 parentScope 已套用所在面板的 via
 export function useDashboardSelection (): DashboardSelection | null {
-  return inject(dashboardSelectionKey, null)
+  const state = inject(dashboardSelectionKey, null)
+  const via = inject(dashboardViaKey, undefined)
+  if (!state) {
+    return null
+  }
+  return {
+    ...state,
+    recordId: table => state.recordId(table, via),
+    parentScope: table => state.parentScope(table, via),
+  }
 }

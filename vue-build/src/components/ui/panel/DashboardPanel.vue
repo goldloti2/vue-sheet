@@ -3,11 +3,13 @@
   import { mdiArrowExpand } from '@mdi/js'
   import { computed, inject, onBeforeUnmount, onMounted, provide, shallowRef, useTemplateRef, watch } from 'vue'
   import { AUTO_ROWS_MAX, dashboardKey } from '@/components/ui/panel/dashboardContext'
+  import { dashboardViaKey } from '@/composables/shell/useDashboardSelection'
   import { panelActiveKey, panelFullPageKey } from '@/composables/shell/usePanelActive'
   import { appBarSelectionKey } from '@/composables/shell/useShellActions'
+  import { relations } from '@/schema/relations'
 
   // dashboard 的一個面板（見 docs/dashboard.md）：小外殼、關注點，以及控制面板內容的各項登記何時生效
-  const { name, title, frame = true, table } = defineProps<{
+  const { name, title, frame = true, table, via } = defineProps<{
     // 對應 DashboardPage 的 layout
     name: string
     // 小外殼上的標題
@@ -16,11 +18,18 @@
     frame?: boolean
     // 面板內容所屬的表，抽屜打開時先停在關注面板的這張表
     table?: TableKey
+    // 互動經由哪個 ref 欄位連動：子表的列表為自己的欄位，父表的詳細面板為子表的欄位。不給時用全部（詳細面板取第一個）
+    via?: string
   }>()
 
   const dashboard = inject(dashboardKey)
   if (!dashboard) {
     throw new Error('DashboardPanel 須放在 DashboardPage 之內')
+  }
+
+  provide(dashboardViaKey, via)
+  if (import.meta.env.DEV && via && !relations.some(relation => relation.column === via)) {
+    console.warn(`[DashboardPanel] 面板 ${name} 的 via "${via}" 不是任何一張表的 ref 欄位`)
   }
 
   const measuredRows = shallowRef<number | null>(null)

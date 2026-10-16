@@ -20,6 +20,8 @@ export interface DashboardPanelEntry {
 export interface DashboardContext {
   focused: Readonly<Ref<string | null>>
   focus: (name: string) => void
+  // 正在多選的面板；其他面板於此期間鎖定
+  selecting: Readonly<Ref<string | null>>
   // 已展開的面板，其餘面板隱藏
   expanded: Readonly<Ref<string | null>>
   expand: (name: string) => void

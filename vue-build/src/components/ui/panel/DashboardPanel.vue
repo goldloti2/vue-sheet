@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+  import type { DashboardContext } from '@/components/ui/panel/dashboardContext'
   import type { TableKey } from '@/schema'
   import { mdiArrowExpand } from '@mdi/js'
   import { computed, inject, onBeforeUnmount, onMounted, provide, shallowRef, useTemplateRef, watch } from 'vue'
@@ -22,10 +23,12 @@
     via?: string
   }>()
 
-  const dashboard = inject(dashboardKey)
-  if (!dashboard) {
+  const injected = inject(dashboardKey)
+  if (!injected) {
     throw new Error('DashboardPanel 須放在 DashboardPage 之內')
   }
+  // 另存一份已確定存在的，函式宣告（會被提升）中才不必再判斷
+  const dashboard: DashboardContext = injected
 
   provide(dashboardViaKey, via)
   if (import.meta.env.DEV && via && !relations.some(relation => relation.column === via)) {
@@ -93,19 +96,40 @@
     }
     return mode === 'slide' && expanded.value ? { viewTransitionName: 'dashboard-panel-active' } : {}
   })
+
+  // 另一個面板在多選時，此面板視為不存在：於捕獲階段攔下點擊與長按（不用 inert，面板自己的捲動才不受影響）
+  const locked = computed(() => dashboard.selecting.value !== null && dashboard.selecting.value !== name)
+
+  // 點擊面板的任何地方即成為關注點（捕獲階段，長按進入多選前即已移到此面板）
+  function onPointerdown (event: PointerEvent) {
+    if (locked.value) {
+      event.stopPropagation()
+    } else {
+      dashboard.focus(name)
+    }
+  }
+
+  function onClick (event: MouseEvent) {
+    if (locked.value) {
+      event.stopPropagation()
+      event.preventDefault()
+    }
+  }
 </script>
 
 <template>
-  <!-- 點擊面板的任何地方即成為關注點（capture，長按進入多選前即已移到此面板） -->
   <section
     v-show="!hidden"
+    :aria-disabled="locked || undefined"
     class="dashboard-panel"
     :class="{
       'dashboard-panel--focused': active && frame && !expanded,
       'dashboard-panel--expanded': expanded,
+      'dashboard-panel--locked': locked,
     }"
     :style="[placementStyle, transitionStyle]"
-    @pointerdown.capture="dashboard.focus(name)"
+    @click.capture="onClick"
+    @pointerdown.capture="onPointerdown"
   >
     <!-- 展開時標題改顯示於 App Bar -->
     <header v-if="frame" v-show="!expanded" ref="header" class="dashboard-panel__header">
@@ -142,6 +166,19 @@
 .dashboard-panel--focused {
   outline: 2px solid rgb(var(--v-theme-primary));
   outline-offset: -1px;
+}
+
+/* 另一個面板多選中：稍微調暗，游標不顯示為可點擊 */
+.dashboard-panel {
+  transition: opacity 0.2s;
+}
+
+.dashboard-panel--locked {
+  opacity: 0.5;
+}
+
+.dashboard-panel--locked :deep(*) {
+  cursor: default;
 }
 
 .dashboard-panel__header {

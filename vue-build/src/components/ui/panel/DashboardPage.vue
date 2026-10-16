@@ -52,10 +52,13 @@
     }
   }
 
+  // 同一時間只有一個面板能多選
+  const selecting = computed(() => panels.find(entry => entry.selecting.value)?.name ?? null)
+
   // 沒有小外殼的面板不能成為關注點；多選期間關注點不移動
   function focus (name: string) {
     const entry = panels.find(panel => panel.name === name)
-    if (!entry?.framed || panels.some(panel => panel.selecting.value && panel.name !== name)) {
+    if (!entry?.framed || (selecting.value !== null && selecting.value !== name)) {
       return
     }
     focused.value = name
@@ -145,6 +148,7 @@
   const context: DashboardContext = {
     focused,
     focus,
+    selecting,
     expanded,
     expand,
     register,

@@ -151,7 +151,7 @@
 
 ### 同一頁面中的多張表
 
-**將各列表放入 `TabPage` 的頁籤即可，不需另行登記**（見 [TabPage.md](components/TabPage.md)）。`TabPage` provide 一份「共用的列表控制」（`useSharedListControls`），其中的 `useListPage` 不自行登記，改為加入此控制：
+**將各列表放入 `TabPage` 的頁籤即可，不需另行登記**（見 [TabPage.md](components/TabPage.md)）；同時顯示多個列表時放入 `DashboardPage` 的面板，行為相同（見 [DashboardPage.md](components/DashboardPage.md)）。`TabPage` provide 一份「共用的列表控制」（`useSharedListControls`），其中的 `useListPage` 不自行登記，改為加入此控制：
 
 - **搜尋字串共用一條**：輸入一次，各頁籤的列表皆隨之過濾
 - **同一張表共用一份篩選與排序**：例如各頁籤為同一張表依狀態切分的列表（以 `useListPage` 的 `scope` 只留該狀態的列），條件套用於所有頁籤，抽屜中該表只有一個 chip

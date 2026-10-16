@@ -21,28 +21,52 @@
 
 <style>
 /* 換頁動畫：整個畫面的截圖依 <html> 的 data-dir 左右滑動 */
-::view-transition-old(root),
-::view-transition-new(root) {
+:root[data-transition='page']::view-transition-old(root),
+:root[data-transition='page']::view-transition-new(root),
+:root[data-transition='panel']::view-transition-old(dashboard-panel-active),
+:root[data-transition='panel']::view-transition-new(dashboard-panel-active) {
   mix-blend-mode: normal;
   animation-duration: 0.3s;
   animation-timing-function: cubic-bezier(0.25, 0.8, 0.5, 1);
   animation-fill-mode: both;
 }
 
-:root[data-dir='forward']::view-transition-old(root) {
+:root[data-transition='page'][data-dir='forward']::view-transition-old(root) {
   animation-name: page-to-left;
 }
 
-:root[data-dir='forward']::view-transition-new(root) {
+:root[data-transition='page'][data-dir='forward']::view-transition-new(root) {
   animation-name: page-from-right;
 }
 
-:root[data-dir='back']::view-transition-old(root) {
+:root[data-transition='page'][data-dir='back']::view-transition-old(root) {
   animation-name: page-to-right;
 }
 
-:root[data-dir='back']::view-transition-new(root) {
+:root[data-transition='page'][data-dir='back']::view-transition-new(root) {
   animation-name: page-from-left;
+}
+
+/* dashboard 面板內的轉場：選取改變時各面板以瀏覽器預設的淡入淡出切換（沒變的面板看不出來）；
+   展開的面板換上下一筆時，只有它命名為 dashboard-panel-active，與換頁同樣左右滑動（見 DashboardPage） */
+:root[data-transition='panel'][data-dir='forward']::view-transition-old(dashboard-panel-active) {
+  animation-name: page-to-left;
+}
+
+:root[data-transition='panel'][data-dir='forward']::view-transition-new(dashboard-panel-active) {
+  animation-name: page-from-right;
+}
+
+:root[data-transition='panel'][data-dir='back']::view-transition-old(dashboard-panel-active) {
+  animation-name: page-to-right;
+}
+
+:root[data-transition='panel'][data-dir='back']::view-transition-new(dashboard-panel-active) {
+  animation-name: page-from-left;
+}
+
+::view-transition-group(dashboard-panel-active) {
+  overflow: clip;
 }
 
 @keyframes page-to-left {

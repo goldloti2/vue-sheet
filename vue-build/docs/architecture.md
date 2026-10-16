@@ -148,7 +148,7 @@ src/
 - **導覽失敗（被取消、被擋下）時略過動畫**：畫面沒變，滑動兩張相同的截圖沒有意義；因重導而沒有走到 `afterEach` 的那一次，於下一次的 `beforeResolve` 略過
 - **滑動的是整個畫面（`root`）的截圖**，而非替內容區命名：`root` 的截圖即為當下看到的畫面，不受捲動位置影響；單獨命名內容區時，元素的位置會隨捲動改變，截圖於動畫中會上下跳動
 - **外殼另外命名**：App Bar、左側抽屜、底部列、FAB、`RecordNav` 各有 `view-transition-name`，因此不在 `root` 的截圖中；舊的直接隱藏、新的不加動畫，與舊做法中「外殼不隨頁面滑動」相同
-- **方向掛在 `<html>` 的 `data-dir`**，於 `afterEach` 寫入，CSS 於動畫開始時才讀取（判定規則見 `router/index.ts`）
+- **方向掛在 `<html>` 的 `data-dir`**，於 `afterEach` 寫入，CSS 於動畫開始時才讀取（判定規則見 `router/index.ts`）。同時寫入 `data-transition="page"`，與 dashboard 面板內的轉場（`data-transition="panel"`，見 [dashboard.md](dashboard.md) 的「面板內的轉場」）區分：兩者共用 View Transitions，`root` 只在換頁時滑動
 - **不支援 View Transitions 的瀏覽器，或系統開啟「減少動態效果」時，不播放動畫**，直接切換
 
 舊做法（`<Transition>` + `<KeepAlive>`）另有兩個限制，改用 View Transitions 後皆不復存在：離場的一側套用的是該 vnode 上次啟用時的 transition hooks，方向須改以屬性選擇器讀取；頁面的 root 須為單一元素，因此三個版型都在外面包一層 `div`（仍保留，見 [components/PageState.md](components/PageState.md)）。

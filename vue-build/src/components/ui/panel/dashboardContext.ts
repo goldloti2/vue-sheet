@@ -28,6 +28,8 @@ export interface DashboardContext {
   // 一格的邊長（px），換算手機自動排版的格數用
   cellSize: Readonly<Ref<number>>
   gap: number
+  // 面板內的轉場進行中：fade 時各面板各自命名，slide 時只有展開的面板命名（見 DashboardPage）
+  panelTransition: Readonly<Ref<'fade' | 'slide' | null>>
 }
 
 export const dashboardKey: InjectionKey<DashboardContext> = Symbol('dashboard')

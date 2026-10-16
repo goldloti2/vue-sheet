@@ -11,8 +11,8 @@ export interface DashboardSelection {
   selectedId: (table: TableKey) => string | null
   // 點擊一列：選取，已選取的那一列再點一次即取消
   toggle: (table: TableKey, id: string) => void
-  // 換成另一筆（詳細面板的上下一筆）
-  select: (table: TableKey, id: string) => void
+  // 換成另一筆（詳細面板的上下一筆），轉場依 direction 左右滑動
+  select: (table: TableKey, id: string, direction: 'forward' | 'back') => void
   // 詳細面板顯示的那一筆：同一張表的選取，否則為所選子列所屬的父列；皆無時為空字串
   recordId: (table: TableKey) => string
   // 子表的列表只留所選父列的子列；父表皆未選取時為 null
@@ -38,8 +38,11 @@ function linked (table: TableKey, side: 'childTable' | 'parentTable', via?: stri
     && (!via || relation.column === via))
 }
 
+// 選取改變時的轉場：fade 為一般的點擊，forward／back 為上下一筆
+type Transition = (kind: 'fade' | 'forward' | 'back', update: () => void) => void
+
 // DashboardPage 呼叫
-export function provideDashboardSelection (interactive: () => boolean): void {
+export function provideDashboardSelection (interactive: () => boolean, transition: Transition): void {
   const store = useTablesStore()
   const selected = shallowReactive(new Map<TableKey, string>())
 
@@ -55,19 +58,19 @@ export function provideDashboardSelection (interactive: () => boolean): void {
     }
   }
 
-  function select (table: TableKey, id: string) {
+  function set (table: TableKey, id: string) {
+    clear(table)
+    selected.set(table, id)
+  }
+
+  function select (table: TableKey, id: string, direction: 'forward' | 'back') {
     if (selected.get(table) !== id) {
-      clear(table)
-      selected.set(table, id)
+      transition(direction, () => set(table, id))
     }
   }
 
   function toggle (table: TableKey, id: string) {
-    if (selected.get(table) === id) {
-      clear(table)
-    } else {
-      select(table, id)
-    }
+    transition('fade', () => selected.get(table) === id ? clear(table) : set(table, id))
   }
 
   // 子表有多個 ref 欄位指向這張表時，未給 via 即取第一個

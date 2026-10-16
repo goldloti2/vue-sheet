@@ -84,6 +84,15 @@
       gridRow: `${placement.value.y} / span ${placement.value.h}`,
     }
     : {})
+
+  // 面板內的轉場進行中才命名，平時不命名，換頁時才會隨整個畫面一起滑動（name 中不能用於 CSS 名稱的字元換成 _）
+  const transitionStyle = computed(() => {
+    const mode = dashboard.panelTransition.value
+    if (mode === 'fade') {
+      return { viewTransitionName: `panel-${name.replace(/[^\w-]/g, '_')}` }
+    }
+    return mode === 'slide' && expanded.value ? { viewTransitionName: 'dashboard-panel-active' } : {}
+  })
 </script>
 
 <template>
@@ -95,7 +104,7 @@
       'dashboard-panel--focused': active && frame && !expanded,
       'dashboard-panel--expanded': expanded,
     }"
-    :style="placementStyle"
+    :style="[placementStyle, transitionStyle]"
     @pointerdown.capture="dashboard.focus(name)"
   >
     <!-- 展開時標題改顯示於 App Bar -->

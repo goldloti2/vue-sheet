@@ -87,7 +87,8 @@ export const navigationCount = shallowRef(0)
 // 換頁動畫（View Transitions，CSS 在 App.vue；流程見 docs/architecture.md）：舊畫面截好才繼續導覽，DOM 更新後放行
 let pending: { transition: ViewTransition, done: () => void } | null = null
 
-function canAnimate (): boolean {
+// 換頁與 dashboard 面板內的轉場共用
+export function canAnimate (): boolean {
   return 'startViewTransition' in document && !window.matchMedia('(prefers-reduced-motion: reduce)').matches
 }
 
@@ -177,6 +178,8 @@ router.afterEach((to, from) => {
   } else {
     dir = toNav < fromNav ? 'back' : 'forward'
   }
+  // data-transition 區分換頁與 dashboard 面板內的轉場，兩者的 CSS 不同（見 App.vue）
+  document.documentElement.dataset.transition = 'page'
   document.documentElement.dataset.dir = dir
 
   // 登入後是 replace 掉登入頁，歷史上沒有 App 內的上一頁，所以重新從 1 算

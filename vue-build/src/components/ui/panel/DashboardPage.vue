@@ -2,7 +2,7 @@
   import type { DashboardContext, DashboardPanelEntry } from '@/components/ui/panel/dashboardContext'
   import type { PanelRequest, PanelSize } from '@/components/ui/panel/placePanels'
   import type { PageAction } from '@/composables/actions/useTableActions'
-  import { computed, onBeforeUnmount, onMounted, provide, shallowReactive, shallowRef, useTemplateRef } from 'vue'
+  import { computed, nextTick, onBeforeUnmount, onMounted, provide, shallowReactive, shallowRef, useTemplateRef } from 'vue'
   import { useRouter } from 'vue-router'
   import { AUTO_ROWS_MAX, dashboardKey } from '@/components/ui/panel/dashboardContext'
   import { placePanels } from '@/components/ui/panel/placePanels'
@@ -10,6 +10,7 @@
   import { provideDashboardSelection } from '@/composables/shell/useDashboardSelection'
   import { provideSharedListControls } from '@/composables/shell/useSharedListControls'
   import { appBarActionsKey, useAppBarActions, useAppBarHeading } from '@/composables/shell/useShellActions'
+  import { canAnimate } from '@/router'
   import { schemas } from '@/schema'
 
   // 同時顯示多個面板（見 docs/dashboard.md）：方格排版、關注點，以及各面板列表共用的搜尋、篩選與排序
@@ -32,6 +33,7 @@
 
   const panels = shallowReactive<DashboardPanelEntry[]>([])
   const focused = shallowRef<string | null>(null)
+  const panelTransition = shallowRef<'fade' | 'slide' | null>(null)
 
   function firstFramed (): string | null {
     return panels.find(entry => entry.framed)?.name ?? null
@@ -149,6 +151,7 @@
     placement: name => computed(() => placements.value.get(name)),
     cellSize: cell,
     gap: GAP,
+    panelTransition,
   }
   provide(dashboardKey, context)
 
@@ -159,8 +162,32 @@
   })
   provideSharedListControls(focusedTableLabel)
 
+  // 面板內的轉場（見 docs/dashboard.md）：先為面板命名並等 DOM 更新，舊畫面才截得到名字；進行中再有選取即直接套用
+  async function transition (kind: 'fade' | 'forward' | 'back', update: () => void) {
+    if (!canAnimate() || panelTransition.value) {
+      update()
+      return
+    }
+    const root = document.documentElement
+    root.dataset.transition = 'panel'
+    if (kind === 'fade') {
+      delete root.dataset.dir
+    } else {
+      root.dataset.dir = kind
+    }
+    panelTransition.value = kind === 'fade' ? 'fade' : 'slide'
+    await nextTick()
+    const viewTransition = document.startViewTransition(async () => {
+      update()
+      await nextTick()
+    })
+    void viewTransition.finished.finally(() => {
+      panelTransition.value = null
+    })
+  }
+
   // 互動的選取；未開啟互動時不會有選取，詳細面板只顯示欄位名稱
-  provideDashboardSelection(() => interactive)
+  provideDashboardSelection(() => interactive, transition)
 
   // 展開時不排方格，展開的面板與一般頁面相同
   const gridStyle = computed(() => expanded.value

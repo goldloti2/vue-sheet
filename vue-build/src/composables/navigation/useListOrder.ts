@@ -57,19 +57,19 @@ export function useSiblingNav (table: TableKey, id: MaybeRefOrGetter<string>): S
     }
   })
 
-  function go (target: string | null) {
+  function go (target: string | null, direction: 'forward' | 'back') {
     if (!target) {
       return
     }
     if (dashboard) {
-      dashboard.select(table, target)
+      dashboard.select(table, target, direction)
     } else {
       void router.replace(`/${table}/${target}`)
     }
   }
 
-  const goPrev = () => go(siblings.value.prev)
-  const goNext = () => go(siblings.value.next)
+  const goPrev = () => go(siblings.value.prev, 'back')
+  const goNext = () => go(siblings.value.next, 'forward')
 
   return { siblings, goPrev, goNext, swipe: { left: goNext, right: goPrev } }
 }

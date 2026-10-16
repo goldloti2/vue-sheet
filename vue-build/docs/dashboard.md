@@ -1,6 +1,6 @@
 # Dashboard（設計稿）
 
-> 🔶 部分實作。本文件為設計，實作完成後改寫為用法說明，或移入 ROADMAP。已完成：多個列表共用搜尋、`useListPage` 的 `scope`、`_ref/` 的路由排除，第 1 階段（`DashboardPage`、`DashboardPanel` 的方格排版、小外殼與關注點、共用的搜尋、平時隱藏 FAB 與 App Bar 的動作）與第 2 階段（展開），見「與現有機制的關係」中標為 ✅ 者。尚未實作：互動、多選的鎖定、面板過窄時的窄版。
+> 🔶 部分實作。本文件為設計，實作完成後改寫為用法說明，或移入 ROADMAP。已完成：多個列表共用搜尋、`useListPage` 的 `scope`、`_ref/` 的路由排除，第 1 階段（`DashboardPage`、`DashboardPanel` 的方格排版、小外殼與關注點、共用的搜尋、平時隱藏 FAB 與 App Bar 的動作）第 2 階段（展開）與第 3 階段（互動），見「與現有機制的關係」中標為 ✅ 者。尚未實作：多選的鎖定、面板過窄時的窄版。
 
 dashboard 同時顯示多個面板，與一次只顯示一個面板的 tab（`TabPage`）相對。以 `interactive` 開關決定面板之間是否連動：
 
@@ -72,7 +72,7 @@ dashboard 同時顯示多個面板，與一次只顯示一個面板的 tab（`Ta
 
 | 頁面所做的事 | 於面板中 |
 | --- | --- |
-| 詳細頁以 `useRecordPage` 自網址取得 id | `DashboardPanel` provide 該面板的表與 id（來自互動的選取）；`useRouteId` 先讀取面板的 provide，沒有時才讀網址 |
+| 詳細頁以 `useRecordPage` 自網址取得 id | `useRecordPage` 偵測到位於 dashboard 中時，改取互動的選取（見「哪些面板會連動」），不讀網址 |
 | 列表頁的 `useListPage` 自行登記搜尋、篩選與排序 | 偵測到位於 dashboard 中時不自行登記，改用 dashboard 共用的 `query`，並將自己的表交由 dashboard 統一登記 |
 | 列表頁取得的 `rows` | 依序經過互動（依所選的父列篩出子列）、篩選、搜尋 |
 | 列表的每一列以 `to` 換頁 | 開啟互動時改為選取；選取的那一列另有標示，與多選的淡底區分 |
@@ -291,9 +291,12 @@ App Bar 依狀態顯示：
 | 子表（有 ref 欄位指向它）的列表面板 | 只顯示屬於它的子列 |
 | 父表（它的 ref 欄位指向的表）的詳細面板 | 顯示它所屬的那一筆 |
 
-- **同一張表有多個 ref 欄位指向同一張表時**，由設計者於面板上指定使用哪個欄位；只有一個時自動判斷
-- **只連動一層**：隔一層的關係（例如子表的子表）不連動，避免連鎖過深
+- **同一張表有多個 ref 欄位指向同一張表時**，目前一律使用第一個；需要時再於面板上加入指定欄位的方式
+- **只連動一層**：隔一層的關係（例如子表的子表）不連動，避免連鎖過深。指向自己的 ref 欄位不連動
 - **尚未選取父列時，子表面板顯示全部子列**
+- **再點一次選取的那一列即取消選取**，子表面板回到顯示全部子列
+- **展開的詳細面板中，上下一筆與左右滑動改為換選取**，不換頁；順序為最後一個關注的列表面板所發布者（列表面板僅於關注時發布順序）
+- **表格（`DataTable`）不支援選取**：例如詳細頁子表區塊中的表格，點擊仍照常換頁
 - **詳細面板尚無選取時，只顯示欄位名稱**：以一筆空的列交給 `DataDetail`，各欄位的值格式化為空字串；`DetailPage` 於面板中不顯示「找不到這筆資料」，依賴該列的區塊（例如子表區塊）與標頭不渲染
 
 ---
@@ -306,15 +309,15 @@ App Bar 依狀態顯示：
 | `useAppBarActions` | ✅ 僅於關注面板多選中或已展開時生效：`DashboardPage` provide `appBarActionsKey` 收下面板的動作，由自己統一登記；`DashboardPanel` 包一層 `appBarSelectionKey`，記下面板是否在多選（見「小外殼與關注點」） |
 | App Bar 的標題與 ← 鈕 | ✅ 新增 `useAppBarHeading()`：登記時以給定的標題與返回動作取代路由的標題與 ← 鈕。`DashboardPage` 於展開時登記面板的標題與縮回 |
 | `PageFab` | ✅ 僅於該面板已展開時顯示：讀取 `usePanelFullPage()`（`DashboardPanel` provide「是否已展開」，不在面板中時一律為 true） |
-| `useRowClick` | 開啟互動時，點擊一列改為選取，不導覽；四個列表元件另加「目前選取」的樣式 |
-| `DetailPage` 的 `RecordNav`（`position: fixed`）與左右滑動 | ✅ 同樣讀取 `usePanelFullPage()`：面板中停用，展開時恢復 |
+| `useRowClick` | ✅ 開啟互動時，點擊一列改為選取，不導覽：`ListPage` 交給每一列的 `props` 另含 `current`、`pickable` 與 `pick`，四個列表元件據此標示選取的那一列並改變點擊 |
+| `DetailPage` 的 `RecordNav`（`position: fixed`）與左右滑動 | ✅ 同樣讀取 `usePanelFullPage()`：面板中停用，展開時恢復；`useSiblingNav` 於 dashboard 中改為換選取 |
 | router 的 `scrollBehavior` | ✅ 網址相同的推入（展開）回到頂端（見「展開」） |
-| `DetailPage` 沒有資料時顯示「找不到這筆資料」 | 面板中尚無選取時，改為只顯示欄位名稱（見「哪些面板會連動」） |
-| `useListPage` 的自動登記 | 🔶 讀取「共用的列表控制」（`TabPage` 與 `DashboardPage` 皆 provide）：不自行登記，改用共用的 `query` 並將表交由外層統一登記（`TabPage` 部分已完成）；於 dashboard 中 `rows` 另經互動的篩選 |
+| `DetailPage` 沒有資料時顯示「找不到這筆資料」 | ✅ 面板中尚無選取時，改為只顯示欄位名稱：`DataDetail` 的 `row` 可為 `null`（見「哪些面板會連動」） |
+| `useListPage` 的自動登記 | ✅ 讀取「共用的列表控制」（`TabPage` 與 `DashboardPage` 皆 provide）：不自行登記，改用共用的 `query` 並將表交由外層統一登記；於 dashboard 中 `rows` 另經互動的篩選（與 `scope` 同一步） |
 | `TabPage` | ✅ 改為 provide「共用的列表控制」，各頁籤的列表自動共用搜尋（見「多個列表共用搜尋」） |
 | `useListPage` 的選項 | ✅ 新增選用的 `scope`，於篩選與搜尋之前縮小範圍；dashboard 的互動篩選亦經由此步驟（見「範例：拆分含頁籤的列表頁」） |
 | 路由插件 | ✅ `exclude` 加入 `src/pages/**/_ref/**`（見「只供嵌入的頁面」） |
-| `useRouteId` | 先讀取 `DashboardPanel` provide 的 id，沒有時才讀網址 |
+| `useRecordPage` | ✅ 位於 dashboard 中時，id 取自 `useDashboardSelection()`（`DashboardPage` provide），不呼叫 `useRouteId` |
 | 「離開就取消選取」 | 維持；另加「多選期間其他面板不可點」 |
 
 ---

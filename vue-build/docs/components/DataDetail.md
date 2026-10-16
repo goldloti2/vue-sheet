@@ -1,6 +1,6 @@
 # DataDetail
 
-detail 頁的欄位區：一列一欄，照 `detailOrder` 排。**載入中／載入失敗／找不到資料由 [PageState](PageState.md) 處理**（`DetailPage` 已經包好），所以拿到的 `row` 一定存在。`type: 'ref'` 的欄位顯示對方的名字（對方 schema 的 `labelColumn`，沒設就是 id），對方那張表會自動載進共用快取。
+detail 頁的欄位區：一列一欄，照 `detailOrder` 排。**載入中／載入失敗／找不到資料由 [PageState](PageState.md) 處理**（`DetailPage` 已經包好），所以拿到的 `row` 一般都存在。`type: 'ref'` 的欄位顯示對方的名字（對方 schema 的 `labelColumn`，沒設就是 id），對方那張表會自動載進共用快取。
 
 欄位右邊的動作（ref 前往對方、開網址、改成今天）由 `fieldActions` 決定：欄位 key → `(row) => PageAction | null`（`null` 表示這一列不適用），一欄一個，整格都能點。從 `use__Table__Actions()` 拿現成的，見 `table/use__Table__Actions.ts`；沒列的欄位就沒有按鈕，ref 的前往也要自己列。
 
@@ -21,5 +21,5 @@ schema 的 `virtualColumns`（見 `table/schema.ts`）跟真實欄位一視同�
 | prop | 型別 | 說明 |
 | --- | --- | --- |
 | `schema` | `TableSchema` | **必填** |
-| `row` | `Row` | **必填**，且非空值 |
+| `row` | `Row \| null` | **必填**。`null` 時只顯示欄位名稱，值留白，亦無欄位的動作（dashboard 的詳細面板尚無選取時，由 `DetailPage` 使用） |
 | `fieldActions` | `FieldActions<Row>?` | 欄位 key → `(row) => PageAction \| null`，每欄一個 |

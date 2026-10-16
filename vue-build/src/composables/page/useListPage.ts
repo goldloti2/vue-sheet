@@ -7,6 +7,7 @@ import { useFilter } from '@/composables/data/useFilter'
 import { useSearch } from '@/composables/data/useSearch'
 import { useSortedTableList } from '@/composables/data/useTable'
 import { useMultiSelect } from '@/composables/list/useMultiSelect'
+import { useDashboardSelection } from '@/composables/shell/useDashboardSelection'
 import { useListControls } from '@/composables/shell/useListControls'
 import { useSharedListControls } from '@/composables/shell/useSharedListControls'
 
@@ -20,7 +21,7 @@ export interface ListPageOptions<Row> {
   scope?: (row: Row) => boolean
 }
 
-// 列表頁的資料層：整表 → scope → 篩選 → 搜尋，加上長按多選。
+// 列表頁的資料層：整表 → scope（含 dashboard 的互動）→ 篩選 → 搜尋，加上長按多選。
 // rows 是畫面該顯示的那些；allRows 是沒過濾的整表（篩選抽屜的選項從它來）。
 // 位於 TabPage 或 DashboardPage 之內時，搜尋字串、篩選與排序取自容器共用的那份，不自行登記
 export function useListPage<Row extends { id: string }> (
@@ -33,8 +34,16 @@ export function useListPage<Row extends { id: string }> (
     ? { ...shared.join<Row>(table, schema), query: shared.query }
     : ownControls<Row>(table, schema, options)
 
+  // dashboard 的互動：子表只留所選父列的子列，與 scope 位於同一步
   const { scope } = options
-  const scopedRows = scope ? computed(() => allRows.value.filter(row => scope(row))) : allRows
+  const dashboard = useDashboardSelection()
+  const scopedRows = computed(() => {
+    const parentScope = dashboard?.parentScope(table) ?? null
+    if (!scope && !parentScope) {
+      return allRows.value
+    }
+    return allRows.value.filter(row => (!scope || scope(row)) && (!parentScope || parentScope(row)))
+  })
 
   const rows = useSearch(query, useFilter(filters, scopedRows, schema), schema)
 

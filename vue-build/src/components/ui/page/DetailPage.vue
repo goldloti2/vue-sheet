@@ -3,6 +3,7 @@
   import type { TableKey } from '@/schema'
   import type { TableSchema } from '@/schema/types'
   import type { RowView } from '@/schema/view'
+  import { computed } from 'vue'
   import { Touch as vTouch } from 'vuetify/directives'
   import PageState from '@/components/ui/page/PageState.vue'
   import DataDetail from '@/components/ui/record/DataDetail.vue'
@@ -10,6 +11,7 @@
   import RecordNav from '@/components/ui/record/RecordNav.vue'
   import PageFab from '@/components/ui/shell/PageFab.vue'
   import { useSiblingNav } from '@/composables/navigation/useListOrder'
+  import { useDashboardSelection } from '@/composables/shell/useDashboardSelection'
   import { usePanelFullPage } from '@/composables/shell/usePanelActive'
 
   defineSlots<{
@@ -37,11 +39,17 @@
   // 左右滑動換上下一筆；RecordNav 的兩顆箭頭是同一份順序。兩者皆只在以整頁呈現時啟用（dashboard 的面板中停用）
   const { swipe } = useSiblingNav(props.table, () => props.id)
   const fullPage = usePanelFullPage()
+
+  // dashboard 的詳細面板尚無選取時，只顯示欄位名稱，不顯示「找不到這筆資料」
+  const dashboard = useDashboardSelection()
+  const blank = computed(() => dashboard !== null && !props.id)
 </script>
 
 <template>
   <div v-touch="fullPage ? swipe : {}">
-    <PageState :empty="!row" :error="error" :loading="loading">
+    <DataDetail v-if="blank" :row="null" :schema="schema" />
+
+    <PageState v-else :empty="!row" :error="error" :loading="loading">
       <!-- PageState 已經擋掉 null 了，這層只是讓型別看得出來 -->
       <template v-if="row">
         <DetailHeader v-if="header" :row="row" :view="header" />

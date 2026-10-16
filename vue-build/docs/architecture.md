@@ -43,8 +43,9 @@ src/
                        （比對與排序本身是 schema/ 底下的純函數）
     form/              表單頁：useTableForm、useLeaveGuard、useSyncHold
     shell/             跟 AppShell 溝通：useActionSlot（登記機制）、useShellActions（App Bar／
-                       底部／多選出口）、useListControls、useSharedListControls（TabPage 底下
-                       的列表共用搜尋）、useAppBarTabs、usePanelActive、
+                       底部／多選出口）、useListControls、useSharedListControls（TabPage 與
+                       DashboardPage 底下的列表共用搜尋）、useDashboardSelection（dashboard 的
+                       互動）、useCompactLayout、useAppBarTabs、usePanelActive、
                        useOverlay、useActionRunner、useDialogs（confirm／notify）、useAskFields
     navigation/        路由接力：useRouteId、useListOrder、useFlow
     list/              列表互動：useMultiSelect、useLongPress、useRowClick

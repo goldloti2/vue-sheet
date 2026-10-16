@@ -16,7 +16,8 @@
 
   const props = defineProps<{
     schema: TableSchema
-    row: Row
+    // null 時只顯示欄位名稱，值留白
+    row: Row | null
     // 欄位 key → 動作，每欄一個。沒列的欄位就沒有動作，ref 的前往也要自己列（goToRefAction）
     fieldActions?: FieldActions<Row>
   }>()
@@ -25,13 +26,15 @@
   const fields = computed<Field[]>(() => {
     const row = props.row
 
-    const fieldList: Field[] = allColumns(props.schema).map(column => ({
-      key: column.key,
-      label: column.label,
-      value: formatColumnValue(row, column),
-      image: column.type === 'image' ? imageSrc((row as Record<string, unknown>)[column.key]) : null,
-      action: props.fieldActions?.[column.key]?.(row),
-    }))
+    const fieldList: Field[] = allColumns(props.schema).map(column => row
+      ? {
+        key: column.key,
+        label: column.label,
+        value: formatColumnValue(row, column),
+        image: column.type === 'image' ? imageSrc((row as Record<string, unknown>)[column.key]) : null,
+        action: props.fieldActions?.[column.key]?.(row),
+      }
+      : { key: column.key, label: column.label, value: '' })
 
     if (!props.schema.detailOrder) {
       return fieldList

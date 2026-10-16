@@ -7,14 +7,17 @@
   import { AUTO_ROWS_MAX, dashboardKey } from '@/components/ui/panel/dashboardContext'
   import { placePanels } from '@/components/ui/panel/placePanels'
   import { useCompactLayout } from '@/composables/shell/useCompactLayout'
+  import { provideDashboardSelection } from '@/composables/shell/useDashboardSelection'
   import { provideSharedListControls } from '@/composables/shell/useSharedListControls'
   import { appBarActionsKey, useAppBarActions, useAppBarHeading } from '@/composables/shell/useShellActions'
   import { schemas } from '@/schema'
 
   // 同時顯示多個面板（見 docs/dashboard.md）：方格排版、關注點，以及各面板列表共用的搜尋、篩選與排序
-  const { layout = {} } = defineProps<{
+  const { layout = {}, interactive = false } = defineProps<{
     // 面板的 name → 手機與電腦的排版；未列出的面板或留空的斷點為自動
     layout?: Record<string, { mobile?: PanelSize, desktop?: PanelSize }>
+    // 開啟時，點擊一列改為選取，與它直接相關的面板跟著改變
+    interactive?: boolean
   }>()
 
   const GAP = 8
@@ -155,6 +158,9 @@
     return table ? schemas[table].tableLabel : ''
   })
   provideSharedListControls(focusedTableLabel)
+
+  // 互動的選取；未開啟互動時不會有選取，詳細面板只顯示欄位名稱
+  provideDashboardSelection(() => interactive)
 
   // 展開時不排方格，展開的面板與一般頁面相同
   const gridStyle = computed(() => expanded.value

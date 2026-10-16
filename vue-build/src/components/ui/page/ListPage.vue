@@ -9,6 +9,7 @@
   import PageState from '@/components/ui/page/PageState.vue'
   import PageFab from '@/components/ui/shell/PageFab.vue'
   import { useListOrder } from '@/composables/navigation/useListOrder'
+  import { useDashboardSelection } from '@/composables/shell/useDashboardSelection'
   import { flattenGroups } from '@/schema/group'
 
   const props = defineProps<{
@@ -37,6 +38,15 @@
   // 畫面上實際的順序，detail 頁的上/下一筆靠它。分組的話攤平才是真正的先後
   const shown = computed<Row[]>(() => props.groups ? flattenGroups(props.groups) : props.rows ?? [])
   useListOrder(props.table, () => shown.value.map(row => row.id))
+
+  // 每一列的綁定：多選，加上 dashboard 開啟互動時的選取（點擊改為選取、標示選取的那一列）
+  const dashboard = useDashboardSelection()
+  function rowProps (id: string): object {
+    const linked = dashboard?.interactive()
+      ? { current: dashboard.selectedId(props.table) === id, pickable: true, onPick: () => dashboard.toggle(props.table, id) }
+      : {}
+    return { ...props.selection?.itemProps(id), ...linked }
+  }
 </script>
 
 <template>
@@ -45,7 +55,7 @@
       <PageState :error="error" :loading="loading" spinner="linear">
         <GroupedList v-if="groups" :groups="groups" :layout="layout">
           <template #default="{ row }">
-            <slot :props="selection?.itemProps(row.id) ?? {}" :row="row" />
+            <slot :props="rowProps(row.id)" :row="row" />
           </template>
         </GroupedList>
 
@@ -53,7 +63,7 @@
 
         <ListLayout v-else :layout="layout">
           <template v-for="row in rows" :key="row.id">
-            <slot :props="selection?.itemProps(row.id) ?? {}" :row="row" />
+            <slot :props="rowProps(row.id)" :row="row" />
           </template>
         </ListLayout>
       </PageState>

@@ -50,6 +50,15 @@
   box-shadow: var(--list-card-shadow);
 }
 
+/* dashboard 的互動中選取的那一列：左側一條主色的細邊，與多選的淡底可同時出現。以 inset 陰影繪製，順著圓角 */
+.list-row--current {
+  box-shadow: inset 3px 0 0 rgb(var(--v-theme-primary));
+}
+
+.list-card.list-row--current {
+  box-shadow: inset 3px 0 0 rgb(var(--v-theme-primary)), var(--list-card-shadow);
+}
+
 /* 動作選單（ViewActions 的 menu、App Bar 的 ⋮）。v-list-item 預設的圖示與文字間距為 32px，
    圖示為中等強調的透明度；此處縮小間距，圖示則與其他位置同樣深淺 */
 .action-menu {

@@ -2,6 +2,7 @@ import type { TableKey } from '@/schema'
 import type { ComputedRef, MaybeRefOrGetter } from 'vue'
 import { computed, onActivated, onDeactivated, reactive, shallowRef, toValue, watchEffect } from 'vue'
 import { useRouter } from 'vue-router'
+import { useDashboardSelection } from '@/composables/shell/useDashboardSelection'
 import { usePanelActive } from '@/composables/shell/usePanelActive'
 
 // 列表頁把「畫面上實際看到的順序」發布出來，detail頁靠它算前後鄰居。
@@ -38,9 +39,10 @@ interface SiblingNav {
   swipe: { left: () => void, right: () => void }
 }
 
-// detail 頁呼叫：上/下一筆的導覽。
+// detail 頁呼叫：上/下一筆的導覽。於 dashboard 的面板中改為換選取，不離開 dashboard
 export function useSiblingNav (table: TableKey, id: MaybeRefOrGetter<string>): SiblingNav {
   const router = useRouter()
+  const dashboard = useDashboardSelection()
 
   const siblings = computed<Siblings>(() => {
     const order = orders.get(table)
@@ -56,7 +58,12 @@ export function useSiblingNav (table: TableKey, id: MaybeRefOrGetter<string>): S
   })
 
   function go (target: string | null) {
-    if (target) {
+    if (!target) {
+      return
+    }
+    if (dashboard) {
+      dashboard.select(table, target)
+    } else {
       void router.replace(`/${table}/${target}`)
     }
   }

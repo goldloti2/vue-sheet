@@ -6,18 +6,22 @@
   import { useRowClick } from '@/composables/list/useRowClick'
 
   // 泛型元件的 props 型別須寫於 defineProps 內，抽成 interface 會使型別宣告輸出失敗
-  const { row, view, selectable = false, selectMode, to } = defineProps<{
+  const { row, view, selectable = false, selectMode, to, pickable = false } = defineProps<{
     row: Row
     view: CardView<Row>
     to?: string
     selectable?: boolean
     selectMode?: boolean
     selected?: boolean
+    // dashboard 的互動：是否為選取的那一列，以及點擊是否改為選取（由 ListPage 給）
+    current?: boolean
+    pickable?: boolean
   }>()
 
   const emit = defineEmits<{
     longpress: [event: PointerEvent]
     toggle: []
+    pick: []
   }>()
 
   const fields = computed(() => view(row))
@@ -49,6 +53,8 @@
     selectMode: () => selectMode,
     onLongpress: event => emit('longpress', event),
     onToggle: () => emit('toggle'),
+    pickable: () => pickable,
+    onPick: () => emit('pick'),
   })
 </script>
 
@@ -57,6 +63,7 @@
     class="card-item list-row list-card"
     :class="{
       'list-row--selected': selectMode && selected,
+      'list-row--current': current,
       'list-row--no-select': selectable,
     }"
     :style="{ containIntrinsicSize: `auto ${estimatedHeight}px` }"

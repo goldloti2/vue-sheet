@@ -38,6 +38,8 @@
 | `selectable` | `boolean?` | 預設 `false`。開了才綁長按監聽、才會禁止文字選取與拖曳 |
 | `selectMode` | `boolean?` | 目前在不在多選模式 |
 | `selected` | `boolean?` | 這一列有沒有被選 |
+| `current` | `boolean?` | dashboard 開啟互動時，是否為選取的那一筆（左側一條主色的細邊，與多選的淡底可同時出現） |
+| `pickable` | `boolean?` | dashboard 開啟互動時為 `true`：點擊改為發出 `pick`，不導覽 |
 
 ## Emits
 
@@ -45,6 +47,7 @@
 | --- | --- |
 | `longpress` | 長按觸發，只有 `selectable` 時會發 |
 | `toggle` | 多選模式下點擊觸發；此時不會導覽 |
+| `pick` | `pickable` 時點擊觸發（多選模式除外）；帶修飾鍵或中鍵的點擊仍交由瀏覽器開新分頁 |
 
 ## 備註
 

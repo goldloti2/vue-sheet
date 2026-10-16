@@ -13,9 +13,9 @@
 | prop | 型別 | 說明 |
 | --- | --- | --- |
 | `table` | `TableKey` | **必填**，上下一筆的順序與導覽都靠它 |
-| `id` | `string` | **必填**，網址上的那一筆 |
+| `id` | `string` | **必填**，網址上的那一筆（dashboard 中為互動選取的那一筆，尚無選取時為空字串） |
 | `schema` | `TableSchema` | **必填**，決定顯示哪些欄位、順序 |
-| `row` | `Row \| null` | **必填**，`null` 時顯示「找不到這筆資料」 |
+| `row` | `Row \| null` | **必填**，`null` 時顯示「找不到這筆資料」；dashboard 中 `id` 為空字串時改為只顯示欄位名稱，標頭與兩個 slot 皆不渲染 |
 | `loading` | `boolean?` | 載入中 |
 | `error` | `string \| null?` | 載入失敗的訊息 |
 | `fieldActions` | `FieldActions<Row>?` | 欄位 key → 動作，每欄一個、整格可點 |
@@ -49,4 +49,5 @@
 
 - **子表這樣放**：slot 裡擺一個 [ChildList](ChildList.md)，`rows` 直接給父列上的 `$子表_欄位key` getter（不用另外查），它會處理標題與筆數、顯示上限、右下角的「展開」與新增
 - **左右滑動與箭頭是同一份順序**（`useListOrder` 發布的列表順序）：沒有經過列表頁就直接開網址時，兩者都會安靜地沒有上下筆
+- **於 dashboard 的面板中**：兩者僅於面板展開時啟用，且改為換成互動選取的上下一筆，不離開 dashboard（見 [dashboard.md](../dashboard.md)）
 - 狀態階梯本身是 [PageState](PageState.md) 畫的；`DataDetail` 只管有資料時怎麼顯示欄位

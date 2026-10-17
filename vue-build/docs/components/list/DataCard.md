@@ -2,7 +2,7 @@
 
 card 式列表的**單一張卡片**：上下共四層，沒有內容的那一層整層隱藏。與 [DataProfile](DataProfile.md) 相同，卡片之間有間隔，點擊卡片進入 detail。
 
-各位置由 card 專用的 view（`defineCardView`）指定，分為 `header`、`body` 兩組，每組可用的位置與 [DataList](DataList.md#view) 的 view 相同。自身不做迴圈：列表頁放在 [ListPage](ListPage.md) 的 slot 裡，其他地方用 `v-for` 或包在 `GroupedList` 的 slot 裡。給了 `to` 整張卡片就是連結。
+各位置由 card 專用的 view（`defineCardView`）指定，分為 `header`、`body` 兩組，每組可用的位置與 [DataList](DataList.md#view) 的 view 相同。自身不做迴圈：列表頁放在 [ListPage](../page/ListPage.md) 的 slot 裡，其他地方用 `v-for` 或包在 `GroupedList` 的 slot 裡。給了 `to` 整張卡片就是連結。
 
 多選的接法與 DataList 相同：`v-bind` 上 `ListPage` slot 給的 `props`（或自己組時用 `selection.itemProps(row.id)`），`selectable`／`selectMode`／`selected` 與長按、點選事件會一次綁好。
 
@@ -17,7 +17,7 @@ card 式列表的**單一張卡片**：上下共四層，沒有內容的那一�
 | 1 | `header` | 左側 40×40 的圓形頭像（`image`），右側上下排列主標題（`title`）與副標題（`subtitle`），過長時以省略號截斷；沒有選單 |
 | 2 | `body.image` | 寬度撐滿卡片的大圖，固定 16:9、裁切填滿（`object-fit: cover`） |
 | 3 | `body` | 標題（`title`）、副標題（`subtitle`）與摘要（`summary`）；摘要可換行，最多三行 |
-| 4 | `actions` | 最多四格，由 [ViewActions](ViewActions.md) 的 `variant="slots"` 呈現：前兩個靠左、後兩個靠右，`null` 保留為空格，超過四個的部分不顯示。每一格依 `display` 顯示為圖示或文字 |
+| 4 | `actions` | 最多四格，由 [ViewActions](../view/ViewActions.md) 的 `variant="slots"` 呈現：前兩個靠左、後兩個靠右，`null` 保留為空格，超過四個的部分不顯示。每一格依 `display` 顯示為圖示或文字 |
 
 - 第 1 層的三個位置皆無內容時隱藏；第 3 層亦同。第 2 層僅於有圖片時出現；第 4 層於四格皆為 `null` 時隱藏，多選模式下亦隱藏
 - `header` 與 `body` 各自指定欄位，可放相同或不同的欄位；`aside` 不顯示
@@ -49,4 +49,4 @@ card 式列表的**單一張卡片**：上下共四層，沒有內容的那一�
 - **勾選圖示疊於卡片左上角**：多選模式下以絕對定位疊於左上角，不受各層有無內容影響；圖示帶有卡片底色的圓形背景，疊在大圖上亦可辨識。被選取的卡片疊上一層主色淡底
 - **間隔由元件自身負責**：卡片帶有下方間距、圓角、外框與偏向右下的陰影，`ListPage` 與 `GroupedList` 不需另外設定。間距、圓角、陰影與點擊、選取的樣式定義於 `src/styles/list.css`，與其他列表元件共用（見 [ListLayout](ListLayout.md) 的「共用的樣式」）
 - **`content-visibility: auto`**：畫面外的卡片不進行排版與繪製。因各層可隱藏、卡片高度差異大，`contain-intrinsic-size` 不寫死，而是依出現的層加總出替代高度（第 1 層 64px、第 2 層為 16:9 的大圖、第 3 層依出現的欄位、第 4 層 48px）。各層的高度以 CSS 變數於 inline style 傳入，大圖以 `100cqw * 9 / 16` 依卡片寬度估算——`ListPage` 的內容區為不具名的 container，`100cqw` 即卡片的寬度；不在 `ListPage` 中時退回以視窗寬度估算。各層的版型若大幅變動，此計算須一併調整
-- **dashboard 中的窄版**：所在面板寬度小於 200px（3 格以下）時，省略第 3 層，替代高度亦不計入（見 [dashboard.md](../dashboard.md) 的「面板內容的寬度」）。一般頁面不會觸發
+- **dashboard 中的窄版**：所在面板寬度小於 200px（3 格以下）時，省略第 3 層，替代高度亦不計入（見 [dashboard.md](../../dashboard.md) 的「面板內容的寬度」）。一般頁面不會觸發

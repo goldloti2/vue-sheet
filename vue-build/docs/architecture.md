@@ -63,7 +63,7 @@ src/
                        view（列的版面：欄位與位置的對應）、index（註冊表：代稱 → schema）
     tables/            每張表的欄位定義，一張表一個檔
   config/              app.ts（App 名稱、登入方式）、navigation.ts（導覽列項目）
-  styles/              全域的 CSS：list.css（列表中一列與卡片共用的樣式，見 docs/components/ListLayout.md；動作選單的樣式，見 docs/components/ViewActions.md）
+  styles/              全域的 CSS：list.css（列表中一列與卡片共用的樣式，見 docs/components/list/ListLayout.md；動作選單的樣式，見 docs/components/view/ViewActions.md）
   router/index.ts      路由實例、登入檢查、換頁動畫與方向判定、leaveAfterAction / pushWithDefaults
   pages/               檔案即路由；任意層的 _ref/ 只供其他頁面引用，不產生路由
 ```
@@ -152,7 +152,7 @@ src/
 - **方向掛在 `<html>` 的 `data-dir`**，於 `afterEach` 寫入，CSS 於動畫開始時才讀取（判定規則見 `router/index.ts`）。同時寫入 `data-transition="page"`，與 dashboard 面板內的轉場（`data-transition="panel"`，見 [dashboard.md](dashboard.md) 的「面板內的轉場」）區分：兩者共用 View Transitions，`root` 只在換頁時滑動
 - **不支援 View Transitions 的瀏覽器，或系統開啟「減少動態效果」時，不播放動畫**，直接切換
 
-舊做法（`<Transition>` + `<KeepAlive>`）另有兩個限制，改用 View Transitions 後皆不復存在：離場的一側套用的是該 vnode 上次啟用時的 transition hooks，方向須改以屬性選擇器讀取；頁面的 root 須為單一元素，因此三個版型都在外面包一層 `div`（仍保留，見 [components/PageState.md](components/PageState.md)）。
+舊做法（`<Transition>` + `<KeepAlive>`）另有兩個限制，改用 View Transitions 後皆不復存在：離場的一側套用的是該 vnode 上次啟用時的 transition hooks，方向須改以屬性選擇器讀取；頁面的 root 須為單一元素，因此三個版型都在外面包一層 `div`（仍保留，見 [components/page/PageState.md](components/page/PageState.md)）。
 
 **為什麼被快取的頁面還在運轉**
 KeepAlive 的 `deactivate` 只搬 DOM，不會暫停元件的 effect；而 `onDeactivated` 是 post-render，比 pre-flush 的 `watch` 還晚。所以被快取的頁面仍然會對外部變化重新計算、重新渲染——而外面的世界已經換頁了。舊的換頁動畫中，離場的頁面是活的 DOM，這直接造成「閃一下錯誤內容」；改用 View Transitions 後離場的一側是截圖，不再看得到，但頁面回到畫面時仍帶著背景期間算出的狀態，上面的規則都是為此而存在。流進被快取頁面的東西只有兩種：路由參數（讀一次就固定）與共用快取（讓它變）。

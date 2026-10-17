@@ -61,7 +61,7 @@ const AUTH = null          // 不驗證
 | `router/index.ts` | 全域 `beforeEach`：連第一次開啟（直接貼網址、重新整理）都會經過，沒有 token 就轉到 `/login?redirect=原目的地`。標了 `meta.public` 的頁面不檢查。另外 `watch` token：token 被清掉時人還在要登入的頁面，就帶去登入頁（`redirect` 是當下這頁） |
 | `services/appScript.ts` | 每個請求的網址帶上 `?token=`；後端回 `unauthorized`／`expired` 時拋 `AuthError` 並清掉 token；回應附帶續期的 token 時換上。`fetchToken(credentials)`：送出 `{ action: 'login', credentials }`、取回 token。沒設 `VITE_APPS_SCRIPT_URL` 時走假後端（`mockLogin` 收到什麼都算成功、發的 token 不簽章；`mockAuthorize` 檢查格式與過期、同樣會續期）。dev 模式的 console 紀錄會把密碼與登入回傳的 token 遮掉 |
 | `composables/auth/useLogin.ts` | 登入頁的資料層：送出（`fetchToken`）、錯誤訊息、成功後存 token、重抓已載入與載入失敗的表（`store.reload()`，不推送），再以 `replace` 前往 `redirect`（只接受站內路徑） |
-| `components/ui/auth/PasswordLoginForm.vue` | 帳號密碼表單，見 [PasswordLoginForm](../vue-build/docs/components/PasswordLoginForm.md) |
+| `components/ui/auth/PasswordLoginForm.vue` | 帳號密碼表單，見 [PasswordLoginForm](../vue-build/docs/components/auth/PasswordLoginForm.md) |
 | `pages/login.vue` | 登入頁本身，整頁自己排版（置中卡片、標題、錯誤訊息），表單用上面那個元件。專案要改外觀（logo、標題、背景、版面）就直接改這個檔 |
 | `components/ui/shell/AppShell.vue` | `meta.shell: false` 的頁面不顯示 App Bar、側邊欄與底部導覽列；`authMethod` 不是 `'none'` 時側邊欄有「登出」 |
 

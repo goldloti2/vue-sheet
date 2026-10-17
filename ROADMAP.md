@@ -197,7 +197,7 @@
 - card 使用兩組（`defineCardView`）：`header` 為第 1 層（`image` 作為頭像），`body` 為第 2、3 層（`image` 作為大圖，`summary` 為摘要）。detail 標頭相當於僅有 `body` 一組，因此直接使用 `defineView`
 - 動作 `actions: (row) => (PageAction | null)[]`，與欄位定義於同一個 view。依位置排列：card 與 detail 標頭的前兩個置於左側、後兩個置於右側，`null` 表示空位；deck 與 profile 會略過空位。`PageAction` 新增 `display: 'icon' | 'text'`
 
-**deck 的 action 按鍵**（✅ `ViewActions`）：置於右下角欄位的下一列，由左往右排列、整組靠右。沒有 action 時不佔高度；多選模式下隱藏。按鈕為原生 `<button>` 加圖示，不使用 `v-btn`（考量列數多時的實例成本，見 [vue-build/docs/components/ViewActions.md](vue-build/docs/components/ViewActions.md)）。🔲 尚未依 [vue-build/docs/perf.md](vue-build/docs/perf.md) 的方法量測加入動作列前後的差異
+**deck 的 action 按鍵**（✅ `ViewActions`）：置於右下角欄位的下一列，由左往右排列、整組靠右。沒有 action 時不佔高度；多選模式下隱藏。按鈕為原生 `<button>` 加圖示，不使用 `v-btn`（考量列數多時的實例成本，見 [vue-build/docs/components/view/ViewActions.md](vue-build/docs/components/view/ViewActions.md)）。🔲 尚未依 [vue-build/docs/perf.md](vue-build/docs/perf.md) 的方法量測加入動作列前後的差異
 
 **profile 與 card** 跟 deck 不同的地方是一張張分開的卡片（有間隔），不是連在一起的清單。點卡片進 detail，支援長按多選。
 - **profile**（✅ `DataProfile`）：左側圓形頭像，中間主標題與副標題，右側 ⋮ 選單收 action。沒有圖片時不顯示頭像；只有一個 action 時亦收入選單。選單於第一次按下 ⋮ 時才建立（ViewActions 的 `variant="menu"`），每列平時僅有一顆原生按鈕。間隔由卡片自身負責

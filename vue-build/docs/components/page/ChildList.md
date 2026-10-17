@@ -24,7 +24,7 @@
 </DetailPage>
 ```
 
-`newChild` 是這張子表的新增動作，預設值指向目前這個父列；`childView` 指定子列顯示的欄位（見 [DataList](DataList.md) 的「view」）：
+`newChild` 是這張子表的新增動作，預設值指向目前這個父列；`childView` 指定子列顯示的欄位（見 [DataList](../list/DataList.md) 的「view」）：
 
 ```ts
 const { new: newChild } = use__Table__Actions({ defaults: () => ({ __parent__: id.value }) })
@@ -35,7 +35,7 @@ const childView = defineView(__table__Schema, { title: '$label' })
 
 | prop | 型別 | 說明 |
 | --- | --- | --- |
-| `title` | `string` | **必填**，區塊小標題。筆數用 [CountLabel](CountLabel.md) 接在後面 |
+| `title` | `string` | **必填**，區塊小標題。筆數用 [CountLabel](../list/CountLabel.md) 接在後面 |
 | `rows` | `readonly Row[]` | **必填**，全部子列（父列上的 `$子表_欄位key` getter，已照子表的 `defaultSort` 排好）。超過 `limit` 的只是沒顯示，不是沒傳進來——筆數也是照這個算 |
 | `limit` | `number?` | 預設 5，最多先顯示幾列；`0` 就是全部列完 |
 | `to` | `string?` | 「展開」要去的頁面。給了就一直顯示那顆鈕，不管有沒有超過 `limit`（位置固定，使用者不用猜今天有沒有） |
@@ -58,7 +58,7 @@ const childView = defineView(__table__Schema, { title: '$label' })
 
 ## 「展開」是一個真的頁面
 
-不是就地展開，而是 `/__parent__/:id/__table__` 這種路由，範本在 [`template/pages/child-list.vue`](../../template/pages/child-list.vue)。一條父子關聯一份檔（同一個檔服務所有父列），內容就是 `useRecordPage` 拿父列 + `ListPage` 把 getter 的子列畫出來，約 20 行。
+不是就地展開，而是 `/__parent__/:id/__table__` 這種路由，範本在 [`template/pages/child-list.vue`](../../../template/pages/child-list.vue)。一條父子關聯一份檔（同一個檔服務所有父列），內容就是 `useRecordPage` 拿父列 + `ListPage` 把 getter 的子列畫出來，約 20 行。
 
 這樣做而不是就地展開，換到四件現成的事：返回鍵會回到詳細頁、頁面轉場動畫、App Bar 標題可以是子表的名字、以及 `ListPage` 會把這份順序發布出去——**所以從這裡點進某一筆，上／下一筆走的是「同一個父列底下的子列」**，而不是子表整張表的順序。
 

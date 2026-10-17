@@ -6,7 +6,7 @@
 
 **搜尋與排序來自該 composable，而非本元件**：`useListPage` 內部呼叫 `useListControls`，因此使用它時 App Bar 即出現放大鏡、篩選鈕與排序鈕（欄位須列於 `searchable`／`sortable`）。位於 `TabPage` 之內時，改為加入 `TabPage` 的共用控制，不自行登記；不需要搜尋，或同一頁面須手動登記多張表時，傳入 `{ search: false }`，見下方「手動登記多張表」。
 
-**選了排序就別再分組**：回傳的 `sort` 不是 null 時把 `groups` 換成 `rows`，見 [ui.md 的排序](../ui.md#排序)。
+**選了排序就別再分組**：回傳的 `sort` 不是 null 時把 `groups` 換成 `rows`，見 [ui.md 的排序](../../ui.md#排序)。
 
 ## Usage
 
@@ -23,7 +23,7 @@
 | `error` | `string \| null?` | 載入失敗的訊息 |
 | `selection` | `MultiSelect?` | 給了才綁長按多選（`useListPage` 的 `selection`） |
 | `fab` | `(PageAction \| null)[]?` | 右下角的 FAB，通常是新增；`null` 略過 |
-| `layout` | `'list' \| 'grid'?` | 各筆的排法，預設 `'list'`（依序往下排）；gallery 用 `'grid'`（格狀排列）。分組時一併轉交給 `GroupedList`，見 [ListLayout](ListLayout.md) |
+| `layout` | `'list' \| 'grid'?` | 各筆的排法，預設 `'list'`（依序往下排）；gallery 用 `'grid'`（格狀排列）。分組時一併轉交給 `GroupedList`，見 [ListLayout](../list/ListLayout.md) |
 
 ## Slots
 
@@ -60,7 +60,7 @@ const groups = computed(() => sort.value ? undefined : groupRows(rows.value, gro
 </ListPage>
 ```
 
-**頁籤**：將列表拆成只供引用的元件（`_ref/`），每個頁籤放一個，各自以 `useListPage` 的 `scope` 只留該頁籤的列；搜尋、篩選與排序由 `TabPage` 統一登記並跨頁籤共用（見 [ui.md](../ui.md#同一頁面中的多張表)，範本為 `template/pages/tab-list.vue` 與 `template/pages/_ref/list.vue`）。每個頁籤各有一個 `ListPage`，各自計算 FAB、多選與列表順序，只有當前頁籤那份會生效（靠 `TabPanel` 的訊號）。發布順序時會先 `flattenGroups`，與畫面上的先後一致。
+**頁籤**：將列表拆成只供引用的元件（`_ref/`），每個頁籤放一個，各自以 `useListPage` 的 `scope` 只留該頁籤的列；搜尋、篩選與排序由 `TabPage` 統一登記並跨頁籤共用（見 [ui.md](../../ui.md#同一頁面中的多張表)，範本為 `template/pages/tab-list.vue` 與 `template/pages/_ref/list.vue`）。每個頁籤各有一個 `ListPage`，各自計算 FAB、多選與列表順序，只有當前頁籤那份會生效（靠 `TabPanel` 的訊號）。發布順序時會先 `flattenGroups`，與畫面上的先後一致。
 
 ## 手動登記多張表
 
@@ -88,4 +88,4 @@ useListControls(query, {
 
 - **版面真的不一樣才自己組**：總覽頁那種混合版面用不到這個元件，資料層仍然可以用 `useListPage`；那時要自己 `useListOrder(table, computed(() => 畫面上的順序))`，因為只有頁面知道實際排列
 - 空列表就是空的，不會顯示「找不到資料」——那是單筆頁面的狀態（見 [PageState](PageState.md)）
-- **內容區為不具名的 container**（`container-type: inline-size`）：列表元件以 `cqw` 依寬度估計畫面外各列的高度（見 [DataCard](DataCard.md) 的備註）。不具名，不影響 dashboard 以 `@container dashboard-panel` 判斷的窄版
+- **內容區為不具名的 container**（`container-type: inline-size`）：列表元件以 `cqw` 依寬度估計畫面外各列的高度（見 [DataCard](../list/DataCard.md) 的備註）。不具名，不影響 dashboard 以 `@container dashboard-panel` 判斷的窄版

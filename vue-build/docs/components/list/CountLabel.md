@@ -2,7 +2,7 @@
 
 「名稱 + 筆數」：筆數做成一個小標籤跟在名稱後面。數字多一位就自己變寬，高度與圓角不變。
 
-存在的理由只有一個——分組標題（[GroupedList](GroupedList.md)）與子表區塊標題（[ChildList](ChildList.md)）要長得一樣。自己寫頁面時想標筆數也可以直接用。
+存在的理由只有一個——分組標題（[GroupedList](GroupedList.md)）與子表區塊標題（[ChildList](../page/ChildList.md)）要長得一樣。自己寫頁面時想標筆數也可以直接用。
 
 ## Usage
 

@@ -1,6 +1,6 @@
 <!-- 複製到 src/pages/__table__/[id]/index.vue
-     版型（標頭、上下筆、FAB、slot 放子表格）見 docs/components/DetailPage.md；
-     欄位怎麼顯示、欄位動作見 docs/components/DataDetail.md -->
+     版型（標頭、上下筆、FAB、slot 放子表格）見 docs/components/page/DetailPage.md；
+     欄位怎麼顯示、欄位動作見 docs/components/record/DataDetail.md -->
 <route lang="json5">
 { meta: { title: '範本詳細' } }
 </route>
@@ -25,7 +25,7 @@
   useAppBarActions(() => [deleteAction.value])
 
   // 選用：整頁最上方的標頭區塊。有圖片欄位時指定 image；
-  // actions 為圖片下方的左右各兩格，null 保留為空格（見 docs/components/DetailHeader.md）
+  // actions 為圖片下方的左右各兩格，null 保留為空格（見 docs/components/record/DetailHeader.md）
   const header = defineView(__table__Schema, { title: 'name', subtitle: 'date' })
 </script>
 

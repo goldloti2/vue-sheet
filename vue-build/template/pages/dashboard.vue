@@ -1,6 +1,6 @@
 <!-- 選用：同時顯示多個面板的總覽頁，複製到 src/pages/dashboard.vue（檔名即路由，可自訂）→ /dashboard
      __parent__ 為父表、__table__ 為子表（子表有 ref 欄位指向父表）；兩張表各需一份 _ref/list.vue，父表另需 detail.vue
-     排版、互動與各面板的行為見 docs/components/DashboardPage.md 與 DashboardPanel.md -->
+     排版、互動與各面板的行為見 docs/components/panel/DashboardPage.md 與 DashboardPanel.md -->
 <route lang="json5">
 { meta: { title: '總覽' } }
 </route>

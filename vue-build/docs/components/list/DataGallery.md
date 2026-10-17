@@ -1,6 +1,6 @@
 # DataGallery
 
-gallery 式列表的**單一格**：上方為正方形圖片，下方為標題與副標，右下角以 ⋮ 選單收納該列的動作。須搭配 [ListPage](ListPage.md) 的 `layout="grid"` 使用，各格才會格狀排列（見 [ListLayout](ListLayout.md)）。
+gallery 式列表的**單一格**：上方為正方形圖片，下方為標題與副標，右下角以 ⋮ 選單收納該列的動作。須搭配 [ListPage](../page/ListPage.md) 的 `layout="grid"` 使用，各格才會格狀排列（見 [ListLayout](ListLayout.md)）。
 
 與 [DataList](DataList.md) 相同，各欄位的位置由 view（`defineView`）指定，自身不做迴圈。給了 `to` 整格就是連結。多選的接法亦與 DataList 相同：`v-bind` 上 `ListPage` slot 給的 `props`。
 
@@ -17,7 +17,7 @@ gallery 式列表的**單一格**：上方為正方形圖片，下方為標題�
 | `image` | 上方的正方形圖片，周圍留白 8px，裁切填滿；沒有圖片時以同樣大小的灰色方塊佔位，格線才會對齊 |
 | `title` | 圖片下方，佔滿寬度，一行，過長時以省略號截斷 |
 | `subtitle` | 標題下方，一行，右側留出 ⋮ 的寬度 |
-| `actions` | 整格右下角的 ⋮ 選單，由 [ViewActions](ViewActions.md) 的 `variant="menu"` 呈現。只有一個動作時亦收入選單；沒有動作時不顯示 ⋮；多選模式下隱藏 |
+| `actions` | 整格右下角的 ⋮ 選單，由 [ViewActions](../view/ViewActions.md) 的 `variant="menu"` 呈現。只有一個動作時亦收入選單；沒有動作時不顯示 ⋮；多選模式下隱藏 |
 
 ## Props
 

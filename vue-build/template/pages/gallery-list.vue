@@ -1,5 +1,5 @@
 <!-- 選用：以 gallery 呈現的列表頁，同樣複製到 src/pages/__table__/index.vue
-     格子的版面與動作的呈現見 docs/components/DataGallery.md；
+     格子的版面與動作的呈現見 docs/components/list/DataGallery.md；
      搜尋、篩選、多選、分組與頁籤見 docs/ui.md -->
 <route lang="json5">
 { meta: { title: '範本' } }

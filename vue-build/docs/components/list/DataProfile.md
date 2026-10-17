@@ -2,7 +2,7 @@
 
 profile 式列表的**單一張卡片**：左側為圓形頭像，中間上下排列主標題與副標題，右側以 ⋮ 選單收納該列的動作。與 [DataList](DataList.md) 不同，卡片之間有間隔，不連成一串；點擊卡片進入 detail。
 
-與 DataList 相同，各欄位的位置由 view（`defineView`）指定，自身不做迴圈：列表頁放在 [ListPage](ListPage.md) 的 slot 裡，其他地方用 `v-for` 或包在 `GroupedList` 的 slot 裡。給了 `to` 整張卡片就是連結。
+與 DataList 相同，各欄位的位置由 view（`defineView`）指定，自身不做迴圈：列表頁放在 [ListPage](../page/ListPage.md) 的 slot 裡，其他地方用 `v-for` 或包在 `GroupedList` 的 slot 裡。給了 `to` 整張卡片就是連結。
 
 多選的接法亦與 DataList 相同：`v-bind` 上 `ListPage` slot 給的 `props`（或自己組時用 `selection.itemProps(row.id)`），`selectable`／`selectMode`／`selected` 與長按、點選事件會一次綁好。
 
@@ -19,7 +19,7 @@ view 的定義方式見 [DataList](DataList.md#view)。本元件僅使用以下�
 | `title` | 中間上方，過長時以省略號截斷 |
 | `subtitle` | 中間下方，過長時以省略號截斷 |
 | `image` | 左側 40×40 的圓形頭像，圖片裁切填滿（`object-fit: cover`）；沒有圖片時不顯示，標題往左靠齊。多選模式下勾選圖示置於其左側 |
-| `actions` | 右側的 ⋮ 選單，由 [ViewActions](ViewActions.md) 的 `variant="menu"` 呈現。只有一個動作時亦收入選單；沒有動作時不顯示 ⋮；多選模式下隱藏 |
+| `actions` | 右側的 ⋮ 選單，由 [ViewActions](../view/ViewActions.md) 的 `variant="menu"` 呈現。只有一個動作時亦收入選單；沒有動作時不顯示 ⋮；多選模式下隱藏 |
 
 ## Props
 

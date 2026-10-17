@@ -2,7 +2,7 @@
 
 詳細頁的整頁版型：載入狀態、選用的標頭區塊、欄位區、左右滑動換上下一筆、底部的上下筆箭頭、右下角 FAB，一次接好。頁面只要說「這是哪張表、哪一筆、有哪些動作」。
 
-搭配 `useRecordPage(table)` 使用，其回傳的 `id`／`row`／`loading`／`error` 直接對應此處的 prop；`row` 另外交給 `useRowAction`，將 `use表名Actions` 中以列為參數的動作（編輯、刪除）綁定至這一筆（見 [actions.md](../actions.md#各表的-use表名actions)）。
+搭配 `useRecordPage(table)` 使用，其回傳的 `id`／`row`／`loading`／`error` 直接對應此處的 prop；`row` 另外交給 `useRowAction`，將 `use表名Actions` 中以列為參數的動作（編輯、刪除）綁定至這一筆（見 [actions.md](../../actions.md#各表的-use表名actions)）。
 
 ## Usage
 
@@ -20,7 +20,7 @@
 | `error` | `string \| null?` | 載入失敗的訊息 |
 | `fieldActions` | `FieldActions<Row>?` | 欄位 key → 動作，每欄一個、整格可點 |
 | `fab` | `(PageAction \| null)[]?` | 右下角的 FAB，通常是編輯；`null` 略過 |
-| `header` | `RowView<Row>?` | 選用，整頁最上方的標頭區塊（`defineView` 的回傳值），置於 `top` slot 之上，見 [DetailHeader](DetailHeader.md) |
+| `header` | `RowView<Row>?` | 選用，整頁最上方的標頭區塊（`defineView` 的回傳值），置於 `top` slot 之上，見 [DetailHeader](../record/DetailHeader.md) |
 
 ## Slots
 
@@ -49,5 +49,5 @@
 
 - **子表這樣放**：slot 裡擺一個 [ChildList](ChildList.md)，`rows` 直接給父列上的 `$子表_欄位key` getter（不用另外查），它會處理標題與筆數、顯示上限、右下角的「展開」與新增
 - **左右滑動與箭頭是同一份順序**（`useListOrder` 發布的列表順序）：沒有經過列表頁就直接開網址時，兩者都會安靜地沒有上下筆
-- **於 dashboard 的面板中**：兩者僅於面板展開時啟用，且改為換成互動選取的上下一筆，不離開 dashboard（見 [dashboard.md](../dashboard.md)）
+- **於 dashboard 的面板中**：兩者僅於面板展開時啟用，且改為換成互動選取的上下一筆，不離開 dashboard（見 [dashboard.md](../../dashboard.md)）
 - 狀態階梯本身是 [PageState](PageState.md) 畫的；`DataDetail` 只管有資料時怎麼顯示欄位

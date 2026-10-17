@@ -7,7 +7,7 @@
 | `list`（預設） | 依序往下排，不另外包裝，DOM 與未使用本元件時相同 | deck、profile、card |
 | `grid` | 格狀排列：`repeat(auto-fill, minmax(140px, 1fr))`，間隔為 `--list-card-gap`，最後一列下方留出陰影的範圍（`--list-card-shadow-extent`） | gallery |
 
-**一般不需要直接使用**：[ListPage](ListPage.md) 與 [GroupedList](GroupedList.md) 的 `layout` prop 會轉交給它。分組時，每一組底下的各筆各自排列，組的標題一律佔一整行。
+**一般不需要直接使用**：[ListPage](../page/ListPage.md) 與 [GroupedList](GroupedList.md) 的 `layout` prop 會轉交給它。分組時，每一組底下的各筆各自排列，組的標題一律佔一整行。
 
 ## 欄寬
 

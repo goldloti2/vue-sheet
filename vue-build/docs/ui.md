@@ -64,24 +64,24 @@
 
 ### 版面的種類
 
-每一列的呈現方式由放進 `ListPage` slot 的元件決定；哪個欄位放在哪個位置則由頁面定義的 view 指定（`defineView`，card 為 `defineCardView`，見 [DataList](components/DataList.md#view)）。同一個 view 可交給 deck、profile 或 gallery，換版面不需改寫欄位的對應。
+每一列的呈現方式由放進 `ListPage` slot 的元件決定；哪個欄位放在哪個位置則由頁面定義的 view 指定（`defineView`，card 為 `defineCardView`，見 [DataList](components/list/DataList.md#view)）。同一個 view 可交給 deck、profile 或 gallery，換版面不需改寫欄位的對應。
 
 | 版面 | 元件 | 外觀 | 該列的動作 | 適合 |
 | --- | --- | --- | --- | --- |
-| deck | [DataList](components/DataList.md) | 連成一串的列，左側縮圖，四個角各一個欄位 | 右下角欄位的下一列，一排按鈕 | 一般的瀏覽，一列可看到較多欄位 |
-| profile | [DataProfile](components/DataProfile.md) | 分開的卡片，左側圓形頭像，中間標題與副標 | 右側的 ⋮ 選單 | 以人或物為主體、資訊精簡的表 |
-| card | [DataCard](components/DataCard.md) | 分開的卡片，上下四層：頭像與標題、大圖、標題與摘要、動作 | 第 4 層，左右各兩格 | 圖片與說明並重的表 |
-| gallery | [DataGallery](components/DataGallery.md) | 格狀排列的方格，正方形圖片加上標題與副標，手機上為兩欄 | 右下角的 ⋮ 選單 | 以圖片為主的表 |
-| table | [DataTable](components/DataTable.md) | 表格 | 無 | 比對多個欄位 |
+| deck | [DataList](components/list/DataList.md) | 連成一串的列，左側縮圖，四個角各一個欄位 | 右下角欄位的下一列，一排按鈕 | 一般的瀏覽，一列可看到較多欄位 |
+| profile | [DataProfile](components/list/DataProfile.md) | 分開的卡片，左側圓形頭像，中間標題與副標 | 右側的 ⋮ 選單 | 以人或物為主體、資訊精簡的表 |
+| card | [DataCard](components/list/DataCard.md) | 分開的卡片，上下四層：頭像與標題、大圖、標題與摘要、動作 | 第 4 層，左右各兩格 | 圖片與說明並重的表 |
+| gallery | [DataGallery](components/list/DataGallery.md) | 格狀排列的方格，正方形圖片加上標題與副標，手機上為兩欄 | 右下角的 ⋮ 選單 | 以圖片為主的表 |
+| table | [DataTable](components/list/DataTable.md) | 表格 | 無 | 比對多個欄位 |
 
-- **gallery 須搭配 `ListPage` 的 `layout="grid"`**，其餘維持預設的 `list`（見 [ListLayout](components/ListLayout.md)）。分組時每一組各自排列，組的標題一律佔一整行
+- **gallery 須搭配 `ListPage` 的 `layout="grid"`**，其餘維持預設的 `list`（見 [ListLayout](components/list/ListLayout.md)）。分組時每一組各自排列，組的標題一律佔一整行
 - **table 走 `ListPage` 的 `#rows` slot**，整批交給 `DataTable`。表格沒有多選——要批次操作就用其他版面
 - **deck、profile、card、gallery 皆支援長按多選**，接法相同：`v-bind` 上 `ListPage` slot 給的 `props`。多選模式下各版面的動作皆隱藏
 - **排序與分組與版面無關**：順序來自 `useListPage`（`defaultSort` 或使用者選的排序）與 `groupRows`，各版面皆依同一順序呈現；gallery 為由左往右、再由上往下
-- **間距、陰影與點擊、選取的樣式為各版面共用**，定義於 `src/styles/list.css`（見 [ListLayout](components/ListLayout.md) 的「共用的樣式」）
+- **間距、陰影與點擊、選取的樣式為各版面共用**，定義於 `src/styles/list.css`（見 [ListLayout](components/list/ListLayout.md) 的「共用的樣式」）
 - 範本見 `template/pages/` 的 `list.vue`（deck）、`profile-list.vue`、`card-list.vue`、`gallery-list.vue`
 
-詳細頁另有選用的標頭區塊（[DetailHeader](components/DetailHeader.md)），結構為 card 去掉第 1 層，由 `DetailPage` 的 `header` 開啟。
+詳細頁另有選用的標頭區塊（[DetailHeader](components/record/DetailHeader.md)），結構為 card 去掉第 1 層，由 `DetailPage` 的 `header` 開啟。
 
 ### 列表的行為
 - **用 `<KeepAlive>` 保留展開狀態**（`GroupedList` 的收合、多選、搜尋字串…），注意事項見 [architecture.md](architecture.md#keepalive-的規則)。捲動位置不是元件狀態，由 router 另外記（回到看過的頁面會回到原本的位置，新頁面從頂端開始）
@@ -151,7 +151,7 @@
 
 ### 同一頁面中的多張表
 
-**將各列表放入 `TabPage` 的頁籤即可，不需另行登記**（見 [TabPage.md](components/TabPage.md)）；同時顯示多個列表時放入 `DashboardPage` 的面板，行為相同（見 [DashboardPage.md](components/DashboardPage.md)）。`TabPage` provide 一份「共用的列表控制」（`useSharedListControls`），其中的 `useListPage` 不自行登記，改為加入此控制：
+**將各列表放入 `TabPage` 的頁籤即可，不需另行登記**（見 [TabPage.md](components/panel/TabPage.md)）；同時顯示多個列表時放入 `DashboardPage` 的面板，行為相同（見 [DashboardPage.md](components/panel/DashboardPage.md)）。`TabPage` provide 一份「共用的列表控制」（`useSharedListControls`），其中的 `useListPage` 不自行登記，改為加入此控制：
 
 - **搜尋字串共用一條**：輸入一次，各頁籤的列表皆隨之過濾
 - **同一張表共用一份篩選與排序**：例如各頁籤為同一張表依狀態切分的列表（以 `useListPage` 的 `scope` 只留該狀態的列），條件套用於所有頁籤，抽屜中該表只有一個 chip
@@ -169,7 +169,7 @@
 
 **拆出的列表以 props 接受條件**，同一個元件可用於不同頁面，例如另一頁只列某一種狀態。常用且意義固定的條件宜定為專屬的 prop（如 `status`）；需要任意條件時，另提供通用的 `scope` prop，於元件內與專屬的條件合併。
 
-**不使用 `TabPage` 時，由頁面手動登記**：各表的 `useListPage` 關閉自動登記，並共用頁面建立的一條搜尋字串，由頁面以 `useListControls` 一次登記全部的表。寫法見 [ListPage.md](components/ListPage.md#手動登記多張表)。
+**不使用 `TabPage` 時，由頁面手動登記**：各表的 `useListPage` 關閉自動登記，並共用頁面建立的一條搜尋字串，由頁面以 `useListControls` 一次登記全部的表。寫法見 [ListPage.md](components/page/ListPage.md#手動登記多張表)。
 
 ---
 
@@ -192,7 +192,7 @@
 | `select` | `options` 的宣告順序（狀態有先後，照字典序排不對）。`options` 沒有的值（`allowCustom` 打的）一律排最後 |
 | 其他 | 欄位值；`duration` 換算成秒、`date` 比時間、空值一律最後（不管升降） |
 
-**排序與分組是二選一的**：分組（`groupRows`）會把原本的順序壓成組內順序，所以使用者選了排序卻只看到每個月裡面重排，會很困惑。頁面自行判斷，框架不介入：`useListPage` 回傳的 `sort` 有值時，交給 `ListPage` 的是 `rows` 而非 `groups`（寫法見 [ListPage.md](components/ListPage.md#分組與頁籤)）。
+**排序與分組是二選一的**：分組（`groupRows`）會把原本的順序壓成組內順序，所以使用者選了排序卻只看到每個月裡面重排，會很困惑。頁面自行判斷，框架不介入：`useListPage` 回傳的 `sort` 有值時，交給 `ListPage` 的是 `rows` 而非 `groups`（寫法見 [ListPage.md](components/page/ListPage.md#分組與頁籤)）。
 
 排序一改，`ListPage` 發布給 `useListOrder` 的順序跟著改，所以詳細頁的上下一筆與左右滑動自動跟畫面一致。
 

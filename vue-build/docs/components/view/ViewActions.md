@@ -1,6 +1,6 @@
 # ViewActions
 
-view 的列上動作（`actions`）的呈現元件，依 `variant` 提供三種排法。`row` 與 `menu` 略過 `null`，`slots` 將其保留為空格；沒有任何動作時不渲染。按下後交由 `useRunAction` 執行，`confirm` 與錯誤提示皆會生效（見 [actions.md](../actions.md#列上的動作)）。
+view 的列上動作（`actions`）的呈現元件，依 `variant` 提供三種排法。`row` 與 `menu` 略過 `null`，`slots` 將其保留為空格；沒有任何動作時不渲染。按下後交由 `useRunAction` 執行，`confirm` 與錯誤提示皆會生效（見 [actions.md](../../actions.md#列上的動作)）。
 
 | `variant` | 排法 | 使用者 |
 | --- | --- | --- |
@@ -8,7 +8,7 @@ view 的列上動作（`actions`）的呈現元件，依 `variant` 提供三種�
 | `menu` | 收入 ⋮ 選單，依陣列順序由上往下排列，每項顯示圖示與 `label` | profile、gallery |
 | `slots` | 左右各兩格：前兩個靠左、後兩個靠右，`null` 保留為空格，超過四個的部分不顯示 | card、detail 標頭 |
 
-**一般不需要直接使用**：[DataList](DataList.md) 已將 `row` 置於右下角欄位的下一列，並在多選模式下隱藏；[DataProfile](DataProfile.md) 已將 `menu` 置於卡片右側，[DataGallery](DataGallery.md) 已將 `menu` 置於格子右下角；[DataCard](DataCard.md) 已將 `slots` 置於第 4 層，[DetailHeader](DetailHeader.md) 已將 `slots` 置於圖片下方。
+**一般不需要直接使用**：[DataList](../list/DataList.md) 已將 `row` 置於右下角欄位的下一列，並在多選模式下隱藏；[DataProfile](../list/DataProfile.md) 已將 `menu` 置於卡片右側，[DataGallery](../list/DataGallery.md) 已將 `menu` 置於格子右下角；[DataCard](../list/DataCard.md) 已將 `slots` 置於第 4 層，[DetailHeader](../record/DetailHeader.md) 已將 `slots` 置於圖片下方。
 
 ## Usage
 
@@ -37,4 +37,4 @@ view 的列上動作（`actions`）的呈現元件，依 `variant` 提供三種�
 - **`menu` 的選單於第一次按下 ⋮ 時才掛上**：每列僅有一顆原生按鈕，`v-menu` 在該列第一次開啟時才建立，之後的開關交由 `v-menu` 綁定於該按鈕的事件處理。上千列的列表因此不會有上千個 `v-menu` 實例
 - **按鈕為原生 `<button>` 加 `v-icon`，而非 `v-btn`**：deck 可能有上千列，`v-btn` 的實例成本較高；且即使未設定 `to`，`v-btn` 仍會呼叫 vue-router 的 `useLink`，開發版中每次導覽都會因此重新計算。按鈕不帶波紋等效果
 - **放不下時換行**：`row` 與 `slots` 皆為 `flex-wrap`，一般頁面中放得下，不會換行
-- **dashboard 中的窄版**：位於 dashboard 的面板中時，`'text'` 的按鈕另繪一個圖示並一律帶 `aria-label`；所在面板寬度小於 200px（3 格以下）時改顯示圖示，外觀與其他圖示按鈕相同；此時整列靠左，`slots` 不分左右、不保留空格（見 [dashboard.md](../dashboard.md) 的「面板內容的寬度」）。一般頁面不繪這個圖示，上千列的列表不會多出同樣數量的 `v-icon`
+- **dashboard 中的窄版**：位於 dashboard 的面板中時，`'text'` 的按鈕另繪一個圖示並一律帶 `aria-label`；所在面板寬度小於 200px（3 格以下）時改顯示圖示，外觀與其他圖示按鈕相同；此時整列靠左，`slots` 不分左右、不保留空格（見 [dashboard.md](../../dashboard.md) 的「面板內容的寬度」）。一般頁面不繪這個圖示，上千列的列表不會多出同樣數量的 `v-icon`

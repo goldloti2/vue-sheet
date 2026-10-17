@@ -1,5 +1,5 @@
 <!-- 複製到 src/pages/__table__/new.vue
-     版型見 docs/components/FormPage.md；欄位怎麼變成輸入元件見 DataForm.md；
+     版型見 docs/components/page/FormPage.md；欄位怎麼變成輸入元件見 DataForm.md；
      初始值的三層來源見 docs/schema.md -->
 <route lang="json5">
 { meta: { title: '新增範本' } }

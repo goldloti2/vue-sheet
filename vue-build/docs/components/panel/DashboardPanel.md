@@ -2,7 +2,7 @@
 
 [DashboardPage](DashboardPage.md) 中的一個面板：外框、小外殼（標題列與展開鈕）與關注點，並控制面板內容的各項登記何時生效。必須放在 `DashboardPage` 之內，否則拋出錯誤。
 
-面板中的頁面不需修改：列表的搜尋自動加入 dashboard 共用的那一份，詳細頁的 id 改取自互動的選取，FAB 與 App Bar 的動作由 dashboard 決定何時顯示（見 [dashboard.md](../dashboard.md) 的「嵌入既有頁面」）。
+面板中的頁面不需修改：列表的搜尋自動加入 dashboard 共用的那一份，詳細頁的 id 改取自互動的選取，FAB 與 App Bar 的動作由 dashboard 決定何時顯示（見 [dashboard.md](../../dashboard.md) 的「嵌入既有頁面」）。
 
 ## Usage
 

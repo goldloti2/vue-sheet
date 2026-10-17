@@ -1,6 +1,6 @@
 # PasswordLoginForm
 
-帳號與密碼兩欄加一顆登入鈕，給 `authMethod: 'custom'` 用（對應後端的帳號密碼示範模組，見 [docs/auth.md](../../../docs/auth.md)）。只有表單本身。
+帳號與密碼兩欄加一顆登入鈕，給 `authMethod: 'custom'` 用（對應後端的帳號密碼示範模組，見 [docs/auth.md](../../../../docs/auth.md)）。只有表單本身。
 
 搭 `useLogin` 用（`composables/auth/`）：`submit` 直接接它的 `login`，`loading` 接 `submitting`。
 

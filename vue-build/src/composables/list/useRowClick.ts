@@ -14,7 +14,7 @@ interface UseRowClickOptions {
 }
 
 // 列表中的一列（DataList、DataProfile 等）的點擊：長按進入多選、多選模式下切換勾選，其餘導覽至 to 或選取。
-// 連結為自行組 href 的 <a>，不使用 RouterLink（理由見 docs/components/DataList.md）
+// 連結為自行組 href 的 <a>，不使用 RouterLink（理由見 docs/components/list/DataList.md）
 export function useRowClick (options: UseRowClickOptions) {
   const router = useRouter()
   const longPress = useLongPress(options.onLongpress)

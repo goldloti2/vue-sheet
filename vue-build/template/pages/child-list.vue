@@ -1,6 +1,6 @@
 <!-- 複製到 src/pages/__parent__/[id]/__table__.vue（選用：詳細頁的子表區塊要「展開」才需要）
      → /__parent__/:id/__table__，一條父子關聯一份，同一個檔服務所有父列
-     子表區塊怎麼擺見 docs/components/ChildList.md，版型見 ListPage.md -->
+     子表區塊怎麼擺見 docs/components/page/ChildList.md，版型見 ListPage.md -->
 <route lang="json5">
 { meta: { title: '子表' } }
 </route>

@@ -195,7 +195,7 @@ export function useEditForm<Row extends HasId> (
   const { submitting, error, run } = useSubmitState()
   const { fieldErrors, check, reset: resetErrors } = useValidation(schema, () => form.value)
 
-  // 同一個網址共用一個 KeepAlive 實例，回來要重置（見 docs/architecture.md）
+  // 同一個網址共用一個 KeepAlive 實例，回來要重置（見 docs/pages.md）
   onActivated(() => {
     form.value = row.value ? { ...row.value } as Row : null
     error.value = null

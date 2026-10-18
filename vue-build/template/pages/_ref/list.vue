@@ -1,6 +1,6 @@
 <!-- 選用：複製到 src/pages/__table__/_ref/__Table__List.vue
      只供其他頁面引用的列表（_ref/ 不產生路由）：放進 TabPage 的頁籤（見 tab-list.vue）、dashboard 的面板，
-     或其他頁面。以 props 傳入條件，同一個元件可用於不同頁面；說明見 docs/ui.md 的「同一頁面中的多張表」 -->
+     或其他頁面。以 props 傳入條件，同一個元件可用於不同頁面；說明見 docs/search.md 的「同一頁面中的多張表」 -->
 <script lang="ts" setup>
   import type { __Table__Row } from '@/schema/tables/__table__'
   import DataList from '@/components/ui/list/DataList.vue'

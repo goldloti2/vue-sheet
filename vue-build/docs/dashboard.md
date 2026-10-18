@@ -235,7 +235,7 @@ App Bar 依狀態顯示：
 
 ## 搜尋、篩選與排序
 
-沿用「同一頁面中的多張表」的機制（見 [ui.md](ui.md#同一頁面中的多張表)）：
+沿用「同一頁面中的多張表」的機制（見 [search.md](search.md#同一頁面中的多張表)）：
 
 - `DashboardPage` 統一登記一次 `useListControls`，`tables` 列出各列表面板的表；各面板的 `useListPage` 偵測到位於 dashboard 中時不自行登記，並共用同一條 `query`
 - **搜尋字串全頁共用**，打一次字，所有列表面板一起過濾

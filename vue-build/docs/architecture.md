@@ -1,6 +1,6 @@
 # 前端架構
 
-程式碼怎麼分、頁面之間怎麼接力：模組結構、KeepAlive 的規則、動作完成後的導覽、離開表單前的確認。動作本身（含連續動作與快速編輯對話框）見 [actions.md](actions.md)。
+程式碼與檔案如何組織：模組化的範圍、資料夾，以及頁面範本的型態。頁面在執行時如何與外殼、導覽配合見 [pages.md](pages.md)，動作本身（含連續動作與快速編輯對話框）見 [actions.md](actions.md)。
 
 > **前置**：先看過 [schema.md](schema.md) 會比較好懂（這裡常提到 schema 與 row 上的 getter）。
 
@@ -82,64 +82,30 @@ src/
 
 ---
 
-## KeepAlive 的規則
+## 頁面範本的五種型態
 
-列表頁與 detail 頁都被 `<KeepAlive :max="50">` 快取，key 是 `route.fullPath`。由此而來的六條規則：
+不論套用於哪張表皆為同一套範本，差別僅在開啟了哪些功能。實際的檔案見 [template/](../template/)，各頁面的外觀與用途見 [design/](design/README.md)。
 
-- **`[id]` 頁面一律用 `useRouteId()`**，不要自己 `watch` `route.params.id`。一個實例終其一生只對應一個網址，路由參數對它而言是常數；跟著路由走的話離開中的頁面會讀到目的地的 id（拿掉 `:key` 的話 `useRouteId()` 會在開發模式印警告）
-- **快取變了就讓它變**。資料真的被刪掉時，離開中的頁面顯示「找不到這筆資料」是正確的
-- **「每次進場都該重算」的東西放 `onActivated`**，因為同一個網址共用同一份實例、`setup` 不會重跑。兩種表單都在 `onActivated` 重建表單並清掉錯誤：新增頁的網址固定（不重建會停在上次的內容、也讀不到新的預設值），編輯頁「離開再回到同一筆」也是同一份實例（不重置的話上次沒存的輸入會留著，很容易被誤存）
-- **Teleport 出去的浮動 UI 自己管進出場**（`PageFab`、`RecordNav` 送到 `body`），用 `onActivated`／`onDeactivated`，否則離開的頁面會把按鈕留在畫面上
-- **列表載入中不要用 `v-if` 把列表整個換掉**。`v-if="loading"` / `v-else` 會在每次背景重新整理（同步鈕會重抓所有已載入的表）時卸載重建，`GroupedList` 的展開狀態就沒了。用 `PageState` 的 `spinner="linear"` 就對了——它把長條加在內容上面而不是取代內容
+頁面的主體不在範本中，而在 `components/ui/page/`、`components/ui/panel/` 的版型元件與 `composables/page/` 的資料層；**範本只是將它們接起來的十幾行**，因此每個頁面檔中留下的皆為該表專屬的內容（哪些欄位、哪些動作）。
 
-- **捲動位置不是元件狀態**，KeepAlive 管不到（它保留的是元件，視窗的捲動在元件外面）。router 自己記一份 `fullPath → scrollY`：`beforeEach` 存、`scrollBehavior` 還原，上限也是 50 筆。返回鍵優先用瀏覽器記的 `savedPosition`，沒看過的頁面回到頂端
-
-會有這些規則，是因為**被快取的頁面是全速運轉的**，理由見文末的設計取捨。
-
----
-
-## 完成動作後的導覽
-
-新增／編輯／刪除完成後要離開頁面，用 `@/router` 的 `leaveAfterAction(fallback)`，**不要用 `router.push`**。它走瀏覽器的返回；沒有 App 內的上一頁時，才 replace 到 `fallback`（例如 `'/表名'`）。
-
-`push` 會把已經完成任務的表單頁留在歷史裡，按上一頁又回到它——編輯頁是舊表單，刪除後的 detail 更是已經不存在的資料。
-
----
-
-## 離開表單前先問
-
-由 `useLeaveGuard` 的 `router.beforeEach` 統一處理——返回鍵、導覽列、改網址、表單底部的取消全走同一條（取消鈕自己不問，否則會問兩次）。要不要問看兩件事：
-
-- **在[連續動作](actions.md#連續動作流程)第二步之後一律問**，文案是「是否放棄未儲存的變更（包含之前的變更）？」——這張表單可能一個字都還沒填，但前面的步驟已經寫了東西，離開等於整條收回
-- **不在流程裡**就看表單有沒有改動（`useCreateForm`／`useEditForm` 登記的 `dirty` getter）
-
-說不就回傳 `false` 擋下導覽，頁面原地不動；瀏覽器返回鍵被擋下時 vue-router 會自己把歷史位置撥回來。`runStep` 自己的導覽不會誤觸（它是等 `replace` 完成才登記的），送出成功後的離開也不會被問（`resumeStep` 已經清掉等待中的步驟）。
-
----
-
-## 頁面範本的四種型態
-
-不管套到哪張表都是同一套範本，差別只在開了哪些功能。實際檔案見 [template/](../template/)。
-
-骨架不在範本裡，而在 `components/ui/page/` 的版型元件與 `composables/page/` 的資料層——**範本只是把它們接起來的那十幾行**，所以每個頁面檔留下的都是這張表專屬的東西（哪些欄位、哪些動作）。
-
-| 型態 | 範本 | 資料層 + 版型 | 頁面自己寫什麼 |
+| 型態 | 範本（`template/pages/`） | 資料層與版型 | 頁面須決定的事 |
 | --- | --- | --- | --- |
-| **列表**（list） | `pages/list.vue` | `useListPage` + `ListPage` | 每列四個角、要不要多選、FAB 放什麼；分組給 `groups`（`GroupedList`）、表格走 `#rows` slot（`DataTable`），頁籤自己包 `TabPage` |
-| **詳細**（detail） | `pages/detail.vue` | `useRecordPage` + `DetailPage` | 欄位動作、slot 裡的子表格或說明 |
-| **表單**（form） | `pages/new.vue`、`pages/edit.vue` | `useCreateForm`／`useEditForm` + `FormPage` | 幾乎不用寫，欄位與順序都在 schema |
-| **總覽**（dashboard） | 🔲 還沒有 | — | 目前沒有具體需求，保留位置 |
+| **列表**（list） | `list.vue`（deck），另有 `profile-list.vue`、`card-list.vue`、`gallery-list.vue` | `useListPage` + `ListPage` | 版面與 view、是否多選、分組、FAB |
+| **頁籤**（tab） | `tab-list.vue` + `_ref/list.vue` | `TabPage`，各頁籤中為 `useListPage` + `ListPage` | 依哪個欄位分頁籤、各頁籤的內容 |
+| **詳細**（detail） | `detail.vue`；子表的完整列表為 `child-list.vue` | `useRecordPage` + `DetailPage` | 選用的標頭、欄位的動作、子表區塊等 slot 中的內容 |
+| **表單**（form） | `new.vue`、`edit.vue` | `useCreateForm`／`useEditForm` + `FormPage` | 幾乎不需撰寫，欄位與順序由 schema 決定 |
+| **儀表板**（dashboard） | `dashboard.vue` | `DashboardPage` + `DashboardPanel`，面板中放各表 `_ref/` 中的列表與詳細頁 | 放入哪些面板、各自的大小、是否開啟互動模式 |
 
-版面真的不一樣（表格式、混合版面）就不套版型元件，資料層仍然共用；那時要自己 `useListOrder` 發布畫面上的順序。四種頁面的載入中／失敗／找不到都由 `PageState` 一份處理。
+版面與上述皆不同時（例如自訂的排列方式），不套用版型元件，資料層仍可共用；此時須自行以 `useListOrder` 發布畫面上的順序。各型態的載入中、載入失敗與找不到資料，皆由同一個 `PageState` 處理。
 
-`detailOrder` 跟 `formOrder` 故意分開，因為兩邊需求不一定相同。
+`detailOrder` 與 `formOrder` 刻意分開，因為兩者的需求不一定相同。
 
 ---
 
 ## 設計取捨
 
 **為什麼 KeepAlive 的 key 要帶完整網址**
-不帶的話，同一個路由換 id（`/表名/A` → `/表名/B`）對 Vue 而言是同一個元件、同一個 vnode，會就地更新：頁面須自行跟著 id 重新載入，各筆的元件狀態也無法分開保留。帶完整網址後，一個實例只對應一個網址，路由參數對它而言是常數（見上方 `useRouteId` 的規則）。代價是 KeepAlive 從「每個元件一份」變成「每個網址一份」，所以要配 `max` 收斂；連續翻超過 50 筆不回列表的話，列表頁會被擠掉、展開狀態就沒了。
+不帶的話，同一個路由換 id（`/表名/A` → `/表名/B`）對 Vue 而言是同一個元件、同一個 vnode，會就地更新：頁面須自行跟著 id 重新載入，各筆的元件狀態也無法分開保留。帶完整網址後，一個實例只對應一個網址，路由參數對它而言是常數（見 [pages.md](pages.md#keepalive-的規則) 中 `useRouteId` 的規則）。代價是 KeepAlive 從「每個元件一份」變成「每個網址一份」，所以要配 `max` 收斂；連續翻超過 50 筆不回列表的話，列表頁會被擠掉、展開狀態就沒了。
 
 **為什麼換頁動畫用 View Transitions，而非 `<Transition>`**
 `<Transition>` 須看到新舊兩個不同的元件才會播放。dashboard 的展開與縮回網址不變，KeepAlive 的 key 相同，前後是同一個元件，`<Transition>` 無從觸發。View Transitions 由瀏覽器截下 DOM 更新前後的畫面再播放動畫，不論前後是否為同一個元件，因此換頁與展開共用同一套。共用的零件在 `composables/shell/viewTransition.ts`（是否播放、開始一次轉場並於截好舊畫面後交回「完成」與「略過」、寫入 `<html>` 的屬性），dashboard 面板內的轉場亦使用；換頁的流程在 `router/index.ts`：
@@ -155,4 +121,13 @@ src/
 舊做法（`<Transition>` + `<KeepAlive>`）另有兩個限制，改用 View Transitions 後皆不復存在：離場的一側套用的是該 vnode 上次啟用時的 transition hooks，方向須改以屬性選擇器讀取；頁面的 root 須為單一元素，因此三個版型都在外面包一層 `div`（仍保留，見 [components/page/PageState.md](components/page/PageState.md)）。
 
 **為什麼被快取的頁面還在運轉**
-KeepAlive 的 `deactivate` 只搬 DOM，不會暫停元件的 effect；而 `onDeactivated` 是 post-render，比 pre-flush 的 `watch` 還晚。所以被快取的頁面仍然會對外部變化重新計算、重新渲染——而外面的世界已經換頁了。舊的換頁動畫中，離場的頁面是活的 DOM，這直接造成「閃一下錯誤內容」；改用 View Transitions 後離場的一側是截圖，不再看得到，但頁面回到畫面時仍帶著背景期間算出的狀態，上面的規則都是為此而存在。流進被快取頁面的東西只有兩種：路由參數（讀一次就固定）與共用快取（讓它變）。
+KeepAlive 的 `deactivate` 只搬 DOM，不會暫停元件的 effect；而 `onDeactivated` 是 post-render，比 pre-flush 的 `watch` 還晚。所以被快取的頁面仍然會對外部變化重新計算、重新渲染——而外面的世界已經換頁了。舊的換頁動畫中，離場的頁面是活的 DOM，這直接造成「閃一下錯誤內容」；改用 View Transitions 後離場的一側是截圖，不再看得到，但頁面回到畫面時仍帶著背景期間算出的狀態，[pages.md](pages.md#keepalive-的規則) 中的規則都是為此而存在。流進被快取頁面的東西只有兩種：路由參數（讀一次就固定）與共用快取（讓它變）。
+
+**為什麼表單的按鈕在螢幕最底端**
+「取消」與「送出」始終位於拇指可及之處，不必將長表單捲到最後才能按到。表單本來就是「按下才算完成」的頁面，此時不應讓使用者分心切換頁面，因此直接取代底部導覽列。
+
+**為什麼 App Bar 動作走 provide/inject、FAB 走 Teleport**
+App Bar 屬於 `AppShell`，頁面只需將動作交給它，不需實際搬移 DOM；FAB 為 `position: fixed`，放在頁面中時，帶有 `transform` 或 containment 的祖先（例如 dashboard 的面板）會成為它的定位基準，因此送至 `body`。換頁動畫中兩者皆另有 `view-transition-name`，不隨頁面滑動（見上方「為什麼換頁動畫用 View Transitions」）。
+
+**為什麼每一塊都是單一 setter**
+三處皆經由同一個 `registerActions`（`useActionSlot.ts`），同一時間只採用一個頁面的動作。因此必須以 `isActive` 擋下被 KeepAlive 快取的頁面：這些頁面仍在全速運轉（見 [pages.md](pages.md#keepalive-的規則)），其動作一旦改變，便會蓋掉目前頁面的動作。

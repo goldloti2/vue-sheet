@@ -167,7 +167,7 @@ export const useTablesStore = defineStore('tables', () => {
     return refresh(true)
   }
 
-  // 開存檔點。一次只能一個：套疊會蓋掉外層的存檔點，所以直接拒絕（見 docs/architecture.md）
+  // 開存檔點。一次只能一個：套疊會蓋掉外層的存檔點，所以直接拒絕（見 docs/actions.md 的「連續動作」）
   function beginFlow (): void {
     if (activeFlow.value) {
       throw new Error('上一個流程還沒結束')

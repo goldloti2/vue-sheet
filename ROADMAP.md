@@ -112,7 +112,7 @@
 - 批次刪除走動作的 `confirm`
 
 ### 連續動作
-設計與實作見 [vue-build/docs/actions.md](vue-build/docs/actions.md)，離開前的確認見 [vue-build/docs/architecture.md](vue-build/docs/architecture.md)。
+設計與實作見 [vue-build/docs/actions.md](vue-build/docs/actions.md)，離開前的確認見 [vue-build/docs/pages.md](vue-build/docs/pages.md)。
 - 流程存檔點 `beginFlow` / `commitFlow` / `rollbackFlow`：把一段流程的快取與佇列改動一次還原；套疊直接拋錯，流程進行中 `flush` 會被擋下
 - `useFlow.ts`：`runFlow`（外殼：存檔點 + commit / rollback）、`runStep`（開表單等送出）、`resumeStep`（表單交棒）、`FlowCancelled`、`hasEarlierSteps`
 - `router.afterEach` 中止等待中的步驟（reject）並回滾；`useCreateForm`／`useEditForm` 送出成功後先問 `resumeStep`

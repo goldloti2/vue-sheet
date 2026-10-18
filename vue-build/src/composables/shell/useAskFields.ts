@@ -21,7 +21,7 @@ interface FieldsDialogState {
   showErrors: boolean
 }
 
-// 全 App 一個「問幾個欄位」對話框，由 AppShell 渲染（見 docs/architecture.md）
+// 全 App 一個「問幾個欄位」對話框，由 AppShell 渲染（見 docs/pages.md）
 export const fieldsDialog = shallowReactive<FieldsDialogState>({
   open: false,
   title: '',

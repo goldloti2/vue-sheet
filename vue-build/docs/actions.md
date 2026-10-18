@@ -2,7 +2,7 @@
 
 畫面上可以按的東西：如何描述一個動作、可以放在哪裡、如何執行，以及內建的 builder、連續動作與快速編輯對話框。
 
-> **前置**：畫面各部位的名稱（App Bar、FAB、底部動作列）見 [ui.md](ui.md)。完成動作後如何離開頁面、表單的離開確認見 [architecture.md](architecture.md)。
+> **前置**：畫面各部位的名稱（App Bar、FAB、底部動作列）見 [design/README.md](design/README.md)。完成動作後如何離開頁面、表單的離開確認見 [pages.md](pages.md)。
 
 > **標記**：沒有標記＝已經實作。🔶 部分實作、🔲 尚未實作。詳細進度見 [ROADMAP.md](../../ROADMAP.md)。
 
@@ -151,7 +151,7 @@ const fieldActions: FieldActions<__Table__Row> = {
 - **流程進行中不能推送**：`flush()` 拒絕執行（同步鈕本來就因為表單開著而停用，見 [store.md](store.md)）
 - **流程掛在起點那張表**的 `use表名Actions` 底下，跨表也一樣
 - **流程不能套疊**：存檔點只有一格，第二個 `beginFlow` 直接拋錯
-- **中途離開時的確認**（第二步之後一律詢問）見 [architecture.md](architecture.md#離開表單前先問)
+- **中途離開時的確認**（第二步之後一律詢問）見 [pages.md](pages.md#離開表單前先問)
 
 連接器只有兩條規則：**只用 `runStep` 導覽到表單；結尾一定要有一個離開的導覽。**
 

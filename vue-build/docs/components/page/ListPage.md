@@ -6,7 +6,7 @@
 
 **搜尋與排序來自該 composable，而非本元件**：`useListPage` 內部呼叫 `useListControls`，因此使用它時 App Bar 即出現放大鏡、篩選鈕與排序鈕（欄位須列於 `searchable`／`sortable`）。位於 `TabPage` 之內時，改為加入 `TabPage` 的共用控制，不自行登記；不需要搜尋，或同一頁面須手動登記多張表時，傳入 `{ search: false }`，見下方「手動登記多張表」。
 
-**選了排序就別再分組**：回傳的 `sort` 不是 null 時把 `groups` 換成 `rows`，見 [ui.md 的排序](../../ui.md#排序)。
+**選了排序就別再分組**：回傳的 `sort` 不是 null 時把 `groups` 換成 `rows`，見 [search.md 的排序](../../search.md#排序)。
 
 ## Usage
 
@@ -60,7 +60,7 @@ const groups = computed(() => sort.value ? undefined : groupRows(rows.value, gro
 </ListPage>
 ```
 
-**頁籤**：將列表拆成只供引用的元件（`_ref/`），每個頁籤放一個，各自以 `useListPage` 的 `scope` 只留該頁籤的列；搜尋、篩選與排序由 `TabPage` 統一登記並跨頁籤共用（見 [ui.md](../../ui.md#同一頁面中的多張表)，範本為 `template/pages/tab-list.vue` 與 `template/pages/_ref/list.vue`）。每個頁籤各有一個 `ListPage`，各自計算 FAB、多選與列表順序，只有當前頁籤那份會生效（靠 `TabPanel` 的訊號）。發布順序時會先 `flattenGroups`，與畫面上的先後一致。
+**頁籤**：將列表拆成只供引用的元件（`_ref/`），每個頁籤放一個，各自以 `useListPage` 的 `scope` 只留該頁籤的列；搜尋、篩選與排序由 `TabPage` 統一登記並跨頁籤共用（見 [search.md](../../search.md#同一頁面中的多張表)，範本為 `template/pages/tab-list.vue` 與 `template/pages/_ref/list.vue`）。每個頁籤各有一個 `ListPage`，各自計算 FAB、多選與列表順序，只有當前頁籤那份會生效（靠 `TabPanel` 的訊號）。發布順序時會先 `flattenGroups`，與畫面上的先後一致。
 
 ## 手動登記多張表
 
@@ -83,6 +83,17 @@ useListControls(query, {
 - **每張表各有一份 `Filters`，同時生效**：各列表以各自的那一份交給 `useFilter`，切換表時條件不會互相帶入
 - **`current` 為頁面目前所在的表**（值與 `tableLabel` 相符），抽屜開啟時先停在該表，使用者仍可自行切換
 - 傳入 `{ search: false }` 的列表，即使位於 `TabPage` 之內，亦不加入其共用控制
+
+## 各種版面
+
+每一列的呈現方式由放進 default slot 的元件決定（deck 為 [DataList](../list/DataList.md)，另有 [DataProfile](../list/DataProfile.md)、[DataCard](../list/DataCard.md)、[DataGallery](../list/DataGallery.md)，以及經由 `#rows` 的 [DataTable](../list/DataTable.md)）；哪個欄位放在哪個位置由頁面定義的 view 指定（`defineView`，card 為 `defineCardView`，見 [DataList](../list/DataList.md#view)）。同一個 view 可交給 deck、profile 或 gallery，換版面不需改寫欄位的對應。各版面的外觀與適用情況見 [design/list.md](../../design/list.md)。
+
+- **gallery 須搭配 `layout="grid"`**，其餘維持預設的 `list`（見 [ListLayout](../list/ListLayout.md)）。分組時每一組各自排列，組的標題一律佔一整行
+- **table 經由 `#rows` slot**，整批交給 `DataTable`。表格不支援多選，需要批次操作時改用其他版面
+- **deck、profile、card、gallery 皆支援長按多選**，接法相同：將 slot 提供的 `props` 以 `v-bind` 綁上。多選模式下各版面的動作皆隱藏
+- **排序與分組與版面無關**：順序來自 `useListPage`（`defaultSort` 或使用者選的排序）與 `groupRows`，各版面皆依同一順序呈現；gallery 為由左往右、再由上往下
+- **間距、陰影與點擊、選取的樣式為各版面共用**，定義於 `src/styles/list.css`（見 [ListLayout](../list/ListLayout.md) 的「共用的樣式」）
+- 範本見 `template/pages/` 的 `list.vue`（deck）、`profile-list.vue`、`card-list.vue`、`gallery-list.vue`
 
 ## 備註
 

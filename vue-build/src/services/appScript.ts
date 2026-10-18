@@ -1,7 +1,6 @@
 // 前端 ↔ Apps Script Web App 的對接層：其他程式碼一律透過這裡打 API，不自己 fetch
 //
-// VITE_APPS_SCRIPT_URL 沒設就走 mock/ 底下的假後端（開發預設）。兩邊回傳的形狀一樣，
-// 所以上線只是在 .env 填一個網址，這個檔案以外的程式碼都不用動；真後端穩定後整個 mock/ 可以刪掉
+// VITE_APPS_SCRIPT_URL 沒設就走 mock/ 底下的假後端（開發預設），兩邊回傳的形狀相同；真後端穩定後整個 mock/ 可以刪掉
 
 import type { ApiResponse, BatchOperation, LoginCredentials, TableData } from './types'
 import type { TableKey } from '@/schema'

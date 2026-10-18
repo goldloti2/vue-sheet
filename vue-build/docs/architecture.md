@@ -20,7 +20,7 @@
          [檔案式路由：自動產生/刪除路由]
 ```
 
-每張表的顯示方式差異大，還有跨表組合的頁面，所以**頁面仍然手寫**；重複的部分靠元件庫、composables、頁面範本壓低。新增或刪除頁面只要動 `pages/` 底下的檔案，路由自動跟著變。
+**頁面仍然手寫**；重複的部分靠元件庫、composables、頁面範本壓低。新增或刪除頁面只要動 `pages/` 底下的檔案，路由自動跟著變。
 
 ---
 
@@ -98,36 +98,4 @@ src/
 
 版面與上述皆不同時（例如自訂的排列方式），不套用版型元件，資料層仍可共用；此時須自行以 `useListOrder` 發布畫面上的順序。各型態的載入中、載入失敗與找不到資料，皆由同一個 `PageState` 處理。
 
-`detailOrder` 與 `formOrder` 刻意分開，因為兩者的需求不一定相同。
-
----
-
-## 設計取捨
-
-**為什麼 KeepAlive 的 key 要帶完整網址**
-不帶的話，同一個路由換 id（`/表名/A` → `/表名/B`）對 Vue 而言是同一個元件、同一個 vnode，會就地更新：頁面須自行跟著 id 重新載入，各筆的元件狀態也無法分開保留。帶完整網址後，一個實例只對應一個網址，路由參數對它而言是常數（見 [pages.md](pages.md#keepalive-的規則) 中 `useRouteId` 的規則）。代價是 KeepAlive 從「每個元件一份」變成「每個網址一份」，所以要配 `max` 收斂；連續翻超過 50 筆不回列表的話，列表頁會被擠掉、展開狀態就沒了。
-
-**為什麼換頁動畫用 View Transitions，而非 `<Transition>`**
-`<Transition>` 須看到新舊兩個不同的元件才會播放。dashboard 的展開與縮回網址不變，KeepAlive 的 key 相同，前後是同一個元件，`<Transition>` 無從觸發。View Transitions 由瀏覽器截下 DOM 更新前後的畫面再播放動畫，不論前後是否為同一個元件，因此換頁與展開共用同一套。共用的零件在 `composables/shell/viewTransition.ts`（是否播放、開始一次轉場並於截好舊畫面後交回「完成」與「略過」、寫入 `<html>` 的屬性），dashboard 面板內的轉場亦使用；換頁的流程在 `router/index.ts`：
-
-- **`beforeResolve` 開始動畫**：呼叫 `document.startViewTransition`，導覽等到舊畫面截好、update callback 被呼叫時才繼續。首次載入不播放
-- **`afterEach` 之後放行**：等 `nextTick`（新頁面的 DOM 已更新）才讓 update callback 結束，瀏覽器隨即截下新畫面。`scrollBehavior` 的捲動排在同一個 `nextTick` 之後的 microtask，早於截圖，因此新畫面已是捲好的位置。dashboard 於 `afterEach` 中改變展開狀態，同樣落在兩次截圖之間
-- **導覽失敗（被取消、被擋下）時略過動畫**：畫面沒變，滑動兩張相同的截圖沒有意義；因重導而沒有走到 `afterEach` 的那一次，於下一次的 `beforeResolve` 略過
-- **滑動的是整個畫面（`root`）的截圖**，而非替內容區命名：`root` 的截圖即為當下看到的畫面，不受捲動位置影響；單獨命名內容區時，元素的位置會隨捲動改變，截圖於動畫中會上下跳動
-- **外殼另外命名**：App Bar、左側抽屜、底部列、FAB、`RecordNav` 各有 `view-transition-name`，因此不在 `root` 的截圖中；舊的直接隱藏、新的不加動畫，與舊做法中「外殼不隨頁面滑動」相同
-- **方向掛在 `<html>` 的 `data-dir`**，於 `afterEach` 寫入，CSS 於動畫開始時才讀取（判定規則見 `router/index.ts`）。同時寫入 `data-transition="page"`，與 dashboard 面板內的轉場（`data-transition="panel"`，見 [dashboard.md](dashboard.md) 的「面板內的轉場」）區分：兩者共用 View Transitions，`root` 只在換頁時滑動
-- **不支援 View Transitions 的瀏覽器，或系統開啟「減少動態效果」時，不播放動畫**，直接切換
-
-舊做法（`<Transition>` + `<KeepAlive>`）另有兩個限制，改用 View Transitions 後皆不復存在：離場的一側套用的是該 vnode 上次啟用時的 transition hooks，方向須改以屬性選擇器讀取；頁面的 root 須為單一元素，因此三個版型都在外面包一層 `div`（仍保留，見 [components/page/PageState.md](components/page/PageState.md)）。
-
-**為什麼被快取的頁面還在運轉**
-KeepAlive 的 `deactivate` 只搬 DOM，不會暫停元件的 effect；而 `onDeactivated` 是 post-render，比 pre-flush 的 `watch` 還晚。所以被快取的頁面仍然會對外部變化重新計算、重新渲染——而外面的世界已經換頁了。舊的換頁動畫中，離場的頁面是活的 DOM，這直接造成「閃一下錯誤內容」；改用 View Transitions 後離場的一側是截圖，不再看得到，但頁面回到畫面時仍帶著背景期間算出的狀態，[pages.md](pages.md#keepalive-的規則) 中的規則都是為此而存在。流進被快取頁面的東西只有兩種：路由參數（讀一次就固定）與共用快取（讓它變）。
-
-**為什麼表單的按鈕在螢幕最底端**
-「取消」與「送出」始終位於拇指可及之處，不必將長表單捲到最後才能按到。表單本來就是「按下才算完成」的頁面，此時不應讓使用者分心切換頁面，因此直接取代底部導覽列。
-
-**為什麼 App Bar 動作走 provide/inject、FAB 走 Teleport**
-App Bar 屬於 `AppShell`，頁面只需將動作交給它，不需實際搬移 DOM；FAB 為 `position: fixed`，放在頁面中時，帶有 `transform` 或 containment 的祖先（例如 dashboard 的面板）會成為它的定位基準，因此送至 `body`。換頁動畫中兩者皆另有 `view-transition-name`，不隨頁面滑動（見上方「為什麼換頁動畫用 View Transitions」）。
-
-**為什麼每一塊都是單一 setter**
-三處皆經由同一個 `registerActions`（`useActionSlot.ts`），同一時間只採用一個頁面的動作。因此必須以 `isActive` 擋下被 KeepAlive 快取的頁面：這些頁面仍在全速運轉（見 [pages.md](pages.md#keepalive-的規則)），其動作一旦改變，便會蓋掉目前頁面的動作。
+`detailOrder` 與 `formOrder` 分開設定。

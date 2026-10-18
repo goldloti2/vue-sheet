@@ -3,7 +3,7 @@ import { sortByKey } from './sort'
 // 分組：純函數，把一批 row 分成巢狀分組。分組鍵不吃 schema，由呼叫端給
 
 export interface GroupLevel<Row> {
-  // 排序用；分開於 label 是為了避免依顯示字串排序出錯（例如「10月」< 「2月」）
+  // 排序用，與 label 分開
   sortKey: (row: Row) => string | number
   // 回傳 null 表示這一列於此層不再往下分：同一組中這類的列併成一個沒有標題的子組
   label: (row: Row) => string | null

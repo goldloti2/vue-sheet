@@ -2,7 +2,7 @@ import { reactive, shallowReactive, watch } from 'vue'
 import router from '@/router'
 
 // 全 App 各一份的小東西，由 AppShell 掛一個實例：是／否確認框與 snackbar。
-// 不走 provide/inject 是因為它們跟頁面的生滅無關，隨時都能叫（動作裡、composable 裡都行）
+// 不經由 provide/inject，動作與 composable 中皆可直接呼叫
 
 // 對話框上的一顆鈕。「取消」永遠在、不用列
 export interface DialogChoice {

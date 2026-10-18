@@ -33,7 +33,7 @@
 
 - **欄位的順序**歸 schema 的 `detailOrder`
 - **區塊的順序**歸頁面：放 `#top` 就在欄位上面、放 default 就在下面，同一個 slot 裡有好幾塊就照寫的順序
-- **想插在某兩個欄位中間**：不支援，也刻意不做（`DetailPage` 得把欄位切段渲染、`DataDetail` 得能只畫部分欄位，為了罕見需求把兩個元件都變複雜）。真的需要就那一頁不用 `DetailPage`，照下面自己排——這個元件的 template 只有二十行，零件都是現成的：
+- **想插在某兩個欄位中間**：不支援。需要時那一頁不使用 `DetailPage`，以現成的零件自行排列：
 
   ```vue
   <PageState :empty="!row" :error="error" :loading="loading">

@@ -99,7 +99,7 @@ export const useTablesStore = defineStore('tables', () => {
     }
   }
 
-  // 推送 + 重抓；推不出去就不重抓，否則會蓋掉未推送的變更
+  // 推送 + 重抓；推不出去就不重抓
   async function refresh (force = false): Promise<boolean> {
     if (!canSync.value || !await flush(force)) {
       return false
@@ -167,7 +167,7 @@ export const useTablesStore = defineStore('tables', () => {
     return refresh(true)
   }
 
-  // 開存檔點。一次只能一個：套疊會蓋掉外層的存檔點，所以直接拒絕（見 docs/actions.md 的「連續動作」）
+  // 開存檔點。一次只能一個，套疊直接拒絕（見 docs/actions.md 的「連續動作」）
   function beginFlow (): void {
     if (activeFlow.value) {
       throw new Error('上一個流程還沒結束')

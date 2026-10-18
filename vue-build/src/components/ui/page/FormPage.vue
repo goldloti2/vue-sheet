@@ -10,7 +10,7 @@
     // 編輯頁才有：先把那一筆載進來
     loading?: boolean
     loadError?: string | null
-    // 送出失敗的訊息，表單要留在畫面上所以不走 PageState
+    // 送出失敗的訊息，不經過 PageState，表單留在畫面上
     error?: string | null
   }>()
 

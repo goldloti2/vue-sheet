@@ -14,7 +14,7 @@ gallery 式列表的**單一格**：上方為正方形圖片，下方為標題�
 
 | 位置 | 顯示於 |
 | --- | --- |
-| `image` | 上方的正方形圖片，周圍留白 8px，裁切填滿；沒有圖片時以同樣大小的灰色方塊佔位，格線才會對齊 |
+| `image` | 上方的正方形圖片，周圍留白 8px，裁切填滿；沒有圖片時以同樣大小的灰色方塊佔位 |
 | `title` | 圖片下方，佔滿寬度，一行，過長時以省略號截斷 |
 | `subtitle` | 標題下方，一行，右側留出 ⋮ 的寬度 |
 | `actions` | 整格右下角的 ⋮ 選單，由 [ViewActions](../view/ViewActions.md) 的 `variant="menu"` 呈現。只有一個動作時亦收入選單；沒有動作時不顯示 ⋮；多選模式下隱藏 |
@@ -43,7 +43,7 @@ gallery 式列表的**單一格**：上方為正方形圖片，下方為標題�
 ## 備註
 
 - **整格固定為 3:4**：寬度由欄寬決定，圖片為正方形，其下剩餘的高度為文字區。手機上文字區約 50–60px，可容納標題與副標各一行
-- **連結與 DataList 相同**：自行組 `href` 的 `<a>`，不使用 `RouterLink`，與 DataList、DataProfile、DataCard 共用 `useRowClick`（理由見 [DataList](DataList.md) 的備註）。⋮ 與連結並列，點擊 ⋮ 不會進入 detail
+- **連結與 DataList 相同**：自行組 `href` 的 `<a>`，不使用 `RouterLink`，與 DataList、DataProfile、DataCard 共用 `useRowClick`。⋮ 與連結並列，點擊 ⋮ 不會進入 detail
 - **勾選圖示疊於圖片左上角**：多選模式下出現，帶有卡片底色的圓形背景；被選取的格子疊上一層主色淡底
 - **外框為直角**：帶有外框與偏向右下的陰影，間隔由 `ListLayout` 的格線負責。間距、陰影與點擊、選取的樣式定義於 `src/styles/list.css`，與其他列表元件共用（見 [ListLayout](ListLayout.md) 的「共用的樣式」）
 - **`content-visibility: auto`**：畫面外的格子不進行排版與繪製。高度由 `aspect-ratio` 依欄寬決定，不需 `contain-intrinsic-size` 的替代值

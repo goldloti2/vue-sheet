@@ -36,8 +36,7 @@ type ColumnType = keyof ColumnTypes
 type ColumnValue<T extends ColumnType> = ColumnTypes[T]['value']
 type ColumnExtra<T extends ColumnType> = ColumnTypes[T] extends { extra: infer Extra } ? Extra : object
 
-// 框架端不知道也不在乎是哪張表的 Row，所以預設是 any：key 退化成 string、value 的 row 退化成 any。
-// 不用 object 是因為 keyof Row 讓 TS 把 Row 判成逆變，TableSchema<XxxRow> 會塞不進 TableSchema<object>
+// 框架端不區分各表的 Row，預設為 any：key 退化成 string、value 的 row 退化成 any
 type AnyRow = any
 
 // Row 裡值型別放得下 Value 的欄位名；id 與 $ 開頭的系統欄位不算

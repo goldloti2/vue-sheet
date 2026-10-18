@@ -2,7 +2,7 @@
 
 確認框，建立在 `AppDialog` 上。左邊永遠一顆「取消」，右邊是呼叫端給的選項（通常只有一顆「確定」），另外帶 loading 狀態與錯誤訊息區。
 
-> **通常不直接用**——動作宣告 `confirm: { title, text }`，或程式裡叫 `confirm(title, text)` 拿 `Promise<boolean>`（見 `README.md`），`AppShell` 掛的那個實例會處理。這個元件只在需要自己管狀態（例如框內要顯示 loading／錯誤）時直接擺。
+> **通常不直接用**——動作宣告 `confirm: { title, text }`，或程式裡叫 `confirm(title, text)` 拿 `Promise<boolean>`（見 [actions.md](../../actions.md#快速編輯對話框)），`AppShell` 掛的那個實例會處理。這個元件只在需要自己管狀態（例如框內要顯示 loading／錯誤）時直接擺。
 
 ## 兩個以上的選項
 

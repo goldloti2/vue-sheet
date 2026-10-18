@@ -85,7 +85,7 @@ npm run build   # 產出靜態檔案到 dist/
 
 | 文件 | 內容 |
 | --- | --- |
-| [ROADMAP.md](ROADMAP.md) | 做到哪裡、還有什麼沒做、刻意不做的是什麼 |
+| [ROADMAP.md](ROADMAP.md) | 做到哪裡、還有什麼沒做 |
 | [CHANGELOG.md](CHANGELOG.md) | 各版本的內容 |
 | [docs/api.md](docs/api.md) | 前後端之間的介面：CRUD API、後端 Hooks、認證與權限 |
 | [docs/auth.md](docs/auth.md) | 認證：前後端的約定、可替換的認證模組、帳號密碼的示範模組 |

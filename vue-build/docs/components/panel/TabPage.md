@@ -2,7 +2,7 @@
 
 頁籤 + 內容區。切換時內容依頁籤順序左右滑動（往右邊的頁籤＝新內容從右進、舊的往左出），方向與換頁動畫一致；動畫本身由 Vuetify 的 `v-window` 提供，不經過換頁動畫的 View Transitions。
 
-**頁籤列不畫在頁面裡**：這個元件把它登記給 `AppShell`，由 App Bar 底下的 extension 顯示，所以捲動內容時頁籤固定在最上面，也不會跟著換頁動畫滑動。頁面只放這個元件、不用管位置；離開頁面（含被 KeepAlive 收起來）時頁籤列自動消失。也因此它需要 `AppShell`，跟 `PageFab`、`useAppBarActions` 一樣。搜尋模式下頁籤仍然留著——搜尋與篩選本來就是跨頁籤生效的。
+**頁籤列不畫在頁面裡**：這個元件把它登記給 `AppShell`，由 App Bar 底下的 extension 顯示，所以捲動內容時頁籤固定在最上面，也不會跟著換頁動畫滑動。頁面只放這個元件、不用管位置；離開頁面（含被 KeepAlive 收起來）時頁籤列自動消失。也因此它需要 `AppShell`，跟 `PageFab`、`useAppBarActions` 一樣。搜尋模式下頁籤仍然留著。
 
 每個頁籤都會被渲染成獨立的面板，看過的會留在 DOM 裡（`v-show` 隱藏），所以各自保有捲動位置與展開狀態。內容不必同構——頁籤只是容器，各放各的。
 
@@ -15,9 +15,9 @@
 | 掛在某個面板裡（元件、或面板內元件呼叫的 composable） | `usePanelActive()` | 「**我**是不是當前面板」 |
 | 在面板外面（頁面層的 composable、`TabPage` 外的東西） | `useCurrentTab()` | 「現在選的是哪個頁籤」 |
 
-同一條規則不要同時接兩個：面板外的東西 `inject` 不到面板，面板裡的東西也不知道自己叫什麼頁籤，所以照位置挑一個就好。`useMultiSelect` 是頁面層，走 `useCurrentTab()`。
+同一條規則只接其中一個，依程式所在的位置挑選。`useMultiSelect` 是頁面層，走 `useCurrentTab()`。
 
-常見用法是依某個 `select` 欄位篩選列表，選項可以直接讀該欄位的 `options`，不用另外維護一份重複的清單（取 `options` 前要先用 `column?.type === 'select'` 縮小型別，這個判斷不能省）。
+常見用法是依某個 `select` 欄位篩選列表，選項直接讀該欄位的 `options`（取 `options` 前要先用 `column?.type === 'select'` 縮小型別，這個判斷不能省）。
 
 ## Usage
 
@@ -41,11 +41,11 @@
 
 - 只要頁籤列、不要內容區的話，直接用 Vuetify 的 `v-tabs`，不用這個元件（自己擺的 `v-tabs` 會跟著內容捲動）
 - 一個畫面同時掛兩個 `TabPage` 會互相蓋掉頁籤列（App Bar 的 extension 只有一份）
-- **不可嵌套**：`TabPage` 與 `DashboardPage` 不可互相嵌套，亦不可嵌套自身。列表只會加入最近的容器，兩層又各自登記 App Bar，搜尋會互相蓋掉；開發模式下於 console 警告
+- **不可嵌套**：`TabPage` 與 `DashboardPage` 不可互相嵌套，亦不可嵌套自身；開發模式下於 console 警告
 - **頁籤中的列表自動共用搜尋**：本元件 provide 一份「共用的列表控制」，各頁籤中的 `useListPage` 不自行登記，改為加入此控制；搜尋字串共用一條，同一張表共用一份篩選與排序，不同的表各有一份，由本元件統一登記一次（見 [search.md](../../search.md#同一頁面中的多張表)）。其中沒有列表時不登記
 - **各頁籤可放不同的表**（例如兩張表的列表），亦可放自其他 `.vue` 檔 import 的列表：各面板掛出各自的 FAB 與 App Bar 動作，搜尋與篩選如上自動共用
 - **同一個頁籤裡的內容仍然共用一組動作**。「不同頁籤不同 FAB」若頁籤只是同一張表的篩選（面板沒有分開），就由頁面自己 `computed(() => 目前頁籤 === 'A' ? actionsA : actionsB)` 餵給 `PageFab`
 - 鍵盤操作是焦點停在頁籤列時用方向鍵（`v-tabs` 底層的 `VSlideGroup` 提供）
-- `v-window` 的兩個 prop 是刻意關掉的，改之前先看清楚：
-  - `:show-arrows="false"` — 預設值是 `undefined`，而判斷式是 `showArrows !== false`，所以不明確關掉就會在內容上疊一層左右箭頭按鈕
-  - `:touch="false"` — 開了就能左右滑動切頁籤。它只綁 `touchstart`/`touchmove`/`touchend`，**桌機用滑鼠拖曳沒有反應**，要測必須用 DevTools 的裝置模擬或真觸控裝置。注意會跟 `DataTable` 的橫向捲動搶手勢
+- `v-window` 的兩個 prop 固定關閉：
+  - `:show-arrows="false"`：須明確設為 `false`，預設值 `undefined` 會顯示左右箭頭
+  - `:touch="false"`：不以左右滑動切換頁籤

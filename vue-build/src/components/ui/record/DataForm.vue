@@ -119,7 +119,7 @@
         @update:model-value="(value) => setFieldValue(column, value)"
       />
 
-      <!-- 時長可以超過 24 小時，原生的 type="time" 塞不下，所以是一般文字框 -->
+      <!-- 時長使用一般文字框，不使用原生的 type="time" -->
       <v-text-field
         v-else-if="column.type === 'duration'"
         :error-messages="errorFor(column)"

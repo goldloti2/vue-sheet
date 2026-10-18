@@ -1,6 +1,6 @@
 # ListPage
 
-列表頁的整頁版型：載入狀態、逐列渲染、右下角 FAB，外加把畫面上的順序發布出去（detail 頁的上／下一筆靠它）。每一列長什麼樣還是頁面自己決定——那是這張表專屬的部分。
+列表頁的整頁版型：載入狀態、逐列渲染、右下角 FAB，外加把畫面上的順序發布出去（detail 頁的上／下一筆靠它）。每一列長什麼樣由頁面自己決定。
 
 搭配 `useListPage(table, schema)` 使用：其依序處理整表 → `scope` → 篩選 → 搜尋，並提供長按多選，回傳的 `rows`／`loading`／`error`／`selection` 直接對應本元件的 prop。選用的 `scope`（`row => boolean`）於篩選與搜尋之前只留部分的列，例如頁籤的狀態。
 
@@ -97,6 +97,6 @@ useListControls(query, {
 
 ## 備註
 
-- **版面真的不一樣才自己組**：總覽頁那種混合版面用不到這個元件，資料層仍然可以用 `useListPage`；那時要自己 `useListOrder(table, computed(() => 畫面上的順序))`，因為只有頁面知道實際排列
-- 空列表就是空的，不會顯示「找不到資料」——那是單筆頁面的狀態（見 [PageState](PageState.md)）
+- **版面真的不一樣才自己組**：總覽頁那種混合版面用不到這個元件，資料層仍然可以用 `useListPage`；那時要自己 `useListOrder(table, computed(() => 畫面上的順序))`
+- 空列表就是空的，不會顯示「找不到資料」（見 [PageState](PageState.md)）
 - **內容區為不具名的 container**（`container-type: inline-size`）：列表元件以 `cqw` 依寬度估計畫面外各列的高度（見 [DataCard](../list/DataCard.md) 的備註）。不具名，不影響 dashboard 以 `@container dashboard-panel` 判斷的窄版

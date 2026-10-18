@@ -36,6 +36,6 @@
 
 ## 備註
 
-- 兩欄有 `autocomplete="username"`／`autocomplete="current-password"`，外面是真的 `<form>`，瀏覽器的密碼管理員才會記住並自動填入
-- 離開登入頁時（`onDeactivated`）會清掉密碼欄。登入頁會被 KeepAlive 留著，不清的話密碼會一直待在記憶體裡
-- 登入頁的 `meta` 兩個都要標：`public: true` 讓沒有 token 也能進來（否則登入頁本身會被導向登入頁），`shell: false` 讓 `AppShell` 不顯示 App Bar、側邊欄與底部導覽列
+- 兩欄有 `autocomplete="username"`／`autocomplete="current-password"`，外面是真的 `<form>`
+- 離開登入頁時（`onDeactivated`）會清掉密碼欄
+- 登入頁的 `meta` 兩個都要標：`public: true` 讓沒有 token 也能進來，`shell: false` 讓 `AppShell` 不顯示 App Bar、側邊欄與底部導覽列

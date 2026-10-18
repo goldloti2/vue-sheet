@@ -44,7 +44,7 @@ export const orderSchema: TableSchema<OrderRow> = {
 }
 ```
 
-寫成 `TableSchema<OrderRow>` 是為了讓 TS 幫忙對答案：`key`、`labelColumn`、`searchable`、`sortable`、`detailOrder`、`defaultSort` 只能填 Row 有的欄位名，`type` 要跟 Row 那個欄位的值型別相符，虛擬欄位 `value` 的 `row` 也直接是 `OrderRow`。
+以 `TableSchema<OrderRow>` 宣告時，`key`、`labelColumn`、`searchable`、`sortable`、`detailOrder`、`defaultSort` 只能填 Row 有的欄位名，`type` 要跟 Row 那個欄位的值型別相符，虛擬欄位 `value` 的 `row` 也直接是 `OrderRow`。
 
 最後在 `src/schema/index.ts` 註冊，`TableKey` 就自動多一個值。
 
@@ -53,11 +53,11 @@ export const orderSchema: TableSchema<OrderRow> = {
 ## Sheet 上的慣例
 
 - **一個 Sheet 分頁 = 一張表**
-- **第一欄是唯一 ID**，不用 row number 當主鍵——排序、刪除、插入都會讓 row index 位移
+- **第一欄是唯一 ID**，不以 row number 作為主鍵
 - **ID 同時是跨表關聯的外鍵**
-- **表頭用對外名稱**（使用者看得懂的那個名字），方便直接開 Sheet 檢查或手改資料
+- **表頭用對外名稱**，使用者看得懂的那個名字
 
-欄位因此有兩個名字：程式裡用的 `key`（英文、好打、不會變），和 Sheet 上給人看的 `sheetHeader`。畫面上的 `label` 通常就是同一個對外名稱，所以 `sheetHeader` 省略時自動用 `label`；只有「Sheet 上的表頭跟畫面上想顯示的不一樣」時才需要分開寫，例如畫面顯示「名稱」、Sheet 的表頭是「訂單名稱」時，另外加上 `sheetHeader: '訂單名稱'`。
+欄位因此有兩個名字：程式裡用的 `key`（英文），和 Sheet 上給人看的 `sheetHeader`。畫面上的 `label` 通常就是同一個對外名稱，所以 `sheetHeader` 省略時自動用 `label`；只有「Sheet 上的表頭跟畫面上想顯示的不一樣」時才需要分開寫，例如畫面顯示「名稱」、Sheet 的表頭是「訂單名稱」時，另外加上 `sheetHeader: '訂單名稱'`。
 
 **寫回 Sheet 前，`serializeRow` 會幫一部分的值補上單引號**：寫進去的字串會被 Sheet 當成「使用者在那一格輸入」解析，有幾種形狀會讓那一格變成別的型別。只有這幾種補，其他值原樣送出；單引號是 Sheet 的純文字前綴，不算內容，讀回來時不含它。
 
@@ -70,12 +70,11 @@ export const orderSchema: TableSchema<OrderRow> = {
 
 只有 `text`／`select`／`image` 這三種型別會做這件事：
 
-- `number` 與 `date` 不補——它們本來就該讓 Sheet 存成數字與日期，表上的 `SUM` 與日期格式才能用
-- `duration` 實測不會被 Sheet 改寫，所以也不用補
-- **`ref` 不補**：它的值是對方的 id，必須跟 id 欄一字不差。而 **id 欄本身不能補**——後端要拿 id 跟 Sheet 上的顯示值比對才找得到那一列。兩邊規則一致才不會脫鉤（只有一邊補的話，`row.欄位 === 對方.id` 會對不起來、關聯無聲斷掉）
-- 連帶的限制：`newId` 的格式不要用數字或 `0` 開頭，否則新列的 id 會被 Sheet 解析成數字而找不到（`prefixedId('ORD')` 這種前綴式沒有這個問題）
+- `number`、`date`、`duration` 不補
+- **`ref` 不補，id 欄本身也不補**
+- 連帶的限制：`newId` 的格式不以數字或 `0` 開頭（`prefixedId('ORD')` 這種前綴式即符合）
 
-**這件事只有前端做得了**：後端只認表頭，分不出「文字欄位裡的 `0912`」和「數字欄位裡的 `0.5`」。
+補單引號由前端處理，後端不參與。
 
 ---
 
@@ -84,18 +83,18 @@ export const orderSchema: TableSchema<OrderRow> = {
 - **真實欄位**（`columns`）：Sheet 上真的有的，可編輯
 - **虛擬欄位**（`virtualColumns`）：不存在 Sheet 上、讀的時候才算。來源可以是這一列自己（價格加手續費），也可以是子表（父表用第一筆子列的名字當標題、子表金額加總）
 
-虛擬欄位除了不能編輯，其他都跟真實欄位一樣：顯示、排序、分組，也照樣能列進 `searchable`／`sortable`／`defaultSort`／`detailOrder`。因為它跟 `columns` 分開放，`coerceRow`／`serializeRow`／表單完全不用知道它存在。
+虛擬欄位除了不能編輯，其他都跟真實欄位一樣：顯示、排序、分組，也照樣能列進 `searchable`／`sortable`／`defaultSort`／`detailOrder`。它與 `columns` 分開放，`coerceRow`／`serializeRow`／表單皆不處理它。
 
 型別有 `text`／`number`／`date`／`duration`／`select`／`ref`／`image` 七種，每種有自己的專屬設定（`number` 的 `min`／`max`、`select` 的 `options`、`ref` 的 `refTable`…）。完整清單見 [`types.ts`](../src/schema/types.ts)。
 
 ### date 與 duration
 
-- **`date` 只有日期**：讀進來時歸零到當天午夜，所以 Sheet 上手動加了時間也不會讓「看起來一樣的兩列」排序或篩選不一樣
-- **`duration` 是一段長度、不是時間點**：值是 `"時:分:秒"` 字串（分秒各兩位、**時數不設上限**），`2:30:00` 是兩個半小時、`30:15:45` 也合法。Sheet 上就是 `2:30:00`，打開來看得懂
+- **`date` 只有日期**：讀進來時歸零到當天午夜
+- **`duration` 是一段長度、不是時間點**：值是 `"時:分:秒"` 字串（分秒各兩位、**時數不設上限**），`2:30:00` 是兩個半小時、`30:15:45` 也合法
 - 讀進來時容忍 `H:mm`（秒補 `00`）與 `H:mm:ss`；分或秒超過 59、格式不對就當空的
-- 表單是一般文字框（原生的 `type="time"` 塞不下超過 24 小時），填錯格式會被驗證擋下來
-- 排序與篩選都換算成秒再比，所以 `9:30:00` 不會排到 `10:00:00` 後面；篩選是**範圍**（最短／最長）
-- 🔲 **沒有「幾點幾分」的型別**。真的需要時間點再加一個，`duration` 不要拿來兼差——它沒有上限、也沒有上午下午的概念
+- 表單是一般文字框，填錯格式會被驗證擋下來
+- 排序與篩選都換算成秒再比；篩選是**範圍**（最短／最長）
+- 🔲 **沒有「幾點幾分」的型別**。需要時間點時另外新增，不以 `duration` 代替
 
 ### image 欄位
 
@@ -108,7 +107,7 @@ export const orderSchema: TableSchema<OrderRow> = {
 | 其他 `http(s)://…` | 圖片網址 |
 | 其餘 | Drive 檔案 id |
 
-顯示時一律用 `imageSrc(value)`（`schema/image.ts`）轉成 `<img src>`：Drive 走 `https://drive.google.com/thumbnail?id=<id>&sz=w<寬>`（沿用瀏覽器已登入的 Google 帳號，不用後端、沒有 CORS），SVG 轉成 `data:image/svg+xml,`。
+顯示時一律用 `imageSrc(value)`（`schema/image.ts`）轉成 `<img src>`：Drive 走 `https://drive.google.com/thumbnail?id=<id>&sz=w<寬>`，SVG 轉成 `data:image/svg+xml,`。
 
 - **詳細頁自動顯示圖片**（`DataDetail` → `DetailField`），不用多做什麼
 - **列表縮圖於 view 中指定**：`defineView(schema, { image: 'photo', … })`，由 view 轉換為 src，`DataList` 顯示為縮圖、`DataProfile` 顯示為圓形頭像，`DataCard` 依所在的組顯示為頭像或大圖，`DataGallery` 顯示為正方形圖片；未指定則不顯示（`DataGallery` 以灰色方塊佔位）（見 [DataList](components/list/DataList.md)、[DataProfile](components/list/DataProfile.md)、[DataCard](components/list/DataCard.md)、[DataGallery](components/list/DataGallery.md)）
@@ -144,7 +143,7 @@ row.$child_parent  // 指向這一列的子列陣列
 ```
 
 - **排序、分組、顯示都能直接用**，`sortRows`、`formatColumnValue`、列表頁的 `row.xxx` 都不必知道它是算出來的
-- **不可列舉**：`{ ...row }`、`Object.keys`、`JSON.stringify` 都看不到，所以寫回後端時不會誤送
+- **不可列舉**：`{ ...row }`、`Object.keys`、`JSON.stringify` 都看不到
 - **會自動更新**：getter 讀的是 store 快取，在 template 或 `computed` 裡讀就會被追蹤，子表一改當場重算
 - **子表還沒載入時是空陣列**，載進來後自動重算
 - **子列陣列不要就地改**（`sort`／`push`）：回傳的是索引裡的同一份
@@ -170,13 +169,13 @@ row.$child_parent  // 指向這一列的子列陣列
 
 ### 「一」的那一方不存清單
 
-Sheet 上的真相只有子表的 ref 欄位一份，父列上的陣列是讀的時候算出來的，所以新增／刪除子列不用維護任何東西。框架也沒有清單型別的欄位。
+Sheet 上的真相只有子表的 ref 欄位一份，父列上的陣列是讀的時候算出來的。框架也沒有清單型別的欄位。
 
 不過 **ref 的方向沒有限制**：父表可以加一個 ref 指向**某一筆特定的**子列（例如「代表項目」），兩張表就互為對方的父／子。代價是載入時互相需要（`ensureLoaded` 的 `seen` 擋掉循環），而且兩邊都標 cascade 前要想清楚刪除會連到哪裡。
 
 ### 子列 getter 的命名
 
-`$子表代稱_ref欄位key`（例如 `$child_parent`）。零設定，看 schema 就推得出來；帶上欄位名是為了同一張子表有兩個 ref 指向同一張父表時，兩條邊各有各的名字。
+`$子表代稱_ref欄位key`（例如 `$child_parent`），不需設定。同一張子表有兩個 ref 指向同一張父表時，兩條關聯各有各的名字。
 
 ### 連帶刪除
 
@@ -199,7 +198,7 @@ Sheet 上的真相只有子表的 ref 欄位一份，父列上的陣列是讀的
 | **後端** | 安全性與結構完整性：id 不重複、目標存在、表在 `Config.gs` 的對照內、欄位名在 Sheet 表頭內 | `apps-script/Batch.gs` 的規劃階段 |
 
 - **form 層**：送出前跑 `validateRow`，不通過就不送，`fieldErrors` 交給 `DataForm` 逐欄顯示。**第一次按送出之前不提示**，按過一次之後改成即時更新。`askFields` 同一套，只驗問到的欄位
-- **store 層**：`create`／`update` 在碰快取與佇列之前再擋一次，有錯就把訊息串成一句拋出去、什麼都不動。這層擋的是繞過表單的程式 bug，錯誤經 `useActionRunner` 進 snackbar
+- **store 層**：`create`／`update` 在碰快取與佇列之前再擋一次，有錯就把訊息串成一句拋出去、什麼都不動。錯誤經 `useActionRunner` 進 snackbar
 - **`update` 只給幾欄時**只驗那幾欄，但會拿快取裡那筆合併後再驗，所以跨欄位規則看得到整列
 
 ### 內建約束與自訂規則
@@ -237,7 +236,7 @@ select 兩個可選開關：
 2. **導覽帶來的 `history.state.defaults`** — 從哪裡按新增決定。`newAction(table, { defaults })` 收 getter，按下去的當下才求值
 3. **`useCreateForm` 的第三個參數** — 頁面自己算得出來的
 
-> 初始值整件事只存在於前端：後端沒有欄位層的 schema，不會幫沒給的欄位填任何東西（`create` 沒送到的欄位就是留空）——跟「合法性驗證只在前端做」是同一條線。
+> 初始值只存在於前端：後端沒有欄位層的 schema，不會替沒給的欄位填任何值（`create` 沒送到的欄位即留空）。
 
 ---
 
@@ -250,34 +249,16 @@ select 兩個可選開關：
 
 **後端沒有欄位層的 schema**：它認表頭（payload 的 key 就是表頭文字），只需要知道「代稱 → 分頁名稱 + ID 欄」這一行對照。所以加減欄位只要改前端 schema 與 Sheet 本身，兩邊要一起動的只有「加一張表」。
 
-**各表的定義在 `schema/tables/`**（一張表一個檔），`schema/` 根目錄則是一批**對 row 做事的純函數**：`types.ts`（型別、`coerceRow`／`formatColumnValue`）、`sort.ts`（`sortRows`／`sortableColumns`）、`group.ts`（`groupRows`／`flattenGroups`）、`filter.ts`（`Filters` 與比對）、`validation.ts`、`relations.ts`、`image.ts`。它們都不碰 reactivity，所以 store、元件、composable 都能直接叫；`composables/data/` 底下的 `useFilter`／`useTable` 只是把它們包成 computed。
+**各表的定義在 `schema/tables/`**（一張表一個檔），`schema/` 根目錄則是一批**對 row 做事的純函數**：`types.ts`（型別、`coerceRow`／`formatColumnValue`）、`sort.ts`（`sortRows`／`sortableColumns`）、`group.ts`（`groupRows`／`flattenGroups`）、`filter.ts`（`Filters` 與比對）、`validation.ts`、`relations.ts`、`image.ts`。它們都不碰 reactivity；`composables/data/` 底下的 `useFilter`／`useTable` 只是把它們包成 computed。
 
 **前端不知道 Sheet 分頁叫什麼**：程式碼裡好打的英文代稱（`schemas` 的 key，`'order'`）就是打 API 用的值（`?table=order`），分頁的實際名稱只有後端需要，對照表在 `apps-script/Config.gs`——所以改分頁名稱不用動前端。`tableLabel` 是另一件事：畫面上怎麼顯示這張表（表的 chip、頁籤比對）。
 
 ---
 
-## 設計取捨
+## 擴充欄位型別
 
-**為什麼跨表的值是 getter，而不是在父表存一份**
-雙向維護容易不一致（新增子列要記得更新父列），而且 Sheet 上會多出沒人維護的欄位。改成讀的時候算，真相永遠只有一份。代價是載一張表就會把它的父表與子表都一起載進來——這個規模無所謂，而且要顯示關聯資料本來就得整張載。
-
-**子列為什麼要建索引**
-`$子表_欄位key` 如果每次讀都重掃整張子表，一個列表頁每列讀好幾次就是 N×M 次比對。改成每條關聯一份「父 id → 子列」的索引（整張子表排序一次後分組）放在 `computed` 裡，子表的陣列被換掉才重建，讀取只是查表。順帶讓回傳的陣列身分穩定。
-
-**為什麼合法性驗證只在前端**
-Sheet 本來就能手動打開來亂改，後端擋合法性也擋不完整，不如把責任明確劃給前端一份。後端只留「結構完整性」——打錯的欄位名會直接在 Sheet 上長出一欄新表頭或寫錯格，這項不能省。
-
-**為什麼 `allowCustom` 與 `suggestFromData` 是兩個開關**
-「清單自己長」不一定是好事：打錯過的值也會變成建議，而清單只會長不會收。所以分開，讓設計者自己決定。
-
-**為什麼 `TableSchema<Row>` 只做單向檢查**
-Row 介面仍然要手寫（虛擬欄位的 `readonly xxx`、store 掛的 `readonly $欄位key?`），泛型不會反過來從 schema 產生介面——那需要兩段式 builder 加跨表的延遲查表，schema 就不再是一眼看完的物件字面值，不值得。框架端一律用不帶參數的 `TableSchema`，它的 Row 預設是 `any`；不用 `object` 是因為 `keyof Row` 讓 TS 把 Row 判成逆變，`TableSchema<XxxRow>` 會塞不進 `TableSchema<object>`。
-
-**為什麼預設值走 `history.state` 而不是 query param**
-不讓值出現在網址上；比全域變數好的地方是**值綁在那一筆歷史紀錄上**，不會殘留下來汙染之後不相關的表單。
-
-**欄位型別怎麼擴充**
 `ColumnTypes` 那張表定義每種 `type` 的值型別與專屬設定，`ColumnBase` 是共同骨架，`SchemaColumn` 疊 Sheet／表單設定、`VirtualColumn` 疊 `value`。加一種型別只改 `ColumnTypes`、`coerceValue`、`formatColumnValue`、`DataForm` 四處，兩種欄位自動都有。用 discriminated union 寫，所以「標了 `type: 'ref'` 卻忘記填 `refTable`」在編譯期就報錯。
 
-**已知缺口**
-`refTable` 只存代稱字串，沒有型別檢查它是否真的存在於 `schemas`——這是為了避免 `schema/types.ts` 反過來 import `schema/index.ts` 造成循環依賴，目前接受這個缺口。
+## 已知缺口
+
+`refTable` 只存代稱字串，沒有型別檢查它是否真的存在於 `schemas`。

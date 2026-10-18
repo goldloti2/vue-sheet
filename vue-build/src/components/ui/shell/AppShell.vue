@@ -100,8 +100,7 @@
     drawerMode.value = null
   })
 
-  // 右側抽屜一次只放一種面板：篩選鈕在搜尋欄裡、排序鈕在 App Bar 上，兩顆各開各的
-  // 抽屜蓋住 App Bar，所以要換面板一定得先關掉，不用另外擋
+  // 右側抽屜一次只放一種面板：篩選鈕在搜尋欄裡、排序鈕在 App Bar 上，兩顆各開各的，不另外處理互斥
   const drawerMode = shallowRef<'filter' | 'sort' | null>(null)
 
   // 關起來的那段時間抽屜還在滑出去，內容不能跟著消失或換掉，不然會看到另一個面板閃一下
@@ -144,7 +143,7 @@
   const store = useTablesStore()
   const syncing = shallowRef(false)
 
-  // 先推送再重抓。推不出去就不重抓，否則會蓋掉未推送的變更
+  // 先推送再重抓。推不出去就不重抓
   async function sync () {
     syncing.value = true
     try {
@@ -302,7 +301,7 @@
       </v-btn>
     </template>
 
-    <!-- 頁籤跟著 App Bar 固定在最上；搜尋模式下也留著，因為搜尋與篩選是跨頁籤的 -->
+    <!-- 頁籤跟著 App Bar 固定在最上；搜尋模式下也留著 -->
     <template v-if="tabs" #extension>
       <v-tabs v-model="tabs.current.value" align-tabs="center" grow>
         <v-tab v-for="tab in tabs.tabs" :key="tab" :value="tab">{{ tab }}</v-tab>

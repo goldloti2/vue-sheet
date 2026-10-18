@@ -112,7 +112,7 @@
   height: 32px;
 }
 
-/* 使用原生 button 而非 v-btn：列數達上千時 v-btn 的實例成本過高（見 docs/components/view/ViewActions.md） */
+/* 使用原生 button，不使用 v-btn（見 docs/components/view/ViewActions.md） */
 .view-actions__button {
   display: inline-flex;
   align-items: center;

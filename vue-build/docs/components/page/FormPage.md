@@ -27,6 +27,6 @@
 
 ## 備註
 
-- **狀態的優先順序**是 loading → loadError → 找不到資料 → 表單，跟資料實際到手的順序一致；那三種狀態本身是交給 [PageState](PageState.md) 畫的
-- 「找不到這筆資料」用的是 `warning` 而不是 `error`：網址打錯或資料被刪掉都算正常情況
+- **狀態的優先順序**是 loading → loadError → 找不到資料 → 表單；那三種狀態本身是交給 [PageState](PageState.md) 畫的
+- 「找不到這筆資料」使用 `warning`，而非 `error`
 - 欄位級的錯誤訊息由 `DataForm` 顯示在各欄底下，這裡的 `error` 是整張表單層級的（送出失敗、後端錯誤）

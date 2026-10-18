@@ -1,4 +1,4 @@
-/* 列表中的一列與卡片（deck、profile、card、gallery）共用的樣式（見 docs/components/ListLayout.md），以及動作選單的樣式 */
+/* 列表中的一列與卡片（deck、profile、card、gallery）共用的樣式（見 docs/components/list/ListLayout.md），以及動作選單的樣式 */
 :root {
   /* 卡片之間的距離。分組展開的動畫期間，下方的陰影須落於其中，因此不可小於 --list-card-shadow-extent */
   --list-card-gap: 8px;

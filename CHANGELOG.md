@@ -1,9 +1,26 @@
 # 版本紀錄
 
+## v1.4
+
+- **Dashboard**：`DashboardPage` 與 `DashboardPanel` 於一頁中同時顯示多個面板，以方格座標排版（手機 6 格、電腦 24 格），點擊面板即成為關注點，面板可就地展開為整頁。面板中可直接放入既有的列表頁與詳細頁；開啟互動（`interactive`）時，點擊一列改為選取，詳細面板顯示選取的那一筆，子表的列表只列出它的子列。面板寬 3 格以下時，列表與詳細頁改用精簡的版面。說明見 [vue-build/docs/design/dashboard.md](vue-build/docs/design/dashboard.md)
+- **頁籤中的列表共用搜尋**：`TabPage` 各頁籤中的列表（包括自其他 `.vue` 檔 import 者）共用一條搜尋字串，同一張表共用一份篩選與排序，由 `TabPage` 統一登記。`useListPage` 新增 `scope`，於篩選與搜尋之前只留所需的列。範本見 `vue-build/template/pages/` 的 `tab-list.vue` 與 `_ref/list.vue`
+- **只供引用的頁面**：`src/pages/` 中任意層的 `_ref/` 資料夾不產生路由，用於放置只供其他頁面 import 的元件（例如自頁籤頁拆出的列表）
+- **文件重新整理**：新增 [vue-build/docs/design/](vue-build/docs/design/README.md)，從使用者看到的畫面介紹各種頁面；元件文件依 `src/components/ui/` 的子資料夾分類；各項機制的說明移至 `vue-build/docs/topics/`
+- **換頁動畫改用 View Transitions**：App Bar、底部導覽列、FAB 等外殼維持不動；不支援的瀏覽器，或系統開啟「減少動態效果」時，不播放動畫
+- 側邊欄預設為關閉
+- `GroupedList` 某一層只有一組時，該組固定展開且不可收合（見 [vue-build/docs/components/list/GroupedList.md](vue-build/docs/components/list/GroupedList.md)）
+- 修正 `vue-build/template/table/schema.ts` 中錯誤的 import 路徑
+- 詳細頁的欄位值為沒有空白的長字串（網址、編號）時於任意處換行，不再撐開欄位
+
+### 不相容的變更
+
+- `TabView` 改名為 `TabPage`，`TabViewPanel` 改名為 `TabPanel`，兩者皆移至 `components/ui/panel/`。使用頁籤的頁面須修改 import 的路徑與元件名稱
+- `@/router` 不再 export `transitionDir`，換頁動畫的方向改寫於 `<html>` 的 `data-dir`
+
 ## v1.3
 
 - **視圖（view）**：頁面以 `defineView`（card 為 `defineCardView`）指定一列的哪些欄位放在版面的哪個位置，以及該列的動作；格式化依欄位型別自動處理。說明見 [vue-build/docs/components/list/DataList.md](vue-build/docs/components/list/DataList.md) 的「view」
-- **列表的版面**：除 deck（`DataList`）外，新增 profile（`DataProfile`）、card（`DataCard`）與 gallery（`DataGallery`）。皆以 view 呈現，並支援長按多選；gallery 搭配 `ListPage` 新增的 `layout="grid"`，手機上為兩欄。各版面的比較見 [vue-build/docs/ui.md](vue-build/docs/ui.md) 的「版面的種類」，範本見 `vue-build/template/pages/`
+- **列表的版面**：除 deck（`DataList`）外，新增 profile（`DataProfile`）、card（`DataCard`）與 gallery（`DataGallery`）。皆以 view 呈現，並支援長按多選；gallery 搭配 `ListPage` 新增的 `layout="grid"`，手機上為兩欄。各版面的比較見 [vue-build/docs/design/list.md](vue-build/docs/design/list.md) 的「五種版面」，範本見 `vue-build/template/pages/`
 - **每一列的動作**：view 的 `actions` 依版面呈現於 deck 的下一列、profile 與 gallery 的 ⋮ 選單，或 card 的左右各兩格。`PageAction` 新增 `display`，可選擇以圖示或文字顯示
 - **詳細頁的標頭區塊**（選用）：`DetailPage` 新增 `header`，於整頁最上方顯示大圖、標題、副標、摘要與動作
 - 列表共用的間距、陰影與點擊、選取的樣式集中於 `vue-build/src/styles/list.css`
@@ -23,7 +40,7 @@
 
 ## v1.2
 
-- **動作的寫法改版**：內建 builder 改為一般函式，回傳單一動作，不適用時回傳 `null`；各表 `use表名Actions` 的每一項亦為單一動作，同一位置放置哪些動作由頁面組成陣列決定。編輯、刪除等以列為參數的動作改為函式，detail 頁以 `useRowAction` 綁定至當前那一筆。說明集中於新增的 [vue-build/docs/actions.md](vue-build/docs/actions.md)
+- **動作的寫法改版**：內建 builder 改為一般函式，回傳單一動作，不適用時回傳 `null`；各表 `use表名Actions` 的每一項亦為單一動作，同一位置放置哪些動作由頁面組成陣列決定。編輯、刪除等以列為參數的動作改為函式，detail 頁以 `useRowAction` 綁定至當前那一筆。說明集中於新增的 [vue-build/docs/topics/actions.md](vue-build/docs/topics/actions.md)
 - 於 detail 頁刪除當前那一筆後，自動返回上一頁
 - 移除內部 helper 不必要的 export
 

@@ -53,5 +53,5 @@
 
 - **`to` 渲染成自己組 href 的 `<a>`，不是 `RouterLink`**：點擊走 `router.push`；帶修飾鍵或非左鍵時交給瀏覽器，中鍵開新分頁為原生行為。沒有 `router-link-active` 那組 class。此部分與長按、多選的點擊判斷一併實作於 `useRowClick`，與 [DataProfile](DataProfile.md)、[DataCard](DataCard.md)、[DataGallery](DataGallery.md) 共用
 - **動作的按鈕不在 `<a>` 內**：整列外層為一個 `div`，連結與動作列並列；連結以 `::after` 覆蓋整列，動作列再疊於其上，且寬度僅包住按鈕。因此動作列的空白處仍屬於連結（點擊進入 detail、長按進入多選），按鈕本身則不會觸發導覽與長按
-- **`content-visibility: auto`**：畫面外的列不進行排版與繪製。`contain-intrinsic-size: auto 72px` 為尚未量得實際高度前的替代值，有動作列時為 `108px`（多出一列 32px 的按鈕與 4px 的間距）。列的版型若大幅變動，此數值須一併調整
-- **dashboard 中的窄版**：所在面板寬度小於 200px（3 格以下）時，只顯示標題與副標，兩者上下排列並靠左，左下與右下隱藏（見 [dashboard.md](../../dashboard.md) 的「面板內容的寬度」）。一般頁面不會觸發
+- **`content-visibility: auto`**：畫面外的列不進行排版與繪製。`contain-intrinsic-size: auto 72px` 為尚未量得實際高度前的替代值，有動作列時為 `108px`（多出一列 32px 的按鈕與 4px 的間距）；dashboard 的窄版沿用同一個值。列的版型若大幅變動，此數值須一併調整
+- **dashboard 中的窄版**：所在面板寬度小於 200px（3 格以下）時，只顯示標題與副標，兩者上下排列並靠左，左下與右下隱藏（見 [DashboardPanel](../panel/DashboardPanel.md)）。一般頁面不會觸發

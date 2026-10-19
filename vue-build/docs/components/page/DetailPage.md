@@ -49,5 +49,5 @@
 
 - **子表這樣放**：slot 裡擺一個 [ChildList](ChildList.md)，`rows` 直接給父列上的 `$子表_欄位key` getter（不用另外查），它會處理標題與筆數、顯示上限、右下角的「展開」與新增
 - **左右滑動與箭頭是同一份順序**（`useListOrder` 發布的列表順序）：沒有經過列表頁就直接開網址時，兩者都會安靜地沒有上下筆
-- **於 dashboard 的面板中**：兩者僅於面板展開時啟用，且改為換成互動選取的上下一筆，不離開 dashboard（見 [dashboard.md](../../dashboard.md)）
+- **於 dashboard 的面板中**：兩者僅於面板展開時啟用，且改為換成互動選取的上下一筆，不離開 dashboard（見 [DashboardPage](../panel/DashboardPage.md#互動)）
 - 狀態階梯本身是 [PageState](PageState.md) 畫的；`DataDetail` 只管有資料時怎麼顯示欄位

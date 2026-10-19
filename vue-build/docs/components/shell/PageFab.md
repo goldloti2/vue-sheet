@@ -6,6 +6,8 @@
 
 **列表頁與詳細頁不用自己擺這個元件**：把動作交給 [ListPage](../page/ListPage.md)／[DetailPage](../page/DetailPage.md) 的 `fab` prop 就好，它們內部放的就是它。直接用的場合是自己組版面的頁面。
 
+位於儀表板的面板中時，僅於該面板展開後顯示（讀取 `usePanelFullPage()`，不在面板中時一律為 `true`）。
+
 ## Usage
 
 ```vue

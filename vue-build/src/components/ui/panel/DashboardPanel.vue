@@ -9,7 +9,7 @@
   import { appBarSelectionKey } from '@/composables/shell/useShellActions'
   import { relations } from '@/schema/relations'
 
-  // dashboard 的一個面板（見 docs/dashboard.md）：小外殼、關注點，以及控制面板內容的各項登記何時生效
+  // dashboard 的一個面板（見 docs/components/panel/DashboardPanel.md）：小外殼、關注點，以及控制面板內容的各項登記何時生效
   const { name, title, frame = true, table, via } = defineProps<{
     // 對應 DashboardPage 的 layout
     name: string
@@ -212,7 +212,7 @@
   border-radius: 14px;
 }
 
-/* 內容依面板的寬度切換窄版（見 docs/dashboard.md 的「面板內容的寬度」）；一般頁面沒有這個 container，不會觸發 */
+/* 內容依面板的寬度切換窄版（見 docs/components/panel/DashboardPanel.md）；一般頁面沒有這個 container，不會觸發 */
 .dashboard-panel__body {
   flex: 1;
   min-height: 0;

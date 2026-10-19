@@ -92,7 +92,7 @@
   text-align: right;
 }
 
-/* dashboard 中 3 格以下的窄面板：只留標題與副標，上下排列並靠左（門檻見 docs/dashboard.md 的「面板內容的寬度」） */
+/* dashboard 中 3 格以下的窄面板：只留標題與副標，上下排列並靠左（門檻見 docs/components/panel/DashboardPanel.md） */
 @container dashboard-panel (width < 200px) {
   .list-item__row {
     grid-template-columns: 1fr;

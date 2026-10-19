@@ -4,7 +4,7 @@ import { inject, provide, shallowReactive, watchEffect } from 'vue'
 import { relations } from '@/schema/relations'
 import { useTablesStore } from '@/stores/tables'
 
-// dashboard 的互動：每張表各記一筆選取，與它直接相關的面板跟著改變（規則見 docs/dashboard.md 的「互動」）
+// dashboard 的互動：每張表各記一筆選取，與它直接相關的面板跟著改變（規則見 docs/components/panel/DashboardPage.md 的「互動」）
 export interface DashboardSelection {
   // 開啟互動時，點擊一列改為選取
   interactive: () => boolean

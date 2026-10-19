@@ -2,7 +2,7 @@
 
 列表頁的整頁版型：載入狀態、逐列渲染、右下角 FAB，外加把畫面上的順序發布出去（detail 頁的上／下一筆靠它）。每一列長什麼樣由頁面自己決定。
 
-搭配 `useListPage(table, schema)` 使用：其依序處理整表 → `scope` → 篩選 → 搜尋，並提供長按多選，回傳的 `rows`／`loading`／`error`／`selection` 直接對應本元件的 prop。選用的 `scope`（`row => boolean`）於篩選與搜尋之前只留部分的列，例如頁籤的狀態。
+搭配 `useListPage(table, schema)` 使用：其依序處理整表 → `scope` → 篩選 → 搜尋，並提供長按多選，回傳的 `rows`／`loading`／`error`／`selection` 直接對應本元件的 prop。選用的 `scope`（`row => boolean`）於篩選與搜尋之前只留部分的列，例如頁籤的狀態；儀表板的互動篩選（依所選的父列篩出子列）亦位於這一步。
 
 **搜尋與排序來自該 composable，而非本元件**：`useListPage` 內部呼叫 `useListControls`，因此使用它時 App Bar 即出現放大鏡、篩選鈕與排序鈕（欄位須列於 `searchable`／`sortable`）。位於 `TabPage` 之內時，改為加入 `TabPage` 的共用控制，不自行登記；不需要搜尋，或同一頁面須手動登記多張表時，傳入 `{ search: false }`，見下方「手動登記多張表」。
 

@@ -12,7 +12,7 @@
 
 | 部位 | 元件／來源 | 說明 |
 | --- | --- | --- |
-| **App Bar** | `AppShell` | 標題取自 `route.meta.title`，沒有時使用 `config/app.ts` 的 App 名稱 |
+| **App Bar** | `AppShell` | 標題取自 `route.meta.title`，沒有時使用 `config/app.ts` 的 App 名稱。`useAppBarHeading()` 登記時，改以給定的標題與返回動作取代路由的標題與 ← 鈕（儀表板的展開） |
 | **左側圖示** | `AppShell` | 有 App 內的上一頁時為返回箭頭，否則為漢堡選單 |
 | **App Bar 動作** | `useAppBarActions()` | 右側的圖示鈕，三顆以上收進「⋮」 |
 | **搜尋鈕／搜尋列** | `useListControls()` | 為獨立的一顆，不收進「⋮」；多選時整顆讓位 |
@@ -56,7 +56,7 @@
 - **每次進入都須重算的東西放在 `onActivated`**，同一個網址共用同一份實例，`setup` 不會重新執行。兩種表單皆於 `onActivated` 重建表單並清除錯誤
 - **Teleport 出去的浮動元件自行處理進出場**（`PageFab`、`RecordNav` 送至 `body`），以 `onActivated`／`onDeactivated` 控制
 - **列表載入中不以 `v-if` 整個替換列表**，使用 `PageState` 的 `spinner="linear"`，它將進度條加在內容上方，而非取代內容
-- **捲動位置由 router 另外記錄**：一份 `fullPath → scrollY`，於 `beforeEach` 儲存、於 `scrollBehavior` 還原，上限同樣為 50 筆。返回鍵優先使用瀏覽器記錄的 `savedPosition`，沒看過的頁面回到頂端
+- **捲動位置由 router 另外記錄**：一份 `fullPath → scrollY`，於 `beforeEach` 儲存、於 `scrollBehavior` 還原，上限同樣為 50 筆。返回鍵優先使用瀏覽器記錄的 `savedPosition`，沒看過的頁面與網址相同的推入（儀表板的展開）回到頂端
 
 被快取的頁面仍在全速運轉：KeepAlive 的 `deactivate` 只搬移 DOM，不暫停元件的 effect。流進被快取頁面的東西只有兩種：路由參數（讀一次即固定）與共用快取（任其改變）。
 

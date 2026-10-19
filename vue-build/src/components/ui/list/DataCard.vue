@@ -189,7 +189,7 @@
   -webkit-box-orient: vertical;
 }
 
-/* dashboard 中 3 格以下的窄面板：省略第 3 層（門檻見 docs/dashboard.md 的「面板內容的寬度」） */
+/* dashboard 中 3 格以下的窄面板：省略第 3 層（門檻見 docs/components/panel/DashboardPanel.md） */
 @container dashboard-panel (width < 200px) {
   .card-item {
     --card-body-shown: 0px;

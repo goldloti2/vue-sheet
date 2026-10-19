@@ -184,7 +184,7 @@
 | gallery | **gallery** | ✅ `DataGallery`，圖片 + 標題的格狀排列，見下方 |
 | chart | **chart** | 🔲 使用者選幾個欄位當軸，畫圓餅圖、折線圖、長條圖；另含文字統計（例如依某欄位分組計數，以「標籤＋數字」的格子呈現）。以 SVG 繪製，依面板寬度縮放。屬於後期才做的項目 |
 | dashboard（分頁） | **tab** | ✅ `TabPage` |
-| dashboard（全部顯示、連動） | **dashboard** | 🔶 設計完成，地基已實作，見下方 |
+| dashboard（全部顯示、連動） | **dashboard** | ✅ `DashboardPage`，見下方 |
 | calendar | — | 把資料當成事件放上日曆（通常靠日期與時間欄位），暫不考慮 |
 | map | — | 把座標標在 Google 地圖上，暫不考慮 |
 | onboarding | — | 導覽頁，暫不考慮 |
@@ -218,10 +218,10 @@
 
 **tab**：一次只顯示一個面板，用頁籤切換。就是現有的 `TabPage`。
 
-**dashboard**（🔶 設計稿見 [vue-build/docs/dashboard.md](vue-build/docs/dashboard.md)）：所有面板同時出現。手機與電腦皆以方格座標二維排版（手機寬 6 格、電腦寬 24 格），每個面板可指定寬與高的格數，或交由自動排版。用一個 `interactive` 開關決定面板之間要不要連動：
+**dashboard**（✅ `DashboardPage`、`DashboardPanel`，外觀與操作見 [vue-build/docs/design/dashboard.md](vue-build/docs/design/dashboard.md)）：所有面板同時出現。手機與電腦皆以方格座標二維排版（手機寬 6 格、電腦寬 24 格），每個面板可指定寬與高的格數，或交由自動排版；面板可就地展開為整頁。用一個 `interactive` 開關決定面板之間要不要連動：
 - **關**：各面板各自獨立
 - **開**：面板之間會連動，例如在 list 點一個項目，旁邊的 detail 就顯示那一項，而不是換頁
-- 地基已完成：多個列表共用搜尋（`TabPage` 已採用）、`useListPage` 的 `scope`、`_ref/` 的路由排除；`DashboardPage` 與 `DashboardPanel` 尚未實作
+- 🔲 form 於窄面板中是否需要調整版面，尚未確認
 
 ### 列表效能（剩下的部分）
 - 🔲 見 [vue-build/docs/perf.md](vue-build/docs/perf.md) 的「還沒做的」
@@ -232,6 +232,7 @@
 
 ### 桌面版
 - 桌面版導覽 UI 待定：要不要改成側邊欄常駐、底部導覽列要不要在桌面隱藏，等要做桌面體驗時再決定
+- 手機與電腦排版的切換門檻待定：`useCompactLayout()` 暫定沿用 Vuetify `mobile` 的 1145px；平板直放應使用 dashboard 的 24 格，門檻可能須調低（例如 840px）
 
 ### 部署
 - 前端靜態託管（Vercel / Cloudflare Pages，注意 SPA fallback）

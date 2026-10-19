@@ -1,4 +1,4 @@
-// dashboard 各面板於方格中的位置（見 docs/dashboard.md 的「位置的計算」）。純函式：
+// dashboard 各面板於方格中的位置（見 docs/components/panel/DashboardPage.md 的「排版」）。純函式：
 // CSS grid 遇到座標重疊時直接讓面板疊在一起，因此位置由這裡算好，CSS 僅照著繪製
 
 // 設計者給的排版：皆以格數表示，x、y 自 1 起算

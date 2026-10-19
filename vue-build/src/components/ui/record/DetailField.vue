@@ -81,7 +81,7 @@
   min-width: 0;
 }
 
-/* dashboard 中 3 格以下的窄面板：名稱與值改為上下兩行，名稱靠左（門檻見 docs/dashboard.md 的「面板內容的寬度」） */
+/* dashboard 中 3 格以下的窄面板：名稱與值改為上下兩行，名稱靠左（門檻見 docs/components/panel/DashboardPanel.md） */
 @container dashboard-panel (width < 200px) {
   .detail-field {
     grid-template-columns: minmax(0, 1fr);

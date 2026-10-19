@@ -76,7 +76,7 @@ src/
 | `pages/表名/new.vue` | `/表名/new` 新增 |
 | `pages/表名/[id]/index.vue` | `/表名/:id` 詳細 |
 | `pages/表名/[id]/edit.vue` | `/表名/:id/edit` 編輯 |
-| `pages/表名/_ref/*.vue` | 不產生路由，只供其他頁面引用（例如自頁籤頁拆出的列表）；`vite.config.mts` 的路由插件以 `exclude: ['src/pages/**/_ref/**']` 排除 |
+| `pages/表名/_ref/*.vue` | 不產生路由，只供其他頁面引用（例如自頁籤頁拆出的列表）；`vite.config.mts` 的路由插件以 `exclude: ['src/pages/**/_ref/**']` 排除，新增表時不需修改設定。`_ref` 指「供其他頁面引用」，與 `ref` 欄位型別及 Vue 的 `ref()` 無關 |
 
 > **注意**：同一個動態片段不能同時有 `[id].vue` 檔案和 `[id]/` 資料夾——unplugin-vue-router 會把前者當成後者的 parent layout，子路由要靠 `<router-view>` 才顯示。一律用資料夾寫法。
 

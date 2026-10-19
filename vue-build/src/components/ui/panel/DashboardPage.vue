@@ -13,7 +13,7 @@
   import { beginTransition, canAnimate, markTransition } from '@/composables/shell/viewTransition'
   import { schemas } from '@/schema'
 
-  // 同時顯示多個面板（見 docs/dashboard.md）：方格排版、關注點，以及各面板列表共用的搜尋、篩選與排序
+  // 同時顯示多個面板（見 docs/components/panel/DashboardPage.md）：方格排版、關注點，以及各面板列表共用的搜尋、篩選與排序
   const { layout = {}, interactive = false } = defineProps<{
     // 面板的 name → 手機與電腦的排版；未列出的面板或留空的斷點為自動
     layout?: Record<string, { mobile?: PanelSize, desktop?: PanelSize }>
@@ -97,7 +97,7 @@
   const cell = computed(() => (contentWidth.value - (cols.value - 1) * GAP) / cols.value)
 
   // 展開：以同一個網址推入一筆 history，於 state 記下面板；返回鍵或 ← 即回到前一筆而縮回。
-  // 網址不變，KeepAlive 不會重建此頁（見 docs/dashboard.md 的「展開」）
+  // 網址不變，KeepAlive 不會重建此頁（見 docs/components/panel/DashboardPage.md 的「展開」）
   const router = useRouter()
   const ownPath = router.currentRoute.value.fullPath
   const expanded = shallowRef<string | null>(null)
@@ -166,7 +166,7 @@
   })
   provideSharedListControls(focusedTableLabel)
 
-  // 面板內的轉場（見 docs/dashboard.md）：先為面板命名並等 DOM 更新，舊畫面才截得到名字；進行中再有選取即直接套用
+  // 面板內的轉場（見 docs/components/panel/DashboardPage.md 的「互動」）：先為面板命名並等 DOM 更新，舊畫面才截得到名字；進行中再有選取即直接套用
   async function transition (kind: 'fade' | 'forward' | 'back', update: () => void) {
     if (!canAnimate() || panelTransition.value) {
       update()

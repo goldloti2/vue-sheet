@@ -20,7 +20,7 @@
   const items = computed(() => variant === 'slots' ? actions.slice(0, 4) : shown.value)
   const visible = computed(() => items.value.some(action => action !== null))
 
-  // dashboard 中文字按鈕另畫圖示，窄面板時改顯示圖示（見 docs/dashboard.md 的「面板內容的寬度」）；一般頁面不多建這個 v-icon
+  // dashboard 中文字按鈕另畫圖示，窄面板時改顯示圖示（見 docs/components/panel/DashboardPanel.md）；一般頁面不多建這個 v-icon
   const inDashboard = useDashboardSelection() !== null
 
   const runAction = useRunAction()
@@ -141,7 +141,7 @@
   display: none;
 }
 
-/* dashboard 中 3 格以下的窄面板：文字按鈕改為與其他按鈕相同的圖示；整列靠左，slots 不分左右、不留空格（見 docs/dashboard.md 的「面板內容的寬度」） */
+/* dashboard 中 3 格以下的窄面板：文字按鈕改為與其他按鈕相同的圖示；整列靠左，slots 不分左右、不留空格（見 docs/components/panel/DashboardPanel.md） */
 @container dashboard-panel (width < 200px) {
   .view-actions {
     justify-content: flex-start;

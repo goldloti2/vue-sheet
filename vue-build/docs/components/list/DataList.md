@@ -25,8 +25,8 @@
 
 - 格式化方式依欄位型別而定，與詳細頁相同（`formatColumnValue`）：日期依日期格式顯示，`ref` 欄位顯示對方的名稱
 - 需要合併多個欄位，或顯示父列、子列的資訊時，應宣告為 schema 的 `virtualColumns`，不在頁面中組合字串
-- 實作位於 `schema/view.ts`。同一個 view 亦可交給 [DataProfile](DataProfile.md) 或 [DataGallery](DataGallery.md)，改以 profile 或 gallery 呈現。[DataCard](DataCard.md) 使用同一組位置名稱，但分為兩組（`defineCardView`）（見 ROADMAP 的「頁面類型」）
-- 動作的定義方式見 [actions.md](../../actions.md#列上的動作)
+- 實作位於 `schema/view.ts`。同一個 view 亦可交給 [DataProfile](DataProfile.md) 或 [DataGallery](DataGallery.md)，改以 profile 或 gallery 呈現。[DataCard](DataCard.md) 使用同一組位置名稱，但分為兩組（`defineCardView`）（見 [ROADMAP](../../../../ROADMAP.md) 的「頁面類型（對照 AppSheet）」）
+- 動作的定義方式見 [actions.md](../../topics/actions.md#列上的動作)
 
 ## Props
 

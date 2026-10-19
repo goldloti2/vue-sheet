@@ -34,14 +34,14 @@
 - **id 由前端產生**（`create` 的 payload 帶 id），重送因此是冪等的：`create` 定義成「id 不存在就建、已存在就當作已完成」，整批重送安全，不需要記錄哪幾筆成功過；待推送佇列也能直接用 `table + id` 當 key。後端仍然要擋重複 id——Sheet 可以手動打開來改，不能假設 id 只由前端產生
 - **`update` 的 `values` 僅含進入過佇列的欄位**（表單送出整列，快速編輯與欄位動作僅送該欄），後端只寫入這些儲存格，因此同一列中未進入佇列的欄位會保留 Sheet 上手動修改的值與公式。送整列省不到呼叫（後端為了把 id 換成列號本來就要讀一次），卻會讓前端快取蓋掉手改的欄位
 - **`table` 的值是前端的表代稱**（`schemas` 的 key，例如 `order`），而非 Sheet 分頁的名稱。後端另有一份「代稱 → 分頁名稱 + ID 欄表頭」的對照（`apps-script/Config.gs`），因此變更分頁名稱不影響前端
-- payload 的欄位值**由前端轉換為 sheet 的形狀**（表頭作為 key、值為字串）後送出，後端原封不動寫入、不做任何型別轉換。值寫入儲存格時 Sheet 會自行解析該字串（見 [../apps-script/README.md](../apps-script/README.md) 的「值寫入儲存格的行為」）；會讓文字變成別的型別的值**由前端在 `serializeRow` 補上單引號前綴**，規則見 [../vue-build/docs/schema.md](../vue-build/docs/schema.md) 的「Sheet 上的慣例」
+- payload 的欄位值**由前端轉換為 sheet 的形狀**（表頭作為 key、值為字串）後送出，後端原封不動寫入、不做任何型別轉換。值寫入儲存格時 Sheet 會自行解析該字串（見 [../apps-script/README.md](../apps-script/README.md) 的「值寫入儲存格的行為」）；會讓文字變成別的型別的值**由前端在 `serializeRow` 補上單引號前綴**，規則見 [../vue-build/docs/topics/schema.md](../vue-build/docs/topics/schema.md) 的「Sheet 上的慣例」
 - 保留字：`table`、`id`、`kind` 不能拿來當欄位名稱
 
 ---
 
 ## 資料一致性
 
-**驗證**：分工見 [vue-build/docs/schema.md](../vue-build/docs/schema.md)——合法性只在前端做（form 層與 store 寫入層都接了同一個 `validateRow`），後端只做安全性與結構完整性。目的不是防外部攻擊（那是認證的事，見下方「認證與權限」），而是防自己送出壞資料。
+**驗證**：分工見 [vue-build/docs/topics/schema.md](../vue-build/docs/topics/schema.md)——合法性只在前端做（form 層與 store 寫入層都接了同一個 `validateRow`），後端只做安全性與結構完整性。目的不是防外部攻擊（那是認證的事，見下方「認證與權限」），而是防自己送出壞資料。
 
 **多裝置同時編輯**（已實測）：比對**整個試算表檔案**的 `modifiedTime`，不是逐筆的 `updatedAt`——Sheets 沒有逐列的修改時間，要維護就得後端戳章加 `onEdit` 觸發器。
 
@@ -49,7 +49,7 @@
 - batch 的 payload 帶 `since`，後端在 `LockService` 鎖裡跟當下的值比對再寫（跟全有全無同一把鎖）：不一致就回 `{ success: false, error: 'modified' }` 什麼都不寫，一致就寫入並回新的 `modifiedTime`
 - 已實測 `SpreadsheetApp.flush()` 之後 `getLastUpdated()` 不會延遲，連續推送不會誤判為衝突
 - **`since` 沒帶就是強制推送**：不比對、直接寫。前端的「強制推送」就是這樣送的
-- 粒度很粗（任何分頁、連格式變更都算），單人多裝置的情境夠用。前端撞到衝突後的處置（保留佇列、兩條出路）見 [vue-build/docs/store.md](../vue-build/docs/store.md) 的推送那節
+- 粒度很粗（任何分頁、連格式變更都算），單人多裝置的情境夠用。前端撞到衝突後的處置（保留佇列、兩條出路）見 [vue-build/docs/topics/store.md](../vue-build/docs/topics/store.md) 的推送那節
 
 > `id` 是每張表都有的系統欄位，兩端都不當成一般欄位看：前端 `TableSchema` 用獨立的 `idColumn` 指出它對應哪個表頭、不放進 `columns`，`coerceRow()` 固定把它轉成 row 物件的 `id`；後端同樣從 `Config.gs` 的 `idColumn` 知道是哪一欄，用來把 id 換成列號。值本身由前端產生（見上方「請求與回應」）。
 
@@ -57,7 +57,7 @@
 
 ## 後端客製邏輯擴充點（Hooks）
 
-> 🔲 **尚未實作。** 後端骨架（`apps-script/`）裡還沒有掛勾的位置，前端 `TableSchema` 也還沒有 `hooks` 欄位。這裡只記設計方向。前端算得出來、不用寫回 Sheet 的欄位已經有 `virtualColumns`（見 [schema.md](../vue-build/docs/schema.md)），hooks 是給「要落到 Sheet 上」的邏輯用的。
+> 🔲 **尚未實作。** 後端骨架（`apps-script/`）裡還沒有掛勾的位置，前端 `TableSchema` 也還沒有 `hooks` 欄位。這裡只記設計方向。前端算得出來、不用寫回 Sheet 的欄位已經有 `virtualColumns`（見 [schema.md](../vue-build/docs/topics/schema.md)），hooks 是給「要落到 Sheet 上」的邏輯用的。
 
 某張表需要「不只是泛用 CRUD」的邏輯時（自動算欄位、送出前驗證、建立後通知），在 Schema 裡掛勾：
 

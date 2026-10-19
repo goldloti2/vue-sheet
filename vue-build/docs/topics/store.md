@@ -4,7 +4,7 @@
 
 > **前置**：先看過 [schema.md](schema.md)（這裡的型別轉換與 row 上的 getter 都由 schema 決定）。
 
-> **標記**：沒有標記＝已經實作。🔶 部分實作、🔲 尚未實作。詳細進度見 [ROADMAP.md](../../ROADMAP.md)。
+> **標記**：沒有標記＝已經實作。🔶 部分實作、🔲 尚未實作。詳細進度見 [ROADMAP.md](../../../ROADMAP.md)。
 
 ---
 
@@ -106,7 +106,7 @@ mutateBatch([
 
 > 假後端是純記憶體的，同一個分頁不可能自己產生衝突。開發時在 console 叫 `mockTouch()` 可以模擬「別人改了 Sheet」，下一次推送就會撞到衝突（只在 dev 模式掛上去）。
 >
-> 啟用登入時，後端回 token 過期或無效，store 的 `error` 與 `flushError` 會帶著那句訊息，同時 router 把畫面帶到登入頁；重新登入後 `store.reload()` 重抓已載入與載入失敗的表（跟同步鈕重抓的範圍一樣，但不推送），佇列則等使用者按同步（見 [docs/auth.md](../../docs/auth.md)）。
+> 啟用登入時，後端回 token 過期或無效，store 的 `error` 與 `flushError` 會帶著那句訊息，同時 router 把畫面帶到登入頁；重新登入後 `store.reload()` 重抓已載入與載入失敗的表（跟同步鈕重抓的範圍一樣，但不推送），佇列則等使用者按同步（見 [docs/auth.md](../../../docs/auth.md)）。
 >
 > 推送與讀取的 payload 在 dev 模式會印進 console（`[api] → / ← / ✗`，`console.debug` 層級），真後端與假後端都印，所以兩邊對不起來的時候可以直接比對。
 

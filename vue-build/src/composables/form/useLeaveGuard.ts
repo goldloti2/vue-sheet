@@ -6,7 +6,7 @@ import router from '@/router'
 // 目前活著的表單各登記一個「有沒有改動」的 getter
 const dirtyChecks = new Set<() => boolean>()
 
-// 表單頁活著的期間登記，任何離開頁面的導覽都會先問（見 docs/pages.md）
+// 表單頁活著的期間登記，任何離開頁面的導覽都會先問（見 docs/topics/pages.md）
 export function useLeaveGuard (dirty: () => boolean): void {
   onMounted(() => dirtyChecks.add(dirty))
   onActivated(() => dirtyChecks.add(dirty))

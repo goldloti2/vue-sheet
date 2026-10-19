@@ -3,7 +3,7 @@ import type { PageAction } from '@/composables/actions/useTableActions'
 import { imageSrc } from './image'
 import { findColumn, formatColumnValue } from './types'
 
-// 視圖：一列資料的哪些欄位放到版面的哪個位置，加上這一列的動作。定義在頁面、交給版面元件（見 ROADMAP 的「頁面類型」）
+// 視圖：一列資料的哪些欄位放到版面的哪個位置，加上這一列的動作。定義在頁面、交給版面元件（見 ROADMAP 的「頁面類型（對照 AppSheet）」）
 
 // schema 的欄位，加上每列都有的系統成員（id、$label）
 type ViewKey<Row extends object> = RowKey<Row> | keyof RowBase

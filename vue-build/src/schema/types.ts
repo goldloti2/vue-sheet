@@ -20,7 +20,7 @@ interface ColumnTypes {
   /** 圖片：一格一張，值是行內 SVG、圖片網址、或 Google Drive 的檔案 id／分享連結（見 schema/image.ts） */
   image: { value: string | null }
   /**
-   * 外鍵，值是對方的 id（見 docs/schema.md 的一對多關聯）。
+   * 外鍵，值是對方的 id（見 docs/topics/schema.md 的一對多關聯）。
    * refTable 是對方在 schemas 裡的 key；顯示時一律用對方的 $label，store 會把對方那一列掛成 row.$欄位key。
    * onDelete: 'cascade' 表示對方那一列被刪時、指向它的這些列也一起刪；不標就留著（ref 指向不存在的 id）
    */
@@ -72,7 +72,7 @@ export type SchemaColumn<Row extends object = AnyRow> = {
   }
 }[ColumnType]
 
-// 虛擬欄位：不在 Sheet 上、讀的時候才算。store 會把它掛成 row 上的 getter，讀起來跟真實欄位一樣（見 docs/schema.md）。
+// 虛擬欄位：不在 Sheet 上、讀的時候才算。store 會把它掛成 row 上的 getter，讀起來跟真實欄位一樣（見 docs/topics/schema.md）。
 // 父表走 row.$欄位key、子表走 row.$子表_欄位key，都是 store 掛好的，value 直接讀
 export type VirtualColumn<Row extends object = AnyRow> = {
   [T in ColumnType]: ColumnBase<Row, T> & {
@@ -98,7 +98,7 @@ export interface TableSchema<Row extends object = AnyRow> {
   idColumn: string
   /** 用哪一欄稱呼一列（真實或虛擬欄位都行），store 據此掛 row.$label；別的表 ref 到這裡就顯示它。省略就是 id */
   labelColumn?: RowKey<Row>
-  /** 怎麼發一筆新 id（常見的前綴式用 prefixedId('TPL')）。格式別用數字開頭，見 docs/schema.md */
+  /** 怎麼發一筆新 id（常見的前綴式用 prefixedId('TPL')）。格式別用數字開頭，見 docs/topics/schema.md */
   newId: () => string
   /** Sheet 上真的有的欄位，順序同時是表單與詳細頁的預設順序 */
   columns: SchemaColumn<Row>[]

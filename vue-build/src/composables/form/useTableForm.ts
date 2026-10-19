@@ -123,7 +123,7 @@ function useSubmitState () {
   return { submitting, error, run }
 }
 
-// 初始值三層疊出來：defaults 參數 > 導覽帶來的 > schema 的 default（見 docs/schema.md）
+// 初始值三層疊出來：defaults 參數 > 導覽帶來的 > schema 的 default（見 docs/topics/schema.md）
 export function useCreateForm<Row extends HasId> (
   table: TableKey,
   schema: TableSchema,
@@ -195,7 +195,7 @@ export function useEditForm<Row extends HasId> (
   const { submitting, error, run } = useSubmitState()
   const { fieldErrors, check, reset: resetErrors } = useValidation(schema, () => form.value)
 
-  // 同一個網址共用一個 KeepAlive 實例，回來要重置（見 docs/pages.md）
+  // 同一個網址共用一個 KeepAlive 實例，回來要重置（見 docs/topics/pages.md）
   onActivated(() => {
     form.value = row.value ? { ...row.value } as Row : null
     error.value = null

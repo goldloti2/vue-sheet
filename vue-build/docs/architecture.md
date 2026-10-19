@@ -1,8 +1,8 @@
 # 前端架構
 
-程式碼與檔案如何組織：模組化的範圍、資料夾，以及頁面範本的型態。頁面在執行時如何與外殼、導覽配合見 [pages.md](pages.md)，動作本身（含連續動作與快速編輯對話框）見 [actions.md](actions.md)。
+程式碼與檔案如何組織：模組化的範圍、資料夾，以及頁面範本的型態。頁面在執行時如何與外殼、導覽配合見 [pages.md](topics/pages.md)，動作本身（含連續動作與快速編輯對話框）見 [actions.md](topics/actions.md)。
 
-> **前置**：先看過 [schema.md](schema.md) 會比較好懂（這裡常提到 schema 與 row 上的 getter）。
+> **前置**：先看過 [schema.md](topics/schema.md) 會比較好懂（這裡常提到 schema 與 row 上的 getter）。
 
 > **標記**：沒有標記＝已經實作。🔶 部分實作、🔲 尚未實作。詳細進度見 [ROADMAP.md](../../ROADMAP.md)。
 
@@ -53,12 +53,12 @@ src/
     page/              頁面的資料層：useRecordPage、useListPage
     actions/           useTableActions：PageAction 型別、通用動作 builder、useAction／useRowAction
     auth/              useLogin（登入頁的資料層）
-  stores/tables/       共用快取、待推送佇列、row 上的 getter（見 store.md）
+  stores/tables/       共用快取、待推送佇列、row 上的 getter（見 topics/store.md）
   services/            appScript.ts 是對後端唯一的出入口（VITE_APPS_SCRIPT_URL 沒設
                        就走 mock/ 的假後端）；dev 模式會把進出的 payload 印進 console
                        （`[api] →／←／✗`）；mock/ 在真後端穩定後整個刪掉
     auth/              token 的讀寫（見 docs/auth.md）
-  schema/              對 row 做事的純函數（見 schema.md）：types（型別、coerce／format）、
+  schema/              對 row 做事的純函數（見 topics/schema.md）：types（型別、coerce／format）、
                        sort、group、filter、validation、relations（關聯圖）、image、
                        view（列的版面：欄位與位置的對應）、index（註冊表：代稱 → schema）
     tables/            每張表的欄位定義，一張表一個檔

@@ -24,7 +24,7 @@ export interface SharedListControls {
 
 const sharedListControlsKey: InjectionKey<SharedListControls> = Symbol('sharedListControls')
 
-// TabPage 與 DashboardPage 用：底下的列表共用一條搜尋字串，同一張表共用篩選與排序，由此統一登記一次（見 docs/search.md 的「同一頁面中的多張表」）。
+// TabPage 與 DashboardPage 用：底下的列表共用一條搜尋字串，同一張表共用篩選與排序，由此統一登記一次（見 docs/topics/search.md 的「同一頁面中的多張表」）。
 // current 為抽屜打開時先停的表（tableLabel），對不上任何表時停在第一張
 export function provideSharedListControls (current?: Readonly<Ref<string>>): void {
   // TabPage 與 DashboardPage 不可互相嵌套，亦不可嵌套自身：列表只會加入最近的容器，兩層又各自登記 App Bar

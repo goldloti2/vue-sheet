@@ -1,4 +1,4 @@
-// 換頁與 dashboard 面板內的轉場共用的零件（View Transitions，CSS 在 App.vue；流程見 docs/pages.md 的「換頁動畫」）
+// 換頁與 dashboard 面板內的轉場共用的零件（View Transitions，CSS 在 App.vue；流程見 docs/topics/pages.md 的「換頁動畫」）
 
 // page：換頁，整個畫面左右滑動；panel：dashboard 面板內，只有命名的面板有動畫
 export type TransitionKind = 'page' | 'panel'

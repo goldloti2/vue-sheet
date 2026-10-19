@@ -92,7 +92,7 @@ function applyOperation (operation: BatchOperation): void {
     }
 
     case 'update': {
-      // 只有改過的欄位會進來，其餘保持原狀（真後端是在鎖裡讀現值再合併，見 docs/store.md）
+      // 只有改過的欄位會進來，其餘保持原狀（真後端是在鎖裡讀現值再合併，見 docs/topics/store.md）
       const index = rowIndexOf(table, id)
       rows[index] = { ...rows[index], ...values }
       return

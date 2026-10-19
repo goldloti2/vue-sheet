@@ -18,7 +18,7 @@ interface PendingStep {
   reject: (error: Error) => void
 }
 
-// 同一時間只會有一個步驟在等表單送出（見 docs/actions.md 的「連續動作」）
+// 同一時間只會有一個步驟在等表單送出（見 docs/topics/actions.md 的「連續動作（流程）」）
 const pendingStep = shallowRef<PendingStep | null>(null)
 // 這條流程已經走了幾步。第一步要 push（保住發起流程的那一頁），之後才 replace
 const stepsTaken = shallowRef(0)

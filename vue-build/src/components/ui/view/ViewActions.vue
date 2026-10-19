@@ -5,7 +5,7 @@
   import { useRunAction } from '@/composables/shell/useActionRunner'
   import { useDashboardSelection } from '@/composables/shell/useDashboardSelection'
 
-  // view 的列上動作：（見 docs/actions.md）
+  // view 的列上動作：（見 docs/topics/actions.md）
   // row 依陣列順序由左往右排列、整組靠右；
   // menu 收於 ⋮ 選單；
   // slots 為左右各兩格，null 保留為空格。row 與 menu 略過 null

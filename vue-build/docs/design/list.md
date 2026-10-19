@@ -138,6 +138,6 @@ App Bar 裡有搜尋與排序，以及這一頁的動作；右下角的 FAB 通�
 
 - 列表頁的組成與分組：[ListPage](../components/page/ListPage.md)、[GroupedList](../components/list/GroupedList.md)
 - 各版面：[DataList](../components/list/DataList.md)（deck）、[DataProfile](../components/list/DataProfile.md)、[DataCard](../components/list/DataCard.md)、[DataGallery](../components/list/DataGallery.md)、[DataTable](../components/list/DataTable.md)
-- 搜尋、篩選與排序：[search.md](../search.md)
-- 動作：[actions.md](../actions.md)
+- 搜尋、篩選與排序：[search.md](../topics/search.md)
+- 動作：[actions.md](../topics/actions.md)
 - 範本：`template/pages/` 的 `list.vue`（deck）、`profile-list.vue`、`card-list.vue`、`gallery-list.vue`

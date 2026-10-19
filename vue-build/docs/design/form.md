@@ -84,7 +84,7 @@
 ## 技術文件
 
 - 表單頁的組成：[FormPage](../components/page/FormPage.md)、[DataForm](../components/record/DataForm.md)
-- 欄位型別、檢查與預設值：[schema.md](../schema.md)
-- 連續的步驟與快速修改：[actions.md](../actions.md#連續動作流程)、[FieldsDialog](../components/dialog/FieldsDialog.md)
-- 離開前的詢問：[pages.md](../pages.md#離開表單前先問)
+- 欄位型別、檢查與預設值：[schema.md](../topics/schema.md)
+- 連續的步驟與快速修改：[actions.md](../topics/actions.md#連續動作流程)、[FieldsDialog](../components/dialog/FieldsDialog.md)
+- 離開前的詢問：[pages.md](../topics/pages.md#離開表單前先問)
 - 範本：`template/pages/new.vue`、`template/pages/edit.vue`

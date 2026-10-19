@@ -7,7 +7,7 @@
     value: string
     // image 欄位轉好的 <img src>；有值就顯示圖片而不是文字
     image?: string | null
-    // 這一欄的動作：右邊出現圖示，整格都能點（見 docs/actions.md）
+    // 這一欄的動作：右邊出現圖示，整格都能點（見 docs/topics/actions.md）
     action?: PageAction | null
   }
 

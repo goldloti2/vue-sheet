@@ -6,7 +6,7 @@
 
 **搜尋與排序來自該 composable，而非本元件**：`useListPage` 內部呼叫 `useListControls`，因此使用它時 App Bar 即出現放大鏡、篩選鈕與排序鈕（欄位須列於 `searchable`／`sortable`）。位於 `TabPage` 之內時，改為加入 `TabPage` 的共用控制，不自行登記；不需要搜尋，或同一頁面須手動登記多張表時，傳入 `{ search: false }`，見下方「手動登記多張表」。
 
-**選了排序就別再分組**：回傳的 `sort` 不是 null 時把 `groups` 換成 `rows`，見 [search.md 的排序](../../search.md#排序)。
+**選了排序就別再分組**：回傳的 `sort` 不是 null 時把 `groups` 換成 `rows`，見 [search.md 的排序](../../topics/search.md#排序)。
 
 ## Usage
 
@@ -60,7 +60,7 @@ const groups = computed(() => sort.value ? undefined : groupRows(rows.value, gro
 </ListPage>
 ```
 
-**頁籤**：將列表拆成只供引用的元件（`_ref/`），每個頁籤放一個，各自以 `useListPage` 的 `scope` 只留該頁籤的列；搜尋、篩選與排序由 `TabPage` 統一登記並跨頁籤共用（見 [search.md](../../search.md#同一頁面中的多張表)，範本為 `template/pages/tab-list.vue` 與 `template/pages/_ref/list.vue`）。每個頁籤各有一個 `ListPage`，各自計算 FAB、多選與列表順序，只有當前頁籤那份會生效（靠 `TabPanel` 的訊號）。發布順序時會先 `flattenGroups`，與畫面上的先後一致。
+**頁籤**：將列表拆成只供引用的元件（`_ref/`），每個頁籤放一個，各自以 `useListPage` 的 `scope` 只留該頁籤的列；搜尋、篩選與排序由 `TabPage` 統一登記並跨頁籤共用（見 [search.md](../../topics/search.md#同一頁面中的多張表)，範本為 `template/pages/tab-list.vue` 與 `template/pages/_ref/list.vue`）。每個頁籤各有一個 `ListPage`，各自計算 FAB、多選與列表順序，只有當前頁籤那份會生效（靠 `TabPanel` 的訊號）。發布順序時會先 `flattenGroups`，與畫面上的先後一致。
 
 ## 手動登記多張表
 

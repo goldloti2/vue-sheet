@@ -51,7 +51,7 @@
 - 跨表算出來的值靠共用快取的 reactivity 自動重算，不需要跨表失效機制
 
 ### 累積寫入
-改動先累積在前端，由使用者按「推送」才一次寫進 Sheet。設計與實作見 [vue-build/docs/store.md](vue-build/docs/store.md)。
+改動先累積在前端，由使用者按「推送」才一次寫進 Sheet。設計與實作見 [vue-build/docs/topics/store.md](vue-build/docs/topics/store.md)。
 - 佇列 `pending`、合併規則、`flush`、`hasPending` / `flushing` / `flushError`
 - 四個寫入 action 變成同步的，只動快取與佇列
 - 流程存檔點 `beginFlow` / `commitFlow` / `rollbackFlow`（給連續動作用；流程進行中 `flush` 會被擋下）
@@ -89,7 +89,7 @@
 - **排序與分組二選一**，框架不介入：分組會把原本的順序壓成組內順序，所以頁面自己在 `sort` 不是 null 時把 `groups` 換成 `rows`（有分組的列表頁就是這樣）。排序一改，`ListPage` 發布的列表順序跟著改，詳細頁的上下一筆自動一致
 
 ### 動作系統
-說明見 [vue-build/docs/actions.md](vue-build/docs/actions.md)。
+說明見 [vue-build/docs/topics/actions.md](vue-build/docs/topics/actions.md)。
 - `PageAction` 型別（`{ key, label, icon, onClick, confirm?, display? }`），FAB、App Bar、底部動作列、detail 欄位動作共用同一種描述；內建 builder 的 label／icon 可用最後一個參數 `ActionLook` 覆寫，與行為的 options 分開
 - 通用 builder：`newAction` / `editAction` / `deleteAction` / `bulkDeleteAction` / `quickEditAction`，皆為一般函式，回傳一個 `PageAction`，不適用時回傳 `null`；不以列為參數者由 `use表名Actions` 以 `useAction` 包裝為 `ComputedRef<PageAction | null>`；以列為參數者（編輯、刪除）為函式，列表的 view 與欄位動作直接以該列呼叫，detail 頁以 `useRowAction` 綁定至當前那一筆。刪除目前 detail 頁所顯示的那一筆時自動離開
 - 欄位動作（`DataDetail` 的 `fieldActions`，欄位 key → `(row) => PageAction | null`，一欄一個、整格可點）：`goToRefAction`（ref 前往對方）／`openUrlAction`（開新分頁）／`setFieldAction`（立即改成某個值，可帶 confirm）
@@ -103,7 +103,7 @@
 ### 表單與多選
 - `useCreateForm` / `useEditForm` 收掉新增與編輯的重複邏輯（起始值、載入、送出、導覽、錯誤狀態），取消／送出也由它們自己掛上底部動作列，頁面只剩「這是哪張表」
 - 新增表單的預設值三層：schema 的 `default` → `newAction` 經 `history.state` 帶來的 → `useCreateForm` 的參數
-- 前端驗證：`schema/validation.ts` 的 `validateRow`（內建 `required`／`min`／`max`／`select` 選項，其他規則由欄位的 `validate(value, row)` 自訂）一份，form 層與 `askFields` 送出前逐欄提示、store 的 `create`／`update` 寫入前再擋一次（拋錯、不動快取）；後端只做結構完整性，分工見 [vue-build/docs/schema.md](vue-build/docs/schema.md)
+- 前端驗證：`schema/validation.ts` 的 `validateRow`（內建 `required`／`min`／`max`／`select` 選項，其他規則由欄位的 `validate(value, row)` 自訂）一份，form 層與 `askFields` 送出前逐欄提示、store 的 `create`／`update` 寫入前再擋一次（拋錯、不動快取）；後端只做結構完整性，分工見 [vue-build/docs/topics/schema.md](vue-build/docs/topics/schema.md)
 - `useMultiSelect` + `useLongPress`：長按進入多選，選取狀態由「有沒有選取任何一筆」推導；`itemProps(id)` 是每列要綁的那一包（`selectable`／`selectMode`／`selected`／長按與點選），列表元件與分組列表共用同一份
 - 分組或分頁籤的列表也走 `ListPage`：一個頁籤一個 `ListPage`，各自算狀態、FAB 與列表順序，靠面板訊號決定哪份生效，頁面不用知道當前是哪個頁籤
 - 列表頁的資料層 `useListPage(table, schema)`：整表 → 排序 → 篩選 → 搜尋（順手登記 App Bar 的放大鏡與排序鈕）＋ 多選，一次回傳（含 `sort`，頁面用它決定還要不要分組）；一頁接好幾張表時傳 `search: false`，改由頁面自己登記，再傳 `query` 讓每張表共用同一條搜尋字串
@@ -112,13 +112,13 @@
 - 批次刪除走動作的 `confirm`
 
 ### 連續動作
-設計與實作見 [vue-build/docs/actions.md](vue-build/docs/actions.md)，離開前的確認見 [vue-build/docs/pages.md](vue-build/docs/pages.md)。
+設計與實作見 [vue-build/docs/topics/actions.md](vue-build/docs/topics/actions.md)，離開前的確認見 [vue-build/docs/topics/pages.md](vue-build/docs/topics/pages.md)。
 - 流程存檔點 `beginFlow` / `commitFlow` / `rollbackFlow`：把一段流程的快取與佇列改動一次還原；套疊直接拋錯，流程進行中 `flush` 會被擋下
 - `useFlow.ts`：`runFlow`（外殼：存檔點 + commit / rollback）、`runStep`（開表單等送出）、`resumeStep`（表單交棒）、`FlowCancelled`、`hasEarlierSteps`
 - `router.afterEach` 中止等待中的步驟（reject）並回滾；`useCreateForm`／`useEditForm` 送出成功後先問 `resumeStep`
 - 第一步 `push`、之後 `replace`
 - 離開前先問：`useLeaveGuard` 的 `router.beforeEach`，返回鍵／導覽列／改網址／底部取消全走同一條；第二步之後一律問，否則看表單有沒有改動
-- 範本 `table/use__Table__Actions.ts` 的回傳物件末尾有寫法示範（註解），說明見 [vue-build/docs/actions.md](vue-build/docs/actions.md) 的「連續動作（流程）」；專案端的第一條流程見 production 分支的 PROJECT-ROADMAP
+- 範本 `table/use__Table__Actions.ts` 的回傳物件末尾有寫法示範（註解），說明見 [vue-build/docs/topics/actions.md](vue-build/docs/topics/actions.md) 的「連續動作（流程）」；專案端的第一條流程見 production 分支的 PROJECT-ROADMAP
 ### 路由
 - 登入頁與導向（`config/app.ts` 的 `authMethod` 不是 `'none'` 時）：全域 guard 連第一次開啟都會檢查，沒有 token 就轉到 `/login?redirect=…`，登入後回到原本要去的地方；側邊欄可登出。每個請求帶 token，後端回過期或無效時清掉 token、回到登入頁，重新登入後重抓用過的表（含載入失敗的，不推送）。尚未完成的部分見「未完成」的「後端」
 - `useRouteId()`：路由參數讀一次就固定（靠 `route.fullPath` 當 key 成立），離場動畫期間不會被目的地的 id 汙染。拿掉 key 時開發模式會警告
@@ -135,20 +135,20 @@
 
 程式在 `apps-script/`，需填寫的僅有 `Config.gs`：試算表 id、「表代稱 → 分頁名稱 + ID 欄表頭」的對照、表頭列號。細節、部署步驟與實測結果見 [apps-script/README.md](apps-script/README.md)。
 
-- 已實作並於 **2026-10-02 對實際的 Sheet 完成測試**：入口與信封、整表讀取、batch（鎖、衝突比對、全有全無）、表頭對應、結構完整性檢查。實作規則、值寫入儲存格的行為與實測結果見 [apps-script/README.md](apps-script/README.md)；字串轉義由前端處理，見 [vue-build/docs/schema.md](vue-build/docs/schema.md)
+- 已實作並於 **2026-10-02 對實際的 Sheet 完成測試**：入口與信封、整表讀取、batch（鎖、衝突比對、全有全無）、表頭對應、結構完整性檢查。實作規則、值寫入儲存格的行為與實測結果見 [apps-script/README.md](apps-script/README.md)；字串轉義由前端處理，見 [vue-build/docs/topics/schema.md](vue-build/docs/topics/schema.md)
 - 認證：`Config.gs` 的 `AUTH` 啟用時，登入換 token（加鹽的 SHA-256 比對帳密、HMAC 簽章、30 天效期、剩不到一半自動續期），每個請求先驗 token 才開試算表。設計見 [docs/auth.md](docs/auth.md)
 - 前後端介面（GET 整張表、POST 一個 batch、全有全無、id 由前端產生、不回傳資料列）見 [docs/api.md](docs/api.md)
 - 待處理的項目（Google 登入、Hooks）見「未完成」
 
 ### 資料一致性
-- 推送前比對整個試算表檔案的 `modifiedTime`（由後端在同一把鎖裡比對），衝突時問使用者「放棄並重抓」或「強制推送」。約定見 [docs/api.md](docs/api.md) 的「資料一致性」，前端的處置見 [vue-build/docs/store.md](vue-build/docs/store.md)
+- 推送前比對整個試算表檔案的 `modifiedTime`（由後端在同一把鎖裡比對），衝突時問使用者「放棄並重抓」或「強制推送」。約定見 [docs/api.md](docs/api.md) 的「資料一致性」，前端的處置見 [vue-build/docs/topics/store.md](vue-build/docs/topics/store.md)
 - 衝突時不把佇列重新套用到新資料上
 
 ### 列表效能
 上千列的列表頁做過一輪渲染成本的處理（每列的連結元件、`ref` 的父列查詢、畫面外的列要不要排版）。量測方法、數字與判讀方式見 [vue-build/docs/perf.md](vue-build/docs/perf.md)（附錄）。
 
 ### 文件與範本
-- 根目錄 `README.md` 是索引；跨兩端的介面在 `docs/api.md`，前端的設計在 `vue-build/docs/`（`architecture` / `schema` / `store` / `ui` + `components/` 每個元件一份）
+- 根目錄 `README.md` 是索引；跨兩端的介面在 `docs/api.md`，前端的文件在 `vue-build/docs/`（`architecture`、`perf`，`topics/` 各項機制、`design/` 設計指南、`components/` 每個元件一份）
 - `vue-build/template/`：新增一張表所需的全套檔案，**留成真的檔案**（複製整份比從程式區塊裡挑好用，而且 `main` 分支上它是唯一的頁面範例）。裡面只留最小骨架＋每個檔開頭一段「該看哪份文件」；選項目錄與說明一律回 docs，不留第二份會漂移的副本
 
 ---

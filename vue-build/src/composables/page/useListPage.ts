@@ -12,7 +12,7 @@ import { useListControls } from '@/composables/shell/useListControls'
 import { useSharedListControls } from '@/composables/shell/useSharedListControls'
 
 export interface ListPageOptions<Row> {
-  // 一頁接好幾張表時關掉，改由頁面自己 useListControls 一次登記全部（見 docs/search.md）。
+  // 一頁接好幾張表時關掉，改由頁面自己 useListControls 一次登記全部（見 docs/topics/search.md）。
   // 傳 false 時完全由頁面手動處理：不自行登記，也不加入 TabPage 等容器的共用控制
   search?: boolean
   // 同上，每張表傳同一條進來，搜尋才會同時作用在每張表上。不給就自己生一條

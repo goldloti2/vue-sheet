@@ -1,6 +1,6 @@
 <!-- 選用：以 profile 呈現的列表頁，同樣複製到 src/pages/__table__/index.vue
      卡片的版面與動作的呈現見 docs/components/list/DataProfile.md；
-     外觀與用途見 docs/design/list.md，搜尋、篩選與排序見 docs/search.md -->
+     外觀與用途見 docs/design/list.md，搜尋、篩選與排序見 docs/topics/search.md -->
 <route lang="json5">
 { meta: { title: '範本' } }
 </route>

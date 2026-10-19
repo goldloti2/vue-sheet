@@ -1,6 +1,6 @@
 # 搜尋、篩選與排序
 
-列表頁的搜尋、篩選與排序如何接上與運作。使用者看到的外觀與操作見 [design/list.md](design/list.md)。
+列表頁的搜尋、篩選與排序如何接上與運作。使用者看到的外觀與操作見 [design/list.md](../design/list.md)。
 
 ---
 
@@ -47,7 +47,7 @@
 
 ### 同一頁面中的多張表
 
-**將各列表放入 `TabPage` 的頁籤即可，不需另行登記**（見 [TabPage.md](components/panel/TabPage.md)）；同時顯示多個列表時放入 `DashboardPage` 的面板，行為相同（見 [DashboardPage.md](components/panel/DashboardPage.md)）。`TabPage` provide 一份「共用的列表控制」（`useSharedListControls`），其中的 `useListPage` 不自行登記，改為加入此控制：
+**將各列表放入 `TabPage` 的頁籤即可，不需另行登記**（見 [TabPage.md](../components/panel/TabPage.md)）；同時顯示多個列表時放入 `DashboardPage` 的面板，行為相同（見 [DashboardPage.md](../components/panel/DashboardPage.md)）。`TabPage` provide 一份「共用的列表控制」（`useSharedListControls`），其中的 `useListPage` 不自行登記，改為加入此控制：
 
 - **搜尋字串共用一條**：輸入一次，各頁籤的列表皆隨之過濾
 - **同一張表共用一份篩選與排序**：例如各頁籤為同一張表依狀態切分的列表（以 `useListPage` 的 `scope` 只留該狀態的列），條件套用於所有頁籤，抽屜中該表只有一個 chip
@@ -65,7 +65,7 @@
 
 **拆出的列表以 props 接受條件**，同一個元件可用於不同頁面，例如另一頁只列出某一種狀態。常用且意義固定的條件宜定為專屬的 prop（例如 `status`）；需要任意條件時，另提供通用的 `scope` prop，於元件內與專屬的條件合併。
 
-**不使用 `TabPage` 時，由頁面手動登記**：各表的 `useListPage` 關閉自動登記，並共用頁面建立的一條搜尋字串，由頁面以 `useListControls` 一次登記全部的表。寫法見 [ListPage.md](components/page/ListPage.md#手動登記多張表)。
+**不使用 `TabPage` 時，由頁面手動登記**：各表的 `useListPage` 關閉自動登記，並共用頁面建立的一條搜尋字串，由頁面以 `useListControls` 一次登記全部的表。寫法見 [ListPage.md](../components/page/ListPage.md#手動登記多張表)。
 
 ---
 
@@ -88,6 +88,6 @@
 | `select` | `options` 的宣告順序。`options` 中沒有的值（`allowCustom` 時自行輸入者）一律排在最後 |
 | 其他 | 欄位的值；`duration` 換算為秒、`date` 比較時間；空值不論遞增或遞減一律排在最後 |
 
-**排序與分組只能擇一**，由頁面自行判斷，框架不介入：`useListPage` 回傳的 `sort` 有值時，交給 `ListPage` 的是 `rows` 而非 `groups`（寫法見 [ListPage.md](components/page/ListPage.md#分組與頁籤)）。
+**排序與分組只能擇一**，由頁面自行判斷，框架不介入：`useListPage` 回傳的 `sort` 有值時，交給 `ListPage` 的是 `rows` 而非 `groups`（寫法見 [ListPage.md](../components/page/ListPage.md#分組與頁籤)）。
 
 排序改變時，`ListPage` 發布給 `useListOrder` 的順序隨之改變，詳細頁的上下一筆與左右滑動因此自動與畫面一致。

@@ -2,9 +2,9 @@
 
 畫面上可以按的東西：如何描述一個動作、可以放在哪裡、如何執行，以及內建的 builder、連續動作與快速編輯對話框。
 
-> **前置**：畫面各部位的名稱（App Bar、FAB、底部動作列）見 [design/README.md](design/README.md)。完成動作後如何離開頁面、表單的離開確認見 [pages.md](pages.md)。
+> **前置**：畫面各部位的名稱（App Bar、FAB、底部動作列）見 [design/README.md](../design/README.md)。完成動作後如何離開頁面、表單的離開確認見 [pages.md](pages.md)。
 
-> **標記**：沒有標記＝已經實作。🔶 部分實作、🔲 尚未實作。詳細進度見 [ROADMAP.md](../../ROADMAP.md)。
+> **標記**：沒有標記＝已經實作。🔶 部分實作、🔲 尚未實作。詳細進度見 [ROADMAP.md](../../../ROADMAP.md)。
 
 ---
 
@@ -53,7 +53,7 @@ interface PageAction {
 - **每個位置都接收 `(PageAction | null)[]`**，`null`（不適用的動作）會被略過，所以頁面組陣列時不需要判斷。略過由最後畫按鈕的元件（`PageFab`、`ChildList`、`AppShell`）負責，中間的版面元件與登記機制一律原樣轉交
 - **陣列的順序即為顯示的順序**
 - **`useAppBarActions`／`useBottomActions` 接收 getter**，回傳值改變時自動重新登記，通常寫成 `() => [xxx.value]`
-- **一次只有一個頁面的動作算數**：被 `<KeepAlive>` 收起來的頁面、以及 `TabPage` 裡不是當前頁籤的面板，動作與 FAB 都會自動讓開（見 [TabPage.md](components/panel/TabPage.md)），頁面自己不用判斷
+- **一次只有一個頁面的動作算數**：被 `<KeepAlive>` 收起來的頁面、以及 `TabPage` 裡不是當前頁籤的面板，動作與 FAB 都會自動讓開（見 [TabPage.md](../components/panel/TabPage.md)），頁面自己不用判斷
 
 ---
 
@@ -92,7 +92,7 @@ interface PageAction {
 
 ## 各表的 use表名Actions
 
-每張表的動作一律從 `use表名Actions(options)` 取，範本為 [template/table/use__Table__Actions.ts](../template/table/use__Table__Actions.ts)。
+每張表的動作一律從 `use表名Actions(options)` 取，範本為 [template/table/use__Table__Actions.ts](../../template/table/use__Table__Actions.ts)。
 
 - **呼叫端只提供自身具備的參數**：列表頁提供 `selectedIds`／`onDone`，需要新增預設值時提供 `defaults`。用不到的動作為 `null`
 - **回傳物件包含兩種項目**：
@@ -128,15 +128,15 @@ const fieldActions: FieldActions<__Table__Row> = {
 
 ## 列上的動作
 
-每一列的動作與欄位一起定義於 view（見 [DataList](components/list/DataList.md) 的「view」）：自 `use表名Actions` 取出以列為參數的動作，於 view 的 `actions` 中以該列呼叫，回傳動作的陣列。範本見 `template/pages/profile-list.vue`、`gallery-list.vue`，左右各兩格的寫法見 `card-list.vue`。
+每一列的動作與欄位一起定義於 view（見 [DataList](../components/list/DataList.md) 的「view」）：自 `use表名Actions` 取出以列為參數的動作，於 view 的 `actions` 中以該列呼叫，回傳動作的陣列。範本見 `template/pages/profile-list.vue`、`gallery-list.vue`，左右各兩格的寫法見 `card-list.vue`。
 
 - **陣列依位置排列，`null` 表示空位**：card 與 detail 標頭的前兩個置於左側、後兩個置於右側；deck、profile 與 gallery 略過空位。builder 判斷不適用而回傳的 `null` 亦同：card 與 detail 標頭中保留該格，deck、profile 與 gallery 中略過
 - **`display`** 決定該動作顯示為圖示或文字
-- **deck**：由 [ViewActions](components/view/ViewActions.md) 呈現於右下角欄位的下一列，由左往右排列、整組靠右；沒有動作時不佔高度；多選模式下隱藏。按鈕與整列的連結並列而非包在連結內，點擊按鈕不會進入 detail
-- **profile**：由 ViewActions 的 `variant="menu"` 收入卡片右側的 ⋮ 選單，只有一個動作時亦同；沒有動作時不顯示 ⋮；多選模式下隱藏。⋮ 與卡片的連結並列，點擊 ⋮ 不會進入 detail（見 [DataProfile](components/list/DataProfile.md)）
-- **gallery**：與 profile 相同，收入 ⋮ 選單，置於格子的右下角（見 [DataGallery](components/list/DataGallery.md)）
-- **card**：由 ViewActions 的 `variant="slots"` 呈現於第 4 層，前兩個靠左、後兩個靠右，`null` 保留為空格，超過四個的部分不顯示；四格皆為 `null` 時整層隱藏；多選模式下隱藏。點擊按鈕不會進入 detail，按鈕之間的空白處仍屬於連結（見 [DataCard](components/list/DataCard.md)）
-- **detail 標頭**：與 card 相同，由 ViewActions 的 `variant="slots"` 呈現於標頭圖片（或文字）的下方。標頭於資料載入後才渲染，`row` 必定存在，因此直接呼叫以列為參數的動作，不需經過 `useRowAction`（見 [DetailHeader](components/record/DetailHeader.md)）
+- **deck**：由 [ViewActions](../components/view/ViewActions.md) 呈現於右下角欄位的下一列，由左往右排列、整組靠右；沒有動作時不佔高度；多選模式下隱藏。按鈕與整列的連結並列而非包在連結內，點擊按鈕不會進入 detail
+- **profile**：由 ViewActions 的 `variant="menu"` 收入卡片右側的 ⋮ 選單，只有一個動作時亦同；沒有動作時不顯示 ⋮；多選模式下隱藏。⋮ 與卡片的連結並列，點擊 ⋮ 不會進入 detail（見 [DataProfile](../components/list/DataProfile.md)）
+- **gallery**：與 profile 相同，收入 ⋮ 選單，置於格子的右下角（見 [DataGallery](../components/list/DataGallery.md)）
+- **card**：由 ViewActions 的 `variant="slots"` 呈現於第 4 層，前兩個靠左、後兩個靠右，`null` 保留為空格，超過四個的部分不顯示；四格皆為 `null` 時整層隱藏；多選模式下隱藏。點擊按鈕不會進入 detail，按鈕之間的空白處仍屬於連結（見 [DataCard](../components/list/DataCard.md)）
+- **detail 標頭**：與 card 相同，由 ViewActions 的 `variant="slots"` 呈現於標頭圖片（或文字）的下方。標頭於資料載入後才渲染，`row` 必定存在，因此直接呼叫以列為參數的動作，不需經過 `useRowAction`（見 [DetailHeader](../components/record/DetailHeader.md)）
 
 ---
 
@@ -182,5 +182,5 @@ if (values) {
 - 內容就是 `DataForm` 加 `only` prop 只顯示那幾欄：輸入元件、驗證、錯誤顯示全部沿用。驗證只檢查被詢問的欄位
 - **初始值三層**：`options.rows` 剛好一筆且那欄非空 → 現值；否則 `options.defaults[key]`（值或函式）；都沒有 → 空。**不套用 schema 的 `default`**。多筆時不顯示現值
 - 通用的用法包成 `quickEditAction(table, keys, ids, { label, icon, defaults, onDone })`：沒有選取任何一筆時回傳 `null`，所以只在多選模式下出現；確定後對每個 id 各跑一次 `store.update`（不另開 op 種類）
-- 只是要問是／否就用 `confirm(title, text): Promise<boolean>`，動作的 `confirm` 宣告與離開守衛都用它；要給兩條以上的出路用 `choose(title, text, choices): Promise<string | null>`（同一個對話框實例，見 [ConfirmDialog.md](components/dialog/ConfirmDialog.md)）
+- 只是要問是／否就用 `confirm(title, text): Promise<boolean>`，動作的 `confirm` 宣告與離開守衛都用它；要給兩條以上的出路用 `choose(title, text, choices): Promise<string | null>`（同一個對話框實例，見 [ConfirmDialog.md](../components/dialog/ConfirmDialog.md)）
 - 一次要問的欄位放在同一個對話框

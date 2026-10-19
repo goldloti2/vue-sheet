@@ -9,7 +9,7 @@
 <template>
   <v-app>
     <AppShell :nav-items="navItems">
-      <!-- 換頁動畫由 router 以 View Transitions 處理（見 docs/pages.md 的「換頁動畫」） -->
+      <!-- 換頁動畫由 router 以 View Transitions 處理（見 docs/topics/pages.md 的「換頁動畫」） -->
       <router-view v-slot="{ Component }">
         <keep-alive :max="50">
           <component :is="Component" :key="route.fullPath" />

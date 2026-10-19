@@ -1,7 +1,7 @@
 // 複製到 src/schema/tables/__table__.ts
 //
 // 更多欄位型別（select／ref／image…）、驗證、初始值、虛擬欄位、跨表關聯，
-// 見 docs/schema.md；每個設定的解釋寫在 src/schema/types.ts 的型別上。
+// 見 docs/topics/schema.md；每個設定的解釋寫在 src/schema/types.ts 的型別上。
 import type { RowBase, TableSchema } from '../types'
 import { prefixedId } from '../types'
 

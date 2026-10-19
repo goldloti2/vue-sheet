@@ -54,5 +54,5 @@ App Bar 下方多一條頁籤列；右下角的 FAB 屬於目前的頁籤。
 
 - 頁籤頁的組成：[TabPage](../components/panel/TabPage.md)
 - 各頁籤中的列表：[ListPage](../components/page/ListPage.md)
-- 跨頁籤的搜尋、篩選與排序：[search.md](../search.md#同一頁面中的多張表)
+- 跨頁籤的搜尋、篩選與排序：[search.md](../topics/search.md#同一頁面中的多張表)
 - 範本：`template/pages/tab-list.vue`、`template/pages/_ref/list.vue`

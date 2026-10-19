@@ -1,6 +1,6 @@
 # ViewActions
 
-view 的列上動作（`actions`）的呈現元件，依 `variant` 提供三種排法。`row` 與 `menu` 略過 `null`，`slots` 將其保留為空格；沒有任何動作時不渲染。按下後交由 `useRunAction` 執行，`confirm` 與錯誤提示皆會生效（見 [actions.md](../../actions.md#列上的動作)）。
+view 的列上動作（`actions`）的呈現元件，依 `variant` 提供三種排法。`row` 與 `menu` 略過 `null`，`slots` 將其保留為空格；沒有任何動作時不渲染。按下後交由 `useRunAction` 執行，`confirm` 與錯誤提示皆會生效（見 [actions.md](../../topics/actions.md#列上的動作)）。
 
 | `variant` | 排法 | 使用者 |
 | --- | --- | --- |

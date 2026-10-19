@@ -1,7 +1,7 @@
 // 複製到 src/composables/actions/use__Table__Actions.ts
 //
 // 現成的 builder、動作在畫面的位置、連續動作（runFlow／runStep）
-// 與快速編輯對話框（quickEditAction／askFields），見 docs/actions.md。
+// 與快速編輯對話框（quickEditAction／askFields），見 docs/topics/actions.md。
 import type { FieldActions, NewActionOptions } from '@/composables/actions/useTableActions'
 import type { TableKey } from '@/schema'
 import type { __Table__Row } from '@/schema/tables/__table__'

@@ -2,9 +2,9 @@
 
 一張表要怎麼描述給框架看：欄位、關聯、驗證、預設值。
 
-> **前置**：讀這份之前不用先讀別的。實際新增一張表的步驟見 [template/README.md](../template/README.md)；每個欄位的完整說明寫在 [`src/schema/types.ts`](../src/schema/types.ts) 的型別上（游標停在欄位名就會跳出來）。
+> **前置**：讀這份之前不用先讀別的。實際新增一張表的步驟見 [template/README.md](../../template/README.md)；每個欄位的完整說明寫在 [`src/schema/types.ts`](../../src/schema/types.ts) 的型別上（游標停在欄位名就會跳出來）。
 
-> **標記**：沒有標記＝已經實作。🔶 部分實作、🔲 尚未實作。詳細進度見 [ROADMAP.md](../../ROADMAP.md)。
+> **標記**：沒有標記＝已經實作。🔶 部分實作、🔲 尚未實作。詳細進度見 [ROADMAP.md](../../../ROADMAP.md)。
 
 ---
 
@@ -12,7 +12,7 @@
 
 一張表 = 一個 Row 介面 + 一個 schema 物件。
 
-> 下面是用來**看**的例子。要複製的骨架在 [template/table/schema.ts](../template/table/schema.ts)。
+> 下面是用來**看**的例子。要複製的骨架在 [template/table/schema.ts](../../template/table/schema.ts)。
 
 ```ts
 // src/schema/tables/order.ts
@@ -85,7 +85,7 @@ export const orderSchema: TableSchema<OrderRow> = {
 
 虛擬欄位除了不能編輯，其他都跟真實欄位一樣：顯示、排序、分組，也照樣能列進 `searchable`／`sortable`／`defaultSort`／`detailOrder`。它與 `columns` 分開放，`coerceRow`／`serializeRow`／表單皆不處理它。
 
-型別有 `text`／`number`／`date`／`duration`／`select`／`ref`／`image` 七種，每種有自己的專屬設定（`number` 的 `min`／`max`、`select` 的 `options`、`ref` 的 `refTable`…）。完整清單見 [`types.ts`](../src/schema/types.ts)。
+型別有 `text`／`number`／`date`／`duration`／`select`／`ref`／`image` 七種，每種有自己的專屬設定（`number` 的 `min`／`max`、`select` 的 `options`、`ref` 的 `refTable`…）。完整清單見 [`types.ts`](../../src/schema/types.ts)。
 
 ### date 與 duration
 
@@ -110,7 +110,7 @@ export const orderSchema: TableSchema<OrderRow> = {
 顯示時一律用 `imageSrc(value)`（`schema/image.ts`）轉成 `<img src>`：Drive 走 `https://drive.google.com/thumbnail?id=<id>&sz=w<寬>`，SVG 轉成 `data:image/svg+xml,`。
 
 - **詳細頁自動顯示圖片**（`DataDetail` → `DetailField`），不用多做什麼
-- **列表縮圖於 view 中指定**：`defineView(schema, { image: 'photo', … })`，由 view 轉換為 src，`DataList` 顯示為縮圖、`DataProfile` 顯示為圓形頭像，`DataCard` 依所在的組顯示為頭像或大圖，`DataGallery` 顯示為正方形圖片；未指定則不顯示（`DataGallery` 以灰色方塊佔位）（見 [DataList](components/list/DataList.md)、[DataProfile](components/list/DataProfile.md)、[DataCard](components/list/DataCard.md)、[DataGallery](components/list/DataGallery.md)）
+- **列表縮圖於 view 中指定**：`defineView(schema, { image: 'photo', … })`，由 view 轉換為 src，`DataList` 顯示為縮圖、`DataProfile` 顯示為圓形頭像，`DataCard` 依所在的組顯示為頭像或大圖，`DataGallery` 顯示為正方形圖片；未指定則不顯示（`DataGallery` 以灰色方塊佔位）（見 [DataList](../components/list/DataList.md)、[DataProfile](../components/list/DataProfile.md)、[DataCard](../components/list/DataCard.md)、[DataGallery](../components/list/DataGallery.md)）
 - **表單就是純文字欄位**：貼網址、Drive 連結或整段 SVG。上傳到 Drive 還沒做
 - **不進搜尋與篩選**
 
@@ -186,7 +186,7 @@ Sheet 上的真相只有子表的 ref 欄位一份，父列上的陣列是讀的
 - 子表必須在快取裡才找得到子列——`ensureLoaded` 本來就會一起載；真的沒載就刪，`removeMany` 在動任何東西之前先拋錯
 - 範圍只到「刪除當下」，Sheet 上手動改出來的孤兒不管
 
-🔲 `allowCreate`（選擇器裡直接「＋ 新增」對方一筆、回來自動選上）還沒做，卡在表單頁當流程呼叫端的幾個問題，見 [ROADMAP](../../ROADMAP.md)。
+🔲 `allowCreate`（選擇器裡直接「＋ 新增」對方一筆、回來自動選上）還沒做，卡在表單頁當流程呼叫端的幾個問題，見 [ROADMAP](../../../ROADMAP.md)。
 
 ---
 

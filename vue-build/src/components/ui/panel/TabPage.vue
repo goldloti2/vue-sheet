@@ -12,7 +12,7 @@
   // 頁籤列畫在 App Bar 底下，這裡只留內容區
   useAppBarTabs(() => ({ tabs: props.tabs, current: model }))
 
-  // 各頁籤中的列表共用一條搜尋字串，同一張表共用篩選與排序，由此統一登記（見 docs/search.md 的「同一頁面中的多張表」）。
+  // 各頁籤中的列表共用一條搜尋字串，同一張表共用篩選與排序，由此統一登記（見 docs/topics/search.md 的「同一頁面中的多張表」）。
   provideSharedListControls(model)
 </script>
 

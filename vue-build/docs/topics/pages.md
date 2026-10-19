@@ -1,8 +1,8 @@
 # 頁面的運作
 
-頁面在執行時如何與外殼、導覽配合：外殼的各部位由誰負責、多選與頁籤的機制、KeepAlive 帶來的規則、換頁動畫、完成動作後如何離開，以及離開表單前的確認。各部位的外觀與用途見 [design/README.md](design/README.md)，動作本身見 [actions.md](actions.md)。
+頁面在執行時如何與外殼、導覽配合：外殼的各部位由誰負責、多選與頁籤的機制、KeepAlive 帶來的規則、換頁動畫、完成動作後如何離開，以及離開表單前的確認。各部位的外觀與用途見 [design/README.md](../design/README.md)，動作本身見 [actions.md](actions.md)。
 
-> **標記**：沒有標記＝已經實作。🔶 部分實作、🔲 尚未實作。詳細進度見 [ROADMAP.md](../../ROADMAP.md)。
+> **標記**：沒有標記＝已經實作。🔶 部分實作、🔲 尚未實作。詳細進度見 [ROADMAP.md](../../../ROADMAP.md)。
 
 ---
 

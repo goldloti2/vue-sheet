@@ -80,5 +80,5 @@ App Bar 裡有這一筆的次要動作，通常為刪除。內容由上而下為
 - 欄位區：[DataDetail](../components/record/DataDetail.md)、[DetailField](../components/record/DetailField.md)
 - 子表區塊：[ChildList](../components/page/ChildList.md)
 - 上下一筆：[RecordNav](../components/record/RecordNav.md)
-- 動作：[actions.md](../actions.md)
+- 動作：[actions.md](../topics/actions.md)
 - 範本：`template/pages/detail.vue`、`template/pages/child-list.vue`

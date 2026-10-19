@@ -43,7 +43,7 @@ export function createQueue () {
     return created
   }
 
-  // 同一筆的多次操作在寫入當下就合併，規則見 docs/store.md
+  // 同一筆的多次操作在寫入當下就合併，規則見 docs/topics/store.md
   function enqueue (table: TableKey, id: string, kind: PendingOp['kind'], values: Record<string, string>) {
     const queue = queueFor(table)
     const existing = queue.get(id)

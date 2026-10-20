@@ -25,7 +25,7 @@
 - `sortRows(rows, schema, sort?)`（使用者選的排序在前、`defaultSort` 接在後面當 tiebreaker）、`sortableColumns`、`sortByKey`（`schema/sort.ts`）；`groupRows`（多層分組）、`flattenGroups`（把分組攤回畫面順序）在 `schema/group.ts`
 - **`schema/` 放對 row 做事的純函數**（`types`／`sort`／`group`／`filter`／`validation`／`relations`／`image`），不碰 reactivity，所以 store、元件、composable 都能直接叫；`composables/data/` 只放反應式包裝（`useTable`／`useSearch`／`useFilter`）。各表的欄位定義在 `schema/tables/`（一張表一個檔），註冊表 `schema/index.ts` 留在根目錄當公開入口
 - `detailOrder` / `formOrder` 分別控制詳細頁與表單頁的欄位順序
-- `virtualColumns`：不在 Sheet 上、讀的時候才算的欄位，來源可以是自己這列、父列（`row.$欄位key`）或子列（`row.$子表_欄位key`）。store 掛成 row 上的 getter，顯示、排序、分組都跟真實欄位一樣；兩種欄位共用 `ColumnTypes`／`ColumnBase` 型別骨架
+- `virtualColumns`：不在 Sheet 上、讀的時候才算的欄位，來源可以是自己這列、父列（`row.$欄位key`）或子列（`row.$子表_欄位key`）。store 掛成 row 上的 getter，顯示、排序、分組都跟真實欄位一樣；兩種欄位共用 `ColumnTypes`／`ColumnBase` 型別骨架。排進 `formOrder` 時於表單中唯讀顯示、隨輸入即時重算（表單的 row 經 `store.withGetters` 掛上同一套 getter）
 - `labelColumn`：一列怎麼稱呼（欄位 key，省略就是 id），store 掛成 `row.$label`
 - `idColumn`：主鍵是 `columns` 中的哪一欄（值為字串的欄位），其值即為 `row.id`。可以是 `ref`（與父表共用 id 的一對一延伸表）或由使用者輸入；新增時留空才以選用的 `newId()` 發號。建立後不能修改：編輯表單與有給 `rows` 的 `askFields` 中唯讀，store 的 `update` 擋下其他途徑；`create` 擋下重複的 id 與剛被刪除、尚未推送的 id。不以數字或 `=`、`+`、`-`、`'` 開頭，只能使用 `encodeURIComponent` 不會改變的字元，不能是 `.` 或 `..`
 - `TableSchema<Row>`：各表宣告時帶自己的 Row 介面，欄位 key 與 `type` 對著它檢查，虛擬欄位 `value` 的 `row` 有型別；框架端用不帶參數的 `TableSchema`

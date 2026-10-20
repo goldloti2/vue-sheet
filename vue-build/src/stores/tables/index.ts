@@ -265,6 +265,11 @@ export const useTablesStore = defineStore('tables', () => {
     return updated
   }
 
+  // 表單等處的暫時列：掛上與快取中相同的 getter（虛擬欄位、$label、父列與子列），不進快取
+  function withGetters<Row extends object> (table: TableKey, values: Row): Row {
+    return attachGetters(table, { ...values } as Row & HasId)
+  }
+
   function remove (table: TableKey, id: string): void {
     removeMany(table, [id])
   }
@@ -320,5 +325,6 @@ export const useTablesStore = defineStore('tables', () => {
     update,
     remove,
     removeMany,
+    withGetters,
   }
 })

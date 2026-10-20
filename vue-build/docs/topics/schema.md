@@ -100,7 +100,9 @@ export const orderSchema: TableSchema<OrderRow> = {
 - **真實欄位**（`columns`）：Sheet 上真的有的，可編輯
 - **虛擬欄位**（`virtualColumns`）：不存在 Sheet 上、讀的時候才算。來源可以是這一列自己（價格加手續費），也可以是子表（父表用第一筆子列的名字當標題、子表金額加總）
 
-虛擬欄位除了不能編輯，其他都跟真實欄位一樣：顯示、排序、分組，也照樣能列進 `searchable`／`sortable`／`defaultSort`／`detailOrder`。它與 `columns` 分開放，`coerceRow`／`serializeRow`／表單皆不處理它。
+虛擬欄位除了不能編輯，其他都跟真實欄位一樣：顯示、排序、分組，也照樣能列進 `searchable`／`sortable`／`defaultSort`／`detailOrder`。它與 `columns` 分開放，`coerceRow`／`serializeRow` 與送出的值皆不處理它。
+
+排進 `formOrder` 時，虛擬欄位於表單中唯讀顯示，隨輸入即時重算；讀父列（`row.$欄位key`）的也算得出來。新增表單的 id 仍是空的，讀子列（`row.$子表_欄位key`）的在新增時一律沒有子列。
 
 型別有 `text`／`number`／`date`／`duration`／`select`／`ref`／`image` 七種，每種有自己的專屬設定（`number` 的 `min`／`max`、`select` 的 `options`、`ref` 的 `refTable`…）。完整清單見 [`types.ts`](../../src/schema/types.ts)。
 
@@ -141,7 +143,7 @@ export const orderSchema: TableSchema<OrderRow> = {
 | --- | --- |
 | `searchable` | 哪些欄位進搜尋列（`text`／`ref`）或篩選抽屜（其餘型別）。**順序就是抽屜第一層的順序** |
 | `sortable` | 哪些欄位進排序面板（`image` 列了也會跳過）。**順序就是面板上的順序** |
-| `detailOrder`／`formOrder` | 詳細頁與表單頁的欄位順序，沒列到的欄位詳細頁不顯示 |
+| `detailOrder`／`formOrder` | 詳細頁與表單頁的欄位順序，沒列到的欄位詳細頁不顯示；`formOrder` 中的虛擬欄位為唯讀 |
 | `defaultSort` | 列表的預設排序，多筆依序當 tiebreaker |
 
 四份都可省略，省略就是「沒有」（`detailOrder`／`formOrder` 例外，它們省略時沿用 `columns` 的順序）。key 打錯字 TS 會擋下來——型別是 `RowKey<Row>[]`，跟 Row 介面對答案。

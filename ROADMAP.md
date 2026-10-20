@@ -18,9 +18,9 @@
 - 捲動位置還原：視窗的捲動位置不是元件狀態，KeepAlive 管不到，所以 router 自己記一份 `fullPath → scrollY`（`beforeEach` 存、`scrollBehavior` 還原，上限同 KeepAlive 的 50 筆）。返回鍵優先用瀏覽器自己記的 `savedPosition`；沒看過的頁面一律從頂端開始（以前是停在上一頁的位置）
 
 ### Schema 型別系統
-- `SchemaColumn` / `TableSchema` 型別，`type` 支援 `text`／`number`／`date`／`duration`／`ref`／`select`／`image`
+- `SchemaColumn` / `TableSchema` 型別，`type` 支援 `text`／`number`／`date`／`duration`／`boolean`／`ref`／`select`／`image`
 - `coerceRow`（後端字串 → 前端型別）與 `serializeRow`（反向）
-- `formatColumnValue` 顯示格式化
+- `formatColumnValue` 顯示格式化；另以 `'sheet'` 取得寫回 Sheet 的文字（`boolean` 寫 `TRUE`／`FALSE`、`ref` 寫 id），`serializeRow` 即用它
 - `columnValues`（組送出用 payload）、`emptyRow`（新增表單起始值，套用欄位的 `default`）
 - `sortRows(rows, schema, sort?)`（使用者選的排序在前、`defaultSort` 接在後面當 tiebreaker）、`sortableColumns`、`sortByKey`（`schema/sort.ts`）；`groupRows`（多層分組）、`flattenGroups`（把分組攤回畫面順序）在 `schema/group.ts`
 - **`schema/` 放對 row 做事的純函數**（`types`／`sort`／`group`／`filter`／`validation`／`relations`／`image`），不碰 reactivity，所以 store、元件、composable 都能直接叫；`composables/data/` 只放反應式包裝（`useTable`／`useSearch`／`useFilter`）。各表的欄位定義在 `schema/tables/`（一張表一個檔），註冊表 `schema/index.ts` 留在根目錄當公開入口
@@ -30,6 +30,7 @@
 - `idColumn`：主鍵是 `columns` 中的哪一欄（值為字串的欄位），其值即為 `row.id`。可以是 `ref`（與父表共用 id 的一對一延伸表）或由使用者輸入；新增時留空才以選用的 `newId()` 發號。建立後不能修改：編輯表單與有給 `rows` 的 `askFields` 中唯讀，store 的 `update` 擋下其他途徑；`create` 擋下重複的 id 與剛被刪除、尚未推送的 id。不以數字或 `=`、`+`、`-`、`'` 開頭，只能使用 `encodeURIComponent` 不會改變的字元，不能是 `.` 或 `..`
 - `TableSchema<Row>`：各表宣告時帶自己的 Row 介面，欄位 key 與 `type` 對著它檢查，虛擬欄位 `value` 的 `row` 有型別；框架端用不帶參數的 `TableSchema`
 - `duration` 欄位：一段長度（不是時間點），值是 `"時:分:秒"` 字串、時數不設上限（`30:15:45` 合法），Sheet 上就是 `2:30:00`；讀進來容忍 `H:mm`（秒補 00）與 `H:mm:ss`。表單是一般文字框（原生 `type="time"` 塞不下超過 24 小時），排序與篩選都換算成秒再比（篩選是最短／最長的範圍）。🔲 「幾點幾分」的時間點型別還沒有，需要再加
+- `boolean` 欄位：值為 `true`／`false`／`null`，Sheet 上為 `TRUE`／`FALSE`／空白。顯示為是／否；表單是兩顆互斥的按鈕，再按一次已選的即清空；篩選勾選是、否、(空白)，排序否在前；不進搜尋列
 - `date` 讀進來時歸零到當天午夜：Sheet 上手動加了時間也不會讓看起來一樣的兩列排序或篩選不一樣
 - `image` 欄位：一格一張，值是行內 SVG、圖片網址、或 Google Drive 的檔案 id／分享連結，由 `schema/image.ts` 的 `imageSrc()` 依內容判斷後轉成 `<img src>`（Drive 走 thumbnail 端點、沿用瀏覽器的 Google 登入；SVG 轉 `data:` URI，當成圖片載入就不能執行 script）。詳細頁自動顯示，列表的圖片於 view 的 `image` 指定，表單是純文字欄位；不進搜尋與篩選。上傳到 Drive 還沒做
 - `select` 的 `allowCustom`：`options` 只當建議清單，表單變 `v-combobox`、打別的字也收、驗證跳過選項檢查；資料形狀還是一個字串，顯示與篩選不用知道差別。再開 `suggestFromData`，建議清單接上資料裡用過的值（`options` 在前，多出來的依次數再依字串；跟篩選抽屜共用 `presentValues`）

@@ -6,7 +6,7 @@
   import { computed, shallowRef, watch } from 'vue'
   import TableChips from '@/components/ui/shell/TableChips.vue'
   import { filterableColumns, presentValues } from '@/schema/filter'
-  import { formatDate } from '@/schema/types'
+  import { booleanText, formatDate } from '@/schema/types'
 
   const props = defineProps<{
     // 每張表各自一份條件、同時生效；上方的表選單只決定現在編哪一張
@@ -55,11 +55,16 @@
   // 只列資料裡出現過的值（options 順序在前、多出來的接後面）；有空的才給「(空白)」，放最後
   function selectItems (column: AnyColumn): SelectItem[] {
     const { known, extra, hasBlank } = presentValues(table.value?.rows.value ?? [], column)
-    const items = [...known, ...extra].map(value => ({ title: value, value }))
+    const items = [...known, ...extra].map(value => ({ title: valueTitle(column, value), value }))
     if (hasBlank) {
       items.push({ title: '(空白)', value: BLANK })
     }
     return items
+  }
+
+  // 選項顯示的文字：boolean 的 'true'／'false' 顯示為是／否，select 即為值本身
+  function valueTitle (column: AnyColumn, value: string): string {
+    return column.type === 'boolean' ? booleanText(value === 'true') : value
   }
 
   function selectedValues (column: AnyColumn): string[] {
@@ -120,7 +125,7 @@
     }
 
     if (filter.values && filter.values.length > 0) {
-      const text = filter.values.map(value => value ?? '(空白)').join('、')
+      const text = filter.values.map(value => value === null ? '(空白)' : valueTitle(column, value)).join('、')
       return text.length <= SUMMARY_MAX ? text : `${text.slice(0, SUMMARY_MAX)}…共 ${filter.values.length} 項`
     }
 
@@ -188,7 +193,7 @@
       </template>
     </v-toolbar>
 
-    <v-list v-if="editing.type === 'select'" density="compact">
+    <v-list v-if="editing.type === 'select' || editing.type === 'boolean'" density="compact">
       <v-list-item
         v-for="item in selectItems(editing)"
         :key="item.value"

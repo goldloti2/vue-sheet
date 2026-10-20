@@ -4,7 +4,7 @@ import { isEmpty } from './validation'
 
 // 篩選：條件的形狀與純函數。反應式的包裝在 composables/data/useFilter.ts
 
-// 一欄的篩選條件：select 用 values（null 代表「空白」那個選項），number / date 用 min / max。空的就是不篩
+// 一欄的篩選條件：select 與 boolean 用 values（boolean 為 'true'／'false'，null 代表「空白」那個選項），number / date 用 min / max。空的就是不篩
 export interface ColumnFilter {
   values?: (string | null)[]
   // number 是數字、date 是 Date、duration 是 "時:分:秒" 字串
@@ -17,8 +17,11 @@ export type Filters = Record<string, ColumnFilter>
 
 // schema.searchable 裡的欄位，搜尋列比 text / ref，其餘型別歸篩選抽屜
 function isFilterable (column: AnyColumn): boolean {
-  return ['date', 'duration', 'number', 'select'].includes(column.type)
+  return ['boolean', 'date', 'duration', 'number', 'select'].includes(column.type)
 }
+
+// boolean 的選項固定為是、否，依此順序列在篩選抽屜
+const BOOLEAN_OPTIONS = ['true', 'false']
 
 // 抽屜第一層的欄位與順序：schema.searchable ，跳過歸搜尋列的那些
 export function filterableColumns (schema: TableSchema): AnyColumn[] {
@@ -33,7 +36,7 @@ interface PresentValues {
   hasBlank: boolean
 }
 
-// 一個 select 欄位在 rows 裡實際出現過哪些值。篩選抽屜的選項與 suggestFromData 的建議清單都從這裡拿，排法才一致
+// 一個 select（或 boolean）欄位在 rows 裡實際出現過哪些值。篩選抽屜的選項與 suggestFromData 的建議清單都從這裡拿，排法才一致
 export function presentValues (rows: readonly object[], column: AnyColumn): PresentValues {
   const counts = new Map<string, number>()
   let hasBlank = false
@@ -46,7 +49,7 @@ export function presentValues (rows: readonly object[], column: AnyColumn): Pres
     }
   }
 
-  const options = column.type === 'select' ? column.options : []
+  const options = column.type === 'select' ? column.options : (column.type === 'boolean' ? BOOLEAN_OPTIONS : [])
   const known = options.filter(option => counts.has(option))
   // eslint-disable-next-line unicorn/no-array-sort
   const extra = [...counts.keys()].filter(value => !options.includes(value)).sort((a, b) => {

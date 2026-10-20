@@ -28,10 +28,10 @@
 順序固定為：**整表 → `useFilter` → `useSearch` → 畫面**。篩選抽屜的選項依整表（`allRows`）列出。
 
 - **修改後即時生效**，沒有套用鈕；按 ← 關閉搜尋時，篩選一併清除
-- **篩選的對象為 `schema.searchable` 中的 `select`、`number`、`date`、`duration`**（`text` 與 `ref` 歸搜尋，兩者共用同一份清單）
+- **篩選的對象為 `schema.searchable` 中的 `select`、`boolean`、`number`、`date`、`duration`**（`text` 與 `ref` 歸搜尋，兩者共用同一份清單）
 - **不同欄位之間為 AND，同一欄的多個選項之間為 OR**
 - **範圍條件**（`number`、`date`、`duration`）只填一邊即為單邊的限制；值為空的列一律排除。時長換算為秒後比較
-- **`select` 另有「(空白)」**，勾選後才保留值為空的列
+- **`select` 與 `boolean` 另有「(空白)」**，勾選後才保留值為空的列
 - **選項僅列出 `rows`（未過濾的整表）中出現過的值**，資料改變時選項隨之改變
 
 ### 抽屜分為兩層
@@ -39,7 +39,7 @@
 | | 內容 |
 | --- | --- |
 | **第一層** | 可篩選欄位的清單，順序即 `schema.searchable` 的順序，略過歸搜尋列的 `text` 與 `ref`。已有條件的欄位，名稱下方以小字顯示目前的條件（例如 `≥ 100`、`100 ～ 500`、`2026/01/01 ～`；`select` 為所選值的串接，過長時截斷並加上「…共 X 項」），右側顯示一個主色的圓點。「清除」位於這一層，清除整張表的條件 |
-| **第二層** | 點選一欄後進入，填寫條件：`select` 為一列一項的勾選框（「(空白)」排在最後），`number`、`date`、`duration` 為兩格的範圍。按 ← 回到第一層 |
+| **第二層** | 點選一欄後進入，填寫條件：`select` 為一列一項的勾選框（「(空白)」排在最後），`boolean` 同樣為勾選框，選項為是、否與「(空白)」；`number`、`date`、`duration` 為兩格的範圍。按 ← 回到第一層 |
 
 關閉抽屜時亦回到第一層。抽屜開啟時 `PageFab` 會讓開，由 `useOverlay` 的 `overlayOpenKey` 通知。
 
@@ -86,6 +86,7 @@
 | --- | --- |
 | `ref` | 對方的 `$label` |
 | `select` | `options` 的宣告順序。`options` 中沒有的值（`allowCustom` 時自行輸入者）一律排在最後 |
+| `boolean` | 否在前、是在後 |
 | 其他 | 欄位的值；`duration` 換算為秒、`date` 比較時間；空值不論遞增或遞減一律排在最後 |
 
 **排序與分組只能擇一**，由頁面自行判斷，框架不介入：`useListPage` 回傳的 `sort` 有值時，交給 `ListPage` 的是 `rows` 而非 `groups`（寫法見 [ListPage.md](../components/page/ListPage.md#分組與頁籤)）。

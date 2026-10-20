@@ -15,6 +15,8 @@ interface ColumnTypes {
   number: { value: number | null, extra: { min?: number, max?: number, step?: number } }
   /** 日期（只有日期，沒有時間；讀進來時會歸零到當天午夜） */
   date: { value: Date | null }
+  /** 是／否。Sheet 上為 TRUE／FALSE，空的儲存格即為空（null），不當成否 */
+  boolean: { value: boolean | null }
   /** 時間長度，值是 "時:分:秒" 字串（分秒兩位數，時數不設上限，例如 "30:15:00"） */
   duration: { value: string | null }
   /** 圖片：一格一張，值是行內 SVG、圖片網址、或 Google Drive 的檔案 id／分享連結（見 schema/image.ts） */
@@ -149,12 +151,16 @@ export function durationSeconds (value: unknown): number | null {
   return parts ? Number(parts[1]) * 3600 + Number(parts[2]) * 60 + Number(parts[3]) : null
 }
 
-function coerceValue (raw: string, type: ColumnType): string | number | Date | null {
+function coerceValue (raw: string, type: ColumnType): string | number | boolean | Date | null {
   if (raw === '') {
     return null
   }
 
   switch (type) {
+    case 'boolean': {
+      const text = raw.trim().toUpperCase()
+      return text === 'TRUE' ? true : (text === 'FALSE' ? false : null)
+    }
     case 'number': {
       const parsed = Number(raw)
       return Number.isNaN(parsed) ? null : parsed
@@ -190,6 +196,11 @@ export function coerceRow<Row> (row: Record<string, string>, schema: TableSchema
   return result as Row
 }
 
+// boolean 的顯示文字，全 App 一致（篩選抽屜的選項與摘要也用它）
+export function booleanText (value: boolean): string {
+  return value ? '是' : '否'
+}
+
 // 日期的顯示格式，全 App 一致（篩選抽屜的摘要也用它）
 export function formatDate (date: Date): string {
   const year = date.getFullYear()
@@ -214,15 +225,18 @@ export function serializeRow (values: Record<string, unknown>, schema: TableSche
 
   for (const column of schema.columns) {
     if (column.key in values) {
-      result[columnHeader(column)] = sheetValue(formatColumnValue(values, column), column.type)
+      result[columnHeader(column)] = sheetValue(formatColumnValue(values, column, 'sheet'), column.type)
     }
   }
 
   return result
 }
 
+// 'display' 為畫面上的文字，'sheet' 為寫回 Sheet 的文字
+export type FormatTarget = 'display' | 'sheet'
+
 // 真實與虛擬欄位都能用：虛擬欄位的值是 store 掛在 row 上的 getter
-export function formatColumnValue (row: object, column: AnyColumn): string {
+export function formatColumnValue (row: object, column: AnyColumn, target: FormatTarget = 'display'): string {
   const record = row as Record<string, unknown>
   const value = record[column.key]
 
@@ -234,8 +248,12 @@ export function formatColumnValue (row: object, column: AnyColumn): string {
     return formatDate(value)
   }
 
+  if (column.type === 'boolean' && typeof value === 'boolean') {
+    return target === 'sheet' ? String(value).toUpperCase() : booleanText(value)
+  }
+
   // ref 顯示對方的名字；對方還沒載或已被刪就退回 id
-  if (column.type === 'ref') {
+  if (column.type === 'ref' && target === 'display') {
     const parent = record[`$${column.key}`] as { $label?: string } | undefined
     return parent?.$label ?? String(value)
   }

@@ -40,6 +40,10 @@ function sortValue (row: Record<string, unknown>, column: AnyColumn | undefined)
     const index = column.options.indexOf(String(value))
     return index === -1 ? column.options.length : index
   }
+  // boolean：否在前、是在後，空的排最後
+  if (column?.type === 'boolean') {
+    return typeof value === 'boolean' ? Number(value) : null
+  }
   return value
 }
 

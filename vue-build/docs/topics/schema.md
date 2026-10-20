@@ -72,7 +72,7 @@ export const orderSchema: TableSchema<OrderRow> = {
 
 只有 `text`／`select`／`image` 這三種型別會做這件事：
 
-- `number`、`date`、`duration` 不補
+- `number`、`date`、`duration`、`boolean` 不補
 - **`ref` 不補，主鍵也不會被補**：主鍵不以數字或 `=`、`+`、`-`、`'` 開頭，也不含 `/`（見下方「主鍵」），不會符合上表的任一種形狀
 
 補單引號由前端處理，後端不參與。
@@ -104,7 +104,7 @@ export const orderSchema: TableSchema<OrderRow> = {
 
 排進 `formOrder` 時，虛擬欄位於表單中唯讀顯示，隨輸入即時重算；讀父列（`row.$欄位key`）的也算得出來。新增表單的 id 仍是空的，讀子列（`row.$子表_欄位key`）的在新增時一律沒有子列。
 
-型別有 `text`／`number`／`date`／`duration`／`select`／`ref`／`image` 七種，每種有自己的專屬設定（`number` 的 `min`／`max`／`step`、`select` 的 `options`、`ref` 的 `refTable`…）。完整清單見 [`types.ts`](../../src/schema/types.ts)。
+型別有 `text`／`number`／`date`／`duration`／`boolean`／`select`／`ref`／`image` 八種，每種有自己的專屬設定（`number` 的 `min`／`max`／`step`、`select` 的 `options`、`ref` 的 `refTable`…）。完整清單見 [`types.ts`](../../src/schema/types.ts)。
 
 `number` 的 `step` 是表單上 −／＋ 每次的增減，預設為 1；輸入的值不受它限制，例如 `step: 0.5` 時仍可輸入 1.3。表單不限制小數位數，輸入的值不會被四捨五入。
 
@@ -116,6 +116,17 @@ export const orderSchema: TableSchema<OrderRow> = {
 - 表單是一般文字框，填錯格式會被驗證擋下來
 - 排序與篩選都換算成秒再比；篩選是**範圍**（最短／最長）
 - 🔲 **沒有「幾點幾分」的型別**。需要時間點時另外新增，不以 `duration` 代替
+
+### boolean 欄位
+
+- **值為 `true`、`false` 或空（`null`）**：Sheet 上為 `TRUE`、`FALSE` 或空的儲存格，空的就是空，不當成否
+- **讀取時不分大小寫**，前後的空白亦忽略；`TRUE`、`FALSE` 以外的值（例如手動填入的 `是`、`1`）一律視為空。這樣的列經表單儲存後，該格會被寫成空
+- **Sheet 上不使用核取方塊**：核取方塊只有勾與不勾，無法留空
+- **寫回時**寫 `TRUE`、`FALSE`，空的寫空字串
+- **顯示為「是」「否」**，空的不顯示
+- **表單**是「否」「是」兩顆互斥的按鈕，再按一次已選的那顆即清空
+- **篩選**勾選是、否或「(空白)」；**排序**否在前、是在後，空的排最後
+- **不進搜尋列**，列進 `searchable` 時歸篩選抽屜
 
 ### image 欄位
 
@@ -278,7 +289,7 @@ select 兩個可選開關：
 
 ## 擴充欄位型別
 
-`ColumnTypes` 那張表定義每種 `type` 的值型別與專屬設定，`ColumnBase` 是共同骨架，`SchemaColumn` 疊 Sheet／表單設定、`VirtualColumn` 疊 `value`。加一種型別只改 `ColumnTypes`、`coerceValue`、`formatColumnValue`、`DataForm` 四處，兩種欄位自動都有。用 discriminated union 寫，所以「標了 `type: 'ref'` 卻忘記填 `refTable`」在編譯期就報錯。
+`ColumnTypes` 那張表定義每種 `type` 的值型別與專屬設定，`ColumnBase` 是共同骨架，`SchemaColumn` 疊 Sheet／表單設定、`VirtualColumn` 疊 `value`。加一種型別至少改 `ColumnTypes`、`coerceValue`、`formatColumnValue`（顯示與寫回 Sheet 兩種文字）、`DataForm` 四處，兩種欄位自動都有；要進篩選抽屜或需要特別的排序時，另改 `schema/filter.ts`、`FilterPanel` 與 `schema/sort.ts`。用 discriminated union 寫，所以「標了 `type: 'ref'` 卻忘記填 `refTable`」在編譯期就報錯。
 
 ## 已知缺口
 

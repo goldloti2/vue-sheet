@@ -41,7 +41,7 @@
     return (model.value as Record<string, unknown>)[column.key] as string | number | Date | null
   }
 
-  function setFieldValue (column: SchemaColumn, value: string | number | Date | null) {
+  function setFieldValue (column: SchemaColumn, value: string | number | boolean | Date | null) {
     model.value = { ...model.value, [column.key]: value }
   }
 
@@ -59,6 +59,17 @@
 
   function setTextValue (column: SchemaColumn, value: string) {
     setFieldValue(column, value === '' ? null : value)
+  }
+
+  // boolean 以 'true'／'false' 交給按鈕組；空的是 undefined，兩顆都不選
+  function booleanKey (column: SchemaColumn): string | undefined {
+    const value = (model.value as Record<string, unknown>)[column.key]
+    return typeof value === 'boolean' ? String(value) : undefined
+  }
+
+  // 按鈕組取消選取時回傳 undefined，即清空
+  function setBooleanValue (column: SchemaColumn, key: unknown) {
+    setFieldValue(column, key === 'true' ? true : (key === 'false' ? false : null))
   }
 
   // 各種輸入元件共用的屬性：標籤、錯誤訊息，以及唯讀（虛擬欄位、建立後的主鍵）與主鍵的提示。
@@ -170,6 +181,27 @@
         @update:model-value="(value) => setFieldValue(column, value)"
       />
 
+      <!-- 否／是兩顆互斥的按鈕；再按一次已選的那顆即清空 -->
+      <v-input
+        v-else-if="column.type === 'boolean'"
+        class="data-form__boolean"
+        :error-messages="fieldProps(column).errorMessages"
+      >
+        <span class="data-form__boolean-label">{{ column.label }}</span>
+
+        <v-btn-toggle
+          class="data-form__boolean-toggle"
+          density="comfortable"
+          divided
+          :model-value="booleanKey(column)"
+          variant="outlined"
+          @update:model-value="(value: unknown) => setBooleanValue(column, value)"
+        >
+          <v-btn value="false">否</v-btn>
+          <v-btn value="true">是</v-btn>
+        </v-btn-toggle>
+      </v-input>
+
       <!-- 時長使用一般文字框，不使用原生的 type="time" -->
       <v-text-field
         v-else-if="column.type === 'duration'"
@@ -222,5 +254,25 @@
 /* 唯讀的欄位（虛擬欄位、建立後的主鍵）：值的字色變淡，與可編輯的欄位區分 */
 .data-form__locked :deep(.v-field__input) {
   opacity: var(--v-medium-emphasis-opacity);
+}
+
+.data-form__boolean :deep(.v-input__control) {
+  display: grid;
+  grid-template-columns: 30% 70%;
+  align-items: center;
+}
+
+.data-form__boolean-label {
+  padding-inline-start: var(--v-field-padding-start, 16px);
+  color: rgba(var(--v-theme-on-surface), var(--v-medium-emphasis-opacity));
+}
+
+.data-form__boolean-toggle {
+  justify-self: center;
+  width: 70%;
+}
+
+.data-form__boolean-toggle :deep(.v-btn) {
+  flex: 1 1 0;
 }
 </style>

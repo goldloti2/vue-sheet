@@ -104,9 +104,9 @@ export const orderSchema: TableSchema<OrderRow> = {
 
 排進 `formOrder` 時，虛擬欄位於表單中唯讀顯示，隨輸入即時重算；讀父列（`row.$欄位key`）的也算得出來。新增表單的 id 仍是空的，讀子列（`row.$子表_欄位key`）的在新增時一律沒有子列。
 
-型別有 `text`／`number`／`date`／`duration`／`select`／`ref`／`image` 七種，每種有自己的專屬設定（`number` 的 `min`／`max`、`select` 的 `options`、`ref` 的 `refTable`…）。完整清單見 [`types.ts`](../../src/schema/types.ts)。
+型別有 `text`／`number`／`date`／`duration`／`select`／`ref`／`image` 七種，每種有自己的專屬設定（`number` 的 `min`／`max`／`step`、`select` 的 `options`、`ref` 的 `refTable`…）。完整清單見 [`types.ts`](../../src/schema/types.ts)。
 
-表單不限制 `number` 的小數位數，輸入的值不會被四捨五入。
+`number` 的 `step` 是表單上 −／＋ 每次的增減，預設為 1；輸入的值不受它限制，例如 `step: 0.5` 時仍可輸入 1.3。表單不限制小數位數，輸入的值不會被四捨五入。
 
 ### date 與 duration
 
@@ -240,7 +240,7 @@ Sheet 上的真相只有子表的 ref 欄位一份，父列上的陣列是讀的
 
 ### 型別層面靠輸入元件
 
-number 用 `v-number-input`（`min`／`max` 一起傳下去）、date 用 `v-date-input`、select 用 `v-select` 只能選 `options`。驗證函式擋的是元件擋不住的那些（沒填、超出範圍）。
+number 用 `v-number-input`（`min`／`max`／`step` 一起傳下去）、date 用 `v-date-input`、select 用 `v-select` 只能選 `options`。驗證函式擋的是元件擋不住的那些（沒填、超出範圍）。
 
 select 兩個可選開關：
 

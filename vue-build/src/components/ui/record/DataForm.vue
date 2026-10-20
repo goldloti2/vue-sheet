@@ -72,8 +72,9 @@
     }
   }
 
-  function numberBound (column: SchemaColumn, bound: 'min' | 'max'): number | undefined {
-    return column.type === 'number' ? column[bound] : undefined
+  // 數字欄位的 min／max／step；沒設時交給 v-number-input 的預設
+  function numberOption (column: SchemaColumn, option: 'min' | 'max' | 'step'): number | undefined {
+    return column.type === 'number' ? column[option] : undefined
   }
 
   // ref 欄位的選項就是對方整張表（共用快取）：值是 id、文字是對方的 $label，照對方的 defaultSort 排
@@ -135,10 +136,11 @@
       <v-number-input
         v-else-if="column.type === 'number'"
         v-bind="fieldProps(column)"
-        :max="numberBound(column, 'max')"
-        :min="numberBound(column, 'min')"
+        :max="numberOption(column, 'max')"
+        :min="numberOption(column, 'min')"
         :model-value="numberValue(column)"
         :precision="null"
+        :step="numberOption(column, 'step')"
         @update:model-value="(value) => setFieldValue(column, value)"
       />
 

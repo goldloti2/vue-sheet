@@ -1,6 +1,6 @@
 <script generic="Row extends object" lang="ts" setup>
   import type { CardView } from '@/schema/view'
-  import { mdiCheckCircle, mdiCircleOutline } from '@mdi/js'
+  import { mdiCheckCircle, mdiCircleOutline, mdiImageOutline } from '@mdi/js'
   import { computed } from 'vue'
   import ViewActions from '@/components/ui/view/ViewActions.vue'
   import { useRowClick } from '@/composables/list/useRowClick'
@@ -26,14 +26,14 @@
 
   const fields = computed(() => view(row))
 
-  // 沒有內容的層整層隱藏
+  // 沒指定任何位置的層整層隱藏；指定了但沒有值的位置保留
   const hasHeader = computed(() => {
     const { title, subtitle, image } = fields.value.header
-    return Boolean(title || subtitle || image)
+    return title !== undefined || subtitle !== undefined || image !== undefined
   })
   const hasBody = computed(() => {
     const { title, subtitle, summary } = fields.value.body
-    return Boolean(title || subtitle || summary)
+    return title !== undefined || subtitle !== undefined || summary !== undefined
   })
   // 多選模式下隱藏動作列
   const hasActions = computed(() => !selectMode && fields.value.actions.slice(0, 4).some(action => action !== null))
@@ -42,12 +42,12 @@
   const estimateStyle = computed(() => {
     const body = fields.value.body
     const bodyHeight = hasBody.value
-      ? 24 + (body.title ? 24 : 0) + (body.subtitle ? 20 : 0) + (body.summary ? 24 : 0)
+      ? 24 + (body.title === undefined ? 0 : 24) + (body.subtitle === undefined ? 0 : 20) + (body.summary === undefined ? 0 : 24)
       : 0
     return {
       '--card-fixed-height': `${(hasHeader.value ? 64 : 0) + (hasActions.value ? 48 : 0)}px`,
       '--card-body-height': `${bodyHeight}px`,
-      '--card-image-ratio': body.image ? '1' : '0',
+      '--card-image-ratio': body.image === undefined ? '0' : '1',
     }
   })
 
@@ -90,21 +90,28 @@
         />
       </span>
 
+      <!-- 沒指定的位置不畫；指定了但沒有值的保留位置（頭像留同大小的空白） -->
       <div v-if="hasHeader" class="card-item__header">
         <img v-if="fields.header.image" alt="" class="card-item__avatar" :src="fields.header.image">
+        <span v-else-if="fields.header.image === null" class="card-item__avatar" />
 
         <div class="card-item__text">
-          <div class="card-item__line text-title-medium font-weight-bold">{{ fields.header.title }}</div>
-          <div class="card-item__line text-body-medium text-medium-emphasis">{{ fields.header.subtitle }}</div>
+          <div v-if="fields.header.title !== undefined" class="card-item__line text-title-medium font-weight-bold">{{ fields.header.title }}</div>
+          <div v-if="fields.header.subtitle !== undefined" class="card-item__line text-body-medium text-medium-emphasis">{{ fields.header.subtitle }}</div>
         </div>
       </div>
 
+      <!-- 大圖指定了但沒有圖時，以同樣大小的灰色方塊佔位 -->
       <img v-if="fields.body.image" alt="" class="card-item__image" :src="fields.body.image">
 
+      <div v-else-if="fields.body.image === null" class="card-item__image card-item__placeholder">
+        <v-icon :icon="mdiImageOutline" size="48" />
+      </div>
+
       <div v-if="hasBody" class="card-item__body">
-        <div v-if="fields.body.title" class="card-item__line text-title-medium font-weight-bold">{{ fields.body.title }}</div>
-        <div v-if="fields.body.subtitle" class="card-item__line text-body-medium text-medium-emphasis">{{ fields.body.subtitle }}</div>
-        <div v-if="fields.body.summary" class="card-item__summary text-body-medium">{{ fields.body.summary }}</div>
+        <div v-if="fields.body.title !== undefined" class="card-item__line text-title-medium font-weight-bold">{{ fields.body.title }}</div>
+        <div v-if="fields.body.subtitle !== undefined" class="card-item__line text-body-medium text-medium-emphasis">{{ fields.body.subtitle }}</div>
+        <div v-if="fields.body.summary !== undefined" class="card-item__summary text-body-medium">{{ fields.body.summary }}</div>
       </div>
     </component>
 
@@ -167,6 +174,14 @@
   object-fit: cover;
 }
 
+.card-item__placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(var(--v-theme-on-surface), var(--v-disabled-opacity));
+  background: rgb(var(--v-theme-surface-light));
+}
+
 /* 第 3 層 */
 .card-item__body {
   display: flex;
@@ -187,6 +202,12 @@
   overflow: hidden;
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
+}
+
+/* 指定了但沒有值：以零寬字元撐出一行的高度 */
+.card-item__line:empty::before,
+.card-item__summary:empty::before {
+  content: '\200b';
 }
 
 /* dashboard 中 3 格以下的窄面板：省略第 3 層（門檻見 docs/components/panel/DashboardPanel.md） */

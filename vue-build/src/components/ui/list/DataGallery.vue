@@ -73,8 +73,9 @@
       </div>
 
       <div class="gallery-item__text">
-        <div class="gallery-item__line text-title-small font-weight-bold">{{ fields.title }}</div>
-        <div v-if="fields.subtitle" class="gallery-item__line gallery-item__subtitle text-body-small text-medium-emphasis">{{ fields.subtitle }}</div>
+        <!-- 沒指定的位置不畫；指定了但沒有值的保留一行 -->
+        <div v-if="fields.title !== undefined" class="gallery-item__line text-title-small font-weight-bold">{{ fields.title }}</div>
+        <div v-if="fields.subtitle !== undefined" class="gallery-item__line gallery-item__subtitle text-body-small text-medium-emphasis">{{ fields.subtitle }}</div>
       </div>
     </component>
 
@@ -141,6 +142,11 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* 指定了但沒有值：以零寬字元撐出一行的高度 */
+.gallery-item__line:empty::before {
+  content: '\200b';
 }
 
 /* 文字區右下，距右緣與底緣各 2px；疊於連結之上由 list-row-above-link 負責 */

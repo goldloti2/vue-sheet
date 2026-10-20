@@ -1,6 +1,6 @@
 # DataCard
 
-card 式列表的**單一張卡片**：上下共四層，沒有內容的那一層整層隱藏。與 [DataProfile](DataProfile.md) 相同，卡片之間有間隔，點擊卡片進入 detail。
+card 式列表的**單一張卡片**：上下共四層，沒指定任何位置的那一層整層隱藏。與 [DataProfile](DataProfile.md) 相同，卡片之間有間隔，點擊卡片進入 detail。
 
 各位置由 card 專用的 view（`defineCardView`）指定，分為 `header`、`body` 兩組，每組可用的位置與 [DataList](DataList.md#view) 的 view 相同。自身不做迴圈：列表頁放在 [ListPage](../page/ListPage.md) 的 slot 裡，其他地方用 `v-for` 或包在 `GroupedList` 的 slot 裡。給了 `to` 整張卡片就是連結。
 
@@ -19,7 +19,8 @@ card 式列表的**單一張卡片**：上下共四層，沒有內容的那一�
 | 3 | `body` | 標題（`title`）、副標題（`subtitle`）與摘要（`summary`）；摘要可換行，最多三行 |
 | 4 | `actions` | 最多四格，由 [ViewActions](../view/ViewActions.md) 的 `variant="slots"` 呈現：前兩個靠左、後兩個靠右，`null` 保留為空格，超過四個的部分不顯示。每一格依 `display` 顯示為圖示或文字 |
 
-- 第 1 層的三個位置皆無內容時隱藏；第 3 層亦同。第 2 層僅於有圖片時出現；第 4 層於四格皆為 `null` 時隱藏，多選模式下亦隱藏
+- 第 1 層的三個位置皆未指定時隱藏；第 3 層亦同。第 2 層僅於指定了 `body.image` 時出現；第 4 層於四格皆為 `null` 時隱藏，多選模式下亦隱藏
+- 指定了但這一列沒有值的位置保留：文字留一行的高度，頭像留同大小的空白，大圖以同樣大小的灰色方塊佔位
 - `header` 與 `body` 各自指定欄位，可放相同或不同的欄位；`aside` 不顯示
 
 ## Props

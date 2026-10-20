@@ -21,12 +21,13 @@ interface FieldGroup<Row extends object> {
 // 依位置排：card 與 detail 標頭的前兩個在左、後兩個在右，null 是空位；deck 與 profile 會跳過空位
 type RowActions<Row extends object> = (row: Row) => (PageAction | null)[]
 
+// 沒指定的位置為 undefined，版面不畫；指定了但沒有值的文字為 ''、圖片為 null，版面保留它的位置
 interface ResolvedGroup {
-  title: string
-  subtitle: string
-  image: string | null
-  summary: string
-  aside: string
+  title?: string
+  subtitle?: string
+  image?: string | null
+  summary?: string
+  aside?: string
 }
 
 // defineView 的結果：給一列，回傳各位置的內容與這一列的動作（deck、profile、gallery、detail 標頭）
@@ -44,9 +45,9 @@ function noActions (): (PageAction | null)[] {
 }
 
 // 欄位在建立時查好，之後每一列只剩讀值與格式化。schema 沒定義的（id、$label）直接轉字串
-function textReader (schema: TableSchema, key: string | undefined): (row: object) => string {
+function textReader (schema: TableSchema, key: string | undefined): (row: object) => string | undefined {
   if (!key) {
-    return () => ''
+    return () => undefined
   }
   const column = findColumn(schema, key)
   if (column) {
@@ -58,9 +59,9 @@ function textReader (schema: TableSchema, key: string | undefined): (row: object
   }
 }
 
-function imageReader (key: string | undefined): (row: object) => string | null {
+function imageReader (key: string | undefined): (row: object) => string | null | undefined {
   if (!key) {
-    return () => null
+    return () => undefined
   }
   return row => imageSrc((row as Record<string, unknown>)[key])
 }

@@ -18,7 +18,7 @@ view 的定義方式見 [DataList](DataList.md#view)。本元件僅使用以下�
 | --- | --- |
 | `title` | 中間上方，過長時以省略號截斷 |
 | `subtitle` | 中間下方，過長時以省略號截斷 |
-| `image` | 左側 40×40 的圓形頭像，圖片裁切填滿（`object-fit: cover`）；沒有圖片時不顯示，標題往左靠齊。多選模式下勾選圖示置於其左側 |
+| `image` | 左側 40×40 的圓形頭像，圖片裁切填滿（`object-fit: cover`）；沒指定時不顯示，標題往左靠齊；指定了但這一列沒有圖片時保留同大小的空白。標題與副標沒指定時不顯示，指定了但沒有值時保留一行。多選模式下勾選圖示置於其左側 |
 | `actions` | 右側的 ⋮ 選單，由 [ViewActions](../view/ViewActions.md) 的 `variant="menu"` 呈現。只有一個動作時亦收入選單；沒有動作時不顯示 ⋮；多選模式下隱藏 |
 
 ## Props
@@ -45,6 +45,6 @@ view 的定義方式見 [DataList](DataList.md#view)。本元件僅使用以下�
 ## 備註
 
 - **連結與 DataList 相同**：自行組 `href` 的 `<a>`，不使用 `RouterLink`，與 DataList、[DataCard](DataCard.md) 共用 `useRowClick`。⋮ 按鈕與連結並列，不包在 `<a>` 內，點擊 ⋮ 不會進入 detail
-- **勾選圖示置於頭像左側**：多選模式下勾選圖示出現於卡片最左側，沒有圖片時則直接接在標題左側；被選取的卡片疊上一層主色淡底
+- **勾選圖示置於頭像左側**：多選模式下勾選圖示出現於卡片最左側，沒指定頭像時則直接接在標題左側；被選取的卡片疊上一層主色淡底
 - **間隔由元件自身負責**：卡片帶有下方間距、圓角、外框與偏向右下的陰影，`ListPage` 與 `GroupedList` 不需另外設定。間距、圓角、陰影與點擊、選取的樣式定義於 `src/styles/list.css`，與其他列表元件共用（見 [ListLayout](ListLayout.md) 的「共用的樣式」）
 - **`content-visibility: auto`**：畫面外的卡片不進行排版與繪製。`contain-intrinsic-size: auto 68px` 為尚未量得實際高度前的替代值；卡片的版型若大幅變動，此數值須一併調整

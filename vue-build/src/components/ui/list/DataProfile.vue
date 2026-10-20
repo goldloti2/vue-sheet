@@ -64,11 +64,13 @@
         size="20"
       />
 
+      <!-- 沒指定的位置不畫；指定了但沒有值的保留位置（頭像留同大小的空白） -->
       <img v-if="fields.image" alt="" class="profile-item__avatar" :src="fields.image">
+      <span v-else-if="fields.image === null" class="profile-item__avatar" />
 
       <div class="profile-item__text">
-        <div class="profile-item__title text-title-medium font-weight-bold">{{ fields.title }}</div>
-        <div class="profile-item__subtitle text-body-medium text-medium-emphasis">{{ fields.subtitle }}</div>
+        <div v-if="fields.title !== undefined" class="profile-item__title text-title-medium font-weight-bold">{{ fields.title }}</div>
+        <div v-if="fields.subtitle !== undefined" class="profile-item__subtitle text-body-medium text-medium-emphasis">{{ fields.subtitle }}</div>
       </div>
     </component>
 
@@ -117,5 +119,11 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* 指定了但沒有值：以零寬字元撐出一行的高度 */
+.profile-item__title:empty::before,
+.profile-item__subtitle:empty::before {
+  content: '\200b';
 }
 </style>

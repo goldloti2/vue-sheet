@@ -104,6 +104,8 @@ export const orderSchema: TableSchema<OrderRow> = {
 
 排進 `formOrder` 時，虛擬欄位於表單中唯讀顯示，隨輸入即時重算；讀父列（`row.$欄位key`）的也算得出來。新增表單的 id 仍是空的，讀子列（`row.$子表_欄位key`）的在新增時一律沒有子列。
 
+虛擬欄位也可以是 `ref`，`value` 回傳對方的 id，用於經由另一筆父列取得的多層關聯。store 同樣掛上 `row.$欄位key`，顯示、排序與搜尋皆以對方的名稱呈現，對方的表亦一起載入。它不進關聯圖：對方沒有 `$子表_欄位key`，不能設 `onDelete`，也不能作為 dashboard 的 `via`。
+
 型別有 `text`／`number`／`date`／`duration`／`boolean`／`select`／`ref`／`image` 八種，每種有自己的專屬設定（`number` 的 `min`／`max`／`step`、`select` 的 `options`、`ref` 的 `refTable`…）。完整清單見 [`types.ts`](../../src/schema/types.ts)。
 
 `number` 的 `step` 是表單上 −／＋ 每次的增減，預設為 1；輸入的值不受它限制，例如 `step: 0.5` 時仍可輸入 1.3。表單不限制小數位數，輸入的值不會被四捨五入。

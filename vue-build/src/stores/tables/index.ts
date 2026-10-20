@@ -4,7 +4,7 @@ import { defineStore } from 'pinia'
 import { computed, reactive, shallowReactive, shallowRef } from 'vue'
 import { schemas } from '@/schema'
 import { cascadeRelations, childRelations } from '@/schema/relations'
-import { idColumnOf, serializeRow } from '@/schema/types'
+import { allColumns, idColumnOf, serializeRow } from '@/schema/types'
 import { isEmpty, validateRow } from '@/schema/validation'
 import { fetchTable } from '@/services/appScript'
 import { createQueue } from './queue'
@@ -67,9 +67,9 @@ export const useTablesStore = defineStore('tables', () => {
     }
   }
 
-  // 這張表要用就得一起載的其他表：ref 指到的父表（$欄位key）與指向它的子表（$子表_欄位key、連帶刪除）
+  // 這張表要用就得一起載的其他表：ref 欄位（含虛擬）指到的父表（$欄位key）與指向它的子表（$子表_欄位key、連帶刪除）
   function tablesNeededBy (table: TableKey): TableKey[] {
-    const parents = schemas[table].columns.flatMap(column => column.type === 'ref' ? [column.refTable as TableKey] : [])
+    const parents = allColumns(schemas[table]).flatMap(column => column.type === 'ref' ? [column.refTable as TableKey] : [])
     const children = childRelations(table).map(relation => relation.childTable)
     return [...new Set([...parents, ...children])]
   }

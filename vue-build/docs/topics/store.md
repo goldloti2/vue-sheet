@@ -25,7 +25,7 @@ const { row, loading, error } = useTableRow<OrderRow>('order', id)              
 ```
 
 - **型別轉換只發生在 `fetchTable` 這一個點**：後端形狀是 `Record<string, string>`，前端形狀是轉好型別的 Row（`Date`／`number`／`null`）
-- **關聯的表會一起載**（ref 指到的父表、指向它的子表）
+- **關聯的表會一起載**（ref 欄位指到的父表，虛擬的 ref 亦同；指向它的子表）
 - **沒有「只重抓一張表」的 API**。要重抓就是整個 App 一起（同步鈕）
 
 ---

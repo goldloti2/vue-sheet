@@ -6,7 +6,7 @@ import { computed } from 'vue'
 import { schemas } from '@/schema'
 import { childRelations } from '@/schema/relations'
 import { sortRows } from '@/schema/sort'
-import { rowLabel } from '@/schema/types'
+import { allColumns, rowLabel } from '@/schema/types'
 
 // 沒有子列時共用同一個空陣列，getter 的回傳值身分才穩定
 const NO_ROWS: unknown[] = []
@@ -74,7 +74,7 @@ export function createRowGetters (rows: Partial<Record<TableKey, unknown[]>>) {
   }
 
   // 不可列舉，spread / JSON / Object.keys 都看不到：
-  // 虛擬欄位、$label（這一列的名字）、每個 ref 欄位的 $欄位key（父列）、每張子表的 $子表_欄位key（子列陣列）
+  // 虛擬欄位、$label（這一列的名字）、每個 ref 欄位（含虛擬）的 $欄位key（父列）、每張子表的 $子表_欄位key（子列陣列）
   function attachGetters<Row extends { id: string }> (table: TableKey, row: Row): Row {
     // 用不帶 Row 的 TableSchema 接，否則 schemas[table] 是各表 schema 的 union，value 的參數會變成所有 Row 的交集
     const schema: TableSchema = schemas[table]
@@ -85,7 +85,7 @@ export function createRowGetters (rows: Partial<Record<TableKey, unknown[]>>) {
 
     defineGetter(row, '$label', () => rowLabel(row, schema))
 
-    for (const column of schema.columns) {
+    for (const column of allColumns(schema)) {
       if (column.type === 'ref') {
         const parentTable = column.refTable as TableKey
         defineGetter(row, `$${column.key}`, () => {

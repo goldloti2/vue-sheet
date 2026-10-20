@@ -93,7 +93,7 @@
 
 ### 先寫 Row 介面，再宣告 schema
 
-`TableSchema<__Table__Row>` 會拿介面去檢查：欄位 `key`、`idColumn`、`labelColumn`、`searchable`、`sortable`、`detailOrder`、`defaultSort` 打錯字直接紅字，`type` 跟值的型別對不上也會抓，虛擬欄位 `value` 的 `row` 不用轉型。介面裡要自己補 store 會掛上去的東西——虛擬欄位的 `readonly xxx`，以及每個 ref 欄位的 `readonly $欄位key?: 對方Row`（`value` 裡要讀父列才需要）。
+`TableSchema<__Table__Row>` 會拿介面去檢查：欄位 `key`、`idColumn`、`labelColumn`、`searchable`、`sortable`、`detailOrder`、`defaultSort` 打錯字直接紅字，`type` 跟值的型別對不上也會抓，虛擬欄位 `value` 的 `row` 不用轉型。介面裡要自己補 store 會掛上去的東西——虛擬欄位的 `readonly xxx`，以及每個 ref 欄位（含虛擬）的 `readonly $欄位key?: 對方Row`（`value` 裡要讀父列才需要）。
 
 ---
 

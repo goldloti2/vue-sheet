@@ -37,7 +37,7 @@
 
 ### 跨表關聯
 - `schema/relations.ts` 掃 schema 的 `ref` 欄位自動產生關聯圖，新增關聯只要標 `type: 'ref'`
-- store 在每列掛每個 ref 欄位的 `$欄位key`（父列），`formatColumnValue` 遇到 ref 就顯示對方的 `$label`，所以 detail／表格／列表／選擇器全都顯示名字、沒有 ref 專用元件
+- store 在每列掛每個 ref 欄位的 `$欄位key`（父列），虛擬的 ref 亦同（只有正向，不進關聯圖），`formatColumnValue` 遇到 ref 就顯示對方的 `$label`，所以 detail／表格／列表／選擇器全都顯示名字、沒有 ref 專用元件
 - `DataForm` 的 `ref` 欄位是父表整表的可搜尋下拉清單（`v-autocomplete`），每列文字與搜尋比對都是對方的 `$label`；「前往對方」是欄位動作 `goToRefAction`，頁面自己列
 - store 也在每張父表的列掛 `$子表_欄位key`（指向這列的子列陣列，照子表 `defaultSort` 排），零設定；虛擬欄位與頁面直接讀它，不用另外查。名字帶 ref 欄位，所以同一張子表兩個 ref 指向同一張父表（平行邊）各自一個 getter，不會撞
 - `ensureLoaded(table)` 會把父表與子表一起載（擋循環）

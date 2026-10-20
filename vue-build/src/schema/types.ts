@@ -75,11 +75,13 @@ export type SchemaColumn<Row extends object = AnyRow> = {
 }[ColumnType]
 
 // 虛擬欄位：不在 Sheet 上、讀的時候才算。store 會把它掛成 row 上的 getter，讀起來跟真實欄位一樣（見 docs/topics/schema.md）。
-// 父表走 row.$欄位key、子表走 row.$子表_欄位key，都是 store 掛好的，value 直接讀
+// 父表走 row.$欄位key、子表走 row.$子表_欄位key，都是 store 掛好的，value 直接讀。
+// 虛擬的 ref 同樣掛 row.$欄位key，但不進關聯圖：對方沒有反向的子列，也不能連帶刪除
 export type VirtualColumn<Row extends object = AnyRow> = {
   [T in ColumnType]: ColumnBase<Row, T> & {
     /** 怎麼算出來。父列讀 row.$欄位key、子列讀 row.$子表_欄位key，都是 store 掛好的 */
     value: (row: Row) => ColumnValue<T>
+    onDelete?: never
   }
 }[ColumnType]
 

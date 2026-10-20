@@ -1,7 +1,7 @@
 // 新增表單的初始值。給函式的話是打開表單那一刻才求值
 export type ColumnDefault<T> = T | (() => T)
 
-// 每張表的 Row 介面都 extends 這個：id 是系統欄位，$label 是 store 掛的 getter（見 labelColumn）
+// 每張表的 Row 介面都 extends 這個：id 恆等於主鍵那一欄的值（見 idColumn），$label 是 store 掛的 getter（見 labelColumn）
 export interface RowBase {
   id: string
   readonly $label: string
@@ -94,12 +94,12 @@ export interface SortSpec<Row extends object = AnyRow> {
 export interface TableSchema<Row extends object = AnyRow> {
   /** 畫面上怎麼顯示這張表（表的 chip、頁籤比對）。Sheet 分頁的名稱只有後端知道 */
   tableLabel: string
-  /** 這張表的 ID 欄，填 Sheet 上的實際表頭文字。系統欄位，不放進 columns */
-  idColumn: string
+  /** 主鍵是 columns 中的哪一欄（text、ref 等值為字串的欄位），其值即為 row.id。建立後不能修改，見 docs/topics/schema.md */
+  idColumn: ColumnKey<Row, string | null>
   /** 用哪一欄稱呼一列（真實或虛擬欄位都行），store 據此掛 row.$label；別的表 ref 到這裡就顯示它。省略就是 id */
   labelColumn?: RowKey<Row>
-  /** 怎麼發一筆新 id（常見的前綴式用 prefixedId('TPL')）。格式別用數字開頭，見 docs/topics/schema.md */
-  newId: () => string
+  /** 新增時主鍵留空就以它發號（常見的前綴式用 prefixedId('TPL')）；省略時主鍵必填 */
+  newId?: () => string
   /** Sheet 上真的有的欄位，順序同時是表單與詳細頁的預設順序 */
   columns: SchemaColumn<Row>[]
   /** 算出來的欄位，不進 coerceRow / serializeRow / 表單；顯示、排序、分組都跟真實欄位一樣用 */
@@ -118,6 +118,20 @@ export interface TableSchema<Row extends object = AnyRow> {
 
 function columnHeader (column: SchemaColumn): string {
   return column.sheetHeader ?? column.label
+}
+
+// 主鍵那一欄；idColumn 指到不存在的欄位是 schema 寫錯，直接拋錯
+export function idColumnOf (schema: TableSchema): SchemaColumn {
+  const column = schema.columns.find(candidate => candidate.key === schema.idColumn)
+  if (!column) {
+    throw new Error(`idColumn "${schema.idColumn}" 不在 columns 中`)
+  }
+  return column
+}
+
+// 主鍵在 Sheet 上的表頭；後端以它找列
+export function idHeader (schema: TableSchema): string {
+  return columnHeader(idColumnOf(schema))
 }
 
 // 時長的容錯：H:mm 與 H:mm:ss，時數不限，秒省略就是 00。分秒超過 59 或格式不對就當空的
@@ -166,7 +180,7 @@ function coerceValue (raw: string, type: ColumnType): string | number | Date | n
 // 把後端/mock 回來的原始字串 row，照 schema 轉成該有的型別
 export function coerceRow<Row> (row: Record<string, string>, schema: TableSchema): Row {
   const result: Record<string, unknown> = {
-    id: row[schema.idColumn] ?? '',
+    id: row[idHeader(schema)] ?? '',
   }
 
   for (const column of schema.columns) {
@@ -267,7 +281,7 @@ export function prefixedId (prefix: string): () => string {
   return () => `${prefix}-${crypto.randomUUID().slice(0, 8)}`
 }
 
-// 依 schema 產生一筆 row 給新增表單當初始值；id 留空，送出時才發
+// 依 schema 產生一筆 row 給新增表單當初始值；id 留空，送出時取主鍵那一欄的值，空的才發號
 export function emptyRow<Row> (schema: TableSchema): Row {
   const result: Record<string, unknown> = { id: '' }
 
@@ -278,7 +292,7 @@ export function emptyRow<Row> (schema: TableSchema): Row {
   return result as Row
 }
 
-// 把 row 攤成 { columnKey: 值 } 的物件，只帶 schema.columns 裡的真實欄位（不含 id）；
+// 把 row 攤成 { columnKey: 值 } 的物件，只帶 schema.columns 裡的真實欄位（主鍵那一欄也在內，系統的 id 不在）；
 // 送 create/update 給後端的 payload 用這個組
 export function columnValues (row: object, schema: TableSchema): Record<string, unknown> {
   const result: Record<string, unknown> = {}

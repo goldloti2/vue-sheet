@@ -27,6 +27,7 @@
 - `detailOrder` / `formOrder` 分別控制詳細頁與表單頁的欄位順序
 - `virtualColumns`：不在 Sheet 上、讀的時候才算的欄位，來源可以是自己這列、父列（`row.$欄位key`）或子列（`row.$子表_欄位key`）。store 掛成 row 上的 getter，顯示、排序、分組都跟真實欄位一樣；兩種欄位共用 `ColumnTypes`／`ColumnBase` 型別骨架
 - `labelColumn`：一列怎麼稱呼（欄位 key，省略就是 id），store 掛成 `row.$label`
+- `idColumn`：主鍵是 `columns` 中的哪一欄（值為字串的欄位），其值即為 `row.id`。可以是 `ref`（與父表共用 id 的一對一延伸表）或由使用者輸入；新增時留空才以選用的 `newId()` 發號。建立後不能修改：編輯表單與有給 `rows` 的 `askFields` 中唯讀，store 的 `update` 擋下其他途徑；`create` 擋下重複的 id 與剛被刪除、尚未推送的 id。不以數字或 `=`、`+`、`-`、`'` 開頭，只能使用 `encodeURIComponent` 不會改變的字元，不能是 `.` 或 `..`
 - `TableSchema<Row>`：各表宣告時帶自己的 Row 介面，欄位 key 與 `type` 對著它檢查，虛擬欄位 `value` 的 `row` 有型別；框架端用不帶參數的 `TableSchema`
 - `duration` 欄位：一段長度（不是時間點），值是 `"時:分:秒"` 字串、時數不設上限（`30:15:45` 合法），Sheet 上就是 `2:30:00`；讀進來容忍 `H:mm`（秒補 00）與 `H:mm:ss`。表單是一般文字框（原生 `type="time"` 塞不下超過 24 小時），排序與篩選都換算成秒再比（篩選是最短／最長的範圍）。🔲 「幾點幾分」的時間點型別還沒有，需要再加
 - `date` 讀進來時歸零到當天午夜：Sheet 上手動加了時間也不會讓看起來一樣的兩列排序或篩選不一樣
@@ -47,7 +48,7 @@
 - 寫入走 store 的 `create` / `update` / `remove` / `removeMany`：改快取並進佇列，呼叫端不用手動 refresh
 - 待寫入佇列 `pending`（含合併規則）與手動推送；四個寫入 action 是同步的，只動快取與佇列
 - `notify()`：全 App 一則 snackbar 訊息，由 `AppShell` 渲染（跟 `confirm()` 一起放在 `shell/useDialogs.ts`）
-- 新增的 id 由前端發：`newId` 是 schema 上的必填函式，格式由各表決定（`prefixedId('TPL')` 是現成的前綴式）。後端收到已存在的 id 就當作重送、回傳既有那筆
+- 新增的 id 由前端決定：主鍵那一欄的值，空的才以 `newId()` 發號，格式由各表決定（`prefixedId('TPL')` 是現成的前綴式）。後端收到已存在的 id 就當作重送、回傳既有那筆
 - 跨表算出來的值靠共用快取的 reactivity 自動重算，不需要跨表失效機制
 
 ### 累積寫入
@@ -160,6 +161,13 @@
 - 🔲 **Google 登入**（前端 `authMethod: 'google'`）：走同一套約定，Google 的 ID token 放進登入的 `credentials`，見 [docs/auth.md](docs/auth.md)
 - 🔲 Hooks 機制（見 [docs/api.md](docs/api.md)）
 - `bulkCreate`：等真的有匯入需求再說
+
+### Schema
+- **可修改的 id**（延後，等確實需要修改 id 的情境再做）：主鍵一改，所有記著舊 id 的地方都須跟著換
+  - 子列的 ref：沿著關聯圖連帶更新為新 id（類似連帶刪除）；子表的 id 欄本身為 ref 時須遞迴
+  - 待推送佇列：未推送的新增直接換 id；已在 Sheet 上的列，推送前後端仍為舊 id，佇列須記一份「新 id → 舊 id」的對照，否則同一批中後續的操作找不到列
+  - 畫面：詳細頁的網址、KeepAlive 的快取、列表發布的順序、多選的 id、儀表板的選取皆記著舊 id，編輯後須以新 id 取代
+  - 編輯時清空 id 欄即重新發號，亦屬於修改 id
 
 ### UI 功能
 - 關聯選擇器的 `allowCreate`：清單最上面一項「＋ 新增…」，開父表的新增表單、回來自動選上。看起來是 `runStep('/父表/new')`，但表單頁當「呼叫端」跟動作當呼叫端不一樣，四件事要先解：

@@ -34,6 +34,7 @@
 | `schema` | `TableSchema` | **必填** |
 | `keys` | `string[]` | **必填**，要問哪幾個欄位 |
 | `errors` | `Record<string, string>` | `{ 欄位 key: 錯誤訊息 }`，交給 `DataForm` 顯示 |
+| `lockId` | `boolean?` | 修改既有的列時為 `true`，主鍵那一欄唯讀；`askFields` 有給 `rows` 時即為 `true` |
 
 ## Emits
 

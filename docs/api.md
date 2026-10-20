@@ -51,7 +51,9 @@
 - **`since` 沒帶就是強制推送**：不比對、直接寫。前端的「強制推送」就是這樣送的
 - 粒度很粗（任何分頁、連格式變更都算），單人多裝置的情境夠用。前端撞到衝突後的處置（保留佇列、兩條出路）見 [vue-build/docs/topics/store.md](../vue-build/docs/topics/store.md) 的推送那節
 
-> `id` 是每張表都有的系統欄位，兩端都不當成一般欄位看：前端 `TableSchema` 用獨立的 `idColumn` 指出它對應哪個表頭、不放進 `columns`，`coerceRow()` 固定把它轉成 row 物件的 `id`；後端同樣從 `Config.gs` 的 `idColumn` 知道是哪一欄，用來把 id 換成列號。值本身由前端產生（見上方「請求與回應」）。
+> 每張表都有一欄主鍵：前端 `TableSchema` 的 `idColumn` 指向 `columns` 中的那一欄，`coerceRow()` 讀出它時同時作為 row 物件的 `id`；後端則從 `Config.gs` 的 `idColumn`（該欄的表頭）知道是哪一欄，用來把 id 換成列號。值本身由前端決定（見上方「請求與回應」）。
+>
+> 主鍵的格式由前端於新增時驗證，後端不檢查：不以數字或 `=`、`+`、`-`、`'` 開頭，只能使用英文字母、數字與 `- _ . ! ~ * ' ( )`（即 `encodeURIComponent` 不會改變的字元），且不能是 `.` 或 `..`。前者避免 Sheet 把 id 解析成數字、公式或純文字前綴而找不到列，後者是因為 id 會直接放進前端的網址。直接在 Sheet 上手動輸入的 id 不受這項驗證，不符合時可能找不到列或無法開啟該筆的頁面（規則見 [vue-build/docs/topics/schema.md](../vue-build/docs/topics/schema.md) 的「主鍵」）。
 
 ---
 

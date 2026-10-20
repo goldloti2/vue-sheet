@@ -5,10 +5,11 @@
 import type { RowBase, TableSchema } from '../types'
 import { prefixedId } from '../types'
 
-// id 與 $label 來自 RowBase，不放進 columns。
+// id 與 $label 來自 RowBase；id 恆等於主鍵那一欄（idColumn）的值。
 // 虛擬欄位、ref 對應的 $欄位key（父列）、指向這張表的 $子表_欄位key（子列陣列）也要列在這裡（readonly），
 // schema 會對著這個介面檢查 key 跟型別
 export interface __Table__Row extends RowBase {
+  code: string | null
   name: string | null
   amount: number | null
   date: Date | null
@@ -18,14 +19,17 @@ export interface __Table__Row extends RowBase {
 export const __table__Schema: TableSchema<__Table__Row> = {
   // 畫面上怎麼顯示這張表（表的 chip、頁籤比對）
   tableLabel: '範本',
-  idColumn: 'TPL-ID',
+  // 主鍵是 columns 中的哪一欄；建立後不能修改
+  idColumn: 'code',
   // 用哪一欄稱呼一列（可省略，省略就是 id）：row.$label、別的表 ref 到這裡、選擇器清單都顯示它
   labelColumn: 'name',
-  // 怎麼發新 id，各表自己決定。prefixedId 是現成的前綴式（TPL-11eef1a8）；格式別用數字開頭
+  // 新增時主鍵留空就以它發號。prefixedId 是現成的前綴式（TPL-11eef1a8）；省略時主鍵必填
   newId: prefixedId('TPL'),
   columns: [
     // 欄位只描述資料本身；「列表頁怎麼用它」寫在下面的清單裡
     // label 就是 Sheet 表頭文字；兩者不同時才另外加 sheetHeader: '實際表頭'
+    // 主鍵：未排進 formOrder 時新增一律發號；排進去則可自行輸入，留空才發號
+    { key: 'code', label: '編號', sheetHeader: 'TPL-ID', type: 'text' },
     { key: 'name', label: '名稱', type: 'text', required: true },
     { key: 'amount', label: '金額', type: 'number', min: 0 },
     { key: 'date', label: '日期', type: 'date' },

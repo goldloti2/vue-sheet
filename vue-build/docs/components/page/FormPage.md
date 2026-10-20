@@ -30,3 +30,4 @@
 - **狀態的優先順序**是 loading → loadError → 找不到資料 → 表單；那三種狀態本身是交給 [PageState](PageState.md) 畫的
 - 「找不到這筆資料」使用 `warning`，而非 `error`
 - 欄位級的錯誤訊息由 `DataForm` 顯示在各欄底下，這裡的 `error` 是整張表單層級的（送出失敗、後端錯誤）
+- **row 已有 `id` 時（編輯頁）主鍵那一欄唯讀**，新增頁的 `id` 為空，可填寫或留空發號（見 [schema.md](../../topics/schema.md#主鍵)）

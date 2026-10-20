@@ -1,5 +1,6 @@
 <script lang="ts" setup>
   import type { TableSchema } from '@/schema/types'
+  import { computed } from 'vue'
   import PageState from '@/components/ui/page/PageState.vue'
   import DataForm from '@/components/ui/record/DataForm.vue'
 
@@ -16,6 +17,9 @@
 
   // 新增頁不會是 null，編輯頁在載入中與找不到資料時是
   const model = defineModel<object | null>({ required: true })
+
+  // 已有 id 即為修改既有的一筆（編輯頁），主鍵唯讀；新增頁的 id 在送出時才決定
+  const lockId = computed(() => Boolean((model.value as { id?: string } | null)?.id))
 </script>
 
 <template>
@@ -23,7 +27,7 @@
     <PageState :empty="!model" :error="loadError" :loading="loading">
       <!-- PageState 已經擋掉 null 了，這層只是讓型別看得出來 -->
       <template v-if="model">
-        <DataForm v-model="model" :errors="errors" :schema="schema" />
+        <DataForm v-model="model" :errors="errors" :lock-id="lockId" :schema="schema" />
 
         <v-container v-if="error">
           <v-alert :text="error" type="error" />

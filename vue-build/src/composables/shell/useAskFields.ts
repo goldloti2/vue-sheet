@@ -5,7 +5,7 @@ import { isEmpty, validateRow } from '@/schema/validation'
 
 export interface AskFieldsOptions {
   title?: string
-  // 要改的那幾筆；剛好一筆時，那欄非空就拿現值當初始值
+  // 要改的那幾筆；剛好一筆時，那欄非空就拿現值當初始值。有給時主鍵那一欄唯讀
   rows?: readonly object[]
   // 沒有現值時的初始值，函式型的在打開對話框那一刻才求值
   defaults?: Record<string, ColumnDefault<unknown>>
@@ -19,6 +19,7 @@ interface FieldsDialogState {
   form: object
   errors: Record<string, string>
   showErrors: boolean
+  lockId: boolean
 }
 
 // 全 App 一個「問幾個欄位」對話框，由 AppShell 渲染（見 docs/topics/actions.md 的「快速編輯對話框」）
@@ -30,6 +31,7 @@ export const fieldsDialog = shallowReactive<FieldsDialogState>({
   form: {},
   errors: {},
   showErrors: false,
+  lockId: false,
 })
 
 let pending: ((result: object | null) => void) | null = null
@@ -88,6 +90,7 @@ export function askFields<Row extends object> (
     .map(key => schema.columns.find(column => column.key === key)?.label ?? key)
     .join('、')
   fieldsDialog.form = initialForm(keys, options)
+  fieldsDialog.lockId = (options.rows?.length ?? 0) > 0
   fieldsDialog.errors = {}
   fieldsDialog.showErrors = false
   fieldsDialog.open = true

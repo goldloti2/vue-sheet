@@ -323,6 +323,7 @@
     v-model:form="fieldsDialog.form"
     :errors="fieldsDialog.errors"
     :keys="fieldsDialog.keys"
+    :lock-id="fieldsDialog.lockId"
     :schema="fieldsDialog.schema"
     :title="fieldsDialog.title"
     @confirm="confirmFields"

@@ -63,6 +63,11 @@ export function createQueue () {
     })
   }
 
+  // 這一筆還沒推送的操作種類；沒有就是 undefined
+  function kindOf (table: TableKey, id: string): PendingOp['kind'] | undefined {
+    return pending.get(table)?.get(id)?.kind
+  }
+
   // 整個佇列攤平成一串操作，順序照加入的先後（Map 保序）。跨表共用一個請求
   function toOperations (): BatchOperation[] {
     const operations: BatchOperation[] = []
@@ -135,5 +140,5 @@ export function createQueue () {
     flushError.value = null
   }
 
-  return { hasPending, flushing, flushError, conflict, knownModifiedTime, enqueue, flush, fail, discard, snapshot, restore }
+  return { hasPending, flushing, flushError, conflict, knownModifiedTime, enqueue, kindOf, flush, fail, discard, snapshot, restore }
 }

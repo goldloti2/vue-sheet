@@ -179,7 +179,7 @@ if (values) {
 ```
 
 - 回傳 `Promise<Partial<Row> | null>`，取消是 `null`。獨立於流程，也能在流程裡當一步用
-- 內容就是 `DataForm` 加 `only` prop 只顯示那幾欄：輸入元件、驗證、錯誤顯示全部沿用。驗證只檢查被詢問的欄位
+- 內容就是 `DataForm` 加 `only` prop 只顯示那幾欄：輸入元件、驗證、錯誤顯示全部沿用。驗證只檢查被詢問的欄位；有給 `options.rows` 時，主鍵那一欄唯讀
 - **初始值三層**：`options.rows` 剛好一筆且那欄非空 → 現值；否則 `options.defaults[key]`（值或函式）；都沒有 → 空。**不套用 schema 的 `default`**。多筆時不顯示現值
 - 通用的用法包成 `quickEditAction(table, keys, ids, { label, icon, defaults, onDone })`：沒有選取任何一筆時回傳 `null`，所以只在多選模式下出現；確定後對每個 id 各跑一次 `store.update`（不另開 op 種類）
 - 只是要問是／否就用 `confirm(title, text): Promise<boolean>`，動作的 `confirm` 宣告與離開守衛都用它；要給兩條以上的出路用 `choose(title, text, choices): Promise<string | null>`（同一個對話框實例，見 [ConfirmDialog.md](../components/dialog/ConfirmDialog.md)）

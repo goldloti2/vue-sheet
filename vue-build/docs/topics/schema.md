@@ -17,6 +17,7 @@
 ```ts
 // src/schema/tables/order.ts
 export interface OrderRow extends RowBase {
+  code: string | null
   title: string | null
   amount: number | null
   orderedAt: Date | null
@@ -26,10 +27,11 @@ export interface OrderRow extends RowBase {
 
 export const orderSchema: TableSchema<OrderRow> = {
   tableLabel: '訂單',           // 畫面上怎麼顯示這張表
-  idColumn: '訂單編號',          // ID 欄的實際表頭
-  newId: prefixedId('ORD'),     // 怎麼發新 id
+  idColumn: 'code',             // 主鍵是哪一欄
+  newId: prefixedId('ORD'),     // 主鍵留空時怎麼發號
   labelColumn: 'title',         // 別的表 ref 到這裡時顯示哪一欄
   columns: [
+    { key: 'code', label: '訂單編號', type: 'text' },
     { key: 'title', label: '名稱', type: 'text', required: true },
     { key: 'amount', label: '金額', type: 'number', min: 0 },
     { key: 'orderedAt', label: '下單日期', type: 'date' },
@@ -44,7 +46,7 @@ export const orderSchema: TableSchema<OrderRow> = {
 }
 ```
 
-以 `TableSchema<OrderRow>` 宣告時，`key`、`labelColumn`、`searchable`、`sortable`、`detailOrder`、`defaultSort` 只能填 Row 有的欄位名，`type` 要跟 Row 那個欄位的值型別相符，虛擬欄位 `value` 的 `row` 也直接是 `OrderRow`。
+以 `TableSchema<OrderRow>` 宣告時，`key`、`idColumn`、`labelColumn`、`searchable`、`sortable`、`detailOrder`、`defaultSort` 只能填 Row 有的欄位名（`idColumn` 另限值為字串的欄位），`type` 要跟 Row 那個欄位的值型別相符，虛擬欄位 `value` 的 `row` 也直接是 `OrderRow`。
 
 最後在 `src/schema/index.ts` 註冊，`TableKey` 就自動多一個值。
 
@@ -53,7 +55,7 @@ export const orderSchema: TableSchema<OrderRow> = {
 ## Sheet 上的慣例
 
 - **一個 Sheet 分頁 = 一張表**
-- **第一欄是唯一 ID**，不以 row number 作為主鍵
+- **每張表有一欄唯一的主鍵**（通常是第一欄，見下方「主鍵」），不以 row number 作為主鍵
 - **ID 同時是跨表關聯的外鍵**
 - **表頭用對外名稱**，使用者看得懂的那個名字
 
@@ -71,10 +73,25 @@ export const orderSchema: TableSchema<OrderRow> = {
 只有 `text`／`select`／`image` 這三種型別會做這件事：
 
 - `number`、`date`、`duration` 不補
-- **`ref` 不補，id 欄本身也不補**
-- 連帶的限制：`newId` 的格式不以數字或 `0` 開頭（`prefixedId('ORD')` 這種前綴式即符合）
+- **`ref` 不補，主鍵也不會被補**：主鍵不以數字或 `=`、`+`、`-`、`'` 開頭，也不含 `/`（見下方「主鍵」），不會符合上表的任一種形狀
 
 補單引號由前端處理，後端不參與。
+
+---
+
+## 主鍵
+
+`idColumn` 指向 `columns` 中的一欄，該欄的值即為 `row.id`；store、路由與跨表關聯皆以 `row.id` 運作。主鍵須為值是字串的欄位（`text`、`ref`、`select` 等），型別不符時 TS 會擋下。
+
+- **新增**：該欄有值即作為 id；空的才以 `newId()` 發號並填回該欄。省略 `newId` 時主鍵必填
+- **新增表單是否出現主鍵**依 `formOrder`（省略 `formOrder` 時所有欄位皆出現）：沒排進去時一律發號；排進去則可自行輸入，有 `newId` 時欄位下方提示「留空即自動產生」
+- **不能重複**：新增時 id 已存在即拋錯；剛被刪除、尚未推送的 id 亦不能再用
+- **建立後不能修改**：編輯表單，以及有給 `rows` 的 `askFields`（含 `quickEditAction`）中，主鍵那一欄為唯讀；不經過表單的修改由 store 的 `update` 拋錯擋下
+- **格式**：`prefixedId('ORD')` 這種前綴式即符合
+  - 不以數字或 `=`、`+`、`-`、`'` 開頭
+  - 只能使用英文字母、數字與 `-`、`_`、`.`、`!`、`~`、`*`、`'`、`(`、`)`，即 `encodeURIComponent` 不會改變的字元；中文與空白都不行
+  - 不能是 `.` 或 `..`
+- **主鍵可以是 `ref`**：例如與父表共用 id 的一對一延伸表，新增時於表單上選父列，id 即等於父列的 id。關聯、`row.$欄位key` 與連帶刪除皆與其他 ref 欄位相同
 
 ---
 

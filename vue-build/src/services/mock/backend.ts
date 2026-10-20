@@ -7,6 +7,7 @@ import type { BatchOperation, LoginCredentials, TableData } from '../types'
 import type { TableKey } from '@/schema'
 import { authMethod } from '@/config/app'
 import { schemas } from '@/schema'
+import { idHeader } from '@/schema/types'
 import { decodeMessage, encodeMessage } from '../auth/tokenMessage'
 import { AuthError, ConflictError } from '../types'
 import { parseCsv } from './csv'
@@ -31,13 +32,13 @@ function tableRows (table: TableKey): Record<string, string>[] {
   return rows
 }
 
-function idColumnOf (table: TableKey): string {
-  return schemas[table].idColumn
+function idHeaderOf (table: TableKey): string {
+  return idHeader(schemas[table])
 }
 
 function rowIndexOf (table: TableKey, id: string): number {
-  const idColumn = idColumnOf(table)
-  const index = tableRows(table).findIndex(row => row[idColumn] === id)
+  const header = idHeaderOf(table)
+  const index = tableRows(table).findIndex(row => row[header] === id)
   if (index === -1) {
     throw new Error(`row "${id}" not found in table "${table}"`)
   }
@@ -84,10 +85,10 @@ function applyOperation (operation: BatchOperation): void {
   switch (operation.kind) {
     case 'create': {
       // id 由呼叫端帶進來。已經存在就當作這次是重送、不重複建立
-      if (rows.some(row => row[idColumnOf(table)] === id)) {
+      if (rows.some(row => row[idHeaderOf(table)] === id)) {
         return
       }
-      rows.push({ [idColumnOf(table)]: id, ...values })
+      rows.push({ [idHeaderOf(table)]: id, ...values })
       return
     }
 

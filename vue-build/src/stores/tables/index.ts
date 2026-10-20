@@ -4,8 +4,8 @@ import { defineStore } from 'pinia'
 import { computed, reactive, shallowReactive, shallowRef } from 'vue'
 import { schemas } from '@/schema'
 import { cascadeRelations, childRelations } from '@/schema/relations'
-import { serializeRow } from '@/schema/types'
-import { validateRow } from '@/schema/validation'
+import { idColumnOf, serializeRow } from '@/schema/types'
+import { isEmpty, validateRow } from '@/schema/validation'
 import { fetchTable } from '@/services/appScript'
 import { createQueue } from './queue'
 import { createRowGetters } from './rowGetters'
@@ -212,34 +212,55 @@ export const useTablesStore = defineStore('tables', () => {
     }
   }
 
+  // 主鍵那一欄有值就以它為 id，空的才以 newId 發號並填回該欄
   function create<Row extends HasId> (table: TableKey, values: Record<string, unknown>): Row {
-    assertValid(table, values)
-
     const schema = schemas[table]
-    const created = attachGetters(table, { id: schema.newId(), ...values } as Row)
+    const key = schema.idColumn
+    const generated = isEmpty(values[key]) ? schema.newId?.() : undefined
+    const filled = generated === undefined ? values : { ...values, [key]: generated }
+    assertValid(table, filled)
+
+    // 後端把已存在的 id 當成重送而略過，重複的 id 必須在這裡擋下
+    const id = String(filled[key])
+    const label = idColumnOf(schema).label
+    if ((rows[table] ?? []).some(row => (row as HasId).id === id)) {
+      throw new Error(`${label}「${id}」已存在`)
+    }
+    if (queue.kindOf(table, id) === 'delete') {
+      throw new Error(`${label}「${id}」剛被刪除，推送之後才能再使用`)
+    }
+
+    const created = attachGetters(table, { ...filled, id } as Row)
 
     patch(table, list => [...list, created])
-    enqueue(table, created.id, 'create', serializeRow(values, schema))
+    enqueue(table, id, 'create', serializeRow(filled, schema))
 
     return created
   }
 
   function update<Row extends HasId> (table: TableKey, id: string, values: Record<string, unknown>): Row {
+    const schema = schemas[table]
+    const key = schema.idColumn
+    if (key in values && values[key] !== id) {
+      throw new Error(`${idColumnOf(schema).label}建立後不能修改`)
+    }
+    // 主鍵不變，不必寫回
+    const changes = Object.fromEntries(Object.entries(values).filter(([column]) => column !== key))
+
     // values 可以只給幾欄：只驗給了的，但用合併後的整列驗，跨欄位的 validate 才看得到其他欄
     const existing = (rows[table] ?? []).find(row => (row as HasId).id === id) as Record<string, unknown> | undefined
-    assertValid(table, { ...existing, ...values }, Object.keys(values))
+    assertValid(table, { ...existing, ...changes }, Object.keys(changes))
 
-    const schema = schemas[table]
-    let updated = { id, ...values } as Row
+    let updated = { id, ...changes } as Row
 
     patch(table, list => list.map(row => {
       if ((row as Row).id !== id) {
         return row
       }
-      updated = attachGetters(table, { ...(row as Row), ...values, id } as Row)
+      updated = attachGetters(table, { ...(row as Row), ...changes, id } as Row)
       return updated
     }))
-    enqueue(table, id, 'update', serializeRow(values, schema))
+    enqueue(table, id, 'update', serializeRow(changes, schema))
 
     return updated
   }

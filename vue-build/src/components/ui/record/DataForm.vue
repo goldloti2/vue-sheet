@@ -12,6 +12,8 @@
     errors?: Record<string, string>
     // 只顯示這幾個欄位（順序仍照 formOrder）；省略就是全部
     only?: readonly string[]
+    // 修改既有的列時為 true：主鍵那一欄唯讀
+    lockId?: boolean
   }>()
 
   // 用 object，實際存取時再轉型（見 schema/types.ts 的 formatColumnValue）
@@ -51,8 +53,16 @@
     setFieldValue(column, value === '' ? null : value)
   }
 
-  function errorFor (column: SchemaColumn): string | string[] {
-    return props.errors?.[column.key] ?? []
+  // 各種輸入元件共用的屬性：標籤、錯誤訊息，以及主鍵的唯讀與提示
+  function fieldProps (column: SchemaColumn) {
+    const isId = column.key === props.schema.idColumn
+    return {
+      errorMessages: props.errors?.[column.key] ?? [],
+      label: column.label,
+      readonly: isId && props.lockId,
+      hint: isId && !props.lockId && props.schema.newId ? '留空即自動產生' : undefined,
+      persistentHint: isId,
+    }
   }
 
   function numberBound (column: SchemaColumn, bound: 'min' | 'max'): number | undefined {
@@ -102,8 +112,7 @@
     <template v-for="column in orderedColumns" :key="column.key">
       <v-number-input
         v-if="column.type === 'number'"
-        :error-messages="errorFor(column)"
-        :label="column.label"
+        v-bind="fieldProps(column)"
         :max="numberBound(column, 'max')"
         :min="numberBound(column, 'min')"
         :model-value="numberValue(column)"
@@ -112,9 +121,8 @@
 
       <v-date-input
         v-else-if="column.type === 'date'"
-        :error-messages="errorFor(column)"
+        v-bind="fieldProps(column)"
         input-format="yyyy/mm/dd"
-        :label="column.label"
         :model-value="dateValue(column)"
         @update:model-value="(value) => setFieldValue(column, value)"
       />
@@ -122,8 +130,7 @@
       <!-- 時長使用一般文字框，不使用原生的 type="time" -->
       <v-text-field
         v-else-if="column.type === 'duration'"
-        :error-messages="errorFor(column)"
-        :label="column.label"
+        v-bind="fieldProps(column)"
         :model-value="textValue(column)"
         placeholder="時:分:秒"
         @update:model-value="(value) => setTextValue(column, value)"
@@ -132,18 +139,16 @@
       <!-- allowCustom：options 只是建議，打了清單外的字也直接當值 -->
       <v-combobox
         v-else-if="column.type === 'select' && column.allowCustom"
-        :error-messages="errorFor(column)"
+        v-bind="fieldProps(column)"
         :items="suggestions(column)"
-        :label="column.label"
         :model-value="textValue(column)"
         @update:model-value="(value) => setTextValue(column, value)"
       />
 
       <v-select
         v-else-if="column.type === 'select'"
-        :error-messages="errorFor(column)"
+        v-bind="fieldProps(column)"
         :items="column.options"
-        :label="column.label"
         :model-value="textValue(column)"
         @update:model-value="(value) => setTextValue(column, value)"
       />
@@ -151,11 +156,10 @@
       <v-autocomplete
         v-else-if="column.type === 'ref'"
         clearable
-        :error-messages="errorFor(column)"
+        v-bind="fieldProps(column)"
         item-title="title"
         item-value="id"
         :items="refItems(column)"
-        :label="column.label"
         :loading="refLoading(column)"
         :model-value="textValue(column)"
         @update:model-value="(value) => setFieldValue(column, value)"
@@ -163,8 +167,7 @@
 
       <v-text-field
         v-else
-        :error-messages="errorFor(column)"
-        :label="column.label"
+        v-bind="fieldProps(column)"
         :model-value="textValue(column)"
         @update:model-value="(value) => setTextValue(column, value)"
       />

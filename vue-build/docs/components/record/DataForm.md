@@ -31,3 +31,8 @@
 | `schema` | `TableSchema` | **必填** |
 | `errors` | `Record<string, string>` | `{ 欄位 key: 錯誤訊息 }`，省略就不顯示任何錯誤 |
 | `only` | `string[]` | 只顯示這幾個欄位（順序仍照 `formOrder`）；`FieldsDialog` 用這個，整頁表單不需要 |
+| `lockId` | `boolean?` | 修改既有的列時為 `true`，主鍵那一欄唯讀。`FormPage` 與 `FieldsDialog` 會自行判斷並傳入 |
+
+## 備註
+
+- **主鍵那一欄**（schema 的 `idColumn`）：`lockId` 時唯讀；否則可填寫，schema 有 `newId` 時欄位下方提示「留空即自動產生」（見 [schema.md](../../topics/schema.md#主鍵)）

@@ -34,6 +34,25 @@ function columnError (value: unknown, column: SchemaColumn, row: object): string
   return validate ? validate(value, row) : null
 }
 
+// 主鍵：有 newId 時可留空（新增時發號），否則必填；格式見 docs/topics/schema.md 的「主鍵」
+function idError (value: unknown, column: SchemaColumn, schema: TableSchema): string | null {
+  if (isEmpty(value)) {
+    return schema.newId ? null : `請填寫${column.label}`
+  }
+
+  const text = String(value)
+  if (/^[\d=+\-']/.test(text)) {
+    return `${column.label}不能以數字或 =、+、-、' 開頭`
+  }
+  if (encodeURIComponent(text) !== text) {
+    return `${column.label}只能使用英文字母、數字與 - _ . ! ~ * ' ( )`
+  }
+  if (text === '.' || text === '..') {
+    return `${column.label}不能是 . 或 ..`
+  }
+  return null
+}
+
 // 回傳 { 欄位 key: 錯誤訊息 }，全部合法就是空物件。給了 keys 就只檢查那幾欄
 export function validateRow (row: object, schema: TableSchema, keys?: readonly string[]): Record<string, string> {
   const errors: Record<string, string> = {}
@@ -43,7 +62,9 @@ export function validateRow (row: object, schema: TableSchema, keys?: readonly s
       continue
     }
 
-    const message = columnError((row as Record<string, unknown>)[column.key], column, row)
+    const value = (row as Record<string, unknown>)[column.key]
+    const message = (column.key === schema.idColumn ? idError(value, column, schema) : null)
+      ?? columnError(value, column, row)
     if (message !== null) {
       errors[column.key] = message
     }

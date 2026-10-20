@@ -8,6 +8,8 @@
     schema: TableSchema
     keys: readonly string[]
     errors?: Record<string, string>
+    // 修改既有的列時為 true：主鍵那一欄唯讀
+    lockId?: boolean
   }
 
   defineProps<FieldsDialogProps>()
@@ -22,7 +24,13 @@
 
 <template>
   <AppDialog v-model="open" :title="title">
-    <DataForm v-model="form" :errors="errors" :only="keys" :schema="schema" />
+    <DataForm
+      v-model="form"
+      :errors="errors"
+      :lock-id="lockId"
+      :only="keys"
+      :schema="schema"
+    />
 
     <template #actions>
       <v-spacer />

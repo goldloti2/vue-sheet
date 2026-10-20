@@ -24,11 +24,11 @@ const TABLES = {
 const AUTH = null                  // 不驗證；'password' 為帳號密碼（見 ../docs/auth.md）
 ```
 
-`TABLES` 的 key 是**前端的表代稱**（`vue-build/src/schema/index.ts` 中 `schemas` 的 key），而非分頁名稱——前端送出的是 `?table=order`。**分頁的實際名稱僅存於此處**，前端並不保存（前端只有 `tableLabel`，即畫面上顯示的表名稱），因此變更分頁名稱只需修改本檔案；`idColumn` 則與前端 schema 的同名欄位一致。設定與實際情形不符時，後端會回傳 `unknown table`、`sheet not found` 或 `id column not found`，訊息會指出不符的項目。
+`TABLES` 的 key 是**前端的表代稱**（`vue-build/src/schema/index.ts` 中 `schemas` 的 key），而非分頁名稱——前端送出的是 `?table=order`。**分頁的實際名稱僅存於此處**，前端並不保存（前端只有 `tableLabel`，即畫面上顯示的表名稱），因此變更分頁名稱只需修改本檔案；`idColumn` 則為前端 schema 中主鍵那一欄的表頭（`sheetHeader`，省略時為 `label`）。設定與實際情形不符時，後端會回傳 `unknown table`、`sheet not found` 或 `id column not found`，訊息會指出不符的項目。
 
 欄位名稱無須列出：payload 的 key 即 Sheet 的表頭文字，後端以表頭比對，無法對應時回傳 `unknown column`。
 
-**前端新增一張表時，此處需同步新增一行**（前端需修改的檔案見 [../vue-build/template/README.md](../vue-build/template/README.md)）：代稱取自 `schemas` 的 key，`idColumn` 取自該表 schema 的同名欄位，`sheetName` 填入分頁的實際名稱。未登記時僅該張表回傳 `unknown table`，其餘各表不受影響。
+**前端新增一張表時，此處需同步新增一行**（前端需修改的檔案見 [../vue-build/template/README.md](../vue-build/template/README.md)）：代稱取自 `schemas` 的 key，`idColumn` 取自該表 schema 中主鍵那一欄的表頭，`sheetName` 填入分頁的實際名稱。未登記時僅該張表回傳 `unknown table`，其餘各表不受影響。
 
 ## 部署步驟
 

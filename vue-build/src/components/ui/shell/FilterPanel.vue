@@ -209,6 +209,7 @@
         hide-details
         label="最小"
         :model-value="numberBound(editing, 'min')"
+        :precision="null"
         @update:model-value="(value) => editing && patch(editing.key, { min: value })"
       />
 
@@ -219,6 +220,7 @@
         hide-details
         label="最大"
         :model-value="numberBound(editing, 'max')"
+        :precision="null"
         @update:model-value="(value) => editing && patch(editing.key, { max: value })"
       />
     </v-container>

@@ -131,12 +131,14 @@
         :model-value="virtualText(column)"
       />
 
+      <!-- 不限制小數位數，輸入的值不會被四捨五入 -->
       <v-number-input
         v-else-if="column.type === 'number'"
         v-bind="fieldProps(column)"
         :max="numberBound(column, 'max')"
         :min="numberBound(column, 'min')"
         :model-value="numberValue(column)"
+        :precision="null"
         @update:model-value="(value) => setFieldValue(column, value)"
       />
 

@@ -106,6 +106,8 @@ export const orderSchema: TableSchema<OrderRow> = {
 
 型別有 `text`／`number`／`date`／`duration`／`select`／`ref`／`image` 七種，每種有自己的專屬設定（`number` 的 `min`／`max`、`select` 的 `options`、`ref` 的 `refTable`…）。完整清單見 [`types.ts`](../../src/schema/types.ts)。
 
+表單不限制 `number` 的小數位數，輸入的值不會被四捨五入。
+
 ### date 與 duration
 
 - **`date` 只有日期**：讀進來時歸零到當天午夜

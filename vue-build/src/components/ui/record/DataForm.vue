@@ -1,6 +1,7 @@
 <script lang="ts" setup>
   import type { TableKey } from '@/schema'
   import type { AnyColumn, SchemaColumn, TableSchema, VirtualColumn } from '@/schema/types'
+  import { mdiLockOutline } from '@mdi/js'
   import { computed } from 'vue'
   import { useTableList } from '@/composables/data/useTable'
   import { schemas } from '@/schema'
@@ -60,13 +61,18 @@
     setFieldValue(column, value === '' ? null : value)
   }
 
-  // 各種輸入元件共用的屬性：標籤、錯誤訊息，以及唯讀（虛擬欄位、建立後的主鍵）與主鍵的提示
+  // 各種輸入元件共用的屬性：標籤、錯誤訊息，以及唯讀（虛擬欄位、建立後的主鍵）與主鍵的提示。
+  // 唯讀時字色變淡，仍可選取複製；建立後的主鍵另加鎖頭
   function fieldProps (column: AnyColumn) {
     const isId = column.key === props.schema.idColumn
+    const idLocked = isId && props.lockId
+    const locked = isVirtual(column) || idLocked
     return {
       errorMessages: props.errors?.[column.key] ?? [],
       label: column.label,
-      readonly: isVirtual(column) || (isId && props.lockId),
+      readonly: locked,
+      class: locked ? 'data-form__locked' : undefined,
+      prependInnerIcon: idLocked ? mdiLockOutline : undefined,
       hint: isId && !props.lockId && props.schema.newId ? '留空即自動產生' : undefined,
       persistentHint: isId,
     }
@@ -132,23 +138,35 @@
         :model-value="virtualText(column)"
       />
 
-      <!-- 不限制小數位數，輸入的值不會被四捨五入 -->
+      <!-- −／＋ 都在右側、以 inset 呈現（預設是上下箭頭，以 slot 換掉圖示）；不限制小數位數，輸入的值不會被四捨五入 -->
       <v-number-input
         v-else-if="column.type === 'number'"
         v-bind="fieldProps(column)"
+        inset
         :max="numberOption(column, 'max')"
         :min="numberOption(column, 'min')"
         :model-value="numberValue(column)"
         :precision="null"
         :step="numberOption(column, 'step')"
         @update:model-value="(value) => setFieldValue(column, value)"
-      />
+      >
+        <template #decrement="{ props: controlProps }">
+          <v-btn v-bind="controlProps" aria-hidden="true" icon="$minus" tabindex="-1" />
+        </template>
 
+        <template #increment="{ props: controlProps }">
+          <v-btn v-bind="controlProps" aria-hidden="true" icon="$plus" tabindex="-1" />
+        </template>
+      </v-number-input>
+
+      <!-- 日曆圖示放在欄位內右側 -->
       <v-date-input
         v-else-if="column.type === 'date'"
         v-bind="fieldProps(column)"
+        append-inner-icon="$calendar"
         input-format="yyyy/mm/dd"
         :model-value="dateValue(column)"
+        prepend-icon=""
         @update:model-value="(value) => setFieldValue(column, value)"
       />
 
@@ -199,3 +217,10 @@
     </template>
   </v-container>
 </template>
+
+<style scoped>
+/* 唯讀的欄位（虛擬欄位、建立後的主鍵）：值的字色變淡，與可編輯的欄位區分 */
+.data-form__locked :deep(.v-field__input) {
+  opacity: var(--v-medium-emphasis-opacity);
+}
+</style>

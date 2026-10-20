@@ -35,6 +35,8 @@
 
 ## 備註
 
-- **數字欄位**：`step` 取自 schema（預設 1）；`precision` 設為 `null`，不限制小數位數
+- **數字欄位**：−／＋ 都在欄位右側，以 `inset` 呈現（以 `increment`／`decrement` slot 換掉預設的上下箭頭）；`step` 取自 schema（預設 1）；`precision` 設為 `null`，不限制小數位數
+- **日期欄位**：日曆圖示置於欄位內右側
+- **唯讀的欄位**（虛擬欄位、建立後的主鍵）：值的字色變淡，仍可選取複製；建立後的主鍵另在欄位內左側加鎖頭
 - **虛擬欄位**：排進 `formOrder` 時以唯讀的文字框顯示格式化後的值，隨輸入即時重算。計算前先以 `store.withGetters` 替表單的 row 掛上與快取相同的 getter，讀父列的虛擬欄位因此算得出來（見 [schema.md](../../topics/schema.md#欄位)）
 - **主鍵那一欄**（schema 的 `idColumn`）：`lockId` 時唯讀；否則可填寫，schema 有 `newId` 時欄位下方提示「留空即自動產生」（見 [schema.md](../../topics/schema.md#主鍵)）

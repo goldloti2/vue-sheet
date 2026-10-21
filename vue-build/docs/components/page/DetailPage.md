@@ -20,6 +20,7 @@
 | `error` | `string \| null?` | 載入失敗的訊息 |
 | `order` | `RowKey<Row>[]?` | 這一頁的欄位順序，覆寫 schema 的 `detailOrder`（見 [DataDetail](../record/DataDetail.md)） |
 | `fieldActions` | `FieldActions<Row>?` | 欄位 key → 動作，每欄一個、整格可點 |
+| `editable` | `RowKey<Row>[]?` | 快速編輯的欄位：直接是輸入元件，改了即寫入（見 [DataDetail](../record/DataDetail.md#快速編輯)） |
 | `fab` | `(PageAction \| null)[]?` | 右下角的 FAB，通常是編輯；`null` 略過 |
 | `header` | `RowView<Row>?` | 選用，整頁最上方的標頭區塊（`defineView` 的回傳值），置於 `top` slot 之上，見 [DetailHeader](../record/DetailHeader.md) |
 

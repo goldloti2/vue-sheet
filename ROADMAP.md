@@ -68,8 +68,8 @@
 
 ### 共用元件庫
 - 列表：`DataList`（卡片式單列，含長按多選）、`DataProfile`（profile 的單張卡片，動作收於 ⋮ 選單，含長按多選）、`DataCard`（card 的單張卡片，四層版面，含長按多選）、`DataGallery`（gallery 的單一格，含長按多選）、`ListLayout`（各筆的排法：依序往下或格狀）、`ListField`、`CountLabel`（名稱 + 筆數的小標籤，分組標題與子表區塊共用）、`GroupedList`（多層可收合分組，標題帶筆數）、`DataTable`（表格式，也用於 detail 頁內嵌子表格；`columns` 可指虛擬欄位）
-- 詳細：`DataDetail`（欄位區，虛擬欄位自動顯示）、`DetailField`、`DetailHeader`（選用的標頭區塊）
-- 表單：`DataForm`（依 `column.type` 自動選輸入元件）
+- 詳細：`DataDetail`（欄位區，虛擬欄位自動顯示；`editable` 的欄位為快速編輯）、`DetailField`、`DetailHeader`（選用的標頭區塊）、`InlineField`（快速編輯的一欄：打字類在失焦或 Enter 時、其餘一改就以 `store.update` 寫入，驗證不過不寫入）
+- 表單：`DataForm`；單一欄位的輸入元件為 `FieldInput`（依 `column.type` 自動選擇），表單與快速編輯共用
 - 整頁版型：`PageState`（載入中／載入失敗／找不到資料，全 App 唯一一份，資料到手才畫 slot）、`FormPage`（新增／編輯頁，內部包 `PageState`，另外處理送出失敗）、`DetailPage`（詳細頁：欄位區 + 左右滑動換筆 + 上下筆箭頭 + FAB）、`ListPage`（列表頁：逐列渲染卡片、`#rows` slot 整批給表格、或 `groups` 交給 `GroupedList`，加上 FAB 與發布列表順序，分組時先 `flattenGroups`）、`ChildList`（詳細頁裡的子表區塊：標題帶筆數、顯示上限、空狀態，右下角一列「展開」與頁面給的動作）。這些都是泛型元件，slot 的 `row` 帶著呼叫端的 Row 型別
 - 詳細頁的順序分工：欄位照 schema 的 `detailOrder`（頁面可以 `order` 覆寫），區塊（`ChildList` 之類）照頁面的 slot——`#top` 在欄位上面、default 在下面。插在特定欄位中間刻意不支援，那種版面直接不用 `DetailPage`（它的 template 只有二十行，零件都是現成的）
 - 子表區塊的「展開」是**一個真的頁面**（`/父表/:id/子表`，範本 `template/pages/child-list.vue`，一條關聯一份、約 20 行），不是就地展開版面。這樣返回鍵、轉場、App Bar 標題都是現成的，而且 `ListPage` 會發布這份順序——從父列底下點進某一筆，上／下一筆走的是同一個父列的子列

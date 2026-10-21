@@ -13,6 +13,9 @@
 
   defineProps<DetailFieldProps>()
 
+  // value：以輸入元件取代顯示的值（快速編輯）；有動作時，動作的圖示接在它右邊
+  const slots = defineSlots<{ value?: () => unknown }>()
+
   const runAction = useRunAction()
 </script>
 
@@ -20,8 +23,22 @@
   <div class="detail-field">
     <span class="detail-field__label text-body-medium text-medium-emphasis">{{ label }}</span>
 
+    <div v-if="slots.value" class="detail-field__value detail-field__editor">
+      <slot name="value" />
+
+      <v-btn
+        v-if="action"
+        :aria-label="action.label"
+        density="comfortable"
+        :icon="action.icon"
+        size="small"
+        variant="text"
+        @click="runAction(action)"
+      />
+    </div>
+
     <button
-      v-if="action"
+      v-else-if="action"
       :aria-label="action.label"
       class="detail-field__value detail-field__action text-body-large"
       type="button"
@@ -56,6 +73,22 @@
 
 .detail-field__value {
   text-align: left;
+}
+
+/* 快速編輯：輸入元件佔滿值的那一欄，與名稱垂直置中 */
+.detail-field:has(.detail-field__editor) {
+  align-items: center;
+}
+
+.detail-field__editor {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.detail-field__editor > :first-child {
+  flex: 1 1 auto;
 }
 
 .detail-field__image {

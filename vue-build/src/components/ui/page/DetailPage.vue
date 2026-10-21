@@ -32,6 +32,8 @@
     order?: readonly RowKey<Row>[]
     // 欄位 key → 動作，每欄一個（見 DataDetail）
     fieldActions?: FieldActions<Row>
+    // 快速編輯的欄位：直接是輸入元件，改了即寫入（見 DataDetail）
+    editable?: readonly RowKey<Row>[]
     // 右下角的 FAB，通常是編輯
     fab?: (PageAction | null)[]
     // 選用：整頁最上方的標頭區塊（defineView，見 DetailHeader）
@@ -58,7 +60,13 @@
 
         <slot name="top" :row="row" />
 
-        <DataDetail :field-actions="fieldActions" :order="order" :row="row" :schema="schema" />
+        <DataDetail
+          :editable="editable"
+          :field-actions="fieldActions"
+          :order="order"
+          :row="row"
+          :schema="schema"
+        />
 
         <!-- 這張表額外要放的東西：子表、說明、圖表… -->
         <slot :row="row" />

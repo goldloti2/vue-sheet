@@ -3,14 +3,21 @@ import { allColumns, durationSeconds, listedColumns } from './types'
 
 // 排序：純函數，對一批 row 做事。反應式的包裝在 composables/data/useTable.ts
 
-// null/undefined 一律排最後（不管 asc/desc），其餘依實際型別比較（Date 比時間、number 比大小、其餘當字串比較）
+function isNil (value: unknown): value is null | undefined {
+  return value === null || value === undefined
+}
+
+// null/undefined 一律排最後，不受 asc/desc 影響：desc 只反轉有值者之間的比較
+function compareWithDirection (a: unknown, b: unknown, direction: SortSpec['direction']): number {
+  if (isNil(a) || isNil(b)) {
+    return Number(isNil(a)) - Number(isNil(b))
+  }
+  const result = compareValues(a, b)
+  return direction === 'desc' ? -result : result
+}
+
+// 兩邊皆有值：依實際型別比較（Date 比時間、number 比大小、其餘當字串比較）
 function compareValues (a: unknown, b: unknown): number {
-  if (a === null || a === undefined) {
-    return b === null || b === undefined ? 0 : 1
-  }
-  if (b === null || b === undefined) {
-    return -1
-  }
   if (a instanceof Date && b instanceof Date) {
     return a.getTime() - b.getTime()
   }
@@ -61,12 +68,13 @@ export function sortRows<Row> (rows: readonly Row[], schema: TableSchema, sort?:
   return [...rows].sort((rowA, rowB) => {
     for (const spec of sortSpecs) {
       const column = columns.get(spec.key)
-      const result = compareValues(
+      const result = compareWithDirection(
         sortValue(rowA as Record<string, unknown>, column),
         sortValue(rowB as Record<string, unknown>, column),
+        spec.direction,
       )
       if (result !== 0) {
-        return spec.direction === 'desc' ? -result : result
+        return result
       }
     }
     return 0

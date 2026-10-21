@@ -14,6 +14,7 @@
 | --- | --- | --- |
 | `v-model` | `object \| null` | **必填**，表單的 row。`null` 時顯示「找不到這筆資料」 |
 | `schema` | `TableSchema` | **必填**，決定有哪些欄位、順序與輸入元件 |
+| `order` | `string[]?` | 這一頁的欄位順序，覆寫 schema 的 `formOrder`，例如新增頁與編輯頁要不同的欄位時。元件不帶 Row 型別，要檢查 key 時於頁面標為 `RowKey<XxxRow>[]` |
 | `errors` | `Record<string, string>?` | 逐欄的錯誤訊息（`fieldErrors`） |
 | `loading` | `boolean?` | 編輯頁載入那一筆的期間 |
 | `loadError` | `string \| null?` | 載入失敗的訊息 |

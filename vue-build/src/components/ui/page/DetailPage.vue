@@ -1,7 +1,7 @@
 <script lang="ts" setup generic="Row extends object">
   import type { FieldActions, PageAction } from '@/composables/actions/useTableActions'
   import type { TableKey } from '@/schema'
-  import type { TableSchema } from '@/schema/types'
+  import type { RowKey, TableSchema } from '@/schema/types'
   import type { RowView } from '@/schema/view'
   import { computed } from 'vue'
   import { Touch as vTouch } from 'vuetify/directives'
@@ -28,6 +28,8 @@
     row: Row | null
     loading?: boolean
     error?: string | null
+    // 這一頁的欄位順序，覆寫 schema 的 detailOrder（見 DataDetail）
+    order?: readonly RowKey<Row>[]
     // 欄位 key → 動作，每欄一個（見 DataDetail）
     fieldActions?: FieldActions<Row>
     // 右下角的 FAB，通常是編輯
@@ -47,7 +49,7 @@
 
 <template>
   <div v-touch="fullPage ? swipe : {}">
-    <DataDetail v-if="blank" :row="null" :schema="schema" />
+    <DataDetail v-if="blank" :order="order" :row="null" :schema="schema" />
 
     <PageState v-else :empty="!row" :error="error" :loading="loading">
       <!-- PageState 已經擋掉 null 了，這層只是讓型別看得出來 -->
@@ -56,7 +58,7 @@
 
         <slot name="top" :row="row" />
 
-        <DataDetail :field-actions="fieldActions" :row="row" :schema="schema" />
+        <DataDetail :field-actions="fieldActions" :order="order" :row="row" :schema="schema" />
 
         <!-- 這張表額外要放的東西：子表、說明、圖表… -->
         <slot :row="row" />

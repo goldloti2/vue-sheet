@@ -24,7 +24,7 @@
 - `columnValues`（組送出用 payload）、`emptyRow`（新增表單起始值，套用欄位的 `default`）
 - `sortRows(rows, schema, sort?)`（使用者選的排序在前、`defaultSort` 接在後面當 tiebreaker）、`sortableColumns`、`sortByKey`（`schema/sort.ts`）；`groupRows`（多層分組）、`flattenGroups`（把分組攤回畫面順序）在 `schema/group.ts`
 - **`schema/` 放對 row 做事的純函數**（`types`／`sort`／`group`／`filter`／`validation`／`relations`／`image`），不碰 reactivity，所以 store、元件、composable 都能直接叫；`composables/data/` 只放反應式包裝（`useTable`／`useSearch`／`useFilter`）。各表的欄位定義在 `schema/tables/`（一張表一個檔），註冊表 `schema/index.ts` 留在根目錄當公開入口
-- `detailOrder` / `formOrder` 分別控制詳細頁與表單頁的欄位順序；欄位的 `showIf` 依這一列的資料決定詳細頁是否顯示該欄
+- `detailOrder` / `formOrder` 分別控制詳細頁與表單頁的欄位順序，為這張表的預設；個別頁面以 `DetailPage`／`FormPage`（與 `DataDetail`／`DataForm`）的 `order` prop 覆寫；欄位的 `showIf` 依這一列的資料決定詳細頁是否顯示該欄
 - `virtualColumns`：不在 Sheet 上、讀的時候才算的欄位，來源可以是自己這列、父列（`row.$欄位key`）或子列（`row.$子表_欄位key`）。store 掛成 row 上的 getter，顯示、排序、分組都跟真實欄位一樣；兩種欄位共用 `ColumnTypes`／`ColumnBase` 型別骨架。排進 `formOrder` 時於表單中唯讀顯示、隨輸入即時重算（表單的 row 經 `store.withGetters` 掛上同一套 getter）
 - `labelColumn`：一列怎麼稱呼（欄位 key，省略就是 id），store 掛成 `row.$label`
 - `idColumn`：主鍵是 `columns` 中的哪一欄（值為字串的欄位），其值即為 `row.id`。可以是 `ref`（與父表共用 id 的一對一延伸表）或由使用者輸入；新增時留空才以選用的 `newId()` 發號。建立後不能修改：編輯表單與有給 `rows` 的 `askFields` 中唯讀，store 的 `update` 擋下其他途徑；`create` 擋下重複的 id 與剛被刪除、尚未推送的 id。不以數字或 `=`、`+`、`-`、`'` 開頭，只能使用 `encodeURIComponent` 不會改變的字元，不能是 `.` 或 `..`
@@ -70,7 +70,7 @@
 - 詳細：`DataDetail`（欄位區，虛擬欄位自動顯示）、`DetailField`、`DetailHeader`（選用的標頭區塊）
 - 表單：`DataForm`（依 `column.type` 自動選輸入元件）
 - 整頁版型：`PageState`（載入中／載入失敗／找不到資料，全 App 唯一一份，資料到手才畫 slot）、`FormPage`（新增／編輯頁，內部包 `PageState`，另外處理送出失敗）、`DetailPage`（詳細頁：欄位區 + 左右滑動換筆 + 上下筆箭頭 + FAB）、`ListPage`（列表頁：逐列渲染卡片、`#rows` slot 整批給表格、或 `groups` 交給 `GroupedList`，加上 FAB 與發布列表順序，分組時先 `flattenGroups`）、`ChildList`（詳細頁裡的子表區塊：標題帶筆數、顯示上限、空狀態，右下角一列「展開」與頁面給的動作）。這些都是泛型元件，slot 的 `row` 帶著呼叫端的 Row 型別
-- 詳細頁的順序分工：欄位照 schema 的 `detailOrder`，區塊（`ChildList` 之類）照頁面的 slot——`#top` 在欄位上面、default 在下面。插在特定欄位中間刻意不支援，那種版面直接不用 `DetailPage`（它的 template 只有二十行，零件都是現成的）
+- 詳細頁的順序分工：欄位照 schema 的 `detailOrder`（頁面可以 `order` 覆寫），區塊（`ChildList` 之類）照頁面的 slot——`#top` 在欄位上面、default 在下面。插在特定欄位中間刻意不支援，那種版面直接不用 `DetailPage`（它的 template 只有二十行，零件都是現成的）
 - 子表區塊的「展開」是**一個真的頁面**（`/父表/:id/子表`，範本 `template/pages/child-list.vue`，一條關聯一份、約 20 行），不是就地展開版面。這樣返回鍵、轉場、App Bar 標題都是現成的，而且 `ListPage` 會發布這份順序——從父列底下點進某一筆，上／下一筆走的是同一個父列的子列
 - 狀態只在兩個地方出現：產生它的 composable，和畫它的 `page/` 那層版型。`DataList`／`DataForm`／`DataDetail` 這些內容元件都不碰 loading／error
 - 其他：`ViewActions`（view 的列上動作：一排按鈕、⋮ 選單或左右各兩格）、`PageFab`、`TabPage`、`RecordNav`、`AppDialog`、`ConfirmDialog`、`FieldsDialog`（只顯示幾欄的 `DataForm`）
@@ -177,8 +177,8 @@
   - 這張表單可能本身就是某條流程的一步（例如「新增父表接著新增子表」的第二步），`runFlow` 不能套疊，而且 `runStep` 在流程中會用 `replace`，把目前這張表單頁換掉
   - 完成後要回到原本那張表單（`back`），不是像流程一樣往前走
   - 等真的常用到再做；現在的替代路徑是先去父表新增、再回來選
-- **schema 要不要拆成 `fields.ts` / `order.ts`**（評估過，先不做）：能乾淨切的只有表這一層——`fields.ts` 放 Row 介面、`tableLabel`／`idColumn`／`newId`／`labelColumn`／`columns`／`virtualColumns`，`order.ts` 放 `detailOrder`／`formOrder`／`defaultSort`，`index.ts` 組起來。切在欄位內部（型別／必填 vs 標籤／可搜尋）已否決，那會逼每個 key 寫兩次。現在順序那半只有三個欄位，拆完是一個五行的檔加一個 import，不划算。回頭重看的時機：順序那半長到 15～20 行，或哪張表需要兩種頁面設定（跟下一條一起做）
-- **頁面設定讓頁面覆寫**（等真的有第二種頁面設定的需求再做）：與 `defineView` 的 view 不同——view 只決定一列的欄位擺在版面的哪個位置與該列的動作，此處指的是整頁的欄位集與資料的順序。`detailOrder`／`formOrder`／`defaultSort` 現在只有 schema 一份，同一張表在不同頁面沒辦法有不同的排法與欄位集（AppSheet 是把這些掛在 view 上，所以一張表能有多個 view）。做法是 schema 那份當**預設**、頁面用選用 prop 覆寫（`DataDetail`／`DataForm` 各加一個 `order`、排序走 `useSortedTableList` 的參數），不是搬到頁面去——沒指定的頁面要有東西可用，預設值一定要留在 schema。頁面端自己寫仍然有型別檢查（`RowKey<XxxRow>[]` 是 exported 的），元件內部那層本來就是 `TableSchema<any>`。（篩選抽屜與排序面板的順序已經不必跟著誰了——它們有自己的 `searchable`／`sortable` 清單）
+- **schema 要不要拆成 `fields.ts` / `order.ts`**（評估過，先不做）：能乾淨切的只有表這一層——`fields.ts` 放 Row 介面、`tableLabel`／`idColumn`／`newId`／`labelColumn`／`columns`／`virtualColumns`，`order.ts` 放 `detailOrder`／`formOrder`／`defaultSort`，`index.ts` 組起來。切在欄位內部（型別／必填 vs 標籤／可搜尋）已否決，那會逼每個 key 寫兩次。現在順序那半只有三個欄位，拆完是一個五行的檔加一個 import，不划算。回頭重看的時機：順序那半長到 15～20 行
+- **列表的預設排序讓頁面覆寫**（等真的需要再做）：欄位的順序已可由頁面的 `order` 覆寫，`defaultSort` 仍只有 schema 一份，同一張表在不同列表頁無法有不同的預設排序。做法同 `order`：schema 那份當預設，頁面經由 `useSortedTableList` 的參數覆寫
 
 ### 頁面類型（對照 AppSheet）
 

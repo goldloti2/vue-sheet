@@ -6,6 +6,8 @@
 
   defineProps<{
     schema: TableSchema
+    // 這一頁的欄位順序，覆寫 schema 的 formOrder（見 DataForm）
+    order?: readonly string[]
     // 逐欄的錯誤訊息（useCreateForm／useEditForm 的 fieldErrors）
     errors?: Record<string, string>
     // 編輯頁才有：先把那一筆載進來
@@ -27,7 +29,13 @@
     <PageState :empty="!model" :error="loadError" :loading="loading">
       <!-- PageState 已經擋掉 null 了，這層只是讓型別看得出來 -->
       <template v-if="model">
-        <DataForm v-model="model" :errors="errors" :lock-id="lockId" :schema="schema" />
+        <DataForm
+          v-model="model"
+          :errors="errors"
+          :lock-id="lockId"
+          :order="order"
+          :schema="schema"
+        />
 
         <v-container v-if="error">
           <v-alert :text="error" type="error" />

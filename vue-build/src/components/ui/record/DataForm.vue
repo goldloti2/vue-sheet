@@ -13,7 +13,9 @@
   const props = defineProps<{
     schema: TableSchema
     errors?: Record<string, string>
-    // 只顯示這幾個欄位（順序仍照 formOrder）；省略就是全部
+    // 這一頁的欄位順序，覆寫 schema 的 formOrder
+    order?: readonly string[]
+    // 只顯示這幾個欄位（順序仍照 order／formOrder）；省略就是全部
     only?: readonly string[]
     // 修改既有的列時為 true：主鍵那一欄唯讀
     lockId?: boolean
@@ -22,10 +24,11 @@
   // 用 object，實際存取時再轉型（見 schema/types.ts 的 formatColumnValue）
   const model = defineModel<object>({ required: true })
 
-  // formOrder 可排進虛擬欄位（唯讀顯示）；省略 formOrder 時只有真實欄位
+  // order 優先於 formOrder，皆可排進虛擬欄位（唯讀顯示）；兩者皆省略時只有真實欄位
   const orderedColumns = computed<AnyColumn[]>(() => {
-    const columns = props.schema.formOrder
-      ? props.schema.formOrder
+    const order = props.order ?? props.schema.formOrder
+    const columns = order
+      ? order
         .map(key => allColumns(props.schema).find(column => column.key === key))
         .filter((column): column is AnyColumn => column !== undefined)
       : props.schema.columns

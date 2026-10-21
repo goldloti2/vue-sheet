@@ -84,7 +84,7 @@ export const orderSchema: TableSchema<OrderRow> = {
 `idColumn` 指向 `columns` 中的一欄，該欄的值即為 `row.id`；store、路由與跨表關聯皆以 `row.id` 運作。主鍵須為值是字串的欄位（`text`、`ref`、`select` 等），型別不符時 TS 會擋下。
 
 - **新增**：該欄有值即作為 id；空的才以 `newId()` 發號並填回該欄。省略 `newId` 時主鍵必填
-- **新增表單是否出現主鍵**依 `formOrder`（省略 `formOrder` 時所有欄位皆出現）：沒排進去時一律發號；排進去則可自行輸入，有 `newId` 時欄位下方提示「留空即自動產生」
+- **新增表單是否出現主鍵**依這一頁實際使用的順序（頁面的 `order`，否則為 `formOrder`；兩者皆省略時所有欄位皆出現）：沒排進去時一律發號；排進去則可自行輸入，有 `newId` 時欄位下方提示「留空即自動產生」
 - **不能重複**：新增時 id 已存在即拋錯；剛被刪除、尚未推送的 id 亦不能再用
 - **建立後不能修改**：編輯表單，以及有給 `rows` 的 `askFields`（含 `quickEditAction`）中，主鍵那一欄為唯讀；不經過表單的修改由 store 的 `update` 拋錯擋下
 - **格式**：`prefixedId('ORD')` 這種前綴式即符合
@@ -162,6 +162,8 @@ export const orderSchema: TableSchema<OrderRow> = {
 | `defaultSort` | 列表的預設排序，多筆依序當 tiebreaker |
 
 四份都可省略，省略就是「沒有」（`detailOrder`／`formOrder` 例外，它們省略時沿用 `columns` 的順序）。key 打錯字 TS 會擋下來——型別是 `RowKey<Row>[]`，跟 Row 介面對答案。
+
+`detailOrder`／`formOrder` 是這張表的預設。個別頁面要不同的欄位或順序時（例如新增頁要填主鍵、編輯頁不顯示），以 `DetailPage`／`FormPage` 的 `order` prop 覆寫，只影響那一頁（見 [DetailPage](../components/page/DetailPage.md)、[FormPage](../components/page/FormPage.md)）。
 
 ### 依條件顯示
 

@@ -98,4 +98,4 @@ src/
 
 版面與上述皆不同時（例如自訂的排列方式），不套用版型元件，資料層仍可共用；此時須自行以 `useListOrder` 發布畫面上的順序。各型態的載入中、載入失敗與找不到資料，皆由同一個 `PageState` 處理。
 
-`detailOrder` 與 `formOrder` 分開設定。
+`detailOrder` 與 `formOrder` 分開設定，個別頁面可以 `order` prop 覆寫。

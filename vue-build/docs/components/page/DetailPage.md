@@ -18,6 +18,7 @@
 | `row` | `Row \| null` | **必填**，`null` 時顯示「找不到這筆資料」；dashboard 中 `id` 為空字串時改為只顯示欄位名稱，標頭與兩個 slot 皆不渲染 |
 | `loading` | `boolean?` | 載入中 |
 | `error` | `string \| null?` | 載入失敗的訊息 |
+| `order` | `RowKey<Row>[]?` | 這一頁的欄位順序，覆寫 schema 的 `detailOrder`（見 [DataDetail](../record/DataDetail.md)） |
 | `fieldActions` | `FieldActions<Row>?` | 欄位 key → 動作，每欄一個、整格可點 |
 | `fab` | `(PageAction \| null)[]?` | 右下角的 FAB，通常是編輯；`null` 略過 |
 | `header` | `RowView<Row>?` | 選用，整頁最上方的標頭區塊（`defineView` 的回傳值），置於 `top` slot 之上，見 [DetailHeader](../record/DetailHeader.md) |
@@ -31,19 +32,17 @@
 
 ### 順序怎麼決定
 
-- **欄位的順序**歸 schema 的 `detailOrder`
+- **欄位的順序**預設為 schema 的 `detailOrder`，這一頁可以 `order` 另外指定
 - **區塊的順序**歸頁面：放 `#top` 就在欄位上面、放 default 就在下面，同一個 slot 裡有好幾塊就照寫的順序
 - **想插在某兩個欄位中間**：不支援。需要時那一頁不使用 `DetailPage`，以現成的零件自行排列：
 
   ```vue
   <PageState :empty="!row" :error="error" :loading="loading">
-    <DataDetail :only="['total', 'status']" :row="row" :schema="schema" />
+    <DataDetail :order="['total', 'status']" :row="row" :schema="schema" />
     <ChildList … />
-    <DataDetail :only="['note1', 'note2']" :row="row" :schema="schema" />
+    <DataDetail :order="['note1', 'note2']" :row="row" :schema="schema" />
   </PageState>
   ```
-
-  （`DataDetail` 目前還沒有 `only`，`DataForm` 有；真的要用時照抄三行就好）
 
 ## 備註
 

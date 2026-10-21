@@ -1,6 +1,6 @@
 <script generic="Row extends object" lang="ts" setup>
   import type { FieldActions, PageAction } from '@/composables/actions/useTableActions'
-  import type { TableSchema } from '@/schema/types'
+  import type { RowKey, TableSchema } from '@/schema/types'
   import { computed } from 'vue'
   import DetailField from '@/components/ui/record/DetailField.vue'
   import { imageSrc } from '@/schema/image'
@@ -18,11 +18,13 @@
     schema: TableSchema
     // null 時只顯示欄位名稱，值留白
     row: Row | null
+    // 這一頁的欄位順序，覆寫 schema 的 detailOrder
+    order?: readonly RowKey<Row>[]
     // 欄位 key → 動作，每欄一個。沒列的欄位就沒有動作，ref 的前往也要自己列（goToRefAction）
     fieldActions?: FieldActions<Row>
   }>()
 
-  // 真實與虛擬欄位一視同仁，照 detailOrder 排；showIf 不成立的欄位不顯示，row 為 null 時一律顯示
+  // 真實與虛擬欄位一視同仁，照 order（省略時為 detailOrder）排；showIf 不成立的欄位不顯示，row 為 null 時一律顯示
   const fields = computed<Field[]>(() => {
     const row = props.row
     const columns = allColumns(props.schema).filter(column => !row || !column.showIf || column.showIf(row))
@@ -37,11 +39,12 @@
       }
       : { key: column.key, label: column.label, value: '' })
 
-    if (!props.schema.detailOrder) {
+    const order: readonly string[] | undefined = props.order ?? props.schema.detailOrder
+    if (!order) {
       return fieldList
     }
 
-    return props.schema.detailOrder
+    return order
       .map(key => fieldList.find(candidate => candidate.key === key))
       .filter((candidate): candidate is Field => candidate !== undefined)
   })

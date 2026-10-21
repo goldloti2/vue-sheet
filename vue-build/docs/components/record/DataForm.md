@@ -1,6 +1,6 @@
 # DataForm
 
-表單版的 `DataDetail`：依 `column.type` 自動選輸入元件（`text` → `v-text-field`、`number` → `v-number-input`、`date` → `v-date-input`、`duration` → `v-text-field`（填「時:分:秒」）、`boolean` → `v-btn-toggle`（左「否」右「是」兩顆互斥的按鈕，再按一次已選的即清空）、`select` → `v-select`、`ref` → `v-autocomplete`，對方整表的可搜尋下拉清單，每列文字是對方的 `$label`；`image` 跟 `text` 一樣是 `v-text-field`，貼網址或 Drive 連結），依 `schema.formOrder` 排序。新增與編輯共用，差別只在初始值。
+表單版的 `DataDetail`：依 `column.type` 自動選輸入元件（`text` → `v-text-field`、`number` → `v-number-input`、`date` → `v-date-input`、`duration` → `v-text-field`（填「時:分:秒」）、`boolean` → `v-btn-toggle`（左「否」右「是」兩顆互斥的按鈕，再按一次已選的即清空）、`select` → `v-select`、`ref` → `v-autocomplete`，對方整表的可搜尋下拉清單，每列文字是對方的 `$label`；`image` 跟 `text` 一樣是 `v-text-field`，貼網址或 Drive 連結），依 `order` 排序，省略時依 `schema.formOrder`。新增與編輯共用，差別只在初始值。
 
 **這個元件不包 loading / error 狀態**，由 [FormPage](../page/FormPage.md) 處理（範本見 `template/pages/edit.vue`）。
 
@@ -30,7 +30,8 @@
 | `v-model` | `object` | **必填**，整個 row 物件（雙向） |
 | `schema` | `TableSchema` | **必填** |
 | `errors` | `Record<string, string>` | `{ 欄位 key: 錯誤訊息 }`，省略就不顯示任何錯誤 |
-| `only` | `string[]` | 只顯示這幾個欄位（順序仍照 `formOrder`）；`FieldsDialog` 用這個，整頁表單不需要 |
+| `order` | `string[]?` | 這一頁的欄位順序，覆寫 schema 的 `formOrder`；`FormPage` 原樣轉交 |
+| `only` | `string[]` | 只顯示這幾個欄位（順序仍照 `order`／`formOrder`）；`FieldsDialog` 用這個，整頁表單不需要 |
 | `lockId` | `boolean?` | 修改既有的列時為 `true`，主鍵那一欄唯讀。`FormPage` 與 `FieldsDialog` 會自行判斷並傳入 |
 
 ## 備註

@@ -1,5 +1,26 @@
 # 版本紀錄
 
+## v1.5
+
+- **主鍵改為一般欄位上的標記**：`idColumn` 指向 `columns` 中的一欄，其值即為 `row.id`。主鍵可以是 `ref`（與父表共用 id 的一對一延伸表），或由使用者於新增表單填寫；留空時才以 `newId()` 發號，`newId` 改為選用。建立後不能修改，編輯表單中為唯讀；新增時擋下重複的 id。說明見 [vue-build/docs/topics/schema.md](vue-build/docs/topics/schema.md) 的「主鍵」
+- **表單可顯示虛擬欄位**：排進 `formOrder` 的虛擬欄位於表單中唯讀顯示，隨輸入即時重算
+- **`boolean` 欄位**：值為是、否或空，Sheet 上為 `TRUE`／`FALSE`／空白。表單是「否」「是」兩顆互斥的按鈕，篩選抽屜可勾選是、否與「(空白)」。說明見 [vue-build/docs/topics/schema.md](vue-build/docs/topics/schema.md) 的「boolean 欄位」
+- **沒有子列時刪除父列**：ref 欄位新增 `onEmpty: 'delete'`，子列被刪除或改指別的父列而使原本的父列沒有子列時，父列一起刪。說明見 [vue-build/docs/topics/schema.md](vue-build/docs/topics/schema.md) 的「沒有子列時刪除父列」
+- **虛擬欄位可以是 `ref`**：`value` 回傳對方的 id，`row.$欄位key` 同樣掛上，顯示、排序與搜尋皆為對方的名稱。只有正向，不進關聯圖
+- **欄位新增 `showIf`**，依這一列的資料決定詳細頁是否顯示該欄
+- **頁面可覆寫欄位順序**：`DetailPage`／`FormPage`（與 `DataDetail`／`DataForm`）新增 `order`，覆寫 schema 的 `detailOrder`／`formOrder`，例如新增頁與編輯頁使用不同的欄位。`FormPage` 另新增 `lockId`，新增頁的主鍵只能由預設值帶入時可設為唯讀
+- **詳細頁的快速編輯**：`DetailPage`／`DataDetail` 新增 `editable`，列出的欄位直接以輸入元件呈現，改了即寫入，不經過編輯頁；打字類的欄位在失焦或按 Enter 時寫入，其餘一改就寫入，驗證不通過時不寫入並顯示錯誤。說明見 [vue-build/docs/components/record/DataDetail.md](vue-build/docs/components/record/DataDetail.md) 的「快速編輯」
+- 表單中必填的欄位於名稱後加上紅色的「*」
+- 表單中唯讀的欄位（虛擬欄位、建立後的主鍵）字色變淡，主鍵另加鎖頭；日期欄位的日曆圖示移到欄位內右側
+- 數字欄位新增 `step`，設定表單上 −／＋ 每次的增減；右側的上下箭頭改為 −／＋
+- 列表中 view 指定了但這一列沒有值的位置保留它的位置（文字留一行、縮圖與頭像留空白、card 的大圖以灰色方塊佔位），各列因此對齊；沒指定的位置照舊不顯示。card 的層改為「沒指定任何位置」才隱藏
+- 修正數字欄位在表單與篩選抽屜中被四捨五入為整數
+- 修正降冪排序時沒有值的列排到最前面；現在不論升冪或降冪皆排在最後
+
+### 不相容的變更
+
+- `idColumn` 由 Sheet 的表頭文字改為 `columns` 中某一欄的 key。各表須在 `columns` 加入主鍵那一欄（例如 `{ key: 'code', label: '編號', sheetHeader: '原本的 idColumn', type: 'text' }`），Row 介面加上該欄，並將 `idColumn` 改為該欄的 key。原本沒有 `formOrder` 的表，新增與編輯表單會多出這一欄，不需要時須補上 `formOrder`
+
 ## v1.4
 
 - **Dashboard**：`DashboardPage` 與 `DashboardPanel` 於一頁中同時顯示多個面板，以方格座標排版（手機 6 格、電腦 24 格），點擊面板即成為關注點，面板可就地展開為整頁。面板中可直接放入既有的列表頁與詳細頁；開啟互動（`interactive`）時，點擊一列改為選取，詳細面板顯示選取的那一筆，子表的列表只列出它的子列。面板寬 3 格以下時，列表與詳細頁改用精簡的版面。說明見 [vue-build/docs/design/dashboard.md](vue-build/docs/design/dashboard.md)

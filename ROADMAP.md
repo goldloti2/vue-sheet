@@ -179,6 +179,10 @@
   - 完成後要回到原本那張表單（`back`），不是像流程一樣往前走
   - 等真的常用到再做；現在的替代路徑是先去父表新增、再回來選
 - **schema 要不要拆成 `fields.ts` / `order.ts`**（評估過，先不做）：能乾淨切的只有表這一層——`fields.ts` 放 Row 介面、`tableLabel`／`idColumn`／`newId`／`labelColumn`／`columns`／`virtualColumns`，`order.ts` 放 `detailOrder`／`formOrder`／`defaultSort`，`index.ts` 組起來。切在欄位內部（型別／必填 vs 標籤／可搜尋）已否決，那會逼每個 key 寫兩次。現在順序那半只有三個欄位，拆完是一個五行的檔加一個 import，不划算。回頭重看的時機：順序那半長到 15～20 行
+- **條件式樣式**（對照 AppSheet 的 format rules）：滿足條件時改變指定欄位的呈現，例如顏色、粗細、底線，或在值旁加上圖示。尚未設計，要先決定：
+  - 作用在哪些地方：詳細頁的欄位、列表 view 的各位置、表格的儲存格
+  - 規則寫在哪：欄位上（同 `showIf`，以 row 判斷），或頁面／view 上
+  - 一個欄位符合多條規則時如何疊加；顏色須在深色模式下也看得清楚
 - **列表的預設排序讓頁面覆寫**（等真的需要再做）：欄位的順序已可由頁面的 `order` 覆寫，`defaultSort` 仍只有 schema 一份，同一張表在不同列表頁無法有不同的預設排序。做法同 `order`：schema 那份當預設，頁面經由 `useSortedTableList` 的參數覆寫
 
 ### 頁面類型（對照 AppSheet）

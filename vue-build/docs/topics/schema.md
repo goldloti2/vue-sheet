@@ -274,10 +274,16 @@ Sheet 上的真相只有子表的 ref 欄位一份，父列上的陣列是讀的
 
 number 用 `v-number-input`（`min`／`max`／`step` 一起傳下去）、date 用 `v-date-input`、select 用 `v-select` 只能選 `options`。驗證函式擋的是元件擋不住的那些（沒填、超出範圍）。
 
-select 兩個可選開關：
+select 的 `allowCustom`：變成 `v-combobox`，`options` 只是建議、打別的字也收，驗證跟著跳過選項檢查。資料形狀仍然是一個字串。
 
-- **`allowCustom`**：變成 `v-combobox`，`options` 只是建議、打別的字也收，驗證跟著跳過選項檢查。資料形狀仍然是一個字串
-- **`suggestFromData`**：建議清單再接上這張表資料裡用過、`options` 沒有的值（`options` 照原順序在前，其餘依出現次數再依字串）
+### 建議值（`suggestedValues`）
+
+`allowCustom` 的 select 可另加 `suggestedValues: (row, rows) => 值的清單`，算出的值接在 `options` 後面成為建議（對照 AppSheet 的 Suggested Values）：
+
+- **`row`** 是正在編輯的那一列，getter 已掛上，可讀父列（`row.$欄位key`）與父列底下的其他子列（`row.$欄位key.$子表_欄位key`）；表單中改了 ref，建議隨之更新
+- **`rows`** 是這張表的所有列，例如列出這一欄在資料中用過的值：`(row, rows) => rows.map(other => other.欄位)`
+- **順序**：`options` 照原順序在前，算出的值照回傳的順序；重複與空值去掉
+- 只影響表單與快速編輯的建議清單，不限制能填的值
 
 ---
 

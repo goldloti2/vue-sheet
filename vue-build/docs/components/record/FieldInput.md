@@ -20,7 +20,8 @@
 | --- | --- | --- |
 | `v-model` | `unknown` | 這一欄的值。文字類的空字串一律存成 `null` |
 | `column` | `SchemaColumn` | **必填** |
-| `schema` | `TableSchema` | **必填**，`select` 的 `suggestFromData` 由它反查自己這張表 |
+| `schema` | `TableSchema` | **必填**，`suggestedValues` 的 `rows` 由它反查自己這張表 |
+| `row` | `object?` | 正在編輯的那一列（getter 已掛上），傳給 `suggestedValues` |
 | `label` | `string?` | 省略時不顯示標籤（詳細頁的名稱另外顯示） |
 | `required` | `boolean?` | 標籤後加上錯誤色的「*」 |
 | `errorMessages` | `string \| string[]?` | 顯示於欄位下方 |

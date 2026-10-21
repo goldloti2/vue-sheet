@@ -33,7 +33,7 @@
 - `boolean` 欄位：值為 `true`／`false`／`null`，Sheet 上為 `TRUE`／`FALSE`／空白。顯示為是／否；表單是兩顆互斥的按鈕，再按一次已選的即清空；篩選勾選是、否、(空白)，排序否在前；不進搜尋列
 - `date` 讀進來時歸零到當天午夜：Sheet 上手動加了時間也不會讓看起來一樣的兩列排序或篩選不一樣
 - `image` 欄位：一格一張，值是行內 SVG、圖片網址、或 Google Drive 的檔案 id／分享連結，由 `schema/image.ts` 的 `imageSrc()` 依內容判斷後轉成 `<img src>`（Drive 走 thumbnail 端點、沿用瀏覽器的 Google 登入；SVG 轉 `data:` URI，當成圖片載入就不能執行 script）。詳細頁自動顯示，列表的圖片於 view 的 `image` 指定，表單是純文字欄位；不進搜尋與篩選。上傳到 Drive 還沒做
-- `select` 的 `allowCustom`：`options` 只當建議清單，表單變 `v-combobox`、打別的字也收、驗證跳過選項檢查；資料形狀還是一個字串，顯示與篩選不用知道差別。再開 `suggestFromData`，建議清單接上資料裡用過的值（`options` 在前，多出來的依次數再依字串；跟篩選抽屜共用 `presentValues`）
+- `select` 的 `allowCustom`：`options` 只當建議清單，表單變 `v-combobox`、打別的字也收、驗證跳過選項檢查；資料形狀還是一個字串，顯示與篩選不用知道差別。建議清單另可由欄位的 `suggestedValues: (row, rows) => 值的清單` 算出，接在 `options` 後面（`row` 掛了 getter，可讀父列與同一父列底下的其他子列；`rows` 是這張表的所有列）
 
 ### 跨表關聯
 - `schema/relations.ts` 掃 schema 的 `ref` 欄位自動產生關聯圖，新增關聯只要標 `type: 'ref'`

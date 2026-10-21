@@ -30,9 +30,9 @@ interface ColumnTypes {
   ref: { value: string | null, extra: { refTable: string, onDelete?: 'cascade', onEmpty?: 'delete' } }
   /**
    * 清單：預設只能選 options 裡的值。
-   * allowCustom 開了 options 就只是建議、打別的字也收；再開 suggestFromData，建議會接上這張表資料裡用過的值（options 在前）
+   * allowCustom 開了 options 就只是建議、打別的字也收；建議另可由欄位的 suggestedValues 算出（接在 options 後面）
    */
-  select: { value: string | null, extra: { options: string[], allowCustom?: boolean, suggestFromData?: boolean } }
+  select: { value: string | null, extra: { options: string[], allowCustom?: boolean } }
 }
 
 type ColumnType = keyof ColumnTypes
@@ -74,6 +74,8 @@ export type SchemaColumn<Row extends object = AnyRow> = {
     default?: ColumnDefault<ColumnValue<T>>
     /** 自訂規則：內建檢查過了、而且有值時才叫，回錯誤訊息或 null */
     validate?: (value: NonNullable<ColumnValue<T>>, row: Row) => string | null
+    /** 只對 allowCustom 的 select 有效：表單建議清單中接在 options 後面的值。row 為正在編輯的那一列（getter 已掛上），rows 為這張表的所有列 */
+    suggestedValues?: (row: Row, rows: readonly Row[]) => readonly (string | null | undefined)[]
   }
 }[ColumnType]
 

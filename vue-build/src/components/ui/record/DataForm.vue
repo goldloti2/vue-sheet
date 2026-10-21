@@ -76,7 +76,7 @@
     }
   }
 
-  // 虛擬欄位的值：表單的 row 是普通複本，先掛上與快取相同的 getter，讀父列的虛擬欄位才算得出來，並隨輸入重算
+  // 虛擬欄位與 suggestedValues 讀的列：表單的 row 是普通複本，先掛上與快取相同的 getter，讀父列的值才算得出來，並隨輸入重算
   const store = useTablesStore()
   const ownTable = (Object.keys(schemas) as TableKey[]).find(key => schemas[key] === props.schema)
   const rowWithGetters = computed(() => ownTable ? store.withGetters(ownTable, model.value) : model.value)
@@ -101,6 +101,7 @@
         :column="column"
         :model-value="fieldValue(column)"
         :required="isRequired(column)"
+        :row="rowWithGetters"
         :schema="schema"
         @update:model-value="(value) => setFieldValue(column, value)"
       />

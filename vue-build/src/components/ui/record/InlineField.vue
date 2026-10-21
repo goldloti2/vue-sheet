@@ -93,6 +93,7 @@
       :error-messages="error ?? []"
       hide-details="auto"
       :model-value="draft"
+      :row="row"
       :schema="schema"
       variant="outlined"
       @keydown.enter="commit"

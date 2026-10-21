@@ -4,7 +4,6 @@
   import { computed } from 'vue'
   import { useTableList } from '@/composables/data/useTable'
   import { schemas } from '@/schema'
-  import { presentValues } from '@/schema/filter'
   import { sortRows } from '@/schema/sort'
 
   // 單一真實欄位的輸入元件，依 column.type 選擇；表單（DataForm）與詳細頁的快速編輯（InlineField）共用。
@@ -14,6 +13,8 @@
   const props = defineProps<{
     column: SchemaColumn
     schema: TableSchema
+    // 正在編輯的那一列（getter 已掛上），給 suggestedValues 用
+    row?: object
     // 省略時不顯示標籤（詳細頁的名稱另外顯示）
     label?: string
     // 標籤後加上錯誤色的「*」
@@ -59,20 +60,19 @@
       .map(row => ({ id: row.id, title: row.$label }))
   })
 
-  // suggestFromData 要讀自己這張表的列。只拿到 schema，從 schemas 反查代稱（schema 物件是單例）
+  // suggestedValues 的 rows 是自己這張表的列。只拿到 schema，從 schemas 反查代稱（schema 物件是單例）
   const ownTable = (Object.keys(schemas) as TableKey[]).find(key => schemas[key] === props.schema)
-  const ownList = ownTable && props.column.type === 'select' && props.column.suggestFromData
-    ? useTableList<object>(ownTable)
-    : null
+  const ownList = ownTable && props.column.suggestedValues ? useTableList<object>(ownTable) : null
 
-  // combobox 的建議：options 全部照原順序在前，開了 suggestFromData 再接資料裡多出來的值（跟篩選抽屜同一個排法）
+  // combobox 的建議：options 照原順序在前，再接 suggestedValues 算出的值（照回傳的順序），去掉重複與空值
   const suggestions = computed(() => {
     if (props.column.type !== 'select') {
       return []
     }
-    return ownList
-      ? [...props.column.options, ...presentValues(ownList.data.value, props.column).extra]
-      : props.column.options
+    const computedValues = props.column.suggestedValues?.(props.row ?? {}, ownList?.data.value ?? []) ?? []
+    const values = [...props.column.options, ...computedValues]
+      .filter((value): value is string => typeof value === 'string' && value !== '')
+    return [...new Set(values)]
   })
 
   // 各輸入元件共用；class 另以 :class 加上，才會與呼叫端給的 class 合併

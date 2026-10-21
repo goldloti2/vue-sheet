@@ -22,11 +22,12 @@
     fieldActions?: FieldActions<Row>
   }>()
 
-  // 真實與虛擬欄位一視同仁，照 detailOrder 排
+  // 真實與虛擬欄位一視同仁，照 detailOrder 排；showIf 不成立的欄位不顯示，row 為 null 時一律顯示
   const fields = computed<Field[]>(() => {
     const row = props.row
+    const columns = allColumns(props.schema).filter(column => !row || !column.showIf || column.showIf(row))
 
-    const fieldList: Field[] = allColumns(props.schema).map(column => row
+    const fieldList: Field[] = columns.map(column => row
       ? {
         key: column.key,
         label: column.label,

@@ -163,6 +163,13 @@ export const orderSchema: TableSchema<OrderRow> = {
 
 四份都可省略，省略就是「沒有」（`detailOrder`／`formOrder` 例外，它們省略時沿用 `columns` 的順序）。key 打錯字 TS 會擋下來——型別是 `RowKey<Row>[]`，跟 Row 介面對答案。
 
+### 依條件顯示
+
+真實與虛擬欄位皆可加上 `showIf: row => boolean`，回傳 `false` 時詳細頁不顯示該欄（連名稱一起拿掉）。`row` 與虛擬欄位的 `value` 相同，可讀虛擬欄位與 `$欄位key` 等 getter。
+
+- **只作用於詳細頁**：表單、列表的 view、表格皆不受影響
+- **row 尚未載入時一律顯示**，與沒有 `showIf` 的欄位相同
+
 ---
 
 ## row 上的 getter

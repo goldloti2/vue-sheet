@@ -58,6 +58,8 @@ export type ColumnBase<Row extends object = AnyRow, T extends ColumnType = Colum
   label: string
   /** 欄位型別，決定值的型別、輸入元件與顯示格式 */
   type: T
+  /** 只作用於詳細頁：回傳 false 時這一列不顯示此欄 */
+  showIf?: (row: Row) => boolean
 } & ColumnExtra<T>
 
 // 真實欄位：Sheet 上有的，多了表頭對應與表單設定

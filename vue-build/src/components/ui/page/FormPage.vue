@@ -4,10 +4,12 @@
   import PageState from '@/components/ui/page/PageState.vue'
   import DataForm from '@/components/ui/record/DataForm.vue'
 
-  defineProps<{
+  const props = withDefaults(defineProps<{
     schema: TableSchema
     // 這一頁的欄位順序，覆寫 schema 的 formOrder（見 DataForm）
     order?: readonly string[]
+    // 主鍵那一欄是否唯讀；省略時依是否修改既有的一筆自動判斷
+    lockId?: boolean
     // 逐欄的錯誤訊息（useCreateForm／useEditForm 的 fieldErrors）
     errors?: Record<string, string>
     // 編輯頁才有：先把那一筆載進來
@@ -15,13 +17,13 @@
     loadError?: string | null
     // 送出失敗的訊息，不經過 PageState，表單留在畫面上
     error?: string | null
-  }>()
+  }>(), { lockId: undefined })
 
   // 新增頁不會是 null，編輯頁在載入中與找不到資料時是
   const model = defineModel<object | null>({ required: true })
 
   // 已有 id 即為修改既有的一筆（編輯頁），主鍵唯讀；新增頁的 id 在送出時才決定
-  const lockId = computed(() => Boolean((model.value as { id?: string } | null)?.id))
+  const lockId = computed(() => props.lockId ?? Boolean((model.value as { id?: string } | null)?.id))
 </script>
 
 <template>

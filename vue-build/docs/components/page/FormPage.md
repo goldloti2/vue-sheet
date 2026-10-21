@@ -15,6 +15,7 @@
 | `v-model` | `object \| null` | **必填**，表單的 row。`null` 時顯示「找不到這筆資料」 |
 | `schema` | `TableSchema` | **必填**，決定有哪些欄位、順序與輸入元件 |
 | `order` | `string[]?` | 這一頁的欄位順序，覆寫 schema 的 `formOrder`，例如新增頁與編輯頁要不同的欄位時。元件不帶 Row 型別，要檢查 key 時於頁面標為 `RowKey<XxxRow>[]` |
+| `lockId` | `boolean?` | 主鍵那一欄是否唯讀。省略時自動判斷：已有 `id`（編輯頁）為唯讀，否則可填。新增頁的主鍵只能由預設值帶入時傳 `true` |
 | `errors` | `Record<string, string>?` | 逐欄的錯誤訊息（`fieldErrors`） |
 | `loading` | `boolean?` | 編輯頁載入那一筆的期間 |
 | `loadError` | `string \| null?` | 載入失敗的訊息 |

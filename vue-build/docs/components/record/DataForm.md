@@ -32,7 +32,7 @@
 | `errors` | `Record<string, string>` | `{ 欄位 key: 錯誤訊息 }`，省略就不顯示任何錯誤 |
 | `order` | `string[]?` | 這一頁的欄位順序，覆寫 schema 的 `formOrder`；`FormPage` 原樣轉交 |
 | `only` | `string[]` | 只顯示這幾個欄位（順序仍照 `order`／`formOrder`）；`FieldsDialog` 用這個，整頁表單不需要 |
-| `lockId` | `boolean?` | 修改既有的列時為 `true`，主鍵那一欄唯讀。`FormPage` 與 `FieldsDialog` 會自行判斷並傳入 |
+| `lockId` | `boolean?` | 修改既有的列時為 `true`，主鍵那一欄唯讀。`FormPage` 與 `FieldsDialog` 會自行判斷並傳入（`FormPage` 可由頁面以同名 prop 覆寫） |
 
 ## 備註
 

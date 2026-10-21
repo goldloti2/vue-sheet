@@ -84,7 +84,7 @@ export const orderSchema: TableSchema<OrderRow> = {
 `idColumn` 指向 `columns` 中的一欄，該欄的值即為 `row.id`；store、路由與跨表關聯皆以 `row.id` 運作。主鍵須為值是字串的欄位（`text`、`ref`、`select` 等），型別不符時 TS 會擋下。
 
 - **新增**：該欄有值即作為 id；空的才以 `newId()` 發號並填回該欄。省略 `newId` 時主鍵必填
-- **新增表單是否出現主鍵**依這一頁實際使用的順序（頁面的 `order`，否則為 `formOrder`；兩者皆省略時所有欄位皆出現）：沒排進去時一律發號；排進去則可自行輸入，有 `newId` 時欄位下方提示「留空即自動產生」
+- **新增表單是否出現主鍵**依這一頁實際使用的順序（頁面的 `order`，否則為 `formOrder`；兩者皆省略時所有欄位皆出現）：沒排進去時一律發號；排進去則可自行輸入，有 `newId` 時欄位下方提示「留空即自動產生」。主鍵只能由預設值帶入時（例如延伸表從父列的頁面新增），新增頁以 `FormPage` 的 `lockId` 設為唯讀
 - **不能重複**：新增時 id 已存在即拋錯；剛被刪除、尚未推送的 id 亦不能再用
 - **建立後不能修改**：編輯表單，以及有給 `rows` 的 `askFields`（含 `quickEditAction`）中，主鍵那一欄為唯讀；不經過表單的修改由 store 的 `update` 拋錯擋下
 - **格式**：`prefixedId('ORD')` 這種前綴式即符合

@@ -75,17 +75,30 @@
     setFieldValue(column, key === 'true' ? true : (key === 'false' ? false : null))
   }
 
+  // 唯讀的欄位：虛擬欄位與建立後的主鍵
+  function isLocked (column: AnyColumn): boolean {
+    return isVirtual(column) || (column.key === props.schema.idColumn && Boolean(props.lockId))
+  }
+
+  // 必填的欄位：標了 required 者，以及沒有 newId 的主鍵；唯讀的欄位不算
+  function isRequired (column: AnyColumn): boolean {
+    if (isVirtual(column) || isLocked(column)) {
+      return false
+    }
+    return Boolean(column.required) || (column.key === props.schema.idColumn && !props.schema.newId)
+  }
+
   // 各種輸入元件共用的屬性：標籤、錯誤訊息，以及唯讀（虛擬欄位、建立後的主鍵）與主鍵的提示。
   // 唯讀時字色變淡，仍可選取複製；建立後的主鍵另加鎖頭
   function fieldProps (column: AnyColumn) {
     const isId = column.key === props.schema.idColumn
     const idLocked = isId && props.lockId
-    const locked = isVirtual(column) || idLocked
+    const locked = isLocked(column)
     return {
       errorMessages: props.errors?.[column.key] ?? [],
       label: column.label,
       readonly: locked,
-      class: locked ? 'data-form__locked' : undefined,
+      class: { 'data-form__locked': locked, 'data-form__required': isRequired(column) },
       prependInnerIcon: idLocked ? mdiLockOutline : undefined,
       hint: isId && !props.lockId && props.schema.newId ? '留空即自動產生' : undefined,
       persistentHint: isId,
@@ -190,7 +203,7 @@
         class="data-form__boolean"
         :error-messages="fieldProps(column).errorMessages"
       >
-        <span class="data-form__boolean-label">{{ column.label }}</span>
+        <span class="data-form__boolean-label" :class="{ 'data-form__required': isRequired(column) }">{{ column.label }}</span>
 
         <v-btn-toggle
           class="data-form__boolean-toggle"
@@ -257,6 +270,13 @@
 /* 唯讀的欄位（虛擬欄位、建立後的主鍵）：值的字色變淡，與可編輯的欄位區分 */
 .data-form__locked :deep(.v-field__input) {
   opacity: var(--v-medium-emphasis-opacity);
+}
+
+/* 必填的欄位：標籤後加上錯誤色的「*」 */
+.data-form__required :deep(.v-label)::after,
+.data-form__boolean-label.data-form__required::after {
+  content: ' *';
+  color: rgb(var(--v-theme-error));
 }
 
 .data-form__boolean :deep(.v-input__control) {

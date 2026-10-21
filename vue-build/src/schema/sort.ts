@@ -16,7 +16,7 @@ function compareWithDirection (a: unknown, b: unknown, direction: SortSpec['dire
   return direction === 'desc' ? -result : result
 }
 
-// 兩邊皆有值：依實際型別比較（Date 比時間、number 比大小、其餘當字串比較）
+// 兩邊皆有值：依實際型別比較（Date 比時間、number 比大小、其餘當字串比較，字串中的數字照大小排）
 function compareValues (a: unknown, b: unknown): number {
   if (a instanceof Date && b instanceof Date) {
     return a.getTime() - b.getTime()
@@ -24,17 +24,24 @@ function compareValues (a: unknown, b: unknown): number {
   if (typeof a === 'number' && typeof b === 'number') {
     return a - b
   }
+  // select：options 中的值（索引）排在 options 以外的值（原字串）之前
+  if (typeof a === 'number' && typeof b === 'string') {
+    return -1
+  }
+  if (typeof a === 'string' && typeof b === 'number') {
+    return 1
+  }
   // 時長是 "時:分:秒" 字串，照字典序會把 "9:30:00" 排到 "10:00:00" 後面
   const secondsA = durationSeconds(a)
   const secondsB = durationSeconds(b)
   if (secondsA !== null && secondsB !== null) {
     return secondsA - secondsB
   }
-  return String(a).localeCompare(String(b))
+  return String(a).localeCompare(String(b), undefined, { numeric: true })
 }
 
 // 排序用的值：ref 照對方的 $label（值本身是 id，照 id 排沒意義）、
-// select 照 options 的宣告順序（狀態有先後，照字典序排不對），options 沒有的值一律排在最後、彼此靠下一個 spec 分先後
+// select 照 options 的宣告順序（狀態有先後，照字典序排不對），options 沒有的值排在其後、彼此照字串比較
 function sortValue (row: Record<string, unknown>, column: AnyColumn | undefined): unknown {
   const value = row[column?.key ?? '']
   if (column?.type === 'ref') {
@@ -45,7 +52,7 @@ function sortValue (row: Record<string, unknown>, column: AnyColumn | undefined)
       return null
     }
     const index = column.options.indexOf(String(value))
-    return index === -1 ? column.options.length : index
+    return index === -1 ? String(value) : index
   }
   // boolean：否在前、是在後，空的排最後
   if (column?.type === 'boolean') {
@@ -86,7 +93,7 @@ export function sortableColumns (schema: TableSchema): AnyColumn[] {
   return listedColumns(schema, schema.sortable).filter(column => column.type !== 'image')
 }
 
-// 依單一鍵值排序，鍵值是 number 就數字比較，否則當字串比較（用於分組鍵，不吃 schema）
+// 依單一鍵值排序，鍵值是 number 就數字比較，否則當字串比較，其中的數字依數值大小（用於分組鍵，不吃 schema）
 export function sortByKey<Row> (rows: readonly Row[], key: (row: Row) => string | number): Row[] {
   // eslint-disable-next-line unicorn/no-array-sort
   return [...rows].sort((rowA, rowB) => {
@@ -95,6 +102,6 @@ export function sortByKey<Row> (rows: readonly Row[], key: (row: Row) => string 
     if (typeof keyA === 'number' && typeof keyB === 'number') {
       return keyA - keyB
     }
-    return String(keyA).localeCompare(String(keyB))
+    return String(keyA).localeCompare(String(keyB), undefined, { numeric: true })
   })
 }

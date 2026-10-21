@@ -1,9 +1,10 @@
 import type { PendingOp, TableQueue } from './queue'
 import type { TableKey } from '@/schema'
+import type { Relation } from '@/schema/relations'
 import { defineStore } from 'pinia'
 import { computed, reactive, shallowReactive, shallowRef } from 'vue'
 import { schemas } from '@/schema'
-import { cascadeRelations, childRelations } from '@/schema/relations'
+import { cascadeRelations, childRelations, emptyParentRelations } from '@/schema/relations'
 import { allColumns, idColumnOf, serializeRow } from '@/schema/types'
 import { isEmpty, validateRow } from '@/schema/validation'
 import { fetchTable } from '@/services/appScript'
@@ -251,6 +252,11 @@ export const useTablesStore = defineStore('tables', () => {
     const existing = (rows[table] ?? []).find(row => (row as HasId).id === id) as Record<string, unknown> | undefined
     assertValid(table, { ...existing, ...changes }, Object.keys(changes))
 
+    // 改了 ref 而離開的父列，寫入後檢查是否已空
+    const leftParents = existing
+      ? parentsOf(table, [existing], column => column in changes && changes[column] !== existing[column])
+      : new Map<Relation, Set<string>>()
+
     let updated = { id, ...changes } as Row
 
     patch(table, list => list.map(row => {
@@ -261,6 +267,7 @@ export const useTablesStore = defineStore('tables', () => {
       return updated
     }))
     enqueue(table, id, 'update', serializeRow(changes, schema))
+    removeEmptyParents(leftParents)
 
     return updated
   }
@@ -290,6 +297,10 @@ export const useTablesStore = defineStore('tables', () => {
       }
     }
 
+    // 被刪的列原本指向的父列，刪完後檢查是否已空
+    const removed = (rows[table] ?? []).filter(row => targets.has((row as HasId).id)) as Record<string, unknown>[]
+    const leftParents = parentsOf(table, removed)
+
     patch(table, list => list.filter(row => !targets.has((row as HasId).id)))
     for (const id of targets) {
       enqueue(table, id, 'delete', {})
@@ -299,6 +310,39 @@ export const useTablesStore = defineStore('tables', () => {
       removeMany(relation.childTable, (rows[relation.childTable] ?? [])
         .filter(row => targets.has((row as Record<string, unknown>)[relation.column] as string))
         .map(row => (row as HasId).id))
+    }
+
+    removeEmptyParents(leftParents)
+  }
+
+  // 標了 onEmpty 的關聯：這些列指向的父列 id。filter 用來只看有變動的欄位（update）
+  function parentsOf (
+    table: TableKey,
+    list: readonly Record<string, unknown>[],
+    filter: (column: string) => boolean = () => true,
+  ): Map<Relation, Set<string>> {
+    const result = new Map<Relation, Set<string>>()
+    for (const relation of emptyParentRelations(table)) {
+      if (!filter(relation.column)) {
+        continue
+      }
+      const ids = new Set(list
+        .map(row => row[relation.column])
+        .filter((id): id is string => typeof id === 'string' && id !== ''))
+      if (ids.size > 0) {
+        result.set(relation, ids)
+      }
+    }
+    return result
+  }
+
+  // 子列減少之後：仍存在、但已沒有任何子列的父列一起刪（走 removeMany，多層往上遞迴）
+  function removeEmptyParents (parents: Map<Relation, Set<string>>): void {
+    for (const [relation, ids] of parents) {
+      const children = (rows[relation.childTable] ?? []) as Record<string, unknown>[]
+      const existing = new Set((rows[relation.parentTable] ?? []).map(row => (row as HasId).id))
+      removeMany(relation.parentTable, [...ids].filter(id =>
+        existing.has(id) && !children.some(row => row[relation.column] === id)))
     }
   }
 

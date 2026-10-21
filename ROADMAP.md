@@ -42,6 +42,7 @@
 - store 也在每張父表的列掛 `$子表_欄位key`（指向這列的子列陣列，照子表 `defaultSort` 排），零設定；虛擬欄位與頁面直接讀它，不用另外查。名字帶 ref 欄位，所以同一張子表兩個 ref 指向同一張父表（平行邊）各自一個 getter，不會撞
 - `ensureLoaded(table)` 會把父表與子表一起載（擋循環）
 - 連帶刪除：ref 欄位標 `onDelete: 'cascade'`，父列被刪時 `store.removeMany` 順著關聯圖把子列也刪掉（多層遞迴，走同一條 `patch`＋`enqueue`）；`ensureLoaded` 會把 cascade 的子表一起載
+- 沒有子列時刪除父列：ref 欄位標 `onEmpty: 'delete'`，子列被刪除或改指別的父列而使原本的父列沒有子列時，`store` 的 `update`／`removeMany` 寫入後把它刪掉（走 `removeMany`，多層往上遞迴）；只在子列減少時檢查，剛建立的空父列不受影響
 
 ### 資料存取
 - `stores/tables/`：每張表一份全 App 共用的快取，同一張表不會重複打 API

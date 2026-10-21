@@ -24,9 +24,10 @@ interface ColumnTypes {
   /**
    * 外鍵，值是對方的 id（見 docs/topics/schema.md 的一對多關聯）。
    * refTable 是對方在 schemas 裡的 key；顯示時一律用對方的 $label，store 會把對方那一列掛成 row.$欄位key。
-   * onDelete: 'cascade' 表示對方那一列被刪時、指向它的這些列也一起刪；不標就留著（ref 指向不存在的 id）
+   * onDelete: 'cascade' 表示對方那一列被刪時、指向它的這些列也一起刪；不標就留著（ref 指向不存在的 id）。
+   * onEmpty: 'delete' 表示指向對方的列減少（刪除或改指別處）而使對方沒有任何子列時，對方也一起刪
    */
-  ref: { value: string | null, extra: { refTable: string, onDelete?: 'cascade' } }
+  ref: { value: string | null, extra: { refTable: string, onDelete?: 'cascade', onEmpty?: 'delete' } }
   /**
    * 清單：預設只能選 options 裡的值。
    * allowCustom 開了 options 就只是建議、打別的字也收；再開 suggestFromData，建議會接上這張表資料裡用過的值（options 在前）
@@ -78,12 +79,13 @@ export type SchemaColumn<Row extends object = AnyRow> = {
 
 // 虛擬欄位：不在 Sheet 上、讀的時候才算。store 會把它掛成 row 上的 getter，讀起來跟真實欄位一樣（見 docs/topics/schema.md）。
 // 父表走 row.$欄位key、子表走 row.$子表_欄位key，都是 store 掛好的，value 直接讀。
-// 虛擬的 ref 同樣掛 row.$欄位key，但不進關聯圖：對方沒有反向的子列，也不能連帶刪除
+// 虛擬的 ref 同樣掛 row.$欄位key，但不進關聯圖：對方沒有反向的子列，也沒有 onDelete／onEmpty
 export type VirtualColumn<Row extends object = AnyRow> = {
   [T in ColumnType]: ColumnBase<Row, T> & {
     /** 怎麼算出來。父列讀 row.$欄位key、子列讀 row.$子表_欄位key，都是 store 掛好的 */
     value: (row: Row) => ColumnValue<T>
     onDelete?: never
+    onEmpty?: never
   }
 }[ColumnType]
 

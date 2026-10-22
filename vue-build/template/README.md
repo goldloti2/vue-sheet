@@ -95,6 +95,52 @@
 
 `TableSchema<__Table__Row>` 會拿介面去檢查：欄位 `key`、`idColumn`、`labelColumn`、`searchable`、`sortable`、`detailOrder`、`defaultSort` 打錯字直接紅字，`type` 跟值的型別對不上也會抓，虛擬欄位 `value` 的 `row` 不用轉型。介面裡要自己補 store 會掛上去的東西——虛擬欄位的 `readonly xxx`，以及每個 ref 欄位（含虛擬）的 `readonly $欄位key?: 對方Row`（`value` 裡要讀父列才需要）。
 
+### 檢查清單
+
+加一張表或一組頁面時逐項確認。各頁面的細節見 [docs/design/](../docs/design/README.md) 各篇的「設計時要決定的事」。
+
+**表（schema）**
+- `labelColumn`：一列以哪一欄稱呼，ref 到它的地方都顯示這一欄
+- 主鍵：以 `newId` 發號，或由使用者填寫
+- ref 欄位：`refTable`、刪除父列時是否連帶刪除（`onDelete`）、子列都離開時是否刪除父列（`onEmpty`）
+- 虛擬欄位：數量、合計、組合的文字等
+- `searchable`、`sortable`、`defaultSort`
+- 條件式格式（`formatRules`）
+- 後端 `Config.gs` 的分頁名稱與 ID 欄
+
+**列表**
+- 版面：deck、profile、card、gallery 或 table
+- view 各位置放哪一欄：標題、副標、摘要、補充、圖片
+- 分組：依哪些欄位、幾層、各組的先後
+- 動作：FAB（通常為新增）、多選與批次刪除、每一列的動作
+- 搜尋、篩選與排序（由 schema 的清單決定）
+- 是否以頁籤分頁，頁籤的名稱
+- 導覽列的入口、位置與圖示
+
+**詳細**
+- 欄位與順序（`detailOrder` 或頁面的 `order`）
+- 標頭：是否使用，圖片、標題、副標、摘要與動作
+- 動作：FAB（通常為編輯）、App Bar（通常為刪除），以及跨表的流程動作
+- 欄位動作：前往 ref 的那一列、開啟網址、一鍵改值
+- 依條件隱藏的欄位（`showIf`），例如空白時隱藏
+- 快速編輯的欄位（`editable`）
+
+**子表區塊**
+- 區塊標題、空白時的文字、最多顯示幾筆、在欄位的上方或下方
+- 以表格或卡片呈現，表格顯示哪些欄位
+- 點一列進入的子表詳細頁
+- 「新增」：預設帶入父列
+- 「展開」頁：本身是一個列表，照上面列表的項目確認
+
+**表單**
+- 欄位與順序（`formOrder` 或頁面的 `order`），新增與編輯是否不同
+- 各欄的型別、必填
+- 主鍵在新增時是否可填，或只能由預設值帶入（`lockId`）
+- 預設值：schema 的 `default`、從哪裡按新增時帶入的值
+- 選項類：只能選選項或可自填（`allowCustom`）、建議清單（`suggestedValues`）
+- 數字的 `min`／`max`／`step`、自訂的 `validate`
+- 是否顯示唯讀的虛擬欄位（例如小計）
+
 ---
 
 ## 2. 不用自己寫的東西

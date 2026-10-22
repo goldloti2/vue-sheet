@@ -135,14 +135,15 @@
 
     <v-btn-toggle
       class="field-input__boolean-toggle"
+      color="primary"
       density="comfortable"
       divided
       :model-value="booleanKey"
       variant="outlined"
       @update:model-value="setBoolean"
     >
-      <v-btn value="false">否</v-btn>
-      <v-btn value="true">是</v-btn>
+      <v-btn value="false" :variant="booleanKey === 'false' ? 'tonal' : 'outlined'">否</v-btn>
+      <v-btn value="true" :variant="booleanKey === 'true' ? 'tonal' : 'outlined'">是</v-btn>
     </v-btn-toggle>
   </v-input>
 

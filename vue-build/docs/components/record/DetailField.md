@@ -19,7 +19,7 @@
 | prop | 型別 | 說明 |
 | --- | --- | --- |
 | `label` | `string` | **必填**，左側標籤 |
-| `value` | `string` | **必填**，已格式化好的字串 |
+| `value` | `DisplayValue` | **必填**，顯示的文字與條件式格式（`schema/format.ts` 的 `displayValue`），以 [FormattedValue](../view/FormattedValue.md) 畫出 |
 | `image` | `string \| null?` | 有給就顯示圖片而不是 `value` 的文字（`DataDetail` 對 `image` 欄位自動帶入） |
 | `action` | `(PageAction \| null)?` | 有給就整格可點，右邊顯示圖示；`null` 與沒給相同 |
 

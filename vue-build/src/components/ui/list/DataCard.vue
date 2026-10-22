@@ -2,6 +2,7 @@
   import type { CardView } from '@/schema/view'
   import { mdiCheckCircle, mdiCircleOutline, mdiImageOutline } from '@mdi/js'
   import { computed } from 'vue'
+  import FormattedValue from '@/components/ui/view/FormattedValue.vue'
   import ViewActions from '@/components/ui/view/ViewActions.vue'
   import { useRowClick } from '@/composables/list/useRowClick'
 
@@ -96,8 +97,8 @@
         <span v-else-if="fields.header.image === null" class="card-item__avatar" />
 
         <div class="card-item__text">
-          <div v-if="fields.header.title !== undefined" class="card-item__line text-title-medium font-weight-bold">{{ fields.header.title }}</div>
-          <div v-if="fields.header.subtitle !== undefined" class="card-item__line text-body-medium text-medium-emphasis">{{ fields.header.subtitle }}</div>
+          <div v-if="fields.header.title !== undefined" class="card-item__line text-title-medium font-weight-bold"><FormattedValue :value="fields.header.title" /></div>
+          <div v-if="fields.header.subtitle !== undefined" class="card-item__line text-body-medium text-medium-emphasis"><FormattedValue :value="fields.header.subtitle" /></div>
         </div>
       </div>
 
@@ -109,9 +110,9 @@
       </div>
 
       <div v-if="hasBody" class="card-item__body">
-        <div v-if="fields.body.title !== undefined" class="card-item__line text-title-medium font-weight-bold">{{ fields.body.title }}</div>
-        <div v-if="fields.body.subtitle !== undefined" class="card-item__line text-body-medium text-medium-emphasis">{{ fields.body.subtitle }}</div>
-        <div v-if="fields.body.summary !== undefined" class="card-item__summary text-body-medium">{{ fields.body.summary }}</div>
+        <div v-if="fields.body.title !== undefined" class="card-item__line text-title-medium font-weight-bold"><FormattedValue :value="fields.body.title" /></div>
+        <div v-if="fields.body.subtitle !== undefined" class="card-item__line text-body-medium text-medium-emphasis"><FormattedValue :value="fields.body.subtitle" /></div>
+        <div v-if="fields.body.summary !== undefined" class="card-item__summary text-body-medium"><FormattedValue :value="fields.body.summary" /></div>
       </div>
     </component>
 

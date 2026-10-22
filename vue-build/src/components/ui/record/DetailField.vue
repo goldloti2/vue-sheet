@@ -1,10 +1,13 @@
 <script lang="ts" setup>
   import type { PageAction } from '@/composables/actions/useTableActions'
+  import type { DisplayValue } from '@/schema/format'
+  import FormattedValue from '@/components/ui/view/FormattedValue.vue'
   import { useRunAction } from '@/composables/shell/useActionRunner'
 
   interface DetailFieldProps {
     label: string
-    value: string
+    // 顯示的文字與條件式格式（schema/format.ts 的 displayValue）
+    value: DisplayValue
     // image 欄位轉好的 <img src>；有值就顯示圖片而不是文字
     image?: string | null
     // 這一欄的動作：右邊出現圖示，整格都能點（見 docs/topics/actions.md）
@@ -44,13 +47,13 @@
       type="button"
       @click="runAction(action)"
     >
-      <span>{{ value }}</span>
+      <span><FormattedValue :value="value" /></span>
       <v-icon :icon="action.icon" size="18" />
     </button>
 
     <img v-else-if="image" alt="" class="detail-field__image" :src="image">
 
-    <span v-else class="detail-field__value text-body-large">{{ value }}</span>
+    <span v-else class="detail-field__value text-body-large"><FormattedValue :value="value" /></span>
   </div>
 </template>
 

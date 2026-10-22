@@ -124,6 +124,27 @@ export interface TableSchema<Row extends object = AnyRow> {
   formOrder?: RowKey<Row>[]
   /** 列表頁的預設排序，多筆依序當 tiebreaker；省略或空陣列＝維持 Sheet 上的原始順序 */
   defaultSort?: SortSpec<Row>[]
+  /** 條件式格式：條件成立時改變指定欄位的呈現，見 docs/topics/schema.md 的「條件式格式」 */
+  formatRules?: FormatRule<Row>[]
+}
+
+/** 條件式格式的顏色：常用色名，深淺色主題各有一組看得清楚的色值 */
+export type FormatColor = 'red' | 'orange' | 'yellow' | 'green' | 'blue' | 'purple' | 'grey'
+
+export interface FormatRule<Row extends object = AnyRow> {
+  /** 條件，row 的 getter 已掛上 */
+  when: (row: Row) => boolean
+  /** 套用的欄位，真實與虛擬欄位皆可 */
+  columns: RowKey<Row>[]
+  color?: FormatColor
+  bold?: boolean
+  italic?: boolean
+  underline?: boolean
+  strike?: boolean
+  /** 值前面的圖示（@mdi/js 的 path） */
+  icon?: string
+  /** 圖示的顏色；省略時與文字同色 */
+  iconColor?: FormatColor
 }
 
 function columnHeader (column: SchemaColumn): string {

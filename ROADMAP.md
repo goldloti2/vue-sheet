@@ -25,6 +25,7 @@
 - `sortRows(rows, schema, sort?)`（使用者選的排序在前、`defaultSort` 接在後面當 tiebreaker）、`sortableColumns`、`sortByKey`（`schema/sort.ts`）；`groupRows`（多層分組）、`flattenGroups`（把分組攤回畫面順序）在 `schema/group.ts`
 - **`schema/` 放對 row 做事的純函數**（`types`／`sort`／`group`／`filter`／`validation`／`relations`／`image`），不碰 reactivity，所以 store、元件、composable 都能直接叫；`composables/data/` 只放反應式包裝（`useTable`／`useSearch`／`useFilter`）。各表的欄位定義在 `schema/tables/`（一張表一個檔），註冊表 `schema/index.ts` 留在根目錄當公開入口
 - `detailOrder` / `formOrder` 分別控制詳細頁與表單頁的欄位順序，為這張表的預設；個別頁面以 `DetailPage`／`FormPage`（與 `DataDetail`／`DataForm`）的 `order` prop 覆寫；欄位的 `showIf` 依這一列的資料決定詳細頁是否顯示該欄
+- 條件式格式：表層級的 `formatRules`（`when`、`columns`，以及顏色、粗體、斜體、底線、刪除線、圖示）。`schema/format.ts` 的 `displayValue` 把文字與格式一起算出，view、`DataDetail`、`DataTable` 都改用它，`FormattedValue` 統一畫出；`formatColumnValue` 仍只回傳字串，供寫回 Sheet、搜尋與 `$label` 使用。多條規則符合時顏色取第一個、圖示依序全取、字形取聯集；顏色為常用色名，深淺色主題各一組色值
 - `virtualColumns`：不在 Sheet 上、讀的時候才算的欄位，來源可以是自己這列、父列（`row.$欄位key`）或子列（`row.$子表_欄位key`）。store 掛成 row 上的 getter，顯示、排序、分組都跟真實欄位一樣；兩種欄位共用 `ColumnTypes`／`ColumnBase` 型別骨架。排進 `formOrder` 時於表單中唯讀顯示、隨輸入即時重算（表單的 row 經 `store.withGetters` 掛上同一套 getter）
 - `labelColumn`：一列怎麼稱呼（欄位 key，省略就是 id），store 掛成 `row.$label`
 - `idColumn`：主鍵是 `columns` 中的哪一欄（值為字串的欄位），其值即為 `row.id`。可以是 `ref`（與父表共用 id 的一對一延伸表）或由使用者輸入；新增時留空才以選用的 `newId()` 發號。建立後不能修改：編輯表單與有給 `rows` 的 `askFields` 中唯讀，store 的 `update` 擋下其他途徑；`create` 擋下重複的 id 與剛被刪除、尚未推送的 id。不以數字或 `=`、`+`、`-`、`'` 開頭，只能使用 `encodeURIComponent` 不會改變的字元，不能是 `.` 或 `..`
@@ -179,10 +180,7 @@
   - 完成後要回到原本那張表單（`back`），不是像流程一樣往前走
   - 等真的常用到再做；現在的替代路徑是先去父表新增、再回來選
 - **schema 要不要拆成 `fields.ts` / `order.ts`**（評估過，先不做）：能乾淨切的只有表這一層——`fields.ts` 放 Row 介面、`tableLabel`／`idColumn`／`newId`／`labelColumn`／`columns`／`virtualColumns`，`order.ts` 放 `detailOrder`／`formOrder`／`defaultSort`，`index.ts` 組起來。切在欄位內部（型別／必填 vs 標籤／可搜尋）已否決，那會逼每個 key 寫兩次。現在順序那半只有三個欄位，拆完是一個五行的檔加一個 import，不划算。回頭重看的時機：順序那半長到 15～20 行
-- **條件式樣式**（對照 AppSheet 的 format rules）：滿足條件時改變指定欄位的呈現，例如顏色、粗細、底線，或在值旁加上圖示。尚未設計，要先決定：
-  - 作用在哪些地方：詳細頁的欄位、列表 view 的各位置、表格的儲存格
-  - 規則寫在哪：欄位上（同 `showIf`，以 row 判斷），或頁面／view 上
-  - 一個欄位符合多條規則時如何疊加；顏色須在深色模式下也看得清楚
+- **條件依顯示情境判斷**（暫不做）：目前 schema 中以列判斷的條件（`formatRules` 的 `when`、`showIf`，以及 `suggestedValues`、`validate` 這類收到 row 的函式）都只收到這一列，不知道自己用在哪一頁、哪種版面。要做時比照 AppSheet 的 `CONTEXT()`，讓這些函式都能以同一種方式取得情境（例如多一個 `context` 參數），不另設限定位置的宣告欄位，條件才能自由組合。顯示的路徑本身知道位置（`DataDetail`、`DataTable`、`DataForm`），view 則須由各版面元件呼叫時告知自己是哪種版面
 - **列表的預設排序讓頁面覆寫**（等真的需要再做）：欄位的順序已可由頁面的 `order` 覆寫，`defaultSort` 仍只有 schema 一份，同一張表在不同列表頁無法有不同的預設排序。做法同 `order`：schema 那份當預設，頁面經由 `useSortedTableList` 的參數覆寫
 
 ### 頁面類型（對照 AppSheet）

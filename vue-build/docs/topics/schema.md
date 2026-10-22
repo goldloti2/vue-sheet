@@ -172,6 +172,25 @@ export const orderSchema: TableSchema<OrderRow> = {
 - **只作用於詳細頁**：表單、列表的 view、表格皆不受影響
 - **row 尚未載入時一律顯示**，與沒有 `showIf` 的欄位相同
 
+### 條件式格式
+
+表層級的 `formatRules` 依條件改變欄位的呈現（對照 AppSheet 的 Format Rules）。每條規則：
+
+| 屬性 | 說明 |
+| --- | --- |
+| `when` | `row => boolean`，與 `showIf` 相同，可讀虛擬欄位與 getter |
+| `columns` | 套用的欄位，真實與虛擬欄位皆可 |
+| `color` | 文字顏色：`red`、`orange`、`yellow`、`green`、`blue`、`purple`、`grey` |
+| `bold`／`italic`／`underline`／`strike` | 粗體、斜體、底線、刪除線 |
+| `icon` | 值前面的圖示（`@mdi/js` 的 path） |
+| `iconColor` | 圖示的顏色，同 `color` 的選項；省略時與文字同色 |
+
+- **多條規則同時符合時**：顏色取第一條有指定的；圖示依規則的順序全部顯示，各自帶自己的顏色；粗體等字形任一條有即套用
+- **顏色在深淺色主題各有一組色值**，淺色主題較深、深色主題較淺，兩者皆看得清楚（色值見 [FormattedValue](../components/view/FormattedValue.md)）
+- **值為空時完全空白**，不顯示圖示
+- **套用於所有顯示值的地方**：詳細頁的欄位與標頭、列表 view 的各位置、表格的儲存格。表單與快速編輯的輸入框、圖片欄位，以及 `id`、`$label` 這類不是 schema 欄位的位置不套用
+- 顯示的文字與格式由 `schema/format.ts` 的 `displayValue` 一起算出，畫的部分是 [FormattedValue](../components/view/FormattedValue.md)
+
 ---
 
 ## row 上的 getter

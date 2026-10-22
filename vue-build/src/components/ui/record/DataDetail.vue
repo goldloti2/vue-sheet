@@ -1,18 +1,20 @@
 <script generic="Row extends object" lang="ts" setup>
   import type { FieldActions, PageAction } from '@/composables/actions/useTableActions'
   import type { TableKey } from '@/schema'
+  import type { DisplayValue } from '@/schema/format'
   import type { RowKey, SchemaColumn, TableSchema } from '@/schema/types'
   import { computed } from 'vue'
   import DetailField from '@/components/ui/record/DetailField.vue'
   import InlineField from '@/components/ui/record/InlineField.vue'
   import { schemas } from '@/schema'
+  import { displayValue } from '@/schema/format'
   import { imageSrc } from '@/schema/image'
-  import { allColumns, formatColumnValue } from '@/schema/types'
+  import { allColumns } from '@/schema/types'
 
   interface Field {
     key: string
     label: string
-    value: string
+    value: DisplayValue
     image?: string | null
     action?: PageAction | null
     // 快速編輯的欄位才有
@@ -50,12 +52,12 @@
       ? {
         key: column.key,
         label: column.label,
-        value: formatColumnValue(row, column),
+        value: displayValue(row, props.schema, column),
         image: column.type === 'image' ? imageSrc((row as Record<string, unknown>)[column.key]) : null,
         action: props.fieldActions?.[column.key]?.(row),
         editColumn: editColumnOf(column.key),
       }
-      : { key: column.key, label: column.label, value: '' })
+      : { key: column.key, label: column.label, value: { text: '' } })
 
     const order: readonly string[] | undefined = props.order ?? props.schema.detailOrder
     if (!order) {

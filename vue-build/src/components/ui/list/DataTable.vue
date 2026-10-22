@@ -1,13 +1,16 @@
 <script generic="Row extends { id: string }" lang="ts" setup>
+  import type { DisplayValue } from '@/schema/format'
   import type { TableSchema } from '@/schema/types'
   import { computed } from 'vue'
   import { useRouter } from 'vue-router'
-  import { allColumns, formatColumnValue } from '@/schema/types'
+  import FormattedValue from '@/components/ui/view/FormattedValue.vue'
+  import { displayValue } from '@/schema/format'
+  import { allColumns } from '@/schema/types'
 
   interface ResolvedColumn<Row> {
     key: string
     label: string
-    getValue: (row: Row) => string
+    getValue: (row: Row) => DisplayValue
   }
 
   const props = withDefaults(defineProps<{
@@ -28,7 +31,7 @@
     const columnList: ResolvedColumn<Row>[] = allColumns(props.schema).map(column => ({
       key: column.key,
       label: column.label,
-      getValue: (row: Row) => formatColumnValue(row, column),
+      getValue: (row: Row) => displayValue(row, props.schema, column),
     }))
 
     if (!props.columns) {
@@ -62,7 +65,7 @@
         :class="{ 'cursor-pointer': rowTo }"
         @click="handleRowClick(row)"
       >
-        <td v-for="column in resolvedColumns" :key="column.key">{{ column.getValue(row) }}</td>
+        <td v-for="column in resolvedColumns" :key="column.key"><FormattedValue :value="column.getValue(row)" /></td>
       </tr>
     </tbody>
   </v-table>

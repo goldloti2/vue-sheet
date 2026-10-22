@@ -1,6 +1,7 @@
 <script generic="Row extends object" lang="ts" setup>
   import type { RowView } from '@/schema/view'
   import { computed } from 'vue'
+  import FormattedValue from '@/components/ui/view/FormattedValue.vue'
   import ViewActions from '@/components/ui/view/ViewActions.vue'
 
   // detail 頁的標頭：僅使用 image、title、subtitle、summary 與這一列的動作（defineView）
@@ -11,7 +12,7 @@
 
   const fields = computed(() => view(row))
 
-  const hasText = computed(() => Boolean(fields.value.title || fields.value.subtitle || fields.value.summary))
+  const hasText = computed(() => Boolean(fields.value.title?.text || fields.value.subtitle?.text || fields.value.summary?.text))
   const hasActions = computed(() => fields.value.actions.slice(0, 4).some(action => action !== null))
 </script>
 
@@ -23,9 +24,9 @@
 
       <div v-if="hasText" class="detail-header__scrim">
         <v-container class="detail-header__text">
-          <div v-if="fields.title" class="text-headline-small font-weight-bold">{{ fields.title }}</div>
-          <div v-if="fields.subtitle" class="detail-header__secondary text-body-large">{{ fields.subtitle }}</div>
-          <div v-if="fields.summary" class="detail-header__secondary text-body-medium">{{ fields.summary }}</div>
+          <div v-if="fields.title?.text" class="text-headline-small font-weight-bold"><FormattedValue :value="fields.title" /></div>
+          <div v-if="fields.subtitle?.text" class="detail-header__secondary text-body-large"><FormattedValue :value="fields.subtitle" /></div>
+          <div v-if="fields.summary?.text" class="detail-header__secondary text-body-medium"><FormattedValue :value="fields.summary" /></div>
         </v-container>
       </div>
     </div>

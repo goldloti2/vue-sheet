@@ -2,6 +2,7 @@
   import type { RowView } from '@/schema/view'
   import { mdiCheckCircle, mdiCircleOutline } from '@mdi/js'
   import { computed } from 'vue'
+  import FormattedValue from '@/components/ui/view/FormattedValue.vue'
   import ViewActions from '@/components/ui/view/ViewActions.vue'
   import { useRowClick } from '@/composables/list/useRowClick'
 
@@ -69,8 +70,8 @@
       <span v-else-if="fields.image === null" class="profile-item__avatar" />
 
       <div class="profile-item__text">
-        <div v-if="fields.title !== undefined" class="profile-item__title text-title-medium font-weight-bold">{{ fields.title }}</div>
-        <div v-if="fields.subtitle !== undefined" class="profile-item__subtitle text-body-medium text-medium-emphasis">{{ fields.subtitle }}</div>
+        <div v-if="fields.title !== undefined" class="profile-item__title text-title-medium font-weight-bold"><FormattedValue :value="fields.title" /></div>
+        <div v-if="fields.subtitle !== undefined" class="profile-item__subtitle text-body-medium text-medium-emphasis"><FormattedValue :value="fields.subtitle" /></div>
       </div>
     </component>
 

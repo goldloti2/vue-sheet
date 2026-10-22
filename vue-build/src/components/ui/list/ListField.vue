@@ -1,14 +1,16 @@
 <script lang="ts" setup>
+  import type { DisplayValue } from '@/schema/format'
   import { mdiCheckCircle, mdiCircleOutline } from '@mdi/js'
   import { computed } from 'vue'
+  import FormattedValue from '@/components/ui/view/FormattedValue.vue'
 
   // 位置的名稱跟 view 一樣（schema/view.ts）：title 左上、subtitle 右上、summary 左下、aside 右下。
   // 沒指定的位置為 undefined，不畫；指定了但沒有值的保留位置
   const props = defineProps<{
-    title?: string
-    subtitle?: string
-    summary?: string
-    aside?: string
+    title?: DisplayValue
+    subtitle?: DisplayValue
+    summary?: DisplayValue
+    aside?: DisplayValue
     // 轉好的 <img src>；null 為指定了但沒有圖，留一塊同大小的空白
     image?: string | null
     selectMode?: boolean
@@ -34,15 +36,15 @@
             size="20"
           />
 
-          <span v-if="title !== undefined" class="list-item__title text-title-medium font-weight-bold">{{ title }}</span>
+          <span v-if="title !== undefined" class="list-item__title text-title-medium font-weight-bold"><FormattedValue :value="title" /></span>
         </div>
 
-        <span v-if="subtitle !== undefined" class="list-item__field text-body-medium text-medium-emphasis list-item__field--right">{{ subtitle }}</span>
+        <span v-if="subtitle !== undefined" class="list-item__field text-body-medium text-medium-emphasis list-item__field--right"><FormattedValue :value="subtitle" /></span>
       </div>
 
       <div v-if="hasBottomRow" class="list-item__row">
-        <span v-if="summary !== undefined" class="list-item__field text-body-medium text-medium-emphasis list-item__field--left">{{ summary }}</span>
-        <span v-if="aside !== undefined" class="list-item__field text-body-medium text-medium-emphasis list-item__field--right">{{ aside }}</span>
+        <span v-if="summary !== undefined" class="list-item__field text-body-medium text-medium-emphasis list-item__field--left"><FormattedValue :value="summary" /></span>
+        <span v-if="aside !== undefined" class="list-item__field text-body-medium text-medium-emphasis list-item__field--right"><FormattedValue :value="aside" /></span>
       </div>
     </div>
   </div>

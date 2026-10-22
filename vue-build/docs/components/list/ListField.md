@@ -24,14 +24,14 @@
 
 ## Props
 
-位置的名稱與 view 相同。沒指定的位置為 `undefined`，不顯示也不佔位置；指定了但沒有值的文字為空字串，保留一行的高度。上下兩行各自在兩個位置都沒指定時整行不顯示。
+位置的名稱與 view 相同。沒指定的位置為 `undefined`，不顯示也不佔位置；指定了但沒有值的文字為 `text` 空字串，保留一行的高度。上下兩行各自在兩個位置都沒指定時整行不顯示。文字位置為 view 算出的 `DisplayValue`（文字與條件式格式），以 [FormattedValue](../view/FormattedValue.md) 畫出。
 
 | prop | 型別 | 說明 |
 | --- | --- | --- |
-| `title` | `string?` | 左上 |
-| `subtitle` | `string?` | 右上 |
-| `summary` | `string?` | 左下 |
-| `aside` | `string?` | 右下 |
+| `title` | `DisplayValue?` | 左上 |
+| `subtitle` | `DisplayValue?` | 右上 |
+| `summary` | `DisplayValue?` | 左下 |
+| `aside` | `DisplayValue?` | 右下 |
 | `image` | `(string \| null)?` | 左側 48×48 的縮圖，須為已轉換的 src；為 `null` 時留一塊同大小的空白，`undefined` 時不顯示 |
 | `selectMode` | `boolean?` | 顯示勾選圈圈 |
 | `selected` | `boolean?` | 勾選圈圈是否為已選狀態 |

@@ -2,6 +2,7 @@
   import type { RowView } from '@/schema/view'
   import { mdiCheckCircle, mdiCircleOutline, mdiImageOutline } from '@mdi/js'
   import { computed } from 'vue'
+  import FormattedValue from '@/components/ui/view/FormattedValue.vue'
   import ViewActions from '@/components/ui/view/ViewActions.vue'
   import { useRowClick } from '@/composables/list/useRowClick'
 
@@ -74,8 +75,8 @@
 
       <div class="gallery-item__text">
         <!-- 沒指定的位置不畫；指定了但沒有值的保留一行 -->
-        <div v-if="fields.title !== undefined" class="gallery-item__line text-title-small font-weight-bold">{{ fields.title }}</div>
-        <div v-if="fields.subtitle !== undefined" class="gallery-item__line gallery-item__subtitle text-body-small text-medium-emphasis">{{ fields.subtitle }}</div>
+        <div v-if="fields.title !== undefined" class="gallery-item__line text-title-small font-weight-bold"><FormattedValue :value="fields.title" /></div>
+        <div v-if="fields.subtitle !== undefined" class="gallery-item__line gallery-item__subtitle text-body-small text-medium-emphasis"><FormattedValue :value="fields.subtitle" /></div>
       </div>
     </component>
 

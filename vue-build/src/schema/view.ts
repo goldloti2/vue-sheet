@@ -1,7 +1,9 @@
+import type { DisplayValue } from './format'
 import type { RowBase, RowKey, TableSchema } from './types'
 import type { PageAction } from '@/composables/actions/useTableActions'
+import { displayValue } from './format'
 import { imageSrc } from './image'
-import { findColumn, formatColumnValue } from './types'
+import { findColumn } from './types'
 
 // 視圖：一列資料的哪些欄位放到版面的哪個位置，加上這一列的動作。定義在頁面、交給版面元件（見 ROADMAP 的「頁面類型（對照 AppSheet）」）
 
@@ -21,13 +23,14 @@ interface FieldGroup<Row extends object> {
 // 依位置排：card 與 detail 標頭的前兩個在左、後兩個在右，null 是空位；deck 與 profile 會跳過空位
 type RowActions<Row extends object> = (row: Row) => (PageAction | null)[]
 
-// 沒指定的位置為 undefined，版面不畫；指定了但沒有值的文字為 ''、圖片為 null，版面保留它的位置
+// 沒指定的位置為 undefined，版面不畫；指定了但沒有值的文字為 text ''、圖片為 null，版面保留它的位置。
+// 文字位置帶著條件式格式（DisplayValue），以 FormattedValue 畫出
 interface ResolvedGroup {
-  title?: string
-  subtitle?: string
+  title?: DisplayValue
+  subtitle?: DisplayValue
   image?: string | null
-  summary?: string
-  aside?: string
+  summary?: DisplayValue
+  aside?: DisplayValue
 }
 
 // defineView 的結果：給一列，回傳各位置的內容與這一列的動作（deck、profile、gallery、detail 標頭）
@@ -44,18 +47,18 @@ function noActions (): (PageAction | null)[] {
   return []
 }
 
-// 欄位在建立時查好，之後每一列只剩讀值與格式化。schema 沒定義的（id、$label）直接轉字串
-function textReader (schema: TableSchema, key: string | undefined): (row: object) => string | undefined {
+// 欄位在建立時查好，之後每一列只剩讀值與格式化。schema 沒定義的（id、$label）直接轉字串，沒有條件式格式
+function textReader (schema: TableSchema, key: string | undefined): (row: object) => DisplayValue | undefined {
   if (!key) {
     return () => undefined
   }
   const column = findColumn(schema, key)
   if (column) {
-    return row => formatColumnValue(row, column)
+    return row => displayValue(row, schema, column)
   }
   return row => {
     const value = (row as Record<string, unknown>)[key]
-    return value === null || value === undefined ? '' : String(value)
+    return { text: value === null || value === undefined ? '' : String(value) }
   }
 }
 

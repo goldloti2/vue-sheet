@@ -26,7 +26,7 @@
         <v-container class="detail-header__text">
           <div v-if="fields.title?.text" class="text-headline-small font-weight-bold"><FormattedValue :value="fields.title" /></div>
           <div v-if="fields.subtitle?.text" class="detail-header__secondary text-body-large"><FormattedValue :value="fields.subtitle" /></div>
-          <div v-if="fields.summary?.text" class="detail-header__secondary text-body-medium"><FormattedValue :value="fields.summary" /></div>
+          <div v-if="fields.summary?.text" class="detail-header__summary text-body-large"><FormattedValue :value="fields.summary" /></div>
         </v-container>
       </div>
     </div>
@@ -77,6 +77,11 @@
 
 .detail-header__top--image .detail-header__secondary {
   opacity: 0.87;
+}
+
+/* 摘要與標題同色、與副標同大小；上方空一行，沒有副標時與標題亦隔開 */
+.detail-header__summary {
+  margin-top: 1lh;
 }
 
 .detail-header__actions {

@@ -25,6 +25,7 @@ schema 的 `virtualColumns`（見 [schema.md](../../topics/schema.md#欄位)）�
 | `order` | `RowKey<Row>[]?` | 這一頁的欄位順序，覆寫 schema 的 `detailOrder`；沒列到的欄位不顯示 |
 | `fieldActions` | `FieldActions<Row>?` | 欄位 key → `(row) => PageAction \| null`，每欄一個 |
 | `editable` | `RowKey<Row>[]?` | 快速編輯的欄位，見下方「快速編輯」 |
+| `layout` | `('side' \| 'stacked')?` | 欄位的排法：標籤與值左右並排或上下兩行；省略時照 `config/app.ts` 的 `detailFieldLayout`（見 [DetailField](DetailField.md)） |
 
 ## 快速編輯
 

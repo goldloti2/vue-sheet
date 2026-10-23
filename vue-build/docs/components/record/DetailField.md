@@ -22,6 +22,7 @@
 | `value` | `DisplayValue` | **必填**，顯示的文字與條件式格式（`schema/format.ts` 的 `displayValue`），以 [FormattedValue](../view/FormattedValue.md) 畫出 |
 | `image` | `string \| null?` | 有給就顯示圖片而不是 `value` 的文字（`DataDetail` 對 `image` 欄位自動帶入） |
 | `action` | `(PageAction \| null)?` | 有給就整格可點，右邊顯示圖示；`null` 與沒給相同 |
+| `layout` | `('side' \| 'stacked')?` | `'side'` 標籤與值左右並排，`'stacked'` 標籤在上、值在下；省略時照 `config/app.ts` 的 `detailFieldLayout` |
 
 ## Slots
 
@@ -31,5 +32,6 @@
 
 ## 備註
 
-- **標籤與值兩欄固定 38:62**：以 `minmax(0, …)` 指定，不被內容撐開；沒有空白的長字串（網址、編號）於任意處換行
-- **dashboard 中的窄版**：所在面板寬度小於 200px（3 格以下）時，標籤與值改為上下兩行，標籤靠左（見 [DashboardPanel](../panel/DashboardPanel.md)）。一般頁面不會觸發
+- **左右並排時兩欄固定 38:62**：以 `minmax(0, …)` 指定，不被內容撐開，標籤靠右；沒有空白的長字串（網址、編號）於任意處換行
+- **上下兩行時**標籤與值皆靠左；欄位動作的圖示仍在值的右側，快速編輯的輸入元件佔滿值的那一行，圖片置於標籤下方
+- **dashboard 中的窄版**：所在面板寬度小於 200px（3 格以下）時，不論 `layout` 一律上下兩行（見 [DashboardPanel](../panel/DashboardPanel.md)）。一般頁面不會觸發

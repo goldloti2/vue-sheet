@@ -1,8 +1,10 @@
 <script lang="ts" setup>
   import type { PageAction } from '@/composables/actions/useTableActions'
+  import type { DetailFieldLayout } from '@/config/app'
   import type { DisplayValue } from '@/schema/format'
   import FormattedValue from '@/components/ui/view/FormattedValue.vue'
   import { useRunAction } from '@/composables/shell/useActionRunner'
+  import { detailFieldLayout } from '@/config/app'
 
   interface DetailFieldProps {
     label: string
@@ -12,9 +14,13 @@
     image?: string | null
     // 這一欄的動作：右邊出現圖示，整格都能點（見 docs/topics/actions.md）
     action?: PageAction | null
+    // 名稱與值左右並排或上下兩行；省略時照 config/app.ts 的 detailFieldLayout
+    layout?: DetailFieldLayout
   }
 
-  defineProps<DetailFieldProps>()
+  withDefaults(defineProps<DetailFieldProps>(), {
+    layout: detailFieldLayout,
+  })
 
   // value：以輸入元件取代顯示的值（快速編輯）；有動作時，動作的圖示接在它右邊
   const slots = defineSlots<{ value?: () => unknown }>()
@@ -23,7 +29,7 @@
 </script>
 
 <template>
-  <div class="detail-field">
+  <div class="detail-field" :class="{ 'detail-field--stacked': layout === 'stacked' }">
     <span class="detail-field__label text-body-medium text-medium-emphasis">{{ label }}</span>
 
     <div v-if="slots.value" class="detail-field__value detail-field__editor">
@@ -117,7 +123,17 @@
   min-width: 0;
 }
 
-/* dashboard 中 3 格以下的窄面板：名稱與值改為上下兩行，名稱靠左（門檻見 docs/components/panel/DashboardPanel.md） */
+/* 上下兩行：名稱在上、值在下，皆靠左 */
+.detail-field--stacked {
+  grid-template-columns: minmax(0, 1fr);
+  row-gap: 2px;
+}
+
+.detail-field--stacked .detail-field__label {
+  text-align: left;
+}
+
+/* dashboard 中 3 格以下的窄面板：不論設定一律上下兩行（門檻見 docs/components/panel/DashboardPanel.md） */
 @container dashboard-panel (width < 200px) {
   .detail-field {
     grid-template-columns: minmax(0, 1fr);

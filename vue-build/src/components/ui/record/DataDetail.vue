@@ -1,5 +1,6 @@
 <script generic="Row extends object" lang="ts" setup>
   import type { FieldActions, PageAction } from '@/composables/actions/useTableActions'
+  import type { DetailFieldLayout } from '@/config/app'
   import type { TableKey } from '@/schema'
   import type { DisplayValue } from '@/schema/format'
   import type { RowKey, SchemaColumn, TableSchema } from '@/schema/types'
@@ -31,6 +32,8 @@
     fieldActions?: FieldActions<Row>
     // 快速編輯：這些欄位直接是輸入元件，改了即寫入；主鍵與虛擬欄位列了也不能編輯
     editable?: readonly RowKey<Row>[]
+    // 名稱與值左右並排或上下兩行；省略時照 config/app.ts 的 detailFieldLayout
+    layout?: DetailFieldLayout
   }>()
 
   // 寫入要用表的代稱。只拿到 schema，從 schemas 反查（schema 物件是單例）
@@ -80,6 +83,7 @@
         v-if="field.editColumn && table && row"
         :action="field.action"
         :label="field.label"
+        :layout="layout"
         :value="field.value"
       >
         <template #value>
@@ -98,6 +102,7 @@
         :action="field.action"
         :image="field.image"
         :label="field.label"
+        :layout="layout"
         :value="field.value"
       />
     </template>

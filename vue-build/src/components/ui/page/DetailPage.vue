@@ -1,5 +1,6 @@
 <script lang="ts" setup generic="Row extends object">
   import type { FieldActions, PageAction } from '@/composables/actions/useTableActions'
+  import type { DetailFieldLayout } from '@/config/app'
   import type { TableKey } from '@/schema'
   import type { RowKey, TableSchema } from '@/schema/types'
   import type { RowView } from '@/schema/view'
@@ -38,6 +39,8 @@
     fab?: (PageAction | null)[]
     // 選用：整頁最上方的標頭區塊（defineView，見 DetailHeader）
     header?: RowView<Row>
+    // 欄位的排法，覆寫 config/app.ts 的 detailFieldLayout（見 DetailField）
+    layout?: DetailFieldLayout
   }>()
 
   // 左右滑動換上下一筆；RecordNav 的兩顆箭頭是同一份順序。兩者皆只在以整頁呈現時啟用（dashboard 的面板中停用）
@@ -51,7 +54,13 @@
 
 <template>
   <div v-touch="fullPage ? swipe : {}">
-    <DataDetail v-if="blank" :order="order" :row="null" :schema="schema" />
+    <DataDetail
+      v-if="blank"
+      :layout="layout"
+      :order="order"
+      :row="null"
+      :schema="schema"
+    />
 
     <PageState v-else :empty="!row" :error="error" :loading="loading">
       <!-- PageState 已經擋掉 null 了，這層只是讓型別看得出來 -->
@@ -63,6 +72,7 @@
         <DataDetail
           :editable="editable"
           :field-actions="fieldActions"
+          :layout="layout"
           :order="order"
           :row="row"
           :schema="schema"

@@ -1,5 +1,20 @@
 # 版本紀錄
 
+## v1.6
+
+- **條件式格式**：表層級的 `formatRules` 依條件改變指定欄位的顏色、粗體、斜體、底線、刪除線，或在值前面加上圖示，套用於詳細頁、列表的各版面與表格。說明見 [vue-build/docs/topics/schema.md](vue-build/docs/topics/schema.md) 的「條件式格式」
+- **建議值改為 `suggestedValues`**：`allowCustom` 的 select 以 `suggestedValues: (row, rows) => 值的清單` 算出建議，接在 `options` 後面；`row` 掛了 getter，可讀父列與同一父列底下的其他子列。說明見 [vue-build/docs/topics/schema.md](vue-build/docs/topics/schema.md) 的「建議值」
+- **表格的欄寬**：`DataTable` 新增 `widths`，各欄可設為最大（完整顯示，可橫向捲動）、預設（均分剩下的寬度，放不下加「…」）或最小（縮到內容寬，上限為預設欄的一份）；`wrap` 令放不下的格子換行而非截斷；`fixed` 令前幾欄於橫向捲動時固定於左側，欄寬不變。說明見 [vue-build/docs/components/list/DataTable.md](vue-build/docs/components/list/DataTable.md) 的「欄寬」與「固定欄」
+- **詳細頁欄位的排法**：標籤與值可左右並排（原本的樣式）或上下兩行。全站預設為 `config/app.ts` 的 `detailFieldLayout`，單一頁面以 `DetailPage` 的 `layout` 覆寫；dashboard 的窄面板不論設定一律上下兩行。說明見 [vue-build/docs/components/record/DetailField.md](vue-build/docs/components/record/DetailField.md)
+- 詳細頁標頭的摘要改為與標題同色、與副標同大小，並與上方隔一行；標頭下方加上分隔線
+- 是非欄位的按鈕組中，選中的那顆改為主題色的淡色底
+- 修正文字排序時數字依字典序排（「10」在「2」之前），現在依數字大小排，分組的先後亦同；選項類的欄位中不在選項裡的值，彼此改為依文字排序
+
+### 不相容的變更
+
+- `select` 的 `suggestFromData` 移除，改寫為 `suggestedValues: (row, rows) => rows.map(other => other.欄位)`
+- view 的文字位置（`title`、`subtitle`、`summary`、`aside`）由字串改為 `{ text, format }`；`DetailField` 的 `value` 亦同。只使用內建版面元件的頁面不受影響，直接讀這些值的程式須改讀 `.text`
+
 ## v1.5
 
 - **主鍵改為一般欄位上的標記**：`idColumn` 指向 `columns` 中的一欄，其值即為 `row.id`。主鍵可以是 `ref`（與父表共用 id 的一對一延伸表），或由使用者於新增表單填寫；留空時才以 `newId()` 發號，`newId` 改為選用。建立後不能修改，編輯表單中為唯讀；新增時擋下重複的 id。說明見 [vue-build/docs/topics/schema.md](vue-build/docs/topics/schema.md) 的「主鍵」

@@ -35,6 +35,11 @@
     <v-container v-if="hasActions" class="detail-header__actions">
       <ViewActions :actions="fields.actions" variant="slots" />
     </v-container>
+
+    <!-- 與下方的欄位區以分隔線隔開，寬度與欄位區相同 -->
+    <v-container class="detail-header__divider">
+      <v-divider :thickness="2" />
+    </v-container>
   </div>
 </template>
 
@@ -86,6 +91,10 @@
 
 .detail-header__actions {
   padding-top: 8px;
+  padding-bottom: 0;
+}
+
+.detail-header__divider {
   padding-bottom: 0;
 }
 </style>

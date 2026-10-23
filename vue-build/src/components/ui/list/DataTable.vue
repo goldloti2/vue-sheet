@@ -27,9 +27,12 @@
     widths?: Partial<Record<string, ColumnWidth>>
     // 放不下的格子換行，而非截斷加上省略號
     wrap?: boolean
+    // 橫向捲動時固定於左側的欄數（自第一欄起）
+    fixed?: number
   }>(), {
     showHeader: true,
     wrap: false,
+    fixed: 0,
   })
 
   const router = useRouter()
@@ -64,6 +67,24 @@
     return total > container.value.clientWidth ? `${total}px` : '100%'
   })
 
+  // 固定欄的 class 與位置，依欄的順序；寬度照欄寬規則，左側位置為前面各欄寬度的加總
+  const cellAttrs = computed(() => {
+    const widths = columnWidths.value
+    const count = Math.min(props.fixed, resolvedColumns.value.length)
+    let left = 0
+    return resolvedColumns.value.map((_, index) => {
+      if (!widths || index >= count) {
+        return {}
+      }
+      const attrs = {
+        class: { 'data-table__fixed': true, 'data-table__fixed--last': index === count - 1 },
+        style: { left: `${left}px` },
+      }
+      left += widths[index]
+      return attrs
+    })
+  })
+
   function handleRowClick (row: Row) {
     if (props.rowTo) {
       router.push(props.rowTo(row))
@@ -86,7 +107,7 @@
 
       <thead v-if="showHeader">
         <tr>
-          <th v-for="column in resolvedColumns" :key="column.key"><span class="data-table__content">{{ column.label }}</span></th>
+          <th v-for="(column, index) in resolvedColumns" :key="column.key" v-bind="cellAttrs[index]"><span class="data-table__content">{{ column.label }}</span></th>
         </tr>
       </thead>
 
@@ -97,7 +118,7 @@
           :class="{ 'cursor-pointer': rowTo }"
           @click="handleRowClick(row)"
         >
-          <td v-for="column in resolvedColumns" :key="column.key"><span class="data-table__content"><FormattedValue :value="column.getValue(row)" /></span></td>
+          <td v-for="(column, index) in resolvedColumns" :key="column.key" v-bind="cellAttrs[index]"><span class="data-table__content"><FormattedValue :value="column.getValue(row)" /></span></td>
         </tr>
       </tbody>
     </v-table>
@@ -123,5 +144,16 @@
 .data-table--sized.data-table--wrap td {
   white-space: normal;
   overflow-wrap: anywhere;
+}
+
+/* 固定欄：不透明的背景蓋住捲到底下的欄，最後一欄的右側以較深的格線分隔 */
+.data-table__fixed {
+  position: sticky;
+  z-index: 1;
+  background: rgb(var(--v-theme-surface));
+}
+
+.data-table__fixed--last {
+  border-right: thin solid rgba(var(--v-border-color), calc(var(--v-border-opacity) * 3));
 }
 </style>

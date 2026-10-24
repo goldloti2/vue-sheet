@@ -3,14 +3,14 @@
   import type { FormatColor } from '@/schema/types'
   import { computed } from 'vue'
 
-  // 顯示一欄的值與它的條件式格式（schema/format.ts 的 displayValue）：圖示依序在前，文字套上顏色與字形。
-  // 值為空時不畫任何東西，所在元素維持 :empty
+  // 顯示一欄的值與其條件式格式：圖示依序在前，文字套上顏色與字形。值為空時不顯示，元素維持 :empty
   const { value } = defineProps<{
     value: DisplayValue
   }>()
 
+  // 顏色為 Vuetify 主題的共用色名（plugins/vuetify.ts）
   function colorClass (color: FormatColor | undefined): string | undefined {
-    return color ? `formatted-value--${color}` : undefined
+    return color ? `text-vuesheet-${color}` : undefined
   }
 
   const textClass = computed(() => {
@@ -52,23 +52,4 @@
 .formatted-value--underline-strike {
   text-decoration-line: underline line-through;
 }
-
-/* 常用色名，取自 Material Design 色板：淺色主題用較深的色值，深色主題用較淺的，皆以 APCA 檢查達 Lc 60。
-   黃色例外：深色主題為 yellow A700，淺色主題為同一色相（OKLCH）降低亮度至達標的值，不在色板上 */
-.formatted-value--red { color: #c62828; }
-.formatted-value--orange { color: #e65100; }
-.formatted-value--yellow { color: #a58a08; }
-.formatted-value--green { color: #2e7d32; }
-.formatted-value--blue { color: #1565c0; }
-.formatted-value--purple { color: #6a1b9a; }
-.formatted-value--grey { color: #616161; }
-
-/* 整個選擇器須包在 :global() 內：:global(.a) .b 會被編譯成只剩 .a */
-:global(.v-theme--dark .formatted-value--red) { color: #ef9a9a; }
-:global(.v-theme--dark .formatted-value--orange) { color: #ffa726; }
-:global(.v-theme--dark .formatted-value--yellow) { color: #ffd600; }
-:global(.v-theme--dark .formatted-value--green) { color: #81c784; }
-:global(.v-theme--dark .formatted-value--blue) { color: #90caf9; }
-:global(.v-theme--dark .formatted-value--purple) { color: #e1bee7; }
-:global(.v-theme--dark .formatted-value--grey) { color: #bdbdbd; }
 </style>

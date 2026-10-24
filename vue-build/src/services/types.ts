@@ -4,7 +4,7 @@ import type { TableKey } from '@/schema'
 
 export type SheetAction = 'create' | 'update' | 'delete'
 
-// 一次推送裡的一個操作。update 的 values 只有改過的那幾欄（見 docs/topics/store.md）
+// 一次推送中的一個操作。update 的 values 只含修改過的欄位（見 docs/topics/store.md）
 export interface BatchOperation {
   table: TableKey
   kind: SheetAction
@@ -12,17 +12,16 @@ export interface BatchOperation {
   values?: Record<string, string>
 }
 
-// 讀整張表的回應。modifiedTime 是整個試算表檔案的修改時間（後端用
-// DriveApp.getFileById(id).getLastUpdated()），不是逐列的——Sheets 沒有逐列的修改時間
+// 讀取整張表的回應。modifiedTime 為整個試算表檔案的修改時間，不是逐列的時間
 export interface TableData {
   rows: Record<string, string>[]
   modifiedTime: string
 }
 
-// 登入時送出的憑證，內容由認證模組決定（帳號密碼、Google 的 ID token…）
+// 登入時送出的憑證，內容由認證模組決定（例如帳號密碼、Google 的 ID token）
 export type LoginCredentials = Record<string, string>
 
-// 後端回 error: 'modified' 時前端拿到的錯誤：Sheet 在這段時間被別處改過，這一批完全沒有寫入
+// 後端回傳 code 'modified' 時的錯誤：Sheet 已被別處修改，整批皆未寫入
 export class ConflictError extends Error {
   constructor () {
     super('Sheet 已被別處修改，這次沒有寫入任何東西')
@@ -30,7 +29,7 @@ export class ConflictError extends Error {
   }
 }
 
-// 後端回 unauthorized／expired：token 已經被清掉，router 會把畫面帶到登入頁
+// 後端回傳 unauthorized 或 expired 時的錯誤。token 隨即被清除，router 導向登入頁
 export class AuthError extends Error {
   constructor (message: string, readonly code: 'unauthorized' | 'expired') {
     super(message)
@@ -41,14 +40,13 @@ export class AuthError extends Error {
 interface ApiSuccess<T> {
   success: true
   data: T
-  // 續期：token 剩不到一半效期時後端換一張新的放這裡（見 docs/auth.md）
+  // 續期：token 剩餘效期不到一半時，後端於此附上新的 token（見 docs/auth.md）
   token?: string
 }
 
 interface ApiFailure {
   success: false
-  // 錯誤只有一句訊息；code 只用在前端要分辨的情況：
-  // 'modified'（衝突）、'unauthorized'（登入失敗或 token 無效）、'expired'（token 過期）
+  // 錯誤為一句訊息。code 只用於前端須區分的情況（見 docs/api.md）
   error: { message: string, code?: 'modified' | 'unauthorized' | 'expired' }
 }
 

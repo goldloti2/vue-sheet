@@ -1,23 +1,32 @@
 # TabPage
 
-頁籤 + 內容區。切換時內容依頁籤順序左右滑動（往右邊的頁籤＝新內容從右進、舊的往左出），方向與換頁動畫一致；動畫本身由 Vuetify 的 `v-window` 提供，不經過換頁動畫的 View Transitions。
+頁籤列加上內容區。
+- 切換時，內容依頁籤的順序左右滑動：前往右側的頁籤時，新內容從右側進入，舊內容往左側離開。方向與換頁動畫一致
+- 動畫由 Vuetify 的 `v-window` 提供，不經過換頁動畫的 View Transitions
 
-**頁籤列不畫在頁面裡**：這個元件把它登記給 `AppShell`，由 App Bar 底下的 extension 顯示，所以捲動內容時頁籤固定在最上面，也不會跟著換頁動畫滑動。頁面只放這個元件、不用管位置；離開頁面（含被 KeepAlive 收起來）時頁籤列自動消失。也因此它需要 `AppShell`，跟 `PageFab`、`useAppBarActions` 一樣。搜尋模式下頁籤仍然留著。
+**頁籤列不畫在頁面中**：
+- 此元件將頁籤列登記給 `AppShell`，由 App Bar 下方的 extension 顯示。因此捲動內容時，頁籤列固定在最上方，也不隨換頁動畫滑動
+- 頁面只須放置此元件，無須處理位置。離開頁面時（包括被 KeepAlive 收起），頁籤列自動消失
+- 因此此元件須有 `AppShell`，與 `PageFab`、`useAppBarActions` 相同
+- 搜尋模式下，頁籤列仍然保留
 
-每個頁籤都會被渲染成獨立的面板，看過的會留在 DOM 裡（`v-show` 隱藏），所以各自保有捲動位置與展開狀態。內容不必同構——頁籤只是容器，各放各的。
+每個頁籤顯示為獨立的面板。看過的面板留在 DOM 中，以 `v-show` 隱藏，因此各自保有捲動位置與展開狀態。各面板的內容不必同構：頁籤只是容器，各自放置各自的內容。
 
-**面板知道自己是不是當前頁籤**：這個元件在每個頁籤外面包一層 `TabPanel`，`provide` 一份「現在輪到我沒」。`PageFab`、`useAppBarActions`／`useBottomActions`、`useListOrder` 都會讀它，所以面板裡直接放整個列表（含自己的 FAB、App Bar 動作）是可以的，不是當前頁籤的那些不會掛出去。不在 `TabPage` 裡的頁面一律算當前，現有頁面零改動。
+**面板知道自己是否為目前的頁籤**：
+- 此元件在每個頁籤外包一層 `TabPanel`，`provide` 一份「目前是否輪到此面板」
+- `PageFab`、`useAppBarActions`、`useBottomActions`、`useListOrder` 皆讀取這份資訊。因此面板中可直接放整個列表，包括列表自己的 FAB 與 App Bar 動作。不是目前頁籤的面板，不會掛出這些動作
+- 不在 `TabPage` 中的頁面一律視為目前的頁籤，既有的頁面無須修改
 
-**要用哪一個訊號**：兩個都來自頁面的頁籤 `v-model`，差別在問題不同——
+**兩個訊號的選擇**：兩者都來自頁面的頁籤 `v-model`，回答的問題不同：
 
-| 你的程式在哪 | 用什麼 | 問的是 |
+| 程式所在的位置 | 使用 | 回答的問題 |
 | --- | --- | --- |
-| 掛在某個面板裡（元件、或面板內元件呼叫的 composable） | `usePanelActive()` | 「**我**是不是當前面板」 |
-| 在面板外面（頁面層的 composable、`TabPage` 外的東西） | `useCurrentTab()` | 「現在選的是哪個頁籤」 |
+| 掛在某個面板中（元件，或面板內元件呼叫的 composable） | `usePanelActive()` | 「**此面板**是否為目前的面板」 |
+| 在面板外（頁面層的 composable、`TabPage` 之外的元件） | `useCurrentTab()` | 「目前選的是哪個頁籤」 |
 
-同一條規則只接其中一個，依程式所在的位置挑選。`useMultiSelect` 是頁面層，走 `useCurrentTab()`。
+同一條規則只接其中一個，依程式所在的位置選擇。`useMultiSelect` 屬於頁面層，使用 `useCurrentTab()`。
 
-常見用法是依某個 `select` 欄位篩選列表，選項直接讀該欄位的 `options`（取 `options` 前要先用 `column?.type === 'select'` 縮小型別，這個判斷不能省）。
+常見的用法是依某個 `select` 欄位篩選列表，頁籤直接讀取該欄位的 `options`。讀取 `options` 前，須先以 `column?.type === 'select'` 縮小型別，此判斷不可省略。
 
 ## Usage
 
@@ -27,25 +36,28 @@
 
 | prop | 型別 | 說明 |
 | --- | --- | --- |
-| `v-model` | `string` | **必填**，目前選中的頁籤 |
-| `tabs` | `string[]` | **必填**，同時決定頁籤順序與滑動方向 |
+| `v-model` | `string` | **必填**，目前選取的頁籤 |
+| `tabs` | `string[]` | **必填**，同時決定頁籤的順序與滑動的方向 |
 
 ## Slots
 
 | slot | scope | 說明 |
 | --- | --- | --- |
-| `default` | `{ tab: string }` | 每個頁籤共用同一份 template 時用這個 |
-| `[頁籤字串]` | `{ tab: string }` | 某個頁籤要放不一樣的東西時，用跟它同名的具名 slot；沒給就退回 `default` |
+| `default` | `{ tab: string }` | 各頁籤共用同一份 template 時使用 |
+| `[頁籤字串]` | `{ tab: string }` | 某個頁籤要放不同的內容時，使用與該頁籤同名的具名 slot。未提供時改用 `default` |
 
 ## 備註
 
-- 只要頁籤列、不要內容區的話，直接用 Vuetify 的 `v-tabs`，不用這個元件（自己擺的 `v-tabs` 會跟著內容捲動）
-- 一個畫面同時掛兩個 `TabPage` 會互相蓋掉頁籤列（App Bar 的 extension 只有一份）
-- **不可嵌套**：`TabPage` 與 `DashboardPage` 不可互相嵌套，亦不可嵌套自身；開發模式下於 console 警告
-- **頁籤中的列表自動共用搜尋**：本元件 provide 一份「共用的列表控制」，各頁籤中的 `useListPage` 不自行登記，改為加入此控制；搜尋字串共用一條，同一張表共用一份篩選與排序，不同的表各有一份，由本元件統一登記一次（見 [search.md](../../topics/search.md#同一頁面中的多張表)）。其中沒有列表時不登記
-- **各頁籤可放不同的表**（例如兩張表的列表），亦可放自其他 `.vue` 檔 import 的列表：各面板掛出各自的 FAB 與 App Bar 動作，搜尋與篩選如上自動共用
-- **同一個頁籤裡的內容仍然共用一組動作**。「不同頁籤不同 FAB」若頁籤只是同一張表的篩選（面板沒有分開），就由頁面自己 `computed(() => 目前頁籤 === 'A' ? actionsA : actionsB)` 餵給 `PageFab`
-- 鍵盤操作是焦點停在頁籤列時用方向鍵（`v-tabs` 底層的 `VSlideGroup` 提供）
+- 只需要頁籤列、不需要內容區時，直接使用 Vuetify 的 `v-tabs`，不使用此元件。頁面自行放置的 `v-tabs` 會隨內容捲動
+- 一個畫面同時掛兩個 `TabPage` 時，兩者的頁籤列互相覆蓋，因為 App Bar 的 extension 只有一份
+- **不可嵌套**：`TabPage` 與 `DashboardPage` 不可互相嵌套，也不可嵌套自身。開發模式下於 console 警告
+- **頁籤中的列表自動共用搜尋**（見 [search.md](../../topics/search.md#同一頁面中的多張表)）：
+  - 此元件 provide 一份共用的列表控制。各頁籤中的 `useListPage` 不自行登記，改為加入這份控制
+  - 搜尋字串共用一條。同一張表共用一份篩選與排序，不同的表各有一份
+  - 此元件統一登記一次。其中沒有列表時不登記
+- **各頁籤可放不同的表**（例如兩張表的列表），也可放從其他 `.vue` 檔 import 的列表。各面板掛出各自的 FAB 與 App Bar 動作，搜尋與篩選照上一項自動共用
+- **同一個頁籤中的內容共用一組動作**：頁籤只是同一張表的篩選、面板沒有分開時，若要「不同頁籤不同 FAB」，由頁面自行以 `computed(() => 目前頁籤 === 'A' ? actionsA : actionsB)` 傳給 `PageFab`
+- 鍵盤操作：焦點停在頁籤列時使用方向鍵，此功能由 `v-tabs` 底層的 `VSlideGroup` 提供
 - `v-window` 的兩個 prop 固定關閉：
   - `:show-arrows="false"`：須明確設為 `false`，預設值 `undefined` 會顯示左右箭頭
   - `:touch="false"`：不以左右滑動切換頁籤

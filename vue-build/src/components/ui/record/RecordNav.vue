@@ -11,7 +11,7 @@
 
   const { goNext, goPrev, siblings } = useSiblingNav(props.table, () => props.id)
 
-  // 與 PageFab 相同，teleport 到 body：頁面中的祖先帶有 transform 或 containment 時會成為 fixed 的定位基準
+  // 與 PageFab 相同，teleport 至 body：頁面中帶有 transform 或 containment 的祖先會成為 fixed 的定位基準
   const isActive = shallowRef(true)
   onActivated(() => {
     isActive.value = true

@@ -5,7 +5,7 @@
   interface ConfirmDialogProps {
     title: string
     text: string
-    // 右邊那幾顆鈕，通常只有一顆「確定」（見 useDialogs 的 confirm／choose）
+    // 右側的按鈕，通常只有一個「確定」（見 useDialogs 的 confirm、choose）
     choices: DialogChoice[]
     loading?: boolean
     error?: string | null

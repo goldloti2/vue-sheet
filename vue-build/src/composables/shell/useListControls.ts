@@ -4,29 +4,29 @@ import type { SortSpec, TableSchema } from '@/schema/types'
 import type { InjectionKey, Ref } from 'vue'
 import { registerSlot } from '@/composables/shell/useActionSlot'
 
-// 抽屜裡的一張表。rows 是還沒過濾的整表，select 只列裡面出現過的值
+// 抽屜中的一張表。rows 為未過濾的整表，select 只列出其中出現過的值
 export interface ListTable {
   schema: TableSchema
   filters: Ref<Filters>
   rows: Ref<readonly object[]>
-  // 使用者選的排序，null 就是照 schema.defaultSort。給了才有排序鈕
+  // 使用者選擇的排序，null 表示 schema.defaultSort。有提供時才顯示排序按鈕
   sort?: Ref<SortSpec | null>
 }
 
 export interface ListControls {
   query: Ref<string>
-  // 給了就有篩選鈕（搜尋欄內）與排序鈕（App Bar 上），兩個都開同一個右側抽屜
+  // 有提供時顯示篩選按鈕（搜尋欄內）與排序按鈕（App Bar 上），兩者開啟同一個右側抽屜
   drawer?: {
-    // 每張表各自一份條件與排序、同時生效。單表的頁面給一個元素就好
+    // 每張表各有一份條件與排序，同時生效。單表的頁面只須一個元素
     tables: ListTable[]
-    // 頁面的頁籤（值對得上某張表的 tableLabel），抽屜打開時先停在那張表
+    // 頁面的頁籤，值為某張表的 tableLabel。抽屜開啟時先顯示該表
     current?: Readonly<Ref<string>>
   }
 }
 
 export const listControlsKey: InjectionKey<SlotSetter<ListControls | null>> = Symbol('listControls')
 
-// 頁面登記後 App Bar 才出現放大鏡與排序鈕；query / filters / sort 都是頁面的，AppShell 只負責讓使用者改它們
+// 頁面登記後 App Bar 才顯示搜尋與排序按鈕。query、filters、sort 屬於頁面，AppShell 只提供修改的介面
 export function useListControls (query: Ref<string>, drawer?: ListControls['drawer']): void {
   registerSlot(listControlsKey, () => ({ query, drawer }), null)
 }

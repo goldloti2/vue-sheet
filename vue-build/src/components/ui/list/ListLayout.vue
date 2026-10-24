@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-  // 列表中各筆的外框：list 依序往下排、不另外包裝；grid 為格狀排列（gallery）。ListPage 與 GroupedList 共用
+  // 列表中各列的外框：list 依序往下排列，grid 為格狀排列（gallery）。ListPage 與 GroupedList 共用
   const { layout = 'list' } = defineProps<{
     layout?: 'list' | 'grid'
   }>()

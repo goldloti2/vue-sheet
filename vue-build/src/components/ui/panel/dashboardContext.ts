@@ -12,7 +12,7 @@ export interface DashboardPanelEntry {
   table?: TableKey
   // 手機自動排版時依內容量得的格數（最多 8 格），尚未量得時為 null
   measuredRows: Ref<number | null>
-  // 面板中正在多選；多選期間關注點不移動
+  // 面板中正在多選。多選期間關注點不移動
   selecting: Ref<boolean>
 }
 
@@ -20,14 +20,14 @@ export interface DashboardPanelEntry {
 export interface DashboardContext {
   focused: Readonly<Ref<string | null>>
   focus: (name: string) => void
-  // 正在多選的面板；其他面板於此期間鎖定
+  // 正在多選的面板。其他面板於此期間鎖定
   selecting: Readonly<Ref<string | null>>
   // 已展開的面板，其餘面板隱藏
   expanded: Readonly<Ref<string | null>>
   expand: (name: string) => void
   register: (entry: DashboardPanelEntry) => () => void
   placement: (name: string) => ComputedRef<PanelPlacement | undefined>
-  // 一格的邊長（px），換算手機自動排版的格數用
+  // 一格的邊長（px），用於換算手機自動排版的格數
   cellSize: Readonly<Ref<number>>
   gap: number
   // 面板內的轉場進行中：fade 時各面板各自命名，slide 時只有展開的面板命名（見 DashboardPage）

@@ -6,7 +6,7 @@
     active: boolean
   }>()
 
-  // TabPage 內部用：只為了讓每個頁籤各有一份 provide，面板裡的頁面才知道自己是不是當前那個
+  // TabPage 內部使用：每個頁籤各有一份 provide，面板中的頁面據此判斷是否為目前的頁籤
   provide(panelActiveKey, toRef(() => props.active))
 </script>
 

@@ -1,9 +1,8 @@
-// token 裡的 message：{ user, exp }，以 base64url 編碼（格式見 docs/auth.md）。
-// 正式流程裡前端不解析 token，只有假後端會用到這裡
+// token 中的 message：{ user, exp }，以 base64url 編碼（見 docs/auth.md）。只有假後端使用此處
 
 interface TokenMessage {
   user: string
-  // 秒
+  // 單位為秒
   exp: number
 }
 
@@ -12,7 +11,7 @@ export function encodeMessage (message: TokenMessage): string {
   return btoa(String.fromCodePoint(...bytes)).replaceAll('+', '-').replaceAll('/', '_').replace(/=+$/, '')
 }
 
-// 解不開就是 null。簽章（'.' 後面那段）不看，只讀前面的 message
+// 無法解碼時為 null。不檢查簽章（'.' 之後），只讀取之前的 message
 export function decodeMessage (token: string): TokenMessage | null {
   try {
     const base64 = token.split('.', 1)[0]!.replaceAll('-', '+').replaceAll('_', '/')

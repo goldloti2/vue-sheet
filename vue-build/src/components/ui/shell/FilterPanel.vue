@@ -9,24 +9,24 @@
   import { booleanText, formatDate } from '@/schema/types'
 
   const props = defineProps<{
-    // 每張表各自一份條件、同時生效；上方的表選單只決定現在編哪一張
+    // 每張表各有一份條件，同時生效。上方的表選單只決定目前編輯哪一張
     tables: ListTable[]
-    // 頁面的頁籤，沒被使用者換過就跟著它
+    // 頁面目前的頁籤。使用者未切換表時，面板跟隨此頁籤
     current?: string
-    // 抽屜是 AppShell 的，這裡只用來在關起來時回到原狀
+    // 抽屜屬於 AppShell，此處只用於在關閉時回到原狀
     open: boolean
   }>()
 
-  // 使用者在抽屜裡點的表；關起來就忘掉，下次打開重新跟著 current
+  // 使用者在抽屜中選取的表。關閉時清空，下次開啟時重新跟隨 current
   const picked = shallowRef<string | null>(null)
 
   const table = computed(() => props.tables.find(item => item.schema.tableLabel === (picked.value ?? props.current)) ?? props.tables[0])
 
-  // 改了就即時生效，沒有套用鈕。每次都給新物件，讀它的 computed 才會重算
+  // 修改即時生效，沒有套用按鈕。每次修改都指定新物件，讀取它的 computed 才會重算
   const filters = computed<Filters>(() => table.value?.filters.value ?? {})
   const columns = computed(() => table.value ? filterableColumns(table.value.schema) : [])
 
-  // 第二層正在編哪一欄；null 就是第一層的欄位清單。關起來回到第一層
+  // 第二層正在編輯的欄位。null 表示第一層的欄位清單，關閉時回到第一層
   const editing = shallowRef<AnyColumn | null>(null)
   watch(() => props.open, value => {
     if (!value) {
@@ -35,7 +35,7 @@
     }
   })
 
-  // 換表就回到欄位清單：第二層那一欄是上一張表的
+  // 切換表時回到欄位清單，因為第二層的欄位屬於上一張表
   const tableName = computed({
     get: () => table.value?.schema.tableLabel ?? '',
     set: value => {
@@ -44,7 +44,7 @@
     },
   })
 
-  // select 多一個「空白」選項，對應值是 null
+  // select 多一個「空白」選項，對應的值為 null
   const BLANK = '__blank__'
 
   interface SelectItem {
@@ -52,7 +52,7 @@
     value: string
   }
 
-  // 只列資料裡出現過的值（options 順序在前、多出來的接後面）；有空的才給「(空白)」，放最後
+  // 只列出資料中出現過的值，options 中的值依序在前。有空值時才加「(空白)」，置於最後
   function selectItems (column: AnyColumn): SelectItem[] {
     const { known, extra, hasBlank } = presentValues(table.value?.rows.value ?? [], column)
     const items = [...known, ...extra].map(value => ({ title: valueTitle(column, value), value }))
@@ -80,13 +80,13 @@
   function toggleValue (column: AnyColumn, value: string) {
     const current = selectedValues(column)
     const next = current.includes(value) ? current.filter(item => item !== value) : [...current, value]
-    // 照 checkbox 的順序存，摘要就不用再排一次；清單上沒有的值（資料變了）接在後面，不會被靜默刪掉
+    // 依 checkbox 的順序儲存。清單上已沒有的值接在後面，不刪除
     const shown = selectItems(column).map(item => item.value)
     const ordered = [...shown.filter(item => next.includes(item)), ...next.filter(item => !shown.includes(item))]
     patch(column.key, { values: ordered.map(item => item === BLANK ? null : item) })
   }
 
-  // 同一個 min / max 欄位給 number 與 date 兩種輸入元件用，各自只取自己那種型別
+  // number、date 與 duration 的輸入元件共用 min、max，各自只取自己的型別
   function numberBound (column: AnyColumn, edge: 'min' | 'max'): number | null {
     const value = filters.value[column.key]?.[edge]
     return typeof value === 'number' ? value : null
@@ -107,7 +107,7 @@
     return (filter?.values?.length ?? 0) > 0 || filter?.min != null || filter?.max != null
   }
 
-  // 摘要的字數上限，超過就截斷改成「…共 X 項」
+  // 摘要的字數上限，超過時截斷並加上「…共 X 項」
   const SUMMARY_MAX = 12
 
   function rangeText (low: string, high: string): string {
@@ -117,7 +117,7 @@
     return low ? `${low} ～` : `～ ${high}`
   }
 
-  // 第一層每欄名稱底下那行小字：目前設了什麼條件。沒設就不顯示
+  // 第一層每欄名稱下方的小字，顯示目前的條件。沒有條件時不顯示
   function summary (column: AnyColumn): string {
     const filter = filters.value[column.key]
     if (!filter || !isActive(column)) {
@@ -150,7 +150,7 @@
     return rangeText(String(min), String(max))
   }
 
-  // 只清現在這張表的；要全部清掉就關掉搜尋（App Bar 的 ←）
+  // 只清除目前這張表的條件。關閉搜尋（App Bar 的 ←）時清除全部的表
   function clear () {
     if (table.value) {
       table.value.filters.value = {}
@@ -159,7 +159,7 @@
 </script>
 
 <template>
-  <!-- 第一層：欄位清單，點一欄才進去填值 -->
+  <!-- 第一層：欄位清單，點選一欄後進入第二層 -->
   <template v-if="!editing">
     <v-toolbar density="compact" flat title="篩選">
       <v-btn text="清除" variant="text" @click="clear" />
@@ -185,7 +185,7 @@
     <v-container v-else class="text-medium-emphasis">這張表沒有可篩選的欄位</v-container>
   </template>
 
-  <!-- 第二層：單一欄位的值，改了就即時生效 -->
+  <!-- 第二層：單一欄位的條件，修改即時生效 -->
   <template v-else>
     <v-toolbar density="compact" flat :title="editing.label">
       <template #prepend>

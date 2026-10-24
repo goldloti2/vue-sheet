@@ -15,7 +15,7 @@
     selectable?: boolean
     selectMode?: boolean
     selected?: boolean
-    // dashboard 的互動：是否為選取的那一列，以及點擊是否改為選取（由 ListPage 給）
+    // dashboard 的互動：是否為選取的那一列，以及點擊是否改為選取（由 ListPage 提供）
     current?: boolean
     pickable?: boolean
   }>()
@@ -68,19 +68,19 @@
 
       <img v-if="fields.image" alt="" class="gallery-item__image" :src="fields.image">
 
-      <!-- 沒有圖片時以同樣大小的灰色方塊佔位，格線才會對齊 -->
+      <!-- 沒有圖片時以同樣大小的灰色方塊佔位，使格線對齊 -->
       <div v-else class="gallery-item__image gallery-item__placeholder">
         <v-icon :icon="mdiImageOutline" size="32" />
       </div>
 
       <div class="gallery-item__text">
-        <!-- 沒指定的位置不畫；指定了但沒有值的保留一行 -->
+        <!-- 未指定的位置不顯示，已指定但沒有值的位置保留一行 -->
         <div v-if="fields.title !== undefined" class="gallery-item__line text-title-small font-weight-bold"><FormattedValue :value="fields.title" /></div>
         <div v-if="fields.subtitle !== undefined" class="gallery-item__line gallery-item__subtitle text-body-small text-medium-emphasis"><FormattedValue :value="fields.subtitle" /></div>
       </div>
     </component>
 
-    <!-- 置於文字區右下；多選模式下隱藏 -->
+    <!-- 置於文字區右下，多選模式下隱藏 -->
     <ViewActions v-if="!selectMode" :actions="fields.actions" class="gallery-item__actions list-row-above-link" variant="menu" />
   </div>
 </template>
@@ -91,7 +91,7 @@
   box-sizing: border-box;
   aspect-ratio: 3 / 4;
   overflow: hidden;
-  /* 畫面外的格子不排版也不繪製；高度由 aspect-ratio 依欄寬決定，不需替代值 */
+  /* 畫面外的格子不排版。高度由 aspect-ratio 依欄寬決定，無須替代值 */
   content-visibility: auto;
 }
 
@@ -128,7 +128,7 @@
   background: rgb(var(--v-theme-surface-light));
 }
 
-/* 標題在上、佔滿寬度；副標緊接於標題下方 */
+/* 標題在上並佔滿寬度，副標緊接於標題下方 */
 .gallery-item__text {
   min-width: 0;
   padding: 8px 12px;
@@ -145,12 +145,12 @@
   white-space: nowrap;
 }
 
-/* 指定了但沒有值：以零寬字元撐出一行的高度 */
+/* 已指定但沒有值時，以零寬字元撐出一行的高度 */
 .gallery-item__line:empty::before {
   content: '\200b';
 }
 
-/* 文字區右下，距右緣與底緣各 2px；疊於連結之上由 list-row-above-link 負責 */
+/* 文字區右下，距右緣與底緣各 2px。疊於連結之上由 list-row-above-link 負責 */
 .gallery-item__actions {
   position: absolute;
   right: 2px;

@@ -10,11 +10,11 @@
     label: string
     // 顯示的文字與條件式格式（schema/format.ts 的 displayValue）
     value: DisplayValue
-    // image 欄位轉好的 <img src>；有值就顯示圖片而不是文字
+    // image 欄位已轉換的 <img src>。有值時顯示圖片，不顯示文字
     image?: string | null
-    // 這一欄的動作：右邊出現圖示，整格都能點（見 docs/topics/actions.md）
+    // 這一欄的動作：右側出現圖示，整格可點擊（見 docs/topics/actions.md）
     action?: PageAction | null
-    // 名稱與值左右並排或上下兩行；省略時照 config/app.ts 的 detailFieldLayout
+    // 名稱與值左右並排或上下兩行。省略時依 config/app.ts 的 detailFieldLayout
     layout?: DetailFieldLayout
   }
 
@@ -22,7 +22,7 @@
     layout: detailFieldLayout,
   })
 
-  // value：以輸入元件取代顯示的值（快速編輯）；有動作時，動作的圖示接在它右邊
+  // value：以輸入元件取代顯示的值（快速編輯）。有動作時，動作的圖示接在其右側
   const slots = defineSlots<{ value?: () => unknown }>()
 
   const runAction = useRunAction()
@@ -64,7 +64,7 @@
 </template>
 
 <style scoped>
-/* 兩欄以 minmax(0, …) 固定比例，不被內容撐開；沒有空白的長字串（網址、編號）於任意處換行 */
+/* 兩欄以 minmax(0, …) 固定比例，不隨內容變寬。沒有空白的長字串可於任意處換行 */
 .detail-field {
   display: grid;
   box-sizing: border-box;
@@ -133,7 +133,7 @@
   text-align: left;
 }
 
-/* dashboard 中 3 格以下的窄面板：不論設定一律上下兩行（門檻見 docs/components/panel/DashboardPanel.md） */
+/* dashboard 中 3 格以下的窄面板：不論設定，一律上下兩行（門檻見 DashboardPanel.md） */
 @container dashboard-panel (width < 200px) {
   .detail-field {
     grid-template-columns: minmax(0, 1fr);

@@ -7,7 +7,7 @@
   const props = withDefaults(defineProps<{
     groups: RowGroup<Row>[]
     path?: string
-    // 每組底下各筆的排法；組的標題一律佔一整行（見 ListLayout）
+    // 每一組中各列的排法，組的標題一律佔一整行（見 ListLayout）
     layout?: 'list' | 'grid'
   }>(), {
     path: '',
@@ -28,7 +28,7 @@
     return `${props.path}/${group.label}`
   }
 
-  // 這一層只有一組時固定展開、不可收合（例如篩選後只剩一年）；組數改變時重新判斷
+  // 這一層只有一組時固定展開、不可收合。組數改變時重新判斷
   const opened = ref<string[]>([])
   const locked = computed(() => {
     const [only, ...rest] = props.groups
@@ -40,7 +40,7 @@
     }
   }, { immediate: true })
 
-  // 固定展開的那一組：拿掉切換用的點擊，標題列不再是可點的項目
+  // 固定展開的那一組：移除切換用的點擊，標題列不再可點擊
   function headerProps (group: RowGroup<Row>, activatorProps: Record<string, unknown>) {
     return valueOf(group) === locked.value ? { ...activatorProps, onClick: undefined, link: false } : activatorProps
   }
@@ -86,7 +86,7 @@
 </template>
 
 <style scoped>
-/* v-list 預設 overflow: auto，會裁切 profile、card、gallery 往右下的陰影；巢狀的各層皆適用 */
+/* v-list 預設 overflow: auto，會裁切 profile、card、gallery 往右下的陰影。巢狀的各層皆適用 */
 .grouped-list {
   overflow: visible;
 }
@@ -96,8 +96,7 @@
   --v-list-prepend-gap: 8px;
 }
 
-/* 展開與收合的動畫期間，Vuetify 會於此層暫設 overflow: hidden。左右各外擴陰影的範圍再以內距抵銷，
-   內容的位置與寬度不變，裁切範圍則涵蓋陰影。Vuetify 另設 min-width: min-content，窄面板中會被不換行的標題撐寬，改回 0 */
+/* 左右外擴陰影的範圍再以內距抵銷，裁切範圍即涵蓋陰影。min-width 改回 0，窄面板中不被標題撐寬 */
 .grouped-list :deep(.v-list-group__items) {
   min-width: 0;
   margin-inline: calc(-1 * var(--list-card-shadow-extent));

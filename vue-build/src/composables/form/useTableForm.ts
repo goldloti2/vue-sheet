@@ -28,7 +28,7 @@ function sameValue (a: unknown, b: unknown): boolean {
   return a === b
 }
 
-// 只比 schema 上的欄位，id 之類的系統欄位不算使用者的改動
+// 只比較 schema 的欄位，id 等系統欄位不計為使用者的改動
 function isDirty (form: object | null, pristine: object | null, schema: TableSchema): boolean {
   if (!form || !pristine) {
     return false
@@ -40,15 +40,14 @@ function isDirty (form: object | null, pristine: object | null, schema: TableSch
   ))
 }
 
-// 表單完成了：在流程裡就把結果交給連接器，不然照舊離開
+// 表單完成：於流程中時將結果交給連接器，否則離開頁面
 function finish (row: object, fallback: RouteLocationRaw): void {
   if (!resumeStep(row)) {
     leaveAfterAction(fallback)
   }
 }
 
-// 取消／送出直接掛上底部動作列（表單頁一律如此，頁面不用自己接）。
-// 取消不自己問，離開頁面的確認統一由 useLeaveGuard 處理
+// 取消與送出直接登記至底部動作列。取消不另外詢問，離開的確認由 useLeaveGuard 處理
 function formActions (
   submitLabel: string,
   submitIcon: string,
@@ -123,7 +122,7 @@ function useSubmitState () {
   return { submitting, error, run }
 }
 
-// 初始值三層疊出來：defaults 參數 > 導覽帶來的 > schema 的 default（見 docs/topics/schema.md）
+// 初始值的優先順序：defaults 參數 > 導覽帶入的值 > schema 的 default（見 docs/topics/schema.md）
 export function useCreateForm<Row extends HasId> (
   table: TableKey,
   schema: TableSchema,
@@ -142,7 +141,7 @@ export function useCreateForm<Row extends HasId> (
 
   const form = ref<Row>(initialForm())
   const pristine = ref<Row>({ ...form.value } as Row)
-  // 送出成功後離開不算放棄
+  // 送出成功後的離開不計為放棄
   const settled = ref(false)
 
   const { submitting, error, run } = useSubmitState()
@@ -186,7 +185,7 @@ export function useEditForm<Row extends HasId> (
 
   const { row, loading, error: loadError } = useTableRow<Row>(table, id)
 
-  // 複製一份，不直接改快取裡的資料
+  // 編輯複本，不直接修改快取中的列
   const form = ref<Row | null>(null)
   watch(row, newRow => {
     form.value = newRow ? { ...newRow } as Row : null
@@ -195,14 +194,14 @@ export function useEditForm<Row extends HasId> (
   const { submitting, error, run } = useSubmitState()
   const { fieldErrors, check, reset: resetErrors } = useValidation(schema, () => form.value)
 
-  // 同一個網址共用一個 KeepAlive 實例，回來要重置（見 docs/topics/pages.md）
+  // 同一個網址共用一個 KeepAlive 實例，回到頁面時重置（見 docs/topics/pages.md）
   onActivated(() => {
     form.value = row.value ? { ...row.value } as Row : null
     error.value = null
     resetErrors()
   })
 
-  // 寫進快取後 row 就等於 form，離開時自然不算髒
+  // 寫入快取後 row 與 form 相同，因此離開時不計為有改動
   const dirty = () => isDirty(form.value, row.value, schema)
   useLeaveGuard(dirty)
 

@@ -5,26 +5,25 @@ import { displayValue } from './format'
 import { imageSrc } from './image'
 import { findColumn } from './types'
 
-// 視圖：一列資料的哪些欄位放到版面的哪個位置，加上這一列的動作。定義在頁面、交給版面元件（見 ROADMAP 的「頁面類型（對照 AppSheet）」）
+// 視圖：一列的欄位置於版面的哪個位置，以及此列的動作。於頁面定義，交給版面元件（見 ROADMAP 的「頁面類型（對照 AppSheet）」）
 
-// schema 的欄位，加上每列都有的系統成員（id、$label）
+// schema 的欄位，以及每列皆有的系統成員（id、$label）
 type ViewKey<Row extends object> = RowKey<Row> | keyof RowBase
 
-// 一組位置。沒給的位置就是空的；要組合多個欄位就宣告成 virtualColumns
+// 一組位置。未指定的位置為空。組合多個欄位時宣告為 virtualColumns
 interface FieldGroup<Row extends object> {
   title?: ViewKey<Row>
   subtitle?: ViewKey<Row>
   image?: ViewKey<Row>
   summary?: ViewKey<Row>
-  // 只有 deck 用：右下角
+  // 只用於 deck：右下角
   aside?: ViewKey<Row>
 }
 
-// 依位置排：card 與 detail 標頭的前兩個在左、後兩個在右，null 是空位；deck 與 profile 會跳過空位
+// 依位置排列：card 與詳細頁標頭的前兩個在左，後兩個在右，null 為空位。deck 與 profile 略過空位
 type RowActions<Row extends object> = (row: Row) => (PageAction | null)[]
 
-// 沒指定的位置為 undefined，版面不畫；指定了但沒有值的文字為 text ''、圖片為 null，版面保留它的位置。
-// 文字位置帶著條件式格式（DisplayValue），以 FormattedValue 畫出
+// 未指定的位置為 undefined，版面不顯示。已指定但沒有值時，文字為 ''，圖片為 null，版面保留位置
 interface ResolvedGroup {
   title?: DisplayValue
   subtitle?: DisplayValue
@@ -33,10 +32,10 @@ interface ResolvedGroup {
   aside?: DisplayValue
 }
 
-// defineView 的結果：給一列，回傳各位置的內容與這一列的動作（deck、profile、gallery、detail 標頭）
+// defineView 的結果：接收一列並回傳各位置的內容與此列的動作（deck、profile、gallery、詳細頁標頭）
 export type RowView<Row extends object> = (row: Row) => ResolvedGroup & { actions: (PageAction | null)[] }
 
-// defineCardView 的結果：header 是第 1 層（image 當頭像），body 是第 2、3 層（image 當大圖），actions 是第 4 層
+// defineCardView 的結果：header 為第 1 層（image 為頭像），body 為第 2、3 層（image 為大圖），actions 為第 4 層
 export type CardView<Row extends object> = (row: Row) => {
   header: ResolvedGroup
   body: ResolvedGroup
@@ -47,7 +46,7 @@ function noActions (): (PageAction | null)[] {
   return []
 }
 
-// 欄位在建立時查好，之後每一列只剩讀值與格式化。schema 沒定義的（id、$label）直接轉字串，沒有條件式格式
+// 欄位於建立時查找，之後每一列只讀值與格式化。schema 未定義的成員（id、$label）直接轉為字串，不套用條件式格式
 function textReader (schema: TableSchema, key: string | undefined): (row: object) => DisplayValue | undefined {
   if (!key) {
     return () => undefined

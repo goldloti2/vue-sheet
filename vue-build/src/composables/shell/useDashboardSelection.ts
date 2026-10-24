@@ -4,41 +4,41 @@ import { inject, provide, shallowReactive, watchEffect } from 'vue'
 import { relations } from '@/schema/relations'
 import { useTablesStore } from '@/stores/tables'
 
-// dashboard 的互動：每張表各記一筆選取，與它直接相關的面板跟著改變（規則見 docs/components/panel/DashboardPage.md 的「互動」）
+// dashboard 的互動：每張表各記錄一列選取，直接相關的面板隨之改變（見 docs/components/panel/DashboardPage.md 的「互動」）
 export interface DashboardSelection {
   // 開啟互動時，點擊一列改為選取
   interactive: () => boolean
   selectedId: (table: TableKey) => string | null
   // 點擊一列：選取，已選取的那一列再點一次即取消
   toggle: (table: TableKey, id: string) => void
-  // 換成另一筆（詳細面板的上下一筆），轉場依 direction 左右滑動
+  // 切換為另一列（詳細面板的上一列、下一列），轉場依 direction 左右滑動
   select: (table: TableKey, id: string, direction: 'forward' | 'back') => void
-  // 詳細面板顯示的那一筆：同一張表的選取，否則為所選子列所屬的父列；皆無時為空字串
+  // 詳細面板顯示的列：同一張表的選取，否則為所選子列的父列。皆無時為空字串
   recordId: (table: TableKey) => string
-  // 子表的列表只留所選父列的子列；父表皆未選取時為 null
+  // 子表的列表只保留所選父列的子列。父表皆未選取時為 null
   parentScope: (table: TableKey) => ((row: object) => boolean) | null
 }
 
-// recordId 與 parentScope 另收面板的 via（DashboardPanel 的 prop），由 useDashboardSelection 綁定
+// recordId 與 parentScope 另接收面板的 via（DashboardPanel 的 prop），由 useDashboardSelection 綁定
 interface SelectionState extends Omit<DashboardSelection, 'recordId' | 'parentScope'> {
   recordId: (table: TableKey, via?: string) => string
   parentScope: (table: TableKey, via?: string) => ((row: object) => boolean) | null
 }
 
 const dashboardSelectionKey: InjectionKey<SelectionState> = Symbol('dashboardSelection')
-// 面板經由哪個 ref 欄位連動，DashboardPanel provide
+// 面板連動所經由的 ref 欄位，由 DashboardPanel provide
 export const dashboardViaKey: InjectionKey<string | undefined> = Symbol('dashboardVia')
 
 type Fields = Record<string, unknown>
 
-// 自己指向自己的 ref 欄位不連動；給了 via 時只取該欄位
+// 指向自身表的 ref 欄位不連動。有 via 時只取該欄位
 function linked (table: TableKey, side: 'childTable' | 'parentTable', via?: string) {
   return relations.filter(relation => relation[side] === table
     && relation.childTable !== relation.parentTable
     && (!via || relation.column === via))
 }
 
-// 選取改變時的轉場：fade 為一般的點擊，forward／back 為上下一筆
+// 選取改變時的轉場：fade 用於一般的點擊，forward 與 back 用於上一列、下一列
 type Transition = (kind: 'fade' | 'forward' | 'back', update: () => void) => void
 
 // DashboardPage 呼叫
@@ -73,7 +73,7 @@ export function provideDashboardSelection (interactive: () => boolean, transitio
     transition('fade', () => selected.get(table) === id ? clear(table) : set(table, id))
   }
 
-  // 子表有多個 ref 欄位指向這張表時，未給 via 即取第一個
+  // 子表有多個 ref 欄位指向此表時，沒有 via 即取第一個
   function recordId (table: TableKey, via?: string): string {
     const own = selected.get(table)
     if (own) {
@@ -89,7 +89,7 @@ export function provideDashboardSelection (interactive: () => boolean, transitio
     return ''
   }
 
-  // 同一張父表的多個 ref 欄位任一等於所選父列即可（例如轉出或轉入帳戶）；不同父表的條件須同時成立
+  // 同一張父表的多個 ref 欄位，任一等於所選父列即符合（例如轉出或轉入帳戶）。不同父表的條件須同時成立
   function parentScope (table: TableKey, via?: string) {
     const conditions = new Map<TableKey, { parentId: string, columns: string[] }>()
     for (const relation of linked(table, 'childTable', via)) {
@@ -108,7 +108,7 @@ export function provideDashboardSelection (interactive: () => boolean, transitio
       columns.some(column => (row as Fields)[column] === parentId))
   }
 
-  // 選取的那一筆被刪除時，自動取消
+  // 選取的列被刪除時，自動取消選取
   watchEffect(() => {
     const removed = [...selected].filter(([table, id]) => !store.loading[table] && !rowOf(table, id))
     for (const [table] of removed) {
@@ -126,7 +126,7 @@ export function provideDashboardSelection (interactive: () => boolean, transitio
   })
 }
 
-// 不在 dashboard 之內時為 null；recordId 與 parentScope 已套用所在面板的 via
+// 不在 dashboard 之內時為 null。recordId 與 parentScope 已套用所在面板的 via
 export function useDashboardSelection (): DashboardSelection | null {
   const state = inject(dashboardSelectionKey, null)
   const via = inject(dashboardViaKey, undefined)

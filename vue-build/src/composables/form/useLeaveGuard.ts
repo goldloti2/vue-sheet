@@ -3,10 +3,10 @@ import { hasEarlierSteps } from '@/composables/navigation/useFlow'
 import { confirm } from '@/composables/shell/useDialogs'
 import router from '@/router'
 
-// 目前活著的表單各登記一個「有沒有改動」的 getter
+// 每個作用中的表單各登記一個「是否有改動」的 getter
 const dirtyChecks = new Set<() => boolean>()
 
-// 表單頁活著的期間登記，任何離開頁面的導覽都會先問（見 docs/topics/pages.md）
+// 表單頁作用中時登記，任何離開頁面的導覽皆先詢問（見 docs/topics/pages.md）
 export function useLeaveGuard (dirty: () => boolean): void {
   onMounted(() => dirtyChecks.add(dirty))
   onActivated(() => dirtyChecks.add(dirty))
@@ -14,7 +14,7 @@ export function useLeaveGuard (dirty: () => boolean): void {
   onUnmounted(() => dirtyChecks.delete(dirty))
 }
 
-// 離開前要不要問：前面的步驟已經寫了東西（離開等於整條收回）、或這張表單改過
+// 流程中先前的步驟已寫入資料，或目前的表單有改動時，離開前詢問
 function leaveConfirmText (): string | undefined {
   if (hasEarlierSteps.value) {
     return '是否放棄未儲存的變更（包含之前的變更）？'
@@ -27,7 +27,7 @@ function leaveConfirmText (): string | undefined {
   return undefined
 }
 
-// 返回鍵、導覽列、改網址、底部的取消都走這裡；說不就擋下導覽，頁面不動
+// 返回鍵、導覽列、修改網址與底部的取消皆經過此處。使用者拒絕時取消導覽
 router.beforeEach(async () => {
   const text = leaveConfirmText()
   return text === undefined ? true : confirm('放棄變更', text)

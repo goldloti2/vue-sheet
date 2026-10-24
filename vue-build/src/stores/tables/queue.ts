@@ -8,19 +8,19 @@ export interface PendingOp {
   values: Record<string, string>
 }
 
-// 一張表還沒推送的操作：id → 操作
+// 一張表尚未推送的操作：id → 操作
 export type TableQueue = Map<string, PendingOp>
 
-// 「要送什麼」的單一真相，加上推送的狀態。流程存檔點的事由呼叫端管（snapshot / restore）
+// 待推送內容的單一資料來源與推送狀態。流程存檔點由呼叫端以 snapshot、restore 處理
 export function createQueue () {
   const pending = reactive(new Map<TableKey, TableQueue>())
   const flushing = shallowRef(false)
   const flushError = shallowRef<string | null>(null)
-  // 上次從後端看到的檔案修改時間，推送時當 since 送出去比對
+  // 上次自後端取得的檔案修改時間，推送時作為 since 比對
   const knownModifiedTime = shallowRef<string | null>(null)
-  // 真的撞到衝突（Sheet 被別處改過）。佇列留著，等使用者選一條出路
+  // 發生衝突（Sheet 已被別處修改）。佇列保留，等待使用者選擇處理方式
   const conflict = shallowRef(false)
-  // 進行中的那一次推送，只給 flush 自己做去重用（畫面看 flushing）
+  // 進行中的推送，只供 flush 去除重複呼叫（畫面讀取 flushing）
   let flushPromise: Promise<boolean> | null = null
 
   const hasPending = computed(() => {
@@ -43,7 +43,7 @@ export function createQueue () {
     return created
   }
 
-  // 同一筆的多次操作在寫入當下就合併，規則見 docs/topics/store.md
+  // 同一列的多次操作於寫入時合併，規則見 docs/topics/store.md
   function enqueue (table: TableKey, id: string, kind: PendingOp['kind'], values: Record<string, string>) {
     const queue = queueFor(table)
     const existing = queue.get(id)
@@ -63,12 +63,12 @@ export function createQueue () {
     })
   }
 
-  // 這一筆還沒推送的操作種類；沒有就是 undefined
+  // 此列尚未推送的操作種類，沒有時為 undefined
   function kindOf (table: TableKey, id: string): PendingOp['kind'] | undefined {
     return pending.get(table)?.get(id)?.kind
   }
 
-  // 整個佇列攤平成一串操作，順序照加入的先後（Map 保序）。跨表共用一個請求
+  // 將整個佇列攤平為操作清單，順序依加入的先後（Map 保序）。所有表共用一個請求
   function toOperations (): BatchOperation[] {
     const operations: BatchOperation[] = []
     for (const [table, queue] of pending) {
@@ -81,8 +81,7 @@ export function createQueue () {
     return operations
   }
 
-  // 推送中又有人叫就共用同一個 promise，等到的是真正的結果（跟 load 的 pendingLoads 同一套）
-  // force 是「強制推送」：不帶 since，不管 Sheet 被改過也照寫（只蓋掉改過的那幾欄）
+  // 推送中再次呼叫時共用同一個 promise。force 為強制推送：不帶 since，只覆蓋修改過的欄位
   async function flush (force = false): Promise<boolean> {
     if (flushPromise) {
       return flushPromise
@@ -96,8 +95,7 @@ export function createQueue () {
     }
   }
 
-  // 一個請求送出整批，全有全無：成功才清空佇列，失敗原封不動留著讓使用者重按
-  // 失敗不往外拋，錯誤記在 flushError；撞到衝突另外立起 conflict，由呼叫端問使用者要走哪條路
+  // 以一個請求送出整批，成功時才清空佇列。失敗時不拋出，錯誤記於 flushError，衝突時另設 conflict
   async function sendQueue (force: boolean): Promise<boolean> {
     flushing.value = true
     flushError.value = null
@@ -119,12 +117,12 @@ export function createQueue () {
     }
   }
 
-  // 還沒開始推就知道推不了（例如流程進行中），理由寫進同一個地方
+  // 推送前即確定無法推送時（例如流程進行中），將原因記於 flushError
   function fail (message: string): void {
     flushError.value = message
   }
 
-  // 流程存檔點用：留一份現在的佇列、之後原樣放回去
+  // 供流程存檔點使用：保留目前的佇列，之後原樣還原
   function snapshot (table: TableKey): TableQueue {
     return new Map(queueFor(table))
   }
@@ -133,7 +131,7 @@ export function createQueue () {
     pending.set(table, saved)
   }
 
-  // 「放棄未推送的變更」用：整個佇列丟掉，由呼叫端接著重抓
+  // 供「放棄未推送的變更」使用：清空佇列，由呼叫端重新抓取
   function discard (): void {
     pending.clear()
     conflict.value = false

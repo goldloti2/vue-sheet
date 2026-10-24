@@ -6,8 +6,7 @@
   import { validateRow } from '@/schema/validation'
   import { useTablesStore } from '@/stores/tables'
 
-  // 詳細頁的快速編輯：一欄直接是輸入元件，改了就寫入 store。
-  // 打字類的欄位先暫存，焦點離開或按 Enter 才寫入；其餘一改就寫入。驗證不過時不寫入，錯誤顯示於欄位下方
+  // 詳細頁的快速編輯：一欄直接顯示為輸入元件，修改後寫入 store（寫入時機見 docs/components/record/InlineField.md）
   const props = defineProps<{
     table: TableKey
     schema: TableSchema
@@ -25,7 +24,7 @@
   const error = ref<string | null>(null)
   const focused = ref(false)
 
-  // 快取中的值被別處改掉時，沒在輸入就跟著更新
+  // 快取中的值被別處修改時，若沒有正在輸入，即跟著更新
   watch(stored, value => {
     if (!focused.value) {
       draft.value = value
@@ -61,7 +60,7 @@
     }
   }
 
-  // 沒有焦點時的變動（例如 −／＋、清除鈕）也立即寫入
+  // 沒有焦點時的變動（例如 −／＋、清除按鈕）也立即寫入
   function onInput (value: unknown) {
     draft.value = value
     if (!deferred || !focused.value) {
@@ -76,7 +75,7 @@
     }
   }
 
-  // 輸入到一半就換頁或換筆時，元件被移除不一定觸發失焦，卸載前補寫一次
+  // 輸入到一半就換頁或切換列時，元件被移除不一定觸發失焦，因此卸載前補寫一次
   onBeforeUnmount(() => {
     if (deferred) {
       commit()
@@ -85,7 +84,7 @@
 </script>
 
 <template>
-  <!-- 擋下觸控事件，在輸入框中拖曳不會觸發詳細頁的左右滑動換筆 -->
+  <!-- 攔下觸控事件，在輸入框中拖曳不觸發詳細頁以左右滑動切換列 -->
   <div class="inline-field" @touchend.stop @touchmove.stop @touchstart.stop>
     <FieldInput
       :column="column"

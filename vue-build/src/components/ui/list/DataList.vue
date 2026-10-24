@@ -5,7 +5,7 @@
   import ViewActions from '@/components/ui/view/ViewActions.vue'
   import { useRowClick } from '@/composables/list/useRowClick'
 
-  // 泛型元件的 props 型別要寫在 defineProps 裡，抽成 interface 會讓型別宣告輸出失敗
+  // 泛型元件的 props 型別須寫於 defineProps 內，抽成 interface 會使型別宣告輸出失敗
   const { row, view, selectable = false, selectMode, to, pickable = false } = defineProps<{
     row: Row
     // 各欄位的位置與這一列的動作（defineView）
@@ -14,14 +14,14 @@
     selectable?: boolean
     selectMode?: boolean
     selected?: boolean
-    // dashboard 的互動：是否為選取的那一列，以及點擊是否改為選取（由 ListPage 給）
+    // dashboard 的互動：是否為選取的那一列，以及點擊是否改為選取（由 ListPage 提供）
     current?: boolean
     pickable?: boolean
   }>()
 
   const fields = computed(() => view(row))
 
-  // 多選模式下隱藏動作列；沒有動作時不渲染，不佔高度
+  // 多選模式下隱藏動作列。沒有動作時不顯示，不佔高度
   const showActions = computed(() => !selectMode && fields.value.actions.some(action => action !== null))
 
   const emit = defineEmits<{
@@ -71,7 +71,7 @@
       />
     </component>
 
-    <!-- 按鈕與連結並列，不包在 <a> 內，點擊按鈕不會進入 detail，也不會觸發長按 -->
+    <!-- 按鈕與連結並列，不包在 <a> 中，點擊按鈕不進入詳細頁，也不觸發長按 -->
     <ViewActions v-if="showActions" :actions="fields.actions" class="list-item__actions list-row-above-link" />
   </div>
 </template>
@@ -81,7 +81,7 @@
   box-sizing: border-box;
   width: 100%;
   padding: 12px 16px;
-  /* 畫面外的列不排版也不繪製；72px 是還沒量到真實高度前的替代值 */
+  /* 畫面外的列不排版。72px 為量得實際高度之前的替代值 */
   content-visibility: auto;
   contain-intrinsic-size: auto 72px;
   border-left: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
@@ -89,7 +89,7 @@
   border-bottom: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
 }
 
-/* 多出一列 32px 的按鈕與 4px 的間距 */
+/* 多出一行 32px 的按鈕與 4px 的間距 */
 .list-item--with-actions {
   contain-intrinsic-size: auto 108px;
 }
@@ -98,7 +98,7 @@
   display: block;
 }
 
-/* 寬度僅包住按鈕，左側空白才會落在連結上 */
+/* 寬度只包住按鈕，使左側的空白落在連結上 */
 .list-item__actions {
   width: fit-content;
   margin: 4px 0 0 auto;

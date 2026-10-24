@@ -8,16 +8,16 @@ import { childRelations } from '@/schema/relations'
 import { sortRows } from '@/schema/sort'
 import { allColumns, rowLabel } from '@/schema/types'
 
-// 沒有子列時共用同一個空陣列，getter 的回傳值身分才穩定
+// 沒有子列時共用同一個空陣列，getter 的回傳值才保持同一個參照
 const NO_ROWS: unknown[] = []
 
-// 掛在 row 上、讀起來跟真實欄位一樣的 getter，讀的都是傳進來的那份快取
+// 掛在 row 上的 getter，讀法與真實欄位相同，讀取傳入的快取
 export function createRowGetters (rows: Partial<Record<TableKey, unknown[]>>) {
-  // 每條關聯的索引只建一次；重算與否由 computed 自己判斷（依賴的是 rows[子表]）
+  // 每條關聯的索引只建立一次，由 computed 依 rows[子表] 判斷是否重算
   const childIndexes = new Map<string, ComputedRef<Map<string, unknown[]>>>()
   const idIndexes = new Map<TableKey, ComputedRef<Map<string, unknown>>>()
 
-  // 一張表一份「id → 列」，給 ref 欄位查父列用
+  // 每張表一份「id → 列」，供 ref 欄位查找父列
   function idIndex (table: TableKey): ComputedRef<Map<string, unknown>> {
     const existing = idIndexes.get(table)
     if (existing) {
@@ -32,7 +32,7 @@ export function createRowGetters (rows: Partial<Record<TableKey, unknown[]>>) {
     return index
   }
 
-  // 一條關聯一份索引：父 id → 指向它的子列，照子表的 defaultSort 排好。建立一次，之後靠 computed 自己失效
+  // 每條關聯一份索引：父列 id → 子列，依子表的 defaultSort 排序。建立一次，由 computed 自行失效
   function childIndex (relation: Relation): ComputedRef<Map<string, unknown[]>> {
     const key = `${relation.childTable}.${relation.column}`
     const existing = childIndexes.get(key)
@@ -42,7 +42,7 @@ export function createRowGetters (rows: Partial<Record<TableKey, unknown[]>>) {
 
     const index = computed(() => {
       const grouped = new Map<string, unknown[]>()
-      // 整張子表先排一次，分組後每組自然是對的順序
+      // 先排序整張子表，分組後每組即為正確的順序
       for (const row of sortRows(rows[relation.childTable] ?? [], schemas[relation.childTable])) {
         const parentId = (row as Record<string, unknown>)[relation.column]
         if (typeof parentId !== 'string') {
@@ -63,8 +63,7 @@ export function createRowGetters (rows: Partial<Record<TableKey, unknown[]>>) {
     return index
   }
 
-  // 沿著一條關聯找指向這一列的子列。子表還沒載就是空的，載進來後讀它的地方會自己重算。
-  // 回傳的是索引裡那一份，不要就地改它（sort / push 會污染索引）
+  // 沿關聯查找此列的子列，子表未載入時為空。回傳索引中的陣列，不可就地修改（sort、push）
   function relatedRows (relation: Relation, parentId: string): unknown[] {
     return childIndex(relation).value.get(parentId) ?? NO_ROWS
   }
@@ -73,10 +72,9 @@ export function createRowGetters (rows: Partial<Record<TableKey, unknown[]>>) {
     Object.defineProperty(row, key, { configurable: true, get })
   }
 
-  // 不可列舉，spread / JSON / Object.keys 都看不到：
-  // 虛擬欄位、$label（這一列的名字）、每個 ref 欄位（含虛擬）的 $欄位key（父列）、每張子表的 $子表_欄位key（子列陣列）
+  // 掛上不可列舉的 getter（spread、JSON、Object.keys 皆看不到），種類見 docs/topics/schema.md 的「row 上的 getter」
   function attachGetters<Row extends { id: string }> (table: TableKey, row: Row): Row {
-    // 用不帶 Row 的 TableSchema 接，否則 schemas[table] 是各表 schema 的 union，value 的參數會變成所有 Row 的交集
+    // 刻意以不帶 Row 的 TableSchema 接收，否則 value 的參數成為所有 Row 的交集
     const schema: TableSchema = schemas[table]
 
     for (const column of schema.virtualColumns ?? []) {
@@ -95,7 +93,7 @@ export function createRowGetters (rows: Partial<Record<TableKey, unknown[]>>) {
       }
     }
 
-    // 名字帶上子表的 ref 欄位（$child_parent），同一張子表兩個 ref 指過來也不會撞
+    // 名稱含子表的 ref 欄位（$子表_欄位key），同一張子表有兩個 ref 指向此表時也不衝突
     for (const relation of childRelations(table)) {
       defineGetter(row, `$${relation.childTable}_${relation.column}`, () => relatedRows(relation, row.id))
     }

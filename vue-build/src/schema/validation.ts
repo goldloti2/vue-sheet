@@ -1,6 +1,6 @@
 import type { SchemaColumn, TableSchema } from './types'
 
-// 空值的定義跟 coerceRow 一致：後端的空字串會被轉成 null
+// 空值的定義與 coerceRow 相同，後端的空字串轉為 null
 const EMPTY_VALUES = new Set<unknown>([null, undefined, ''])
 
 export function isEmpty (value: unknown): boolean {
@@ -29,12 +29,12 @@ function columnError (value: unknown, column: SchemaColumn, row: object): string
     return `${column.label}不是有效的選項`
   }
 
-  // 內建檢查都過了才輪到設計者的規則。
+  // 內建檢查皆通過後，才執行設計者的規則
   const validate = column.validate as ((value: unknown, row: object) => string | null) | undefined
   return validate ? validate(value, row) : null
 }
 
-// 主鍵：有 newId 時可留空（新增時發號），否則必填；格式見 docs/topics/schema.md 的「主鍵」
+// 主鍵：有 newId 時可留空，否則為必填。格式見 docs/topics/schema.md 的「主鍵」
 function idError (value: unknown, column: SchemaColumn, schema: TableSchema): string | null {
   if (isEmpty(value)) {
     return schema.newId ? null : `請填寫${column.label}`
@@ -53,7 +53,7 @@ function idError (value: unknown, column: SchemaColumn, schema: TableSchema): st
   return null
 }
 
-// 回傳 { 欄位 key: 錯誤訊息 }，全部合法就是空物件。給了 keys 就只檢查那幾欄
+// 回傳 { 欄位 key: 錯誤訊息 }，全部合法時為空物件。有 keys 時只檢查這些欄位
 export function validateRow (row: object, schema: TableSchema, keys?: readonly string[]): Record<string, string> {
   const errors: Record<string, string> = {}
 

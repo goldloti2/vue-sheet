@@ -20,7 +20,7 @@
   gap: 8px;
 }
 
-/* 自己畫而不是用 v-chip：chip 的內距與行高會跟著外面的標題樣式跑，數字站不正 */
+/* 不使用 v-chip：其內距與行高隨外層的標題樣式變化，數字無法置中 */
 .count-label__count {
   display: inline-flex;
   align-items: center;

@@ -4,7 +4,7 @@ import type { ComputedRef, MaybeRefOrGetter } from 'vue'
 import { computed, toValue } from 'vue'
 import { filterableColumns, isActiveFilter, matchesFilter } from '@/schema/filter'
 
-// 欄位之間 AND、同一欄的 values 之間 OR。只看 filterable 的欄位，別的 key 忽略
+// 欄位之間為 AND，同一欄的 values 之間為 OR。只檢查 filterable 的欄位，忽略其他 key
 export function useFilter<Row extends object> (
   filters: MaybeRefOrGetter<Filters>,
   rows: MaybeRefOrGetter<readonly Row[]>,

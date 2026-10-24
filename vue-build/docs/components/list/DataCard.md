@@ -1,27 +1,30 @@
 # DataCard
 
-card 式列表的**單一張卡片**：上下共四層，沒指定任何位置的那一層整層隱藏。與 [DataProfile](DataProfile.md) 相同，卡片之間有間隔，點擊卡片進入 detail。
+card 式列表的**單一張卡片**：上下共四層，未指定任何位置的那一層整層隱藏。與 [DataProfile](DataProfile.md) 相同，卡片之間有間隔，點擊卡片進入詳細頁。
 
-各位置由 card 專用的 view（`defineCardView`）指定，分為 `header`、`body` 兩組，每組可用的位置與 [DataList](DataList.md#view) 的 view 相同。自身不做迴圈：列表頁放在 [ListPage](../page/ListPage.md) 的 slot 裡，其他地方用 `v-for` 或包在 `GroupedList` 的 slot 裡。給了 `to` 整張卡片就是連結。
-
-多選的接法與 DataList 相同：`v-bind` 上 `ListPage` slot 給的 `props`（或自己組時用 `selection.itemProps(row.id)`），`selectable`／`selectMode`／`selected` 與長按、點選事件會一次綁好。
+- 各位置由 card 專用的 view（`defineCardView`）指定，分為 `header`、`body` 兩組。每一組可用的位置與 [DataList](DataList.md#view) 的 view 相同
+- 元件本身不做迴圈。列表頁將此元件置於 [ListPage](../page/ListPage.md) 的 slot 中，其他地方以 `v-for` 或 `GroupedList` 的 slot 使用
+- 提供 `to` 時，整張卡片即為連結
+- 多選的接法與 DataList 相同：`v-bind` `ListPage` 的 slot 提供的 `props`，自行組合時使用 `selection.itemProps(row.id)`。如此一次綁定 `selectable`、`selectMode`、`selected` 與長按、點選的事件
 
 ## Usage
 
-範本見 `template/pages/card-list.vue`，其中示範了 `defineCardView` 與第 4 層的左右各兩格（含文字按鈕與空格）。
+範本見 `template/pages/card-list.vue`。範本示範 `defineCardView`，以及第 4 層左右各兩格的寫法，包括文字按鈕與空格。
 
 ## 四層
 
 | 層 | 來源 | 內容 |
 | --- | --- | --- |
-| 1 | `header` | 左側 40×40 的圓形頭像（`image`），右側上下排列主標題（`title`）與副標題（`subtitle`），過長時以省略號截斷；沒有選單 |
-| 2 | `body.image` | 寬度撐滿卡片的大圖，固定 16:9、裁切填滿（`object-fit: cover`） |
-| 3 | `body` | 標題（`title`）、副標題（`subtitle`）與摘要（`summary`）；摘要可換行，最多三行 |
-| 4 | `actions` | 最多四格，由 [ViewActions](../view/ViewActions.md) 的 `variant="slots"` 呈現：前兩個靠左、後兩個靠右，`null` 保留為空格，超過四個的部分不顯示。每一格依 `display` 顯示為圖示或文字 |
+| 1 | `header` | 左側 40×40 的圓形頭像（`image`），右側上下排列標題（`title`）與副標（`subtitle`），過長時以省略號截斷。沒有選單 |
+| 2 | `body.image` | 寬度撐滿卡片的大圖，固定 16:9，裁切填滿（`object-fit: cover`） |
+| 3 | `body` | 標題（`title`）、副標（`subtitle`）與摘要（`summary`）。摘要可換行，最多三行 |
+| 4 | `actions` | 最多四格，由 [ViewActions](../view/ViewActions.md) 的 `variant="slots"` 呈現：前兩格靠左，後兩格靠右，`null` 保留為空格，第五個以後不顯示。每一格依 `display` 顯示為圖示或文字 |
 
-- 第 1 層的三個位置皆未指定時隱藏；第 3 層亦同。第 2 層僅於指定了 `body.image` 時出現；第 4 層於四格皆為 `null` 時隱藏，多選模式下亦隱藏
-- 指定了但這一列沒有值的位置保留：文字留一行的高度，頭像留同大小的空白，大圖以同樣大小的灰色方塊佔位
-- `header` 與 `body` 各自指定欄位，可放相同或不同的欄位；`aside` 不顯示
+- 第 1 層的三個位置皆未指定時，第 1 層隱藏。第 3 層的規則與第 1 層相同
+- 第 2 層只在指定 `body.image` 時出現
+- 第 4 層於四格皆為 `null` 時隱藏，多選模式下也隱藏
+- 已指定但這一列沒有值的位置保留：文字保留一行的高度，頭像保留同大小的空白，大圖以同樣大小的灰色方塊佔位
+- `header` 與 `body` 各自指定欄位，可放相同或不同的欄位。`aside` 不顯示
 
 ## Props
 
@@ -29,25 +32,29 @@ card 式列表的**單一張卡片**：上下共四層，沒指定任何位置�
 | --- | --- | --- |
 | `row` | `Row` | **必填**，要顯示的那一列 |
 | `view` | `CardView<Row>` | **必填**，`defineCardView` 的回傳值 |
-| `to` | `string?` | 有給才是連結；沒給就是純顯示的一張卡片 |
-| `selectable` | `boolean?` | 預設 `false`。開了才綁長按監聽、才會禁止文字選取與拖曳 |
-| `selectMode` | `boolean?` | 目前在不在多選模式 |
-| `selected` | `boolean?` | 這一張有沒有被選 |
-| `current` | `boolean?` | dashboard 開啟互動時，是否為選取的那一筆（左側一條主色的細邊，與多選的淡底可同時出現） |
+| `to` | `string?` | 提供時整張卡片為連結。未提供時為純顯示的一張卡片 |
+| `selectable` | `boolean?` | 預設 `false`。開啟時才綁定長按的監聽，並禁止選取文字與拖曳 |
+| `selectMode` | `boolean?` | 目前是否為多選模式 |
+| `selected` | `boolean?` | 這一張是否已選取 |
+| `current` | `boolean?` | dashboard 開啟互動時，這一張是否為選取的那一列。選取的那一列左側有一條主色的細邊，可與多選的淡底同時出現 |
 | `pickable` | `boolean?` | dashboard 開啟互動時為 `true`：點擊改為發出 `pick`，不導覽 |
 
 ## Emits
 
 | event | 說明 |
 | --- | --- |
-| `longpress` | 長按觸發，只有 `selectable` 時會發 |
-| `toggle` | 多選模式下點擊觸發；此時不會導覽 |
-| `pick` | `pickable` 時點擊觸發（多選模式除外）；帶修飾鍵或中鍵的點擊仍交由瀏覽器開新分頁 |
+| `longpress` | 長按時發出，只在 `selectable` 時發出 |
+| `toggle` | 多選模式下點擊時發出。此時不導覽 |
+| `pick` | `pickable` 時點擊發出，多選模式除外。帶修飾鍵或中鍵的點擊仍交由瀏覽器開新分頁 |
 
 ## 備註
 
-- **連結與 DataList 相同**：自行組 `href` 的 `<a>`，不使用 `RouterLink`，與 DataList、DataProfile 共用 `useRowClick`。第 4 層與連結並列，不包在 `<a>` 內；第 4 層本身不接收點擊，僅按鈕接收，因此按鈕之間的空白處仍屬於連結
-- **勾選圖示疊於卡片左上角**：多選模式下以絕對定位疊於左上角，不受各層有無內容影響；圖示帶有卡片底色的圓形背景，疊在大圖上亦可辨識。被選取的卡片疊上一層主色淡底
-- **間隔由元件自身負責**：卡片帶有下方間距、圓角、外框與偏向右下的陰影，`ListPage` 與 `GroupedList` 不需另外設定。間距、圓角、陰影與點擊、選取的樣式定義於 `src/styles/list.css`，與其他列表元件共用（見 [ListLayout](ListLayout.md) 的「共用的樣式」）
-- **`content-visibility: auto`**：畫面外的卡片不進行排版與繪製。`contain-intrinsic-size` 不寫死，而是依出現的層加總出替代高度（第 1 層 64px、第 2 層為 16:9 的大圖、第 3 層依出現的欄位、第 4 層 48px）。各層的高度以 CSS 變數於 inline style 傳入，大圖以 `100cqw * 9 / 16` 依卡片寬度估算——`ListPage` 的內容區為不具名的 container，`100cqw` 即卡片的寬度；不在 `ListPage` 中時退回以視窗寬度估算。各層的版型若大幅變動，此計算須一併調整
-- **dashboard 中的窄版**：所在面板寬度小於 200px（3 格以下）時，省略第 3 層，替代高度亦不計入（見 [DashboardPanel](../panel/DashboardPanel.md)）。一般頁面不會觸發
+- **連結的做法與 DataList 相同**：元件自行組成帶 `href` 的 `<a>`，不使用 `RouterLink`。此元件與 DataList、DataProfile 共用 `useRowClick`。第 4 層與連結並列，不包在 `<a>` 中。第 4 層本身不接收點擊，只有按鈕接收，因此按鈕之間的空白處仍屬於連結
+- **勾選圖示疊於卡片左上角**：多選模式下，勾選圖示以絕對定位疊於左上角，不受各層有無內容影響。圖示帶有卡片底色的圓形背景，疊在大圖上也能辨識。選取的卡片疊上一層主色淡底
+- **間隔由元件本身負責**：卡片帶有下方間距、圓角、外框與偏向右下的陰影，`ListPage` 與 `GroupedList` 無須另外設定。間距、圓角、陰影與點擊、選取的樣式定義於 `src/styles/list.css`，與其他列表元件共用（見 [ListLayout](ListLayout.md) 的「共用的樣式」）
+- **`content-visibility: auto`**：瀏覽器不排版與繪製畫面外的卡片。`contain-intrinsic-size` 不寫死，元件依出現的層加總出替代高度：
+  - 第 1 層 64px，第 2 層為 16:9 的大圖，第 3 層依出現的欄位，第 4 層 48px
+  - 各層的高度以 CSS 變數由 inline style 傳入
+  - 大圖的高度以 `100cqw * 9 / 16` 依卡片寬度估算。`ListPage` 的內容區為不具名的 container，因此 `100cqw` 即為卡片的寬度。不在 `ListPage` 中時，改以視窗寬度估算
+  - 各層的版型大幅變動時，須一併調整此計算
+- **dashboard 中的窄版**：所在面板寬度小於 200px（3 格以下）時，省略第 3 層，替代高度也不計入第 3 層（見 [DashboardPanel](../panel/DashboardPanel.md)）。一般頁面不會觸發窄版

@@ -6,14 +6,13 @@
   import { schemas } from '@/schema'
   import { sortRows } from '@/schema/sort'
 
-  // 單一真實欄位的輸入元件，依 column.type 選擇；表單（DataForm）與詳細頁的快速編輯（InlineField）共用。
-  // 其餘屬性與事件（readonly、hint、density、@blur…）原樣交給內層的 Vuetify 元件
+  // 單一真實欄位的輸入元件，依 column.type 選擇，DataForm 與 InlineField 共用。其餘屬性原樣交給內層元件
   defineOptions({ inheritAttrs: false })
 
   const props = defineProps<{
     column: SchemaColumn
     schema: TableSchema
-    // 正在編輯的那一列（getter 已掛上），給 suggestedValues 用
+    // 正在編輯的那一列，getter 已掛上，供 suggestedValues 使用
     row?: object
     // 省略時不顯示標籤（詳細頁的名稱另外顯示）
     label?: string
@@ -24,17 +23,17 @@
 
   const model = defineModel<unknown>()
 
-  // 各輸入元件要的值型別
+  // 各輸入元件所需的值型別
   const numberValue = computed(() => model.value as number | null)
   const dateValue = computed(() => model.value as Date | null)
   const textValue = computed(() => model.value as string | null)
 
-  // 文字類的空字串一律存成 null
+  // 文字類的空字串一律存為 null
   function setText (value: string | null) {
     model.value = value === '' ? null : value
   }
 
-  // boolean 以 'true'／'false' 交給按鈕組；空的是 undefined，兩顆都不選
+  // boolean 以 'true'、'false' 交給按鈕組。空值為 undefined，兩個按鈕都不選取
   const booleanKey = computed(() => typeof model.value === 'boolean' ? String(model.value) : undefined)
 
   // 按鈕組取消選取時回傳 undefined，即清空
@@ -42,12 +41,12 @@
     model.value = key === 'true' ? true : (key === 'false' ? false : null)
   }
 
-  // 數字欄位的 min／max／step；沒設時交給 v-number-input 的預設
+  // 數字欄位的 min、max、step。未設定時使用 v-number-input 的預設
   function numberOption (option: 'min' | 'max' | 'step'): number | undefined {
     return props.column.type === 'number' ? props.column[option] : undefined
   }
 
-  // ref 欄位的選項就是對方整張表（共用快取）：值是 id、文字是對方的 $label，照對方的 defaultSort 排
+  // ref 欄位的選項為父表整張表（共用快取）：值為 id，文字為父列的 $label，依父表的 defaultSort 排序
   const refList = props.column.type === 'ref'
     ? useTableList<{ id: string, $label: string }>(props.column.refTable as TableKey)
     : null
@@ -60,11 +59,11 @@
       .map(row => ({ id: row.id, title: row.$label }))
   })
 
-  // suggestedValues 的 rows 是自己這張表的列。只拿到 schema，從 schemas 反查代稱（schema 物件是單例）
+  // suggestedValues 的 rows 為所屬這張表的列，由 schema 從 schemas 反查代稱（schema 物件為單例）
   const ownTable = (Object.keys(schemas) as TableKey[]).find(key => schemas[key] === props.schema)
   const ownList = ownTable && props.column.suggestedValues ? useTableList<object>(ownTable) : null
 
-  // combobox 的建議：options 照原順序在前，再接 suggestedValues 算出的值（照回傳的順序），去掉重複與空值
+  // combobox 的建議：options 依原順序在前，再接 suggestedValues 算出的值，去除重複與空值
   const suggestions = computed(() => {
     if (props.column.type !== 'select') {
       return []
@@ -75,7 +74,7 @@
     return [...new Set(values)]
   })
 
-  // 各輸入元件共用；class 另以 :class 加上，才會與呼叫端給的 class 合併
+  // 各輸入元件共用。class 另以 :class 加上，才會與呼叫端提供的 class 合併
   const common = computed(() => ({
     label: props.label,
     errorMessages: props.errorMessages ?? [],
@@ -85,7 +84,7 @@
 </script>
 
 <template>
-  <!-- −／＋ 都在右側、以 inset 呈現（預設是上下箭頭，以 slot 換掉圖示）；不限制小數位數，輸入的值不會被四捨五入 -->
+  <!-- −／＋ 皆在右側，以 inset 呈現，以 slot 取代預設的上下箭頭。不限制小數位數 -->
   <v-number-input
     v-if="column.type === 'number'"
     v-bind="{ ...$attrs, ...common }"
@@ -107,7 +106,7 @@
     </template>
   </v-number-input>
 
-  <!-- 日曆圖示放在欄位內右側 -->
+  <!-- 日曆圖示置於欄位內的右側 -->
   <v-date-input
     v-else-if="column.type === 'date'"
     v-bind="{ ...$attrs, ...common }"
@@ -119,7 +118,7 @@
     @update:model-value="(value) => model = value"
   />
 
-  <!-- 否／是兩顆互斥的按鈕；再按一次已選的那顆即清空。沒有標籤時只有按鈕組 -->
+  <!-- 否、是兩個互斥的按鈕，再按一次已選取的按鈕即清空。沒有標籤時只有按鈕組 -->
   <v-input
     v-else-if="column.type === 'boolean'"
     v-bind="$attrs"
@@ -157,7 +156,7 @@
     @update:model-value="setText"
   />
 
-  <!-- allowCustom：options 只是建議，打了清單外的字也直接當值 -->
+  <!-- allowCustom：options 只是建議，輸入清單外的文字也直接作為值 -->
   <v-combobox
     v-else-if="column.type === 'select' && column.allowCustom"
     v-bind="{ ...$attrs, ...common }"
@@ -206,7 +205,7 @@
   color: rgb(var(--v-theme-error));
 }
 
-/* 有標籤時：標籤與按鈕組兩欄為 38:62，與詳細頁的名稱與值相同；標籤再長也只在左欄內換行 */
+/* 有標籤時：標籤與按鈕組兩欄為 38:62，與詳細頁相同。標籤再長也只在左欄內換行 */
 .field-input__boolean--labeled :deep(.v-input__control) {
   display: grid;
   grid-template-columns: minmax(0, 38fr) minmax(0, 62fr);
@@ -218,7 +217,7 @@
   color: rgba(var(--v-theme-on-surface), var(--v-medium-emphasis-opacity));
 }
 
-/* 按鈕組一律佔所在空間的 62% 並置中：有標籤時為標籤以外的那一欄，沒有標籤時為整欄 */
+/* 按鈕組一律佔所在空間的 62% 並置中。所在空間在有標籤時為右欄，沒有標籤時為整欄 */
 .field-input__boolean-toggle {
   width: 62%;
   margin-inline: auto;

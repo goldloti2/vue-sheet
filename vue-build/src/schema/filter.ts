@@ -2,20 +2,20 @@ import type { AnyColumn, TableSchema } from './types'
 import { durationSeconds, listedColumns } from './types'
 import { isEmpty } from './validation'
 
-// 篩選：條件的形狀與純函數。反應式的包裝在 composables/data/useFilter.ts
+// 篩選：條件的形狀與純函數。反應式的包裝位於 composables/data/useFilter.ts
 
-// 一欄的篩選條件：select 與 boolean 用 values（boolean 為 'true'／'false'，null 代表「空白」那個選項），number / date 用 min / max。空的就是不篩
+// 一欄的篩選條件：select 與 boolean 使用 values（null 為「空白」選項），其餘使用 min、max。空的條件不篩選
 export interface ColumnFilter {
   values?: (string | null)[]
-  // number 是數字、date 是 Date、duration 是 "時:分:秒" 字串
+  // number 為數字，date 為 Date，duration 為 "時:分:秒" 字串
   min?: number | Date | string | null
   max?: number | Date | string | null
 }
 
-// 欄位 key → 條件；沒列的欄位不篩
+// 欄位 key → 條件。未列出的欄位不篩選
 export type Filters = Record<string, ColumnFilter>
 
-// schema.searchable 裡的欄位，搜尋列比 text / ref，其餘型別歸篩選抽屜
+// schema.searchable 中的 text 與 ref 由搜尋列比對，其餘型別由篩選抽屜處理
 function isFilterable (column: AnyColumn): boolean {
   return ['boolean', 'date', 'duration', 'number', 'select'].includes(column.type)
 }
@@ -23,20 +23,20 @@ function isFilterable (column: AnyColumn): boolean {
 // boolean 的選項固定為是、否，依此順序列在篩選抽屜
 const BOOLEAN_OPTIONS = ['true', 'false']
 
-// 抽屜第一層的欄位與順序：schema.searchable ，跳過歸搜尋列的那些
+// 抽屜第一層的欄位與順序：schema.searchable 中由篩選抽屜處理的欄位
 export function filterableColumns (schema: TableSchema): AnyColumn[] {
   return listedColumns(schema, schema.searchable).filter(column => isFilterable(column))
 }
 
 interface PresentValues {
-  // options 裡在資料出現過的，照 options 順序
+  // options 中出現於資料的值，依 options 的順序
   known: string[]
-  // 資料裡有、options 沒有的（allowCustom 打的、Sheet 手動改的），出現次數多的在前，同次數依字串
+  // 資料中有而 options 沒有的值（例如 allowCustom 的輸入），出現次數多者在前，次數相同時依字串
   extra: string[]
   hasBlank: boolean
 }
 
-// 一個 select（或 boolean）欄位在 rows 裡實際出現過哪些值，給篩選抽屜的選項用
+// select 或 boolean 欄位於 rows 中實際出現的值，供篩選抽屜的選項使用
 export function presentValues (rows: readonly object[], column: AnyColumn): PresentValues {
   const counts = new Map<string, number>()
   let hasBlank = false
@@ -66,17 +66,17 @@ export function isActiveFilter (filter: ColumnFilter | undefined): boolean {
   return (filter.values?.length ?? 0) > 0 || filter.min != null || filter.max != null
 }
 
-// 有任何一欄設了條件就算篩選中（App Bar 的圖示標記用）
+// 任一欄有條件即為篩選中（用於 App Bar 的圖示標記）
 export function hasActiveFilter (filters: Filters): boolean {
   return Object.values(filters).some(filter => isActiveFilter(filter))
 }
 
-// select 的比對鍵：空值（跟 coerceRow 一樣把空字串當空）是 null，其餘轉字串
+// select 的比對鍵：空值（與 coerceRow 相同，含空字串）為 null，其餘轉為字串
 function selectKey (value: unknown): string | null {
   return isEmpty(value) ? null : String(value)
 }
 
-// 範圍比較一律換算成數字：Date 用毫秒、時長用秒
+// 範圍比較一律換算為數字：Date 為毫秒，時長為秒
 function toNumber (value: unknown): number | null {
   if (value instanceof Date) {
     return value.getTime()
@@ -87,7 +87,7 @@ function toNumber (value: unknown): number | null {
   return typeof value === 'number' ? value : null
 }
 
-// 值空著的列：select 只有勾了「空白」才留，範圍條件一律不留（沒東西可比）
+// 值為空的列：select 只在勾選「空白」時保留，範圍條件一律不保留
 export function matchesFilter (value: unknown, filter: ColumnFilter): boolean {
   if (filter.values && filter.values.length > 0) {
     const key = selectKey(value)

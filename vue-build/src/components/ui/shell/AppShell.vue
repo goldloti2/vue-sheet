@@ -49,7 +49,7 @@
 
   const title = computed(() => heading.value?.title ?? route.meta.title ?? appName)
 
-  // 登入頁這類整頁自己排版的頁面：App Bar、側邊欄、底部導覽列都不顯示
+  // 自行排版整頁的頁面（例如登入頁）不顯示 App Bar、側邊欄與底部導覽列
   const showShell = computed(() => route.meta.shell !== false)
 
   const appBarActions = shallowRef<PageAction[]>([])
@@ -57,53 +57,52 @@
     appBarActions.value = actions.filter(action => action !== null)
   })
 
-  // 註冊了底部動作就暫時取代導覽列（表單頁用），離開頁面自動還原
+  // 頁面註冊底部動作時（例如表單頁），底部動作暫時取代導覽列，離開頁面時自動還原
   const bottomActions = shallowRef<PageAction[]>([])
   provide(bottomActionsKey, actions => {
     bottomActions.value = actions.filter(action => action !== null)
   })
 
-  // 多選模式的出口。不是 null 就代表頁面正在多選，搜尋那些鈕先讓位（見 template）
+  // 多選模式的出口。不為 null 時頁面正在多選，搜尋與排序按鈕隱藏
   const cancelSelect = shallowRef<(() => void) | null>(null)
   provide(appBarSelectionKey, cancel => {
     cancelSelect.value = cancel
   })
 
-  // 頁籤列（TabPage 登記的）掛在 App Bar 底下，所以不會跟著內容捲走
+  // TabPage 登記的頁籤列置於 App Bar 下方，因此不隨內容捲動
   const tabs = shallowRef<AppBarTabs | null>(null)
   provide(appBarTabsKey, value => {
     tabs.value = value
   })
 
-  // 頁面與面板都在底下，靠這個知道使用者換頁籤了（例如多選要跟著取消）
+  // 目前的頁籤，供下層的頁面與面板得知使用者切換頁籤（例如取消多選）
   provide(currentTabKey, computed(() => tabs.value?.current.value ?? null))
 
-  // 頁面登記了搜尋才有放大鏡；按下去 App Bar 換成輸入框。query 是頁面的 ref，關掉時清空
+  // 頁面登記搜尋時才顯示搜尋按鈕，按下後 App Bar 換成輸入框。query 為頁面的 ref，關閉時清空
   const controls = shallowRef<ListControls | null>(null)
   provide(listControlsKey, value => {
     controls.value = value
   })
   const searchOpen = shallowRef(false)
 
-  // 一頁可以有好幾張表的條件（頁籤各接一張），任一張有條件就算篩選中
+  // 一頁可有多張表的條件（每個頁籤各一張），任一張表有條件即為篩選中
   const drawerTables = computed(() => controls.value?.drawer?.tables ?? [])
   const filterActive = computed(() => drawerTables.value.some(table => hasActiveFilter(table.filters.value)))
 
-  // 有給 sort 的表才有排序鈕；任一張不是預設排序就算排序中
+  // 有 sort 的表才有排序按鈕。任一張表不是預設排序即為排序中
   const sortTables = computed(() => drawerTables.value.filter(table => table.sort))
   const sortActive = computed(() => sortTables.value.some(table => table.sort?.value))
 
-  // 換頁就收起來；回到還帶著 query 或篩選的頁面（KeepAlive）就重新打開，讓列表跟搜尋欄一致
-  // 抽屜也一起收：使用者可以在抽屜開著時按返回鍵換頁
+  // 換頁時收起搜尋欄與抽屜。回到仍有 query 或篩選的頁面（KeepAlive）時重新打開搜尋欄
   watch(controls, value => {
     searchOpen.value = value !== null && (value.query.value !== '' || filterActive.value)
     drawerMode.value = null
   })
 
-  // 右側抽屜一次只放一種面板：篩選鈕在搜尋欄裡、排序鈕在 App Bar 上，兩顆各開各的，不另外處理互斥
+  // 右側抽屜一次只顯示一種面板。篩選按鈕在搜尋欄內，排序按鈕在 App Bar 上
   const drawerMode = shallowRef<'filter' | 'sort' | null>(null)
 
-  // 關起來的那段時間抽屜還在滑出去，內容不能跟著消失或換掉，不然會看到另一個面板閃一下
+  // 抽屜關閉的動畫期間，內容保持為原本的面板
   const shownPanel = shallowRef<'filter' | 'sort'>('filter')
   watch(drawerMode, mode => {
     if (mode) {
@@ -120,10 +119,10 @@
     },
   })
 
-  // 抽屜開著時 FAB 讓開
+  // 抽屜開啟時隱藏 FAB
   provide(overlayOpenKey, drawerOpen)
 
-  // 關閉搜尋＝清掉 query 與所有表的篩選，列表回到全部
+  // 關閉搜尋時清空 query 與所有表的篩選，列表顯示全部的列
   function closeSearch () {
     if (controls.value) {
       controls.value.query.value = ''
@@ -134,16 +133,16 @@
     searchOpen.value = false
   }
 
-  // 動作的執行與確認框都在這裡，頁面只負責註冊動作
+  // AppShell 執行動作並顯示確認框，頁面只註冊動作
   const runAction = provideActionRunner()
 
-  // 導覽列的目的地不用返回按鈕；其他方式進來的頁面（例如點列表項目進 detail）都算。頁面取代了標題時一律顯示
+  // 導覽列的目的地以外的頁面（例如詳細頁）顯示返回按鈕。頁面取代標題時一律顯示
   const showBack = computed(() => heading.value !== null || !props.navItems.some(item => item.to === route.path))
 
   const store = useTablesStore()
   const syncing = shallowRef(false)
 
-  // 先推送再重抓。推不出去就不重抓
+  // 先推送，再重新抓取。推送失敗時不重新抓取
   async function sync () {
     syncing.value = true
     try {
@@ -151,7 +150,7 @@
         return
       }
 
-      // Sheet 被別處改過：整批都沒寫，佇列還在，問使用者要走哪條路（關掉就什麼都不做）
+      // Sheet 已被別處修改時整批皆未寫入，佇列保留。詢問使用者如何處理，關閉對話框則不處理
       if (!store.conflict) {
         notify(store.flushError ?? '推送失敗，稍後再試', 'error')
         return
@@ -172,14 +171,14 @@
     }
   }
 
-  // 離開前有未推送的變更時攔一下
+  // 有未推送的變更時，離開前提示使用者
   function warnUnsaved (event: BeforeUnloadEvent) {
     if (store.hasPending) {
       event.preventDefault()
     }
   }
 
-  // 清掉 token，router 就會帶去登入頁。未推送的變更留在佇列裡，重新登入後照常推送
+  // 清除 token 後 router 導向登入頁。未推送的變更留在佇列中，重新登入後照常推送
   async function logout () {
     if (store.hasPending && !await confirm('登出', '有尚未推送的變更，確定要登出嗎？')) {
       return
@@ -205,11 +204,11 @@
 
 <template>
   <v-app-bar v-if="showShell" class="shell-app-bar">
-    <!-- 搜尋模式：整條 App Bar 換成返回鍵 + 輸入框，標題與動作先讓位 -->
+    <!-- 搜尋模式：整條 App Bar 換成返回按鈕與輸入框，不顯示標題與動作 -->
     <template v-if="searchOpen && controls">
       <v-app-bar-nav-icon aria-label="關閉搜尋" :icon="mdiArrowLeft" @click="closeSearch" />
 
-      <!-- clearable 清空時給的是 null，收回成空字串 -->
+      <!-- clearable 清空時傳回 null，此處轉為空字串 -->
       <v-text-field
         autofocus
         bg-color="grey-lighten-3"
@@ -243,7 +242,7 @@
     </template>
 
     <template v-if="!(searchOpen && controls)" #append>
-      <!-- 多選模式讓位：那時畫面上要的是對選取項目的動作，搜尋這些先收起來 -->
+      <!-- 多選模式中不顯示搜尋與排序按鈕 -->
       <v-btn v-if="controls && !cancelSelect" aria-label="搜尋" :icon="mdiMagnify" @click="searchOpen = true" />
 
       <v-btn
@@ -280,7 +279,7 @@
         </v-list>
       </v-menu>
 
-      <!-- 多選的出口釘在選單外面，收進去就找不到了 -->
+      <!-- 多選的取消按鈕一律置於選單外 -->
       <v-btn v-if="cancelSelect" aria-label="取消" :icon="mdiClose" @click="cancelSelect()" />
 
       <v-btn
@@ -301,7 +300,7 @@
       </v-btn>
     </template>
 
-    <!-- 頁籤跟著 App Bar 固定在最上；搜尋模式下也留著 -->
+    <!-- 頁籤隨 App Bar 固定於頂端，搜尋模式下仍顯示 -->
     <template v-if="tabs" #extension>
       <v-tabs v-model="tabs.current.value" align-tabs="center" grow>
         <v-tab v-for="tab in tabs.tabs" :key="tab" :value="tab">{{ tab }}</v-tab>
@@ -329,7 +328,7 @@
     @confirm="confirmFields"
   />
 
-  <!-- 右側抽屜歸 AppShell，面板只放內容，一次顯示一種 -->
+  <!-- 右側抽屜屬於 AppShell，面板只提供內容，一次顯示一種 -->
   <v-navigation-drawer
     v-if="drawerTables.length > 0"
     v-model="drawerOpen"
@@ -396,7 +395,7 @@
 </template>
 
 <style scoped>
-/* 換頁動畫中不隨頁面滑動，直接換成新的（見 App.vue） */
+/* 換頁動畫中不隨頁面滑動，直接換成新頁面的內容（見 App.vue） */
 .shell-app-bar {
   view-transition-name: app-bar;
 }

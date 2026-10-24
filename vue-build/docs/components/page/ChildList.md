@@ -1,8 +1,14 @@
 # ChildList
 
-詳細頁裡的「底下掛著的那些」：一個小標題（後面接筆數）、前幾列、空狀態，加上右下角一列按鈕（「展開」與頁面給的動作，通常是「新增」）。放在 [DetailPage](DetailPage.md) 的 `#top` 或 default slot 裡（子表是主體就放 `#top`）。
+詳細頁中的子表區塊，包含：
+- 標題，後面接列數
+- 前幾列子列
+- 沒有子列時的文字
+- 右下角一行按鈕：「展開」，以及頁面提供的動作（通常為「新增」）
 
-子列不用另外查——父列上有 store 掛好的 `$子表_欄位key` getter（照子表的 `defaultSort` 排好），直接餵進來。
+此元件置於 [DetailPage](DetailPage.md) 的 `#top` 或 default slot 中。子表為頁面的主體時，置於 `#top`。
+
+子列無須另外查詢。store 在父列上掛有 `$子表_欄位key` getter，子列已依子表的 `defaultSort` 排序，直接傳入即可。
 
 ## Usage
 
@@ -15,7 +21,7 @@
       title="子表"
       :to="`/__parent__/${parent.id}/__table__`"
     >
-      <!-- slot 拿到的是截斷後的那幾列，卡片就自己 v-for -->
+      <!-- slot 提供截斷後的子列，卡片由頁面自行 v-for -->
       <template #default="{ rows: children }">
         <DataList v-for="child in children" :key="child.id" :row="child" :to="`/__table__/${child.id}`" :view="childView" />
       </template>
@@ -24,7 +30,7 @@
 </DetailPage>
 ```
 
-`newChild` 是這張子表的新增動作，預設值指向目前這個父列；`childView` 指定子列顯示的欄位（見 [DataList](../list/DataList.md) 的「view」）：
+`newChild` 為子表的新增動作，預設值指向目前這個父列。`childView` 指定子列顯示的欄位（見 [DataList](../list/DataList.md) 的「view」）：
 
 ```ts
 const { new: newChild } = use__Table__Actions({ defaults: () => ({ __parent__: id.value }) })
@@ -35,20 +41,20 @@ const childView = defineView(__table__Schema, { title: '$label' })
 
 | prop | 型別 | 說明 |
 | --- | --- | --- |
-| `title` | `string` | **必填**，區塊小標題。筆數用 [CountLabel](../list/CountLabel.md) 接在後面 |
-| `rows` | `readonly Row[]` | **必填**，全部子列（父列上的 `$子表_欄位key` getter，已照子表的 `defaultSort` 排好）。超過 `limit` 的只是沒顯示，不是沒傳進來——筆數也是照這個算 |
-| `limit` | `number?` | 預設 5，最多先顯示幾列；`0` 就是全部列完 |
-| `to` | `string?` | 「展開」要去的頁面。給了就一直顯示那顆鈕，不管有沒有超過 `limit` |
-| `actions` | `(PageAction \| null)[]?` | 排在「展開」旁邊的右下角，通常是「新增」；`null` 略過 |
-| `emptyText` | `string?` | 一列都沒有時顯示，預設「還沒有資料」 |
+| `title` | `string` | **必填**，區塊的標題。列數以 [CountLabel](../list/CountLabel.md) 接在標題後面 |
+| `rows` | `readonly Row[]` | **必填**，全部的子列，即父列上的 `$子表_欄位key` getter，已依子表的 `defaultSort` 排序。超過 `limit` 的子列只是不顯示，仍須傳入。列數依全部的子列計算 |
+| `limit` | `number?` | 最多先顯示幾列，預設 5。`0` 表示全部列出 |
+| `to` | `string?` | 「展開」前往的頁面。提供時一律顯示「展開」，不論子列是否超過 `limit` |
+| `actions` | `(PageAction \| null)[]?` | 排在「展開」旁的右下角，通常為「新增」。`null` 略過 |
+| `emptyText` | `string?` | 沒有任何子列時顯示的文字，預設「還沒有資料」 |
 
 ## Slots
 
 | slot | scope | 說明 |
 | --- | --- | --- |
-| `default` | `{ rows }` | **截斷後**的那幾列（不是全部）。要卡片就自己 `v-for` 一串 `DataList`（或 `DataProfile`、`DataCard`；`DataGallery` 須再以 `ListLayout layout="grid"` 包住），要表格就整批餵給 `DataTable`；型別跟著 `:rows` 走 |
+| `default` | `{ rows }` | **截斷後**的子列，不是全部。型別隨 `:rows` 而定。呈現方式：<br>・卡片：頁面自行 `v-for` `DataList`、`DataProfile` 或 `DataCard`。`DataGallery` 須再以 `ListLayout layout="grid"` 包住<br>・表格：整批交給 `DataTable` |
 
-slot 給的是整批，表格可直接交給 `DataTable`：
+slot 提供的是整批子列，表格可直接交給 `DataTable`：
 
 ```vue
 <template #default="{ rows: children }">
@@ -56,16 +62,19 @@ slot 給的是整批，表格可直接交給 `DataTable`：
 </template>
 ```
 
-## 「展開」是一個真的頁面
+## 「展開」是一個真正的頁面
 
-不是就地展開，而是 `/__parent__/:id/__table__` 這種路由，範本在 [`template/pages/child-list.vue`](../../../template/pages/child-list.vue)。一條父子關聯一份檔（同一個檔服務所有父列），內容就是 `useRecordPage` 拿父列 + `ListPage` 把 getter 的子列畫出來，約 20 行。
+「展開」不是就地展開，而是前往 `/__parent__/:id/__table__` 這類路由。範本見 [`template/pages/child-list.vue`](../../../template/pages/child-list.vue)。
 
-`ListPage` 會發布這份順序，**從這裡點進某一筆時，上／下一筆走的是「同一個父列底下的子列」**，而不是子表整張表的順序。
+- 一條父子關聯一個檔案，同一個檔案服務所有的父列
+- 內容為：以 `useRecordPage` 取得父列，再以 `ListPage` 呈現 getter 中的子列，約 20 行
+
+`ListPage` 會發布這份順序。**從展開頁點進某一列時，上一列、下一列在同一個父列的子列之間切換**，不依子表整張表的順序。
 
 ## 備註
 
-- **筆數顯示於標題旁的小標籤**，「展開」不寫筆數，也不依是否超過 `limit` 而出現或消失
-- **不想要「展開」就別給 `to`**：子列本來就只有兩三筆的關聯不用專門開一頁
-- **沒有搜尋**：子表頁的資料來自父列的 getter，不經由 `useListPage`，因此沒有放大鏡
-- **不做多選**：批次操作在子表的列表頁做
-- **右下角的按鈕列放不下時換行**，例如儀表板的窄面板中
+- **列數顯示於標題旁的小標籤**。「展開」不寫列數，也不依子列是否超過 `limit` 而出現或消失
+- **不需要「展開」時，不提供 `to`**：子列通常只有兩三列的關聯，無須另開一頁
+- **沒有搜尋**：展開頁的資料來自父列的 getter，不經過 `useListPage`，因此沒有放大鏡
+- **不支援多選**：多選操作在子表的列表頁進行
+- **右下角的按鈕放不下時換行**，例如在儀表板的窄面板中

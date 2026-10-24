@@ -4,14 +4,13 @@
   import { computed } from 'vue'
   import FormattedValue from '@/components/ui/view/FormattedValue.vue'
 
-  // 位置的名稱跟 view 一樣（schema/view.ts）：title 左上、subtitle 右上、summary 左下、aside 右下。
-  // 沒指定的位置為 undefined，不畫；指定了但沒有值的保留位置
+  // 位置名稱同 view：title 左上、subtitle 右上、summary 左下、aside 右下。undefined 的位置不顯示
   const props = defineProps<{
     title?: DisplayValue
     subtitle?: DisplayValue
     summary?: DisplayValue
     aside?: DisplayValue
-    // 轉好的 <img src>；null 為指定了但沒有圖，留一塊同大小的空白
+    // 已轉換的 <img src>。null 表示已指定但沒有圖片，保留同大小的空白
     image?: string | null
     selectMode?: boolean
     selected?: boolean
@@ -61,7 +60,7 @@
   flex: none;
   width: 48px;
   height: 48px;
-  /* 等比縮到框內、不裁切，所以長方形的圖兩側會留白 */
+  /* 等比縮放至框內，不裁切，長方形的圖兩側留白 */
   object-fit: contain;
   border-radius: 4px;
 }
@@ -92,7 +91,7 @@
   text-align: left;
 }
 
-/* 左右固定在各自的欄，另一側沒指定時也不會移位 */
+/* 左右固定在各自的欄，另一側未指定時也不移位 */
 .list-item__field--left {
   grid-column: 1;
   text-align: left;
@@ -103,7 +102,7 @@
   text-align: right;
 }
 
-/* 指定了但沒有值：以零寬字元撐出一行的高度 */
+/* 已指定但沒有值時，以零寬字元撐出一行的高度 */
 .list-item__title:empty::before,
 .list-item__field:empty::before {
   content: '\200b';

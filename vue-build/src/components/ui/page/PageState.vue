@@ -1,12 +1,12 @@
 <script lang="ts" setup>
   withDefaults(defineProps<{
     loading?: boolean
-    // 載入失敗的訊息。動作失敗（送出、推送）不走這裡，那種要讓內容留在畫面上
+    // 載入失敗的訊息。動作失敗（送出、推送）不經過此處，內容須留在畫面上
     error?: string | null
-    // 載入完了但沒東西可顯示（單筆的頁面用，列表空著就是空著）
+    // 已載入但沒有內容可顯示，用於顯示單一列的頁面。列表不使用
     empty?: boolean
     emptyText?: string
-    // 列表用長條貼在內容上緣（內容留著），單筆用置中的圓圈（取代內容）
+    // 列表使用貼在內容上緣的長條（保留內容），單一列的頁面使用置中的圓圈（取代內容）
     spinner?: 'circular' | 'linear'
   }>(), {
     error: null,
@@ -29,7 +29,7 @@
   </v-container>
 
   <template v-else>
-    <!-- 重新整理時列表要留在畫面上：卸載重建會弄丟分組的展開狀態與捲動位置 -->
+    <!-- 重新整理時列表留在畫面上，不卸載重建，分組的展開狀態與捲動位置才得以保留 -->
     <v-progress-linear v-if="loading" indeterminate />
 
     <slot />

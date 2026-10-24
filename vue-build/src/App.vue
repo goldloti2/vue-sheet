@@ -47,8 +47,7 @@
   animation-name: page-from-left;
 }
 
-/* dashboard 面板內的轉場：選取改變時各面板以瀏覽器預設的淡入淡出切換（沒變的面板看不出來）；
-   展開的面板換上下一筆時，只有它命名為 dashboard-panel-active，與換頁同樣左右滑動（見 DashboardPage） */
+/* dashboard 面板內：選取改變時各面板淡入淡出。展開的面板切換列時命名為 dashboard-panel-active，左右滑動 */
 :root[data-transition='panel'][data-dir='forward']::view-transition-old(dashboard-panel-active) {
   animation-name: page-to-left;
 }
@@ -93,7 +92,7 @@
   }
 }
 
-/* 外殼（App Bar、抽屜、底部列、FAB、上下一筆）各自命名而不在整個畫面的截圖中，直接換成新的、不滑動 */
+/* 外殼（App Bar、抽屜、底部列、FAB、上一列與下一列的按鈕）各自命名，不在畫面截圖中，直接換成新的內容 */
 ::view-transition-group(app-bar),
 ::view-transition-group(nav-drawer),
 ::view-transition-group(bottom-bar),

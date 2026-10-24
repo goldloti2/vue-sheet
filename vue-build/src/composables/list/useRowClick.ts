@@ -13,8 +13,7 @@ interface UseRowClickOptions {
   onPick: () => void
 }
 
-// 列表中的一列（DataList、DataProfile 等）的點擊：長按進入多選、多選模式下切換勾選，其餘導覽至 to 或選取。
-// 連結為自行組 href 的 <a>，不使用 RouterLink
+// 列表中一列的點擊：長按進入多選，多選模式下切換勾選，其餘導覽至 to 或選取。連結為自行組成 href 的 <a>
 export function useRowClick (options: UseRowClickOptions) {
   const router = useRouter()
   const longPress = useLongPress(options.onLongpress)
@@ -36,7 +35,7 @@ export function useRowClick (options: UseRowClickOptions) {
       return
     }
 
-    // 帶修飾鍵或非左鍵時交由瀏覽器處理，開新分頁或新視窗即維持原生行為
+    // 帶修飾鍵或非左鍵的點擊交由瀏覽器處理，開新分頁或新視窗維持原生行為
     if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
       return
     }

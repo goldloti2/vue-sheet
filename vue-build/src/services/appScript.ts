@@ -1,6 +1,6 @@
-// 前端 ↔ Apps Script Web App 的對接層：其他程式碼一律透過這裡打 API，不自己 fetch
-//
-// VITE_APPS_SCRIPT_URL 沒設就走 mock/ 底下的假後端（開發預設），兩邊回傳的形狀相同；真後端穩定後整個 mock/ 可以刪掉
+// 前端與 Apps Script Web App 的對接層。其他程式一律經由此處呼叫 API，不自行 fetch
+
+// 未設定 VITE_APPS_SCRIPT_URL 時使用 mock/ 中的假後端，兩者回傳的形狀相同
 
 import type { ApiResponse, BatchOperation, LoginCredentials, TableData } from './types'
 import type { TableKey } from '@/schema'
@@ -15,8 +15,7 @@ export type { ApiResponse, BatchOperation, LoginCredentials, SheetAction, TableD
 
 const API_URL = import.meta.env.VITE_APPS_SCRIPT_URL
 
-// Apps Script 幾乎都回 200，所以成敗一律看 body 的 success（見 docs/api.md）。
-// 要分辨的只有衝突與認證失敗，其他錯誤就是一句訊息
+// 成敗一律依 body 的 success 判斷（見 docs/api.md）。只區分衝突與認證失敗，其他錯誤為一句訊息
 async function unwrap<T> (response: Response): Promise<T> {
   if (!response.ok) {
     throw new Error(`後端回應 ${response.status}`)
@@ -35,14 +34,14 @@ async function unwrap<T> (response: Response): Promise<T> {
   return payload.data
 }
 
-// 後端續期時在信封上附一張新的 token，換上就好（見 docs/auth.md）
+// 後端續期時於回應中附上新的 token，前端直接替換（見 docs/auth.md）
 function renewToken (newToken: string | undefined): void {
   if (newToken) {
     setToken(newToken)
   }
 }
 
-// GET 沒有 body，所以 token 一律放網址，POST 也一樣（見 docs/auth.md）
+// token 一律置於網址，GET 與 POST 相同（見 docs/auth.md）
 function endpoint (url: string, params: Record<string, string> = {}): string {
   const query = new URLSearchParams(params)
   if (token.value) {
@@ -51,8 +50,7 @@ function endpoint (url: string, params: Record<string, string> = {}): string {
   return query.size > 0 ? `${url}?${query}` : url
 }
 
-// Content-Type 刻意留成 text/plain：帶 application/json 會觸發 CORS 預檢，
-// 而 Apps Script 的 Web App 回不了預檢。後端用 JSON.parse(e.postData.contents) 讀
+// Content-Type 刻意為 text/plain：application/json 會觸發 Apps Script 無法回應的 CORS 預檢
 async function post<T> (url: string, body: unknown): Promise<T> {
   return unwrap<T>(await fetch(url, {
     method: 'POST',
@@ -61,8 +59,7 @@ async function post<T> (url: string, body: unknown): Promise<T> {
   }))
 }
 
-// 開發時把進出的 payload 印到 console；production build 會把整段當死碼拿掉。
-// shown 是要印的那份（密碼、token 遮掉），不是真正送出去的
+// 開發時將 payload 印至 console，production build 移除此段。shown 為遮蔽密碼與 token 後的內容
 async function trace<T> (label: string, shown: unknown, run: () => Promise<T>, shownResult = (data: T): unknown => data): Promise<T> {
   if (!import.meta.env.DEV) {
     return run()
@@ -79,7 +76,7 @@ async function trace<T> (label: string, shown: unknown, run: () => Promise<T>, s
   }
 }
 
-// 打 API 的共同外殼：認證失敗就清掉 token，router 看到 token 沒了會把畫面帶到登入頁
+// 呼叫 API 的共同外殼：認證失敗時清除 token，router 隨即導向登入頁
 async function request<T> (label: string, shown: unknown, run: () => Promise<T>, shownResult?: (data: T) => unknown): Promise<T> {
   try {
     return await trace(label, shown, run, shownResult)
@@ -91,10 +88,9 @@ async function request<T> (label: string, shown: unknown, run: () => Promise<T>,
   }
 }
 
-// GET：list/get，回傳整張表 + 整個檔案的 modifiedTime（推送時當 since 用）
-// 後端給的是原始字串，回傳前照 schema 轉成該有的型別（見文件 6.1 節）
+// GET：回傳整張表與檔案的 modifiedTime（推送時作為 since）。後端的字串於回傳前依 schema 轉型
 export async function fetchTable<Row> (table: TableKey): Promise<{ rows: Row[], modifiedTime: string }> {
-  // trace 包的是轉型別之前的原始字串，也就是後端真正回了什麼
+  // trace 記錄的是轉型前的字串，即後端實際的回應
   const { rows, modifiedTime } = await request<TableData>(`GET ${table}`, { table }, async () => {
     if (API_URL) {
       return unwrap<TableData>(await fetch(endpoint(API_URL, { table })))
@@ -106,10 +102,7 @@ export async function fetchTable<Row> (table: TableKey): Promise<{ rows: Row[], 
   return { rows: rows.map(row => coerceRow<Row>(row, schemas[table])), modifiedTime }
 }
 
-// POST：一次送出整批操作，回傳寫入後的新 modifiedTime。
-// 全有全無：後端在鎖裡跑完整批，中途失敗就拋錯讓前端保留佇列重送。
-// since 是前端上次看到的 modifiedTime，後端在同一把鎖裡比對；對不上就拋 ConflictError，什麼都不寫。
-// 不給 since 就是強制推送（不比對）。不回傳資料列——寫入當下前端快取就改好了，推送成功後本來就會重抓
+// POST：一次送出整批操作，回傳寫入後的 modifiedTime。全有全無，省略 since 時強制推送（見 docs/api.md）
 export async function mutateBatch (operations: readonly BatchOperation[], since?: string): Promise<string> {
   const { modifiedTime } = await request('POST', { operations, since }, async () => {
     if (API_URL) {
@@ -122,7 +115,7 @@ export async function mutateBatch (operations: readonly BatchOperation[], since?
   return modifiedTime
 }
 
-// POST：登入，用憑證換 token（約定見 docs/auth.md）。console 上的密碼與 token 會遮掉
+// POST：登入，以憑證換取 token（見 docs/auth.md）。console 上遮蔽密碼與 token
 export async function fetchToken (credentials: LoginCredentials): Promise<string> {
   const shown = { action: 'login', credentials: { ...credentials, password: '***' } }
   const result = await request('POST login', shown, async () => API_URL

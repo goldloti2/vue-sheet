@@ -1,6 +1,6 @@
-// 認證：登入換 token、每個請求驗 token（約定見 docs/auth.md）
+// 認證：以登入換取 token，每個請求驗證 token（約定見 docs/auth.md）
 
-// 依 Config.gs 的 AUTH 取模組。放在函式裡查：各檔的頂層依載入順序執行，請求進來時才保證全部載完
+// 依 Config.gs 的 AUTH 取出模組。須於函數中查找，請求進來時各檔才保證全部載入
 function authModule () {
   if (AUTH === null) {
     return null
@@ -19,7 +19,7 @@ function login (credentials) {
   return { token: auth.login(credentials) }
 }
 
-// 讀寫之前先過這關；AUTH 是 null 就不檢查。回傳續期用的新 token（不需要續期就是 undefined）
+// 讀寫之前先驗證，AUTH 為 null 時不檢查。回傳續期用的新 token，無須續期時為 undefined
 function authorize (token) {
   const auth = authModule()
   return auth ? auth.verify(token || '').token : undefined
@@ -34,14 +34,14 @@ const TOKEN_RENEW_BELOW_SECONDS = TOKEN_LIFETIME_SECONDS / 2
 
 function passwordLogin (credentials) {
   const user = readUser(credentials.username)
-  // 帳號不存在與密碼錯誤回同一句，不讓人試出哪些帳號存在
+  // 帳號不存在與密碼錯誤回傳同一句訊息，不洩漏哪些帳號存在
   if (!user || hashPassword(credentials.password || '', user.salt) !== user.hash) {
     throw apiError('帳號或密碼錯誤', 'unauthorized')
   }
   return issueToken(credentials.username)
 }
 
-// token = payload.簽章。簽的是編碼後的 payload 字串
+// token = payload.簽章。簽章的對象為編碼後的 payload 字串
 function issueToken (username) {
   const message = { user: username, exp: Math.floor(Date.now() / 1000) + TOKEN_LIFETIME_SECONDS }
   const payload = base64url(JSON.stringify(message))
@@ -58,7 +58,7 @@ function verifyToken (token) {
   if (message.exp < Date.now() / 1000) {
     throw apiError('登入已過期，請重新登入', 'expired')
   }
-  // 帳號被刪掉，手上的 token 就跟著失效
+  // 帳號被刪除時，該帳號的 token 隨之失效
   if (!readUser(message.user)) {
     throw apiError('登入資訊無效，請重新登入', 'unauthorized')
   }
@@ -70,7 +70,7 @@ function sign (payload) {
   return base64url(Utilities.computeHmacSha256Signature(payload, authSecret(), Utilities.Charset.UTF_8))
 }
 
-// 簽 token 的密鑰只在 Script Properties
+// 簽章 token 的密鑰只存於 Script Properties
 function authSecret () {
   const secret = PropertiesService.getScriptProperties().getProperty('AUTH_SECRET')
   if (!secret) {
@@ -79,7 +79,7 @@ function authSecret () {
   return secret
 }
 
-// 字串照 UTF-8 編；HMAC 的結果是 byte 陣列，直接編
+// 字串依 UTF-8 編碼，HMAC 的結果為 byte 陣列，直接編碼
 function base64url (data) {
   const encoded = typeof data === 'string'
     ? Utilities.base64EncodeWebSafe(data, Utilities.Charset.UTF_8)
@@ -87,7 +87,7 @@ function base64url (data) {
   return encoded.replace(/=+$/, '')
 }
 
-// 解不開就是 null
+// 無法解開時為 null
 function decodeMessage (payload) {
   try {
     const padded = payload + '='.repeat((4 - payload.length % 4) % 4)
@@ -98,13 +98,13 @@ function decodeMessage (payload) {
   }
 }
 
-// SHA-256(密碼 + salt)，以 base64 存。Apps Script 沒有 bcrypt 這類密碼專用的雜湊
+// SHA-256(密碼 + salt)，以 base64 存放。Apps Script 沒有 bcrypt 這類密碼專用的雜湊
 function hashPassword (password, salt) {
   const bytes = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, password + salt, Utilities.Charset.UTF_8)
   return Utilities.base64Encode(bytes)
 }
 
-// 一個帳號一筆 Script Property，在「專案設定 → 指令碼屬性」看得到、也能直接刪
+// 一個帳號一筆 Script Property，可在「專案設定 → 指令碼屬性」檢視與刪除
 function userKey (username) {
   return `AUTH_USER_${username}`
 }
@@ -116,14 +116,13 @@ function readUser (username) {
 
 // ===== 管理員在編輯器裡手動執行 =====
 
-// 產生簽 token 用的密鑰，啟用前執行一次。重新執行會讓所有已發出的 token 失效（所有人都要重新登入）
+// 產生簽章 token 的密鑰，啟用前執行一次。重新執行會使所有已發出的 token 失效
 function setupSecret () {
   PropertiesService.getScriptProperties().setProperty('AUTH_SECRET', Utilities.getUuid() + Utilities.getUuid())
   console.log('已產生 AUTH_SECRET')
 }
 
-// 「執行」鈕不能帶參數，所以先填這兩個值、從上方選單選 addUser 或 removeUser 再按執行。
-// 執行完把密碼清掉，不要留在程式碼裡
+// 填入後執行 addUser 或 removeUser（「執行」按鈕無法傳參數）。執行完畢後清空密碼
 const ACCOUNT_USERNAME = ''
 const ACCOUNT_PASSWORD = ''
 
@@ -131,7 +130,7 @@ function addUser () {
   if (!ACCOUNT_USERNAME || !ACCOUNT_PASSWORD) {
     throw new Error('先填 ACCOUNT_USERNAME 與 ACCOUNT_PASSWORD')
   }
-  // salt 每個帳號各自隨機一組，改密碼時也重新產生
+  // salt 每個帳號各自隨機產生，修改密碼時也重新產生
   const salt = Utilities.getUuid()
   PropertiesService.getScriptProperties()
     .setProperty(userKey(ACCOUNT_USERNAME), JSON.stringify({ salt, hash: hashPassword(ACCOUNT_PASSWORD, salt) }))

@@ -1,37 +1,29 @@
-// 新增表單的初始值。給函式的話是打開表單那一刻才求值
+// 新增表單的初始值。函式於開啟表單時求值
 export type ColumnDefault<T> = T | (() => T)
 
-// 每張表的 Row 介面都 extends 這個：id 恆等於主鍵那一欄的值（見 idColumn），$label 是 store 掛的 getter（見 labelColumn）
+// 每張表的 Row 介面皆 extends 此介面。id 等於主鍵的值，$label 為 store 掛上的 getter（見 labelColumn）
 export interface RowBase {
   id: string
   readonly $label: string
 }
 
-// 每種欄位型別只在這裡定義一次：值的型別 + 這種型別專屬的設定。真實與虛擬欄位都從這張表推導
+// 每種欄位型別只於此處定義一次：值的型別與型別專屬的設定。真實與虛擬欄位皆由此推導
 interface ColumnTypes {
   /** 一般文字 */
   text: { value: string | null }
-  /** 數字；min／max 同時是表單輸入框的範圍與驗證的上下限，step 是表單 ＋／− 每次的增減（預設 1，不限制輸入的值） */
+  /** 數字。min、max 為輸入範圍與驗證的上下限，step 為 ＋／− 每次的增減（預設 1） */
   number: { value: number | null, extra: { min?: number, max?: number, step?: number } }
-  /** 日期（只有日期，沒有時間；讀進來時會歸零到當天午夜） */
+  /** 日期，不含時間。讀取時歸零至當天午夜 */
   date: { value: Date | null }
-  /** 是／否。Sheet 上為 TRUE／FALSE，空的儲存格即為空（null），不當成否 */
+  /** 是／否。Sheet 上為 TRUE、FALSE，空的儲存格為 null，不視為否 */
   boolean: { value: boolean | null }
-  /** 時間長度，值是 "時:分:秒" 字串（分秒兩位數，時數不設上限，例如 "30:15:00"） */
+  /** 時間長度，值為 "時:分:秒" 字串（例如 "30:15:00"），時數不設上限 */
   duration: { value: string | null }
-  /** 圖片：一格一張，值是行內 SVG、圖片網址、或 Google Drive 的檔案 id／分享連結（見 schema/image.ts） */
+  /** 圖片，一格一張。值為行內 SVG、圖片網址或 Google Drive 的檔案（見 schema/image.ts） */
   image: { value: string | null }
-  /**
-   * 外鍵，值是對方的 id（見 docs/topics/schema.md 的一對多關聯）。
-   * refTable 是對方在 schemas 裡的 key；顯示時一律用對方的 $label，store 會把對方那一列掛成 row.$欄位key。
-   * onDelete: 'cascade' 表示對方那一列被刪時、指向它的這些列也一起刪；不標就留著（ref 指向不存在的 id）。
-   * onEmpty: 'delete' 表示指向對方的列減少（刪除或改指別處）而使對方沒有任何子列時，對方也一起刪
-   */
+  /** 外鍵，值為父列的 id。refTable、onDelete、onEmpty 見 docs/topics/schema.md 的「跨表關聯」 */
   ref: { value: string | null, extra: { refTable: string, onDelete?: 'cascade', onEmpty?: 'delete' } }
-  /**
-   * 清單：預設只能選 options 裡的值。
-   * allowCustom 開了 options 就只是建議、打別的字也收；建議另可由欄位的 suggestedValues 算出（接在 options 後面）
-   */
+  /** 清單，預設只能選 options 中的值。開啟 allowCustom 時，options 只是建議 */
   select: { value: string | null, extra: { options: string[], allowCustom?: boolean } }
 }
 
@@ -39,100 +31,97 @@ type ColumnType = keyof ColumnTypes
 type ColumnValue<T extends ColumnType> = ColumnTypes[T]['value']
 type ColumnExtra<T extends ColumnType> = ColumnTypes[T] extends { extra: infer Extra } ? Extra : object
 
-// 框架端不區分各表的 Row，預設為 any：key 退化成 string、value 的 row 退化成 any
+// 框架端不區分各表的 Row，預設為 any。此時 key 為 string，value 的 row 為 any
 type AnyRow = any
 
-// Row 裡值型別放得下 Value 的欄位名；id 與 $ 開頭的系統欄位不算
+// Row 中值型別可容納 Value 的欄位名，不含 id 與 $ 開頭的系統欄位
 type ColumnKey<Row extends object, Value> = {
   [K in keyof Row & string]: K extends 'id' | `$${string}` ? never : Row[K] extends Value ? K : never
 }[keyof Row & string]
 
-// 任一欄位名，給 labelColumn / detailOrder 這種不挑型別的地方
+// 任一欄位名，用於不限型別之處（例如 labelColumn、detailOrder）
 export type RowKey<Row extends object> = ColumnKey<Row, unknown>
 
-// 一個欄位最基本的資訊：key、label、型別、型別專屬設定。真實與虛擬欄位都疊在這上面。
-// 帶 Row 時 key 只能是 Row 裡型別相符的欄位（type: 'number' 只能綁 number | null 的欄位）
+// 欄位的基本資訊，真實與虛擬欄位皆以此為基礎。指定 Row 時，key 只能是 Row 中型別相符的欄位
 export type ColumnBase<Row extends object = AnyRow, T extends ColumnType = ColumnType> = {
-  /** 程式裡用的欄位名（Row 介面上的那個） */
+  /** 程式中使用的欄位名，即 Row 介面上的名稱 */
   key: ColumnKey<Row, ColumnValue<T>>
-  /** 顯示用的標籤，表單、詳細頁、表格表頭都用它 */
+  /** 顯示用的標籤，用於表單、詳細頁與表格的表頭 */
   label: string
   /** 欄位型別，決定值的型別、輸入元件與顯示格式 */
   type: T
-  /** 只作用於詳細頁：回傳 false 時這一列不顯示此欄 */
+  /** 只作用於詳細頁：回傳 false 時此列不顯示此欄 */
   showIf?: (row: Row) => boolean
 } & ColumnExtra<T>
 
-// 真實欄位：Sheet 上有的，多了表頭對應與表單設定
+// 真實欄位：Sheet 上的欄位，另有表頭對應與表單設定
 export type SchemaColumn<Row extends object = AnyRow> = {
   [T in ColumnType]: ColumnBase<Row, T> & {
-    /** Sheet 上的實際表頭文字；省略時跟 label 同值 */
+    /** Sheet 上的實際表頭文字。省略時與 label 相同 */
     sheetHeader?: string
-    /** 不能留空。空字串與 null 都算空 */
+    /** 不可留空。空字串與 null 皆視為空 */
     required?: boolean
-    /** 新增表單的初始值；函式型的在打開表單那一刻才求值 */
+    /** 新增表單的初始值。函式於開啟表單時求值 */
     default?: ColumnDefault<ColumnValue<T>>
-    /** 自訂規則：內建檢查過了、而且有值時才叫，回錯誤訊息或 null */
+    /** 自訂規則，於內建檢查通過且有值時呼叫，回傳錯誤訊息或 null */
     validate?: (value: NonNullable<ColumnValue<T>>, row: Row) => string | null
-    /** 只對 allowCustom 的 select 有效：表單建議清單中接在 options 後面的值。row 為正在編輯的那一列（getter 已掛上），rows 為這張表的所有列 */
+    /** 只對 allowCustom 的 select 有效：接在 options 後的建議值。row 為正在編輯的列，rows 為此表的所有列 */
     suggestedValues?: (row: Row, rows: readonly Row[]) => readonly (string | null | undefined)[]
   }
 }[ColumnType]
 
-// 虛擬欄位：不在 Sheet 上、讀的時候才算。store 會把它掛成 row 上的 getter，讀起來跟真實欄位一樣（見 docs/topics/schema.md）。
-// 父表走 row.$欄位key、子表走 row.$子表_欄位key，都是 store 掛好的，value 直接讀。
-// 虛擬的 ref 同樣掛 row.$欄位key，但不進關聯圖：對方沒有反向的子列，也沒有 onDelete／onEmpty
+// 虛擬欄位：不在 Sheet 上，讀取時才計算，由 store 掛為 row 上的 getter（見 docs/topics/schema.md）
 export type VirtualColumn<Row extends object = AnyRow> = {
   [T in ColumnType]: ColumnBase<Row, T> & {
-    /** 怎麼算出來。父列讀 row.$欄位key、子列讀 row.$子表_欄位key，都是 store 掛好的 */
+    /** 計算方式。父列以 row.$欄位key 讀取，子列以 row.$子表_欄位key 讀取 */
     value: (row: Row) => ColumnValue<T>
     onDelete?: never
     onEmpty?: never
   }
 }[ColumnType]
 
-// 顯示用：兩種欄位一起看的時候
+// 真實或虛擬欄位，用於顯示
 export type AnyColumn<Row extends object = AnyRow> = SchemaColumn<Row> | VirtualColumn<Row>
 
 export interface SortSpec<Row extends object = AnyRow> {
-  /** 依哪一欄排，真實或虛擬欄位都行 */
+  /** 排序依據的欄位，真實或虛擬欄位皆可 */
   key: RowKey<Row>
   direction: 'asc' | 'desc'
 }
 
-// 各表宣告成 TableSchema<XxxRow>，欄位 key 與 value 的 row 就有型別；框架端一律用不帶參數的 TableSchema 接
+// 各表宣告為 TableSchema<XxxRow>，欄位 key 與 value 的 row 即有型別。框架端一律使用不帶參數的 TableSchema
 export interface TableSchema<Row extends object = AnyRow> {
-  /** 畫面上怎麼顯示這張表（表的 chip、頁籤比對）。Sheet 分頁的名稱只有後端知道 */
+  /** 表於畫面上的名稱（表的 chip、頁籤比對）。Sheet 分頁的名稱只有後端知道 */
   tableLabel: string
-  /** 主鍵是 columns 中的哪一欄（text、ref 等值為字串的欄位），其值即為 row.id。建立後不能修改，見 docs/topics/schema.md */
+  /** 主鍵，須為值為字串的欄位，其值即為 row.id。建立後不可修改（見 docs/topics/schema.md） */
   idColumn: ColumnKey<Row, string | null>
-  /** 用哪一欄稱呼一列（真實或虛擬欄位都行），store 據此掛 row.$label；別的表 ref 到這裡就顯示它。省略就是 id */
+  /** 稱呼一列所用的欄位，真實或虛擬欄位皆可。store 據此掛上 row.$label。省略時為 id */
   labelColumn?: RowKey<Row>
-  /** 新增時主鍵留空就以它發號（常見的前綴式用 prefixedId('TPL')）；省略時主鍵必填 */
+  /** 新增時主鍵留空即以此產生（例如 prefixedId('TPL')）。省略時主鍵為必填 */
   newId?: () => string
-  /** Sheet 上真的有的欄位，順序同時是表單與詳細頁的預設順序 */
+  /** Sheet 上的欄位。順序即為表單與詳細頁的預設順序 */
   columns: SchemaColumn<Row>[]
-  /** 算出來的欄位，不進 coerceRow / serializeRow / 表單；顯示、排序、分組都跟真實欄位一樣用 */
+  /** 虛擬欄位，不經過 coerceRow、serializeRow 與表單。顯示、排序與分組的用法與真實欄位相同 */
   virtualColumns?: VirtualColumn<Row>[]
-  /** 能搜尋或篩選的欄位（text／ref 進搜尋列，其餘進篩選抽屜）。順序就是抽屜第一層的順序 */
+  /** 可搜尋或篩選的欄位，text 與 ref 進搜尋列，其餘進篩選抽屜。順序即為抽屜第一層的順序 */
   searchable?: RowKey<Row>[]
-  /** 能排序的欄位（image 不支援）。順序就是排序面板的順序 */
+  /** 可排序的欄位，不支援 image。順序即為排序面板的順序 */
   sortable?: RowKey<Row>[]
-  /** 詳細頁的欄位順序；省略就沿用 columns 的順序。沒列到的欄位不顯示 */
+  /** 詳細頁的欄位順序，省略時依 columns。未列出的欄位不顯示 */
   detailOrder?: RowKey<Row>[]
-  /** 表單頁的欄位順序；省略就沿用 columns 的順序 */
+  /** 表單頁的欄位順序，省略時依 columns */
   formOrder?: RowKey<Row>[]
-  /** 列表頁的預設排序，多筆依序當 tiebreaker；省略或空陣列＝維持 Sheet 上的原始順序 */
+  /** 列表頁的預設排序，依序作為次要排序。省略或為空陣列時維持 Sheet 上的原始順序 */
   defaultSort?: SortSpec<Row>[]
-  /** 條件式格式：條件成立時改變指定欄位的呈現，見 docs/topics/schema.md 的「條件式格式」 */
+  /** 條件式格式：條件成立時改變指定欄位的呈現（見 docs/topics/schema.md 的「條件式格式」） */
   formatRules?: FormatRule<Row>[]
 }
 
-/** 條件式格式的顏色：常用色名，深淺色主題各有一組看得清楚的色值 */
+/** 條件式格式的顏色。淺色與深色主題各有一組色值 */
 export type FormatColor = 'red' | 'orange' | 'yellow' | 'green' | 'blue' | 'purple' | 'grey'
 
 export interface FormatRule<Row extends object = AnyRow> {
-  /** 條件，row 的 getter 已掛上 */
+  /** 條件。row 的 getter 已掛上 */
   when: (row: Row) => boolean
   /** 套用的欄位，真實與虛擬欄位皆可 */
   columns: RowKey<Row>[]
@@ -141,9 +130,9 @@ export interface FormatRule<Row extends object = AnyRow> {
   italic?: boolean
   underline?: boolean
   strike?: boolean
-  /** 值前面的圖示（@mdi/js 的 path） */
+  /** 值前方的圖示（@mdi/js 的 path） */
   icon?: string
-  /** 圖示的顏色；省略時與文字同色 */
+  /** 圖示的顏色。省略時與文字同色 */
   iconColor?: FormatColor
 }
 
@@ -151,7 +140,7 @@ function columnHeader (column: SchemaColumn): string {
   return column.sheetHeader ?? column.label
 }
 
-// 主鍵那一欄；idColumn 指到不存在的欄位是 schema 寫錯，直接拋錯
+// 主鍵的欄位。idColumn 指向不存在的欄位時拋出錯誤
 export function idColumnOf (schema: TableSchema): SchemaColumn {
   const column = schema.columns.find(candidate => candidate.key === schema.idColumn)
   if (!column) {
@@ -160,18 +149,18 @@ export function idColumnOf (schema: TableSchema): SchemaColumn {
   return column
 }
 
-// 主鍵在 Sheet 上的表頭；後端以它找列
+// 主鍵於 Sheet 上的表頭，後端以此尋找列
 export function idHeader (schema: TableSchema): string {
   return columnHeader(idColumnOf(schema))
 }
 
-// 時長的容錯：H:mm 與 H:mm:ss，時數不限，秒省略就是 00。分秒超過 59 或格式不對就當空的
+// 時長接受 H:mm 與 H:mm:ss，省略秒時為 00。分秒超過 59 或格式不符時視為空值
 function parseDuration (raw: string): string | null {
   const parts = /^(\d+):([0-5]\d)(?::([0-5]\d))?$/.exec(raw.trim())
   return parts ? `${Number(parts[1])}:${parts[2]}:${parts[3] ?? '00'}` : null
 }
 
-// "時:分:秒" 換算成秒，給排序與篩選的範圍比較用
+// 將 "時:分:秒" 換算為秒，供排序與篩選的範圍比較使用
 export function durationSeconds (value: unknown): number | null {
   if (typeof value !== 'string') {
     return null
@@ -199,7 +188,7 @@ function coerceValue (raw: string, type: ColumnType): string | number | boolean 
       if (Number.isNaN(parsed.getTime())) {
         return null
       }
-      // 歸零到當天午夜：儲存格手動帶了時間的話，看起來一樣的兩列不該排序或篩選得不一樣
+      // 歸零至當天午夜，儲存格含時間時，日期相同的兩列排序與篩選結果才相同
       parsed.setHours(0, 0, 0, 0)
       return parsed
     }
@@ -212,7 +201,7 @@ function coerceValue (raw: string, type: ColumnType): string | number | boolean 
   }
 }
 
-// 把後端/mock 回來的原始字串 row，照 schema 轉成該有的型別
+// 依 schema 將後端或 mock 傳回的字串 row 轉為對應的型別
 export function coerceRow<Row> (row: Record<string, string>, schema: TableSchema): Row {
   const result: Record<string, unknown> = {
     id: row[idHeader(schema)] ?? '',
@@ -225,12 +214,12 @@ export function coerceRow<Row> (row: Record<string, string>, schema: TableSchema
   return result as Row
 }
 
-// boolean 的顯示文字，全 App 一致（篩選抽屜的選項與摘要也用它）
+// boolean 的顯示文字，全 App 共用（包含篩選抽屜的選項與摘要）
 export function booleanText (value: boolean): string {
   return value ? '是' : '否'
 }
 
-// 日期的顯示格式，全 App 一致（篩選抽屜的摘要也用它）
+// 日期的顯示格式，全 App 共用（包含篩選抽屜的摘要）
 export function formatDate (date: Date): string {
   const year = date.getFullYear()
   const month = String(date.getMonth() + 1).padStart(2, '0')
@@ -238,9 +227,7 @@ export function formatDate (date: Date): string {
   return `${year}/${month}/${day}`
 }
 
-// 寫進 Sheet 的字串會被當成「使用者在那一格輸入」解析，有幾種形狀會讓那一格變成別的型別：
-// = 與 + 開頭變公式、0 開頭掉前導零、1/2 變日期、1E5 變數字。只有這幾種補一個單引號
-// （Sheet 的純文字前綴，不算內容、讀回來不含它），其他值原樣送出
+// Sheet 會改變型別的字串（= 與 + 開頭、0 開頭、1/2、1E5）前加單引號，其他值原樣送出（見 docs/topics/schema.md）
 const sheetTypeChanging = /^[=+0]|^\d+(?:\.\d+)?e[+-]?\d+$|^\d+(?:\/\d+)+$/i
 
 const sheetTextTypes = new Set<ColumnType>(['text', 'select', 'image'])
@@ -264,7 +251,7 @@ export function serializeRow (values: Record<string, unknown>, schema: TableSche
 // 'display' 為畫面上的文字，'sheet' 為寫回 Sheet 的文字
 export type FormatTarget = 'display' | 'sheet'
 
-// 真實與虛擬欄位都能用：虛擬欄位的值是 store 掛在 row 上的 getter
+// 適用於真實與虛擬欄位，虛擬欄位的值為 store 掛在 row 上的 getter
 export function formatColumnValue (row: object, column: AnyColumn, target: FormatTarget = 'display'): string {
   const record = row as Record<string, unknown>
   const value = record[column.key]
@@ -281,7 +268,7 @@ export function formatColumnValue (row: object, column: AnyColumn, target: Forma
     return target === 'sheet' ? String(value).toUpperCase() : booleanText(value)
   }
 
-  // ref 顯示對方的名字；對方還沒載或已被刪就退回 id
+  // ref 顯示父列的名稱。父列尚未載入或已刪除時顯示 id
   if (column.type === 'ref' && target === 'display') {
     const parent = record[`$${column.key}`] as { $label?: string } | undefined
     return parent?.$label ?? String(value)
@@ -290,7 +277,7 @@ export function formatColumnValue (row: object, column: AnyColumn, target: Forma
   return String(value)
 }
 
-// 真實欄位在前、虛擬欄位在後
+// 真實欄位在前，虛擬欄位在後
 export function allColumns (schema: TableSchema): AnyColumn[] {
   return [...schema.columns, ...(schema.virtualColumns ?? [])]
 }
@@ -299,36 +286,36 @@ export function findColumn (schema: TableSchema, key: string): AnyColumn | undef
   return allColumns(schema).find(column => column.key === key)
 }
 
-// searchable / sortable 是 key 的清單，順序就是面板上的順序；認不得的 key 靜靜跳過
+// searchable 與 sortable 為 key 的清單，順序即為面板上的順序。略過不存在的 key
 export function listedColumns (schema: TableSchema, keys: readonly string[] | undefined): AnyColumn[] {
   const columns = new Map(allColumns(schema).map(column => [column.key, column]))
   return (keys ?? []).map(key => columns.get(key)).filter(column => column !== undefined)
 }
 
-// 只知道欄位 key、還沒有 column 物件時用這個（rowLabel 用）
+// 只有欄位 key、沒有 column 物件時使用（供 rowLabel 使用）
 function formatField (row: object, schema: TableSchema, key: string): string {
   const column = findColumn(schema, key)
   return column ? formatColumnValue(row, column) : ''
 }
 
-// 一列怎麼稱呼：schema 的 labelColumn 那欄的顯示文字，沒設或空的就是 id。store 用它掛 row.$label
+// 一列的名稱：labelColumn 的顯示文字，未設定或為空時為 id。store 以此掛上 row.$label
 export function rowLabel (row: object, schema: TableSchema): string {
   const label = schema.labelColumn ? formatField(row, schema, schema.labelColumn) : ''
   return label || String((row as { id?: unknown }).id ?? '')
 }
 
-// 沒有 default 的欄位是 null；有的話套上去，函式型的在這裡才求值
+// 沒有 default 的欄位為 null。default 為函式時於此處求值
 function columnDefault (column: SchemaColumn): unknown {
   const value = column.default
   return typeof value === 'function' ? value() : value ?? null
 }
 
-// 給 schema 的 newId 用的現成產生器：前綴 + 8 碼十六進位隨機值（TPL-11eef1a8）。
+// 供 schema 的 newId 使用：前綴加 8 碼十六進位隨機值（例如 TPL-11eef1a8）
 export function prefixedId (prefix: string): () => string {
   return () => `${prefix}-${crypto.randomUUID().slice(0, 8)}`
 }
 
-// 依 schema 產生一筆 row 給新增表單當初始值；id 留空，送出時取主鍵那一欄的值，空的才發號
+// 依 schema 產生新增表單的初始列。id 留空，送出時取主鍵的值，主鍵為空時才產生
 export function emptyRow<Row> (schema: TableSchema): Row {
   const result: Record<string, unknown> = { id: '' }
 
@@ -339,8 +326,7 @@ export function emptyRow<Row> (schema: TableSchema): Row {
   return result as Row
 }
 
-// 把 row 攤成 { columnKey: 值 } 的物件，只帶 schema.columns 裡的真實欄位（主鍵那一欄也在內，系統的 id 不在）；
-// 送 create/update 給後端的 payload 用這個組
+// 將 row 轉為 { columnKey: 值 }，只含真實欄位（含主鍵，不含系統的 id）。用於 create 與 update 的 payload
 export function columnValues (row: object, schema: TableSchema): Record<string, unknown> {
   const result: Record<string, unknown> = {}
   for (const column of schema.columns) {

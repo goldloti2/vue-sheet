@@ -17,7 +17,7 @@
   })
 
   defineSlots<{
-    // 給的是截斷後的那幾列：要卡片就自己 v-for DataList，要表格就整批餵給 DataTable
+    // 提供截斷後的子列：卡片由頁面自行 v-for，表格則整批交給 DataTable
     default?: (slotProps: { rows: Row[] }) => unknown
   }>()
 

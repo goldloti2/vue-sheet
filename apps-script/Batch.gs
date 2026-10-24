@@ -1,4 +1,4 @@
-// 一次推送：整批操作（跨所有表）在 LockService 的鎖裡跑完，全有全無
+// 一次推送：整批操作（跨所有表）在 LockService 的鎖中執行，全有全無
 
 function runBatch (operations, since) {
   const lock = LockService.getScriptLock()
@@ -7,12 +7,12 @@ function runBatch (operations, since) {
   }
 
   try {
-    // 衝突比對跟寫入在同一把鎖裡。since 沒帶就是強制推送，不比對
+    // 衝突比對與寫入在同一把鎖中。未帶 since 即為強制推送，不比對
     if (since && since !== modifiedTime()) {
       throw apiError('試算表已被別處修改', 'modified')
     }
 
-    // 先規劃（只讀）、再寫入（只寫）：結構檢查全在規劃階段，所以全有全無不必回滾
+    // 先規劃（只讀取），再寫入（只寫入）。結構檢查全在規劃階段，因此無須回滾
     const plans = planBatch(operations)
     for (const table of Object.keys(plans)) {
       writePlan(plans[table])
@@ -51,7 +51,7 @@ function planOperation (plan, operation) {
 
   switch (operation.kind) {
     case 'create': {
-      // 冪等：id 已經在表上（或同一批裡剛新增過）就當作這次是重送，什麼都不做
+      // 冪等：id 已在表上，或同一批中剛新增過時，視為重送，不做任何事
       const queued = plan.creates.some(row => row[cache.idIndex] === id)
       if (index === -1 && !queued) {
         plan.creates.push(newRow(cache, id, values))
@@ -60,7 +60,7 @@ function planOperation (plan, operation) {
     }
 
     case 'update': {
-      // 只有進過佇列的那幾欄會進來，所以只記這幾格，其餘保持原狀
+      // 只記錄進入過佇列的那幾格，其餘的儲存格保持原狀
       plan.updates.push({ index: requireRow(index, id), changes: changedCells(cache, values) })
       return
     }
@@ -83,10 +83,10 @@ function requireRow (index, id) {
   return index
 }
 
-// 新列：整列照表頭排好，沒給的欄位留空
+// 新列：整列依表頭排列，未提供的欄位留空
 function newRow (cache, id, values) {
   const row = cache.header.map(() => '')
-  // id 原樣寫入：要跟 Sheet 上的顯示值比對才找得到列
+  // id 原樣寫入：須與 Sheet 上的顯示值比對才找得到列
   row[cache.idIndex] = id
   for (const change of changedCells(cache, values)) {
     row[change.column - 1] = change.value
@@ -94,12 +94,12 @@ function newRow (cache, id, values) {
   return row
 }
 
-// 寫入等於「在那一格打字」，所以字串會被 Sheet 解析（數字與日期刻意如此，見 README）
+// 寫入等同於在該格輸入，字串由 Sheet 解析。數字與日期刻意如此，見 README
 function writePlan (plan) {
   const cache = plan.cache
   const sheet = cache.sheet
 
-  // 改過的那幾格而已：沒送的欄位保留 Sheet 上手改的值，也不會蓋掉公式
+  // 只寫入修改過的儲存格，未送出的欄位保留 Sheet 上的值與公式
   for (const update of plan.updates) {
     const rowNumber = HEADER_ROW + 1 + update.index
     for (const change of update.changes) {
@@ -107,13 +107,13 @@ function writePlan (plan) {
     }
   }
 
-  // 新增的列接在資料後面，連續範圍一次寫完
+  // 新增的列接在資料之後，以連續範圍一次寫入
   if (plan.creates.length > 0) {
     sheet.getRange(HEADER_ROW + 1 + cache.rows.length, 1, plan.creates.length, cache.header.length)
       .setValues(plan.creates)
   }
 
-  // 刪列由下往上，否則刪掉前面的列之後、後面的列號會位移
+  // 刪除列由下往上，以免後面的列號位移
   for (const index of plan.deletes.slice().sort((a, b) => b - a)) {
     sheet.deleteRow(HEADER_ROW + 1 + index)
   }

@@ -5,8 +5,7 @@ import { computed, toValue, watchEffect } from 'vue'
 import { sortRows } from '@/schema/sort'
 import { useTablesStore } from '@/stores/tables'
 
-// 同一張表的三種讀法，都是同一份共用快取（store.rows），所以放同一個檔：
-// 整表、整表照 defaultSort 排、單筆。第一次讀到的人負責觸發載入
+// 讀取共用快取（store.rows）的三種方式：整表、依排序的整表、單一列。第一個讀取者觸發載入
 
 export function useTableList<Row> (table: MaybeRefOrGetter<TableKey>) {
   const store = useTablesStore()
@@ -26,7 +25,7 @@ export function useTableList<Row> (table: MaybeRefOrGetter<TableKey>) {
 export function useSortedTableList<Row> (
   table: MaybeRefOrGetter<TableKey>,
   schema: TableSchema,
-  // 使用者選的排序（排序面板）。不給就只照 schema.defaultSort
+  // 使用者於排序面板選擇的排序。省略時只依 schema.defaultSort
   sort?: MaybeRefOrGetter<SortSpec[] | null>,
 ) {
   const { data, loading, error } = useTableList<Row>(table)

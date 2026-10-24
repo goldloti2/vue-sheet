@@ -13,19 +13,19 @@
   import { beginTransition, canAnimate, markTransition } from '@/composables/shell/viewTransition'
   import { schemas } from '@/schema'
 
-  // 同時顯示多個面板（見 docs/components/panel/DashboardPage.md）：方格排版、關注點，以及各面板列表共用的搜尋、篩選與排序
+  // 同時顯示多個面板：方格排版、關注點，以及各列表面板共用的搜尋、篩選與排序（見 docs/components/panel/DashboardPage.md）
   const { layout = {}, interactive = false } = defineProps<{
-    // 面板的 name → 手機與電腦的排版；未列出的面板或留空的斷點為自動
+    // 面板的 name → 手機與電腦的排版。未列出的面板或留空的斷點為自動
     layout?: Record<string, { mobile?: PanelSize, desktop?: PanelSize }>
-    // 開啟時，點擊一列改為選取，與它直接相關的面板跟著改變
+    // 開啟時，點擊一列改為選取，與該列直接相關的面板跟著改變
     interactive?: boolean
   }>()
 
   const GAP = 8
-  // 寬的格數：手機 6、電腦 24；面板最少 2 格寬
+  // 寬的格數：手機 6，電腦 24。面板最少 2 格寬
   const COLS = { mobile: 6, desktop: 24 }
   const MIN_WIDTH = 2
-  // 電腦的自動：一個畫面放得下 3×2 個面板
+  // 電腦的自動大小：一個畫面放得下 3×2 個面板
   const DESKTOP_AUTO = { w: 8, h: 7 }
 
   const compact = useCompactLayout()
@@ -55,7 +55,7 @@
   // 同一時間只有一個面板能多選
   const selecting = computed(() => panels.find(entry => entry.selecting.value)?.name ?? null)
 
-  // 沒有小外殼的面板不能成為關注點；多選期間關注點不移動
+  // 沒有小外殼的面板不能成為關注點。多選期間關注點不移動
   function focus (name: string) {
     const entry = panels.find(panel => panel.name === name)
     if (!entry?.framed || (selecting.value !== null && selecting.value !== name)) {
@@ -64,7 +64,7 @@
     focused.value = name
   }
 
-  // 依排版類型決定寬高：{ w, h } 固定、{ h } 只控制高（寬同自動）、留空為自動
+  // 依排版類型決定寬高：{ w, h } 固定，{ h } 只控制高（寬同自動），留空為自動
   function requestFor (entry: DashboardPanelEntry): PanelRequest {
     const size = layout[entry.name]?.[compact.value ? 'mobile' : 'desktop'] ?? {}
     const autoWidth = compact.value ? cols.value : DESKTOP_AUTO.w
@@ -96,13 +96,12 @@
 
   const cell = computed(() => (contentWidth.value - (cols.value - 1) * GAP) / cols.value)
 
-  // 展開：以同一個網址推入一筆 history，於 state 記下面板；返回鍵或 ← 即回到前一筆而縮回。
-  // 網址不變，KeepAlive 不會重建此頁（見 docs/components/panel/DashboardPage.md 的「展開」）
+  // 展開：以同一個網址推入一筆 history，於 state 記下面板。返回鍵或 ← 即縮回（見 DashboardPage.md 的「展開」）
   const router = useRouter()
   const ownPath = router.currentRoute.value.fullPath
   const expanded = shallowRef<string | null>(null)
 
-  // 依目前這一筆 history 的 state 決定是否展開；KeepAlive 收起來時其他頁面的導覽不理會
+  // 依目前這一筆 history 的 state 決定是否展開。被 KeepAlive 收起時，忽略其他頁面的導覽
   function syncExpanded () {
     if (router.currentRoute.value.fullPath !== ownPath) {
       return
@@ -117,7 +116,7 @@
   onMounted(syncExpanded)
   onBeforeUnmount(router.afterEach(syncExpanded))
 
-  // 由面板小外殼上的展開鈕呼叫
+  // 由面板小外殼上的展開按鈕呼叫
   function expand (name: string) {
     const entry = panels.find(panel => panel.name === name)
     if (!entry?.framed) {
@@ -134,8 +133,7 @@
 
   const focusedEntry = computed(() => panels.find(entry => entry.name === focused.value))
 
-  // App Bar 的動作：平時沒有；關注面板多選中或已展開時，為該面板自己的動作。
-  // 面板中的登記交到這裡（只有關注面板的會進來），由此統一決定
+  // App Bar 的動作：平時沒有。關注面板多選中或已展開時，為該面板交到此處的動作
   const panelActions = shallowRef<(PageAction | null)[]>([])
   useAppBarActions(() => expanded.value || focusedEntry.value?.selecting.value ? panelActions.value : [])
   provide(appBarActionsKey, actions => {
@@ -159,14 +157,14 @@
   }
   provide(dashboardKey, context)
 
-  // 抽屜打開時先停在關注面板的那張表
+  // 抽屜開啟時，先停在關注面板的表
   const focusedTableLabel = computed(() => {
     const table = panels.find(entry => entry.name === focused.value)?.table
     return table ? schemas[table].tableLabel : ''
   })
   provideSharedListControls(focusedTableLabel)
 
-  // 面板內的轉場（見 docs/components/panel/DashboardPage.md 的「互動」）：先為面板命名並等 DOM 更新，舊畫面才截得到名字；進行中再有選取即直接套用
+  // 面板內的轉場：先為面板命名並等待 DOM 更新，舊畫面才截得到名稱。轉場進行中再有選取時直接套用
   async function transition (kind: 'fade' | 'forward' | 'back', update: () => void) {
     if (!canAnimate() || panelTransition.value) {
       update()
@@ -185,7 +183,7 @@
     })
   }
 
-  // 互動的選取；未開啟互動時不會有選取，詳細面板只顯示欄位名稱
+  // 互動的選取。未開啟互動時沒有選取，詳細面板只顯示欄位名稱
   provideDashboardSelection(() => interactive, transition)
 
   // 展開時不排方格，展開的面板與一般頁面相同

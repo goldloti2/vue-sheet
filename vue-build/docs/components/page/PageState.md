@@ -1,8 +1,8 @@
 # PageState
 
-「資料還沒到」的那一段畫面：載入中、載入失敗、找不到資料，三種狀態擋在內容前面，資料到手才畫 slot。
+資料尚未取得時的畫面。載入中、載入失敗、找不到資料三種狀態擋在內容前面，資料取得後才顯示 slot。
 
-**這是全 App 唯一一份那串階梯**。頁面與內容元件都不要自己寫——`DataList`、`DataForm` 這類元件只負責「有資料時怎麼畫」，狀態一律由這層處理（`FormPage` 內部就是包著它）。
+**此元件是全 App 唯一處理這三種狀態的地方**。頁面與內容元件皆不自行處理：`DataList`、`DataForm` 等元件只負責有資料時的顯示，狀態一律由此元件處理。`FormPage` 的內部即包著此元件。
 
 ## Usage
 
@@ -16,7 +16,7 @@
 </template>
 ```
 
-單筆的頁面多給一個 `empty`：
+顯示單一列的頁面另外提供 `empty`：
 
 ```vue
 <PageState :empty="!row" :error="error" :loading="loading">
@@ -30,20 +30,20 @@
 | --- | --- | --- |
 | `loading` | `boolean?` | 載入中 |
 | `error` | `string \| null?` | 載入失敗的訊息 |
-| `empty` | `boolean?` | 載入完了但沒東西可顯示。列表用不到（空列表就是空的） |
+| `empty` | `boolean?` | 已載入完成，但沒有內容可顯示。列表不使用此 prop，空列表即顯示為空 |
 | `emptyText` | `string?` | 預設「找不到這筆資料」 |
-| `spinner` | `'circular' \| 'linear'?` | 預設 `circular`（置中圓圈，**取代**內容，單筆用）；列表用 `linear`，長條貼在內容上緣、**內容留著** |
+| `spinner` | `'circular' \| 'linear'?` | 預設 `circular`：置中的圓圈，**取代**內容，用於單一列的頁面。列表使用 `linear`：長條貼在內容上緣，**保留**內容 |
 
 ## Slots
 
 | slot | 說明 |
 | --- | --- |
-| `default` | 資料到手才渲染。裡面的元件不需要再判斷載入狀態 |
+| `default` | 資料取得後才顯示。其中的元件無須再判斷載入狀態 |
 
 ## 備註
 
-- **`linear` 不會卸載內容**：進度條加在內容上面，不取代內容（`circular` 則為取代）
-- **動作失敗不經過這裡**：送出失敗、推送失敗等錯誤保留畫面上的內容，訊息顯示在內容底下，例如 `FormPage` 的 `error` prop
-- **一頁可以有好幾份**：主記錄之外的區塊（詳細頁內嵌的子表格、總覽頁的各區塊）各包各的，狀態不會互相影響
-- 三種狀態的優先順序是 loading → error → empty
-- **它渲染出來的不是單一元素**（資料到手時是「進度條 + slot」的 fragment）。三個版型（`ListPage`／`DetailPage`／`FormPage`）都在外面包一層 `div`
+- **`linear` 不卸載內容**：進度條加在內容上方，不取代內容。`circular` 取代內容
+- **動作失敗不經過此元件**：送出失敗、推送失敗等錯誤保留畫面上的內容，訊息顯示於內容下方，例如 `FormPage` 的 `error` prop
+- **一頁可以有多個 PageState**：主要的那一列以外的區塊，例如詳細頁內嵌的子表表格、總覽頁的各區塊，各自包一個。各區塊的狀態互不影響
+- 三種狀態的優先順序為 loading → error → empty
+- **此元件的輸出不是單一元素**：資料取得時為「進度條 + slot」的 fragment。三個版型（`ListPage`、`DetailPage`、`FormPage`）皆在外層包一個 `div`

@@ -8,21 +8,21 @@ import router, { leaveAfterAction, pushWithDefaults } from '@/router'
 import { schemas } from '@/schema'
 import { useTablesStore } from '@/stores/tables'
 
-// 有 confirm 就先問再跑 onClick（見 useActionRunner）；放動作的位置都吃 (PageAction | null)[]，null 略過
+// 有 confirm 時先詢問再執行 onClick（見 useActionRunner）。放置動作處皆接收 (PageAction | null)[]，略過 null
 export interface PageAction {
   key: string
   label: string
   icon: string
   onClick: () => void | Promise<void>
   confirm?: { title: string, text: string }
-  // 列上的動作用（schema/view.ts 的 RowActions）：顯示成圖示或文字，預設圖示
+  // 列上的動作（schema/view.ts 的 RowActions）顯示為圖示或文字，預設為圖示
   display?: 'icon' | 'text'
 }
 
-// detail 頁的欄位動作：欄位 key → 吃這一列、回傳動作，每欄一個
+// 詳細頁的欄位動作：欄位 key → 接收一列並回傳動作的函式，每欄一個
 export type FieldActions<Row extends object> = Record<string, (row: Row) => PageAction | null>
 
-// 框架內建動作的預設圖示全在這裡；表單的取消／送出（useTableForm）也從這裡拿
+// 框架內建動作的預設圖示，包含表單的取消與送出（useTableForm）
 export const actionIcons = {
   new: mdiPlus,
   edit: mdiPencil,
@@ -33,24 +33,23 @@ export const actionIcons = {
   save: mdiContentSave,
 } as const
 
-// 內建 builder 的文字與圖示都有預設，要換就傳在 builder 的最後一個參數
+// 內建 builder 的文字與圖示皆有預設，以 builder 的最後一個參數替換
 export interface ActionLook {
   label?: string
   icon?: string
 }
 
-// 把 builder 包成會隨資料更新的動作，給各表的 use表名Actions 用
+// 將 builder 包裝為隨資料更新的動作，供各表的 use表名Actions 使用
 export function useAction (build: () => PageAction | null): ComputedRef<PageAction | null> {
   return computed(build)
 }
 
-// 供 detail 頁使用：將以列為參數的動作綁定至當前那一筆，尚未載入時為 null
+// 供詳細頁使用：將以列為參數的動作綁定至目前的列，尚未載入時為 null
 export function useRowAction<Row> (row: Ref<Row | null>, build: (row: Row) => PageAction | null): ComputedRef<PageAction | null> {
   return useAction(() => row.value ? build(row.value) : null)
 }
 
-// 以下的 builder 都是一般函式：吃當下的值、回傳一個動作，不適用就回傳 null。
-// 不以列為參數者由各表的 use表名Actions 以 useAction 包裝；以列為參數者直接以一列呼叫，detail 頁再以 useRowAction 綁定
+// 以下的 builder 皆為一般函式，接收當下的值並回傳動作，不適用時回傳 null（包裝方式見 docs/topics/actions.md）
 
 export interface NewActionOptions {
   defaults?: MaybeRefOrGetter<Record<string, unknown>>
@@ -83,7 +82,7 @@ export function editAction (table: TableKey, row: { id: string }, look: ActionLo
   }
 }
 
-// 刪除的若是目前 detail 頁所顯示的那一筆，會自動離開；onDone 用於其他額外的處理
+// 刪除的列為目前詳細頁所顯示的列時，自動離開詳細頁。onDone 用於其他額外的處理
 export function deleteAction (table: TableKey, row: { id: string }, onDone?: () => void, look: ActionLook = {}): PageAction {
   return {
     key: 'delete',
@@ -125,7 +124,7 @@ export interface QuickEditOptions {
   onDone?: () => void
 }
 
-// 把選取的幾筆的某幾欄改成同一個值：只選一筆時對話框顯示那筆的現值，否則用 defaults
+// 將選取的列的指定欄位改為同一個值。只選取一列時對話框顯示該列的現值，否則使用 defaults
 export function quickEditAction<Row extends { id: string }> (
   table: TableKey,
   keys: (keyof Row & string)[],
@@ -156,9 +155,9 @@ export function quickEditAction<Row extends { id: string }> (
   }
 }
 
-// 以下三個常用在 detail 頁的欄位動作（DataDetail 的 fieldActions）
+// 以下三個 builder 常用於詳細頁的欄位動作（DataDetail 的 fieldActions）
 
-// ref 欄位：前往對方的 detail。用 push，回來時這一頁還在
+// ref 欄位：以 push 前往父列的詳細頁，返回時目前的頁面仍在
 export function goToRefAction (row: object, key: string, refTable: TableKey, look: ActionLook = {}): PageAction | null {
   const id = (row as Record<string, unknown>)[key]
   if (typeof id !== 'string' || id === '') {
@@ -173,7 +172,7 @@ export function goToRefAction (row: object, key: string, refTable: TableKey, loo
   }
 }
 
-// 文字欄位裡是網址：開新分頁
+// 文字欄位的值為網址時，於新分頁開啟
 export function openUrlAction (row: object, key: string, look: ActionLook = {}): PageAction | null {
   const url = (row as Record<string, unknown>)[key]
   if (typeof url !== 'string' || !/^https?:\/\//.test(url)) {
@@ -196,7 +195,7 @@ export interface SetFieldOptions {
   confirm?: PageAction['confirm']
 }
 
-// 立即型：把這一欄改成某個值。value 是函式，點下去那一刻才算（例如 () => new Date()）
+// 立即型：將此欄改為某個值。value 為函式，於點選時求值（例如 () => new Date()）
 export function setFieldAction (
   table: TableKey,
   row: { id: string },

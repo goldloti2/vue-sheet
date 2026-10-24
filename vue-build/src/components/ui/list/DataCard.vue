@@ -14,7 +14,7 @@
     selectable?: boolean
     selectMode?: boolean
     selected?: boolean
-    // dashboard 的互動：是否為選取的那一列，以及點擊是否改為選取（由 ListPage 給）
+    // dashboard 的互動：是否為選取的那一列，以及點擊是否改為選取（由 ListPage 提供）
     current?: boolean
     pickable?: boolean
   }>()
@@ -27,7 +27,7 @@
 
   const fields = computed(() => view(row))
 
-  // 沒指定任何位置的層整層隱藏；指定了但沒有值的位置保留
+  // 未指定任何位置的層整層隱藏，已指定但沒有值的位置保留
   const hasHeader = computed(() => {
     const { title, subtitle, image } = fields.value.header
     return title !== undefined || subtitle !== undefined || image !== undefined
@@ -39,7 +39,7 @@
   // 多選模式下隱藏動作列
   const hasActions = computed(() => !selectMode && fields.value.actions.slice(0, 4).some(action => action !== null))
 
-  // 尚未量得實際高度前的替代值，依出現的層加總（各層高度見樣式）
+  // 量得實際高度之前的替代值，依出現的層加總（各層的高度見樣式）
   const estimateStyle = computed(() => {
     const body = fields.value.body
     const bodyHeight = hasBody.value
@@ -91,7 +91,7 @@
         />
       </span>
 
-      <!-- 沒指定的位置不畫；指定了但沒有值的保留位置（頭像留同大小的空白） -->
+      <!-- 未指定的位置不顯示，已指定但沒有值的位置保留（頭像保留同大小的空白） -->
       <div v-if="hasHeader" class="card-item__header">
         <img v-if="fields.header.image" alt="" class="card-item__avatar" :src="fields.header.image">
         <span v-else-if="fields.header.image === null" class="card-item__avatar" />
@@ -102,7 +102,7 @@
         </div>
       </div>
 
-      <!-- 大圖指定了但沒有圖時，以同樣大小的灰色方塊佔位 -->
+      <!-- 已指定大圖但沒有圖片時，以同樣大小的灰色方塊佔位 -->
       <img v-if="fields.body.image" alt="" class="card-item__image" :src="fields.body.image">
 
       <div v-else-if="fields.body.image === null" class="card-item__image card-item__placeholder">
@@ -116,7 +116,7 @@
       </div>
     </component>
 
-    <!-- 按鈕與連結並列，不包在 <a> 內，點擊按鈕不會進入 detail -->
+    <!-- 按鈕與連結並列，不包在 <a> 中，點擊按鈕不進入詳細頁 -->
     <ViewActions v-if="hasActions" :actions="fields.actions" class="card-item__actions list-row-above-link" variant="slots" />
   </div>
 </template>
@@ -127,8 +127,7 @@
   width: 100%;
   margin-bottom: var(--list-card-gap);
   overflow: hidden;
-  /* 畫面外的卡片不排版也不繪製。替代高度＝第 1、4 層＋第 3 層＋16:9 的大圖；100cqw 為 ListPage 內容區的寬度，即卡片的寬度。
-     第 3 層另以 --card-body-shown 覆寫（窄版時為 0），行內樣式的 --card-body-height 才不會蓋過 container query */
+  /* 替代高度為各層加總（100cqw 即卡片寬）。第 3 層以 --card-body-shown 覆寫，以免行內樣式蓋過 container query */
   content-visibility: auto;
   contain-intrinsic-size: auto calc(var(--card-fixed-height) + var(--card-body-shown, var(--card-body-height)) + var(--card-image-ratio) * 100cqw * 9 / 16);
   border-radius: var(--list-card-radius);
@@ -205,7 +204,7 @@
   -webkit-box-orient: vertical;
 }
 
-/* 指定了但沒有值：以零寬字元撐出一行的高度 */
+/* 已指定但沒有值時，以零寬字元撐出一行的高度 */
 .card-item__line:empty::before,
 .card-item__summary:empty::before {
   content: '\200b';
@@ -222,7 +221,7 @@
   }
 }
 
-/* 第 4 層：8px 上下內距 + 32px 按鈕 = 48px。整列寬度皆為動作列，僅按鈕接收點擊，空白處仍落在連結上 */
+/* 第 4 層：8px 上下內距 + 32px 按鈕 = 48px。只有按鈕接收點擊，空白處仍落在連結上 */
 .card-item__actions {
   padding: 8px;
   pointer-events: none;

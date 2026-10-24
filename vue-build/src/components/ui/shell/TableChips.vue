@@ -5,12 +5,12 @@
     tables: ListTable[]
   }>()
 
-  // 選中那張表的 tableLabel
+  // 選取的表的 tableLabel
   const picked = defineModel<string>({ required: true })
 </script>
 
 <template>
-  <!-- 多張表才需要選；每張表的條件與排序是分開的，同時生效 -->
+  <!-- 有多張表時才顯示。每張表的條件與排序各自獨立，同時生效 -->
   <v-chip-group
     v-if="tables.length > 1"
     v-model="picked"

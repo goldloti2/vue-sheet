@@ -5,11 +5,11 @@ import { useRouter } from 'vue-router'
 import { useDashboardSelection } from '@/composables/shell/useDashboardSelection'
 import { usePanelActive } from '@/composables/shell/usePanelActive'
 
-// 列表頁把「畫面上實際看到的順序」發布出來，detail頁靠它算前後鄰居。
+// 列表頁發布畫面上實際的順序，詳細頁以此計算上一列與下一列
 const orders = reactive(new Map<TableKey, string[]>())
 
 export function useListOrder (table: TableKey, ids: MaybeRefOrGetter<string[]>): void {
-  // 被 KeepAlive 收起來的列表、以及不是當前頁籤的面板，都仍然全速運轉，不擋的話會蓋掉當前那份順序
+  // KeepAlive 保留的列表與非目前頁籤的面板仍在運作，因此只由作用中的列表發布順序
   const cached = shallowRef(true)
   const panelActive = usePanelActive()
   onActivated(() => {
@@ -19,7 +19,7 @@ export function useListOrder (table: TableKey, ids: MaybeRefOrGetter<string[]>):
     cached.value = false
   })
 
-  // 只停止更新、不清掉：detail 頁是在列表離場之後才來讀的
+  // 只停止更新，不清除。詳細頁於列表離開畫面後才讀取
   watchEffect(() => {
     if (cached.value && panelActive.value) {
       orders.set(table, [...toValue(ids)])
@@ -39,7 +39,7 @@ interface SiblingNav {
   swipe: { left: () => void, right: () => void }
 }
 
-// detail 頁呼叫：上/下一筆的導覽。於 dashboard 的面板中改為換選取，不離開 dashboard
+// 詳細頁呼叫：上一列與下一列的導覽。於 dashboard 的面板中改為切換選取，不離開 dashboard
 export function useSiblingNav (table: TableKey, id: MaybeRefOrGetter<string>): SiblingNav {
   const router = useRouter()
   const dashboard = useDashboardSelection()
@@ -74,7 +74,7 @@ export function useSiblingNav (table: TableKey, id: MaybeRefOrGetter<string>): S
   return { siblings, goPrev, goNext, swipe: { left: goNext, right: goPrev } }
 }
 
-// 給 router 判斷「同一個路由換 id」的動畫方向用。
+// 供 router 判斷同一個路由切換 id 時的動畫方向
 export function siblingDirection (fromId: string, toId: string): 'forward' | 'back' | null {
   for (const order of orders.values()) {
     const from = order.indexOf(fromId)

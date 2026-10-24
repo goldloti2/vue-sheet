@@ -1,9 +1,9 @@
 import { shallowRef } from 'vue'
 
-// 同網域的其他 App 共用同一份 localStorage，key 帶上 BASE_URL 才不會互相蓋掉
+// 同網域的其他 App 共用 localStorage，key 加上 BASE_URL 以免互相覆蓋
 const KEY = `${import.meta.env.BASE_URL}:token`
 
-// 無痕模式或封鎖網站資料時 localStorage 會丟錯，一律當作沒存
+// 無痕模式或封鎖網站資料時 localStorage 拋出錯誤，一律視為未儲存
 function read (): string | null {
   try {
     return localStorage.getItem(KEY)
@@ -12,7 +12,7 @@ function read (): string | null {
   }
 }
 
-// localStorage 不是響應式的，畫面與 guard 都讀這一份
+// localStorage 不是響應式的，畫面與 guard 皆讀取此 ref
 export const token = shallowRef<string | null>(read())
 
 export function setToken (value: string): void {
@@ -20,7 +20,7 @@ export function setToken (value: string): void {
   try {
     localStorage.setItem(KEY, value)
   } catch {
-    // 存不進去就只在這次開啟有效
+    // 無法儲存時，token 只在此次開啟期間有效
   }
 }
 
@@ -29,6 +29,6 @@ export function clearToken (): void {
   try {
     localStorage.removeItem(KEY)
   } catch {
-    // 同上
+    // 無法移除時忽略
   }
 }

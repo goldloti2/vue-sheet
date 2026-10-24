@@ -12,18 +12,15 @@ import { useListControls } from '@/composables/shell/useListControls'
 import { useSharedListControls } from '@/composables/shell/useSharedListControls'
 
 export interface ListPageOptions<Row> {
-  // 一頁接好幾張表時關掉，改由頁面自己 useListControls 一次登記全部（見 docs/topics/search.md）。
-  // 傳 false 時完全由頁面手動處理：不自行登記，也不加入 TabPage 等容器的共用控制
+  // false：不自行登記，也不加入容器的共用控制，由頁面以 useListControls 登記（見 docs/topics/search.md）
   search?: boolean
-  // 同上，每張表傳同一條進來，搜尋才會同時作用在每張表上。不給就自己生一條
+  // 搭配 search: false 使用，每張表傳入同一個 query。省略時自行建立
   query?: Ref<string>
-  // 只留這些列，位於篩選與搜尋之前（例如頁籤的狀態）；函式中讀到的 ref 改變時重算
+  // 只保留符合的列（例如頁籤的狀態），於篩選與搜尋之前套用。函式讀取的 ref 改變時重算
   scope?: (row: Row) => boolean
 }
 
-// 列表頁的資料層：整表 → scope（含 dashboard 的互動）→ 篩選 → 搜尋，加上長按多選。
-// rows 是畫面該顯示的那些；allRows 是沒過濾的整表（篩選抽屜的選項從它來）。
-// 位於 TabPage 或 DashboardPage 之內時，搜尋字串、篩選與排序取自容器共用的那份，不自行登記
+// 列表頁的資料層：整表 → scope（含 dashboard 的互動）→ 篩選 → 搜尋，以及多選（見 docs/components/page/ListPage.md）
 export function useListPage<Row extends { id: string }> (
   table: TableKey,
   schema: TableSchema,
@@ -50,9 +47,9 @@ export function useListPage<Row extends { id: string }> (
   return { rows, allRows, loading, error, query, filters, sort, selection: useMultiSelect() }
 }
 
-// 不在容器之內：自己一份排序、篩選與搜尋字串，並自行登記
+// 不在容器內時：自行建立排序、篩選與搜尋字串，並自行登記
 function ownControls<Row extends { id: string }> (table: TableKey, schema: TableSchema, options: ListPageOptions<Row>) {
-  // 使用者選的排序；null 就是 schema.defaultSort。單欄排序，defaultSort 永遠是 tiebreaker
+  // 使用者選擇的單欄排序，null 表示 schema.defaultSort。defaultSort 一律作為次要排序
   const sort = ref<SortSpec | null>(null)
   const { data: allRows, loading, error } = useSortedTableList<Row>(table, schema, () => sort.value ? [sort.value] : null)
 

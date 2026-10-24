@@ -1,11 +1,11 @@
 import { sortByKey } from './sort'
 
-// 分組：純函數，把一批 row 分成巢狀分組。分組鍵不吃 schema，由呼叫端給
+// 分組：純函數，將列分為巢狀分組。分組鍵不使用 schema，由呼叫端提供
 
 export interface GroupLevel<Row> {
-  // 排序用，與 label 分開
+  // 排序用的鍵，與 label 分開
   sortKey: (row: Row) => string | number
-  // 回傳 null 表示這一列於此層不再往下分：同一組中這類的列併成一個沒有標題的子組
+  // 回傳 null 時，此列於此層不再細分。同一組中這類的列併為一個沒有標題的子組
   label: (row: Row) => string | null
 }
 
@@ -54,8 +54,7 @@ function buildGroups<Row> (rows: readonly Row[], levels: readonly GroupLevel<Row
     : { label: group.label, subgroups: buildGroups(group.rows, restLevels) })
 }
 
-// 依多層分組鍵把 rows 分成巢狀分組（由外到內）。levels 依序疊加穩定排序，
-// 原本的排序（例如 sortRows 排好的 defaultSort）會保留成最內層的 tiebreaker
+// 依多層分組鍵將 rows 分為巢狀分組（由外到內）。原本的排序保留為最內層的次要排序
 export function groupRows<Row> (rows: readonly Row[], levels: readonly GroupLevel<Row>[]): RowGroup<Row>[] {
   let sorted = [...rows]
   for (let i = levels.length - 1; i >= 0; i--) {
@@ -64,7 +63,7 @@ export function groupRows<Row> (rows: readonly Row[], levels: readonly GroupLeve
   return buildGroups(sorted, levels)
 }
 
-// 把巢狀分組攤回一維，順序就是畫面上由上往下的順序（給 useListOrder 用）
+// 將巢狀分組攤平為一維，順序與畫面由上往下的順序相同（供 useListOrder 使用）
 export function flattenGroups<Row> (groups: readonly RowGroup<Row>[]): Row[] {
   return groups.flatMap(group => 'rows' in group ? group.rows : flattenGroups(group.subgroups))
 }

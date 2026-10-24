@@ -9,17 +9,17 @@
   import { appBarSelectionKey } from '@/composables/shell/useShellActions'
   import { relations } from '@/schema/relations'
 
-  // dashboard 的一個面板（見 docs/components/panel/DashboardPanel.md）：小外殼、關注點，以及控制面板內容的各項登記何時生效
+  // dashboard 的一個面板：小外殼、關注點，以及面板內容各項登記生效的時機（見 docs/components/panel/DashboardPanel.md）
   const { name, title, frame = true, table, via } = defineProps<{
     // 對應 DashboardPage 的 layout
     name: string
     // 小外殼上的標題
     title?: string
-    // 是否有小外殼；沒有時不能成為關注點
+    // 是否有小外殼。沒有時不能成為關注點
     frame?: boolean
-    // 面板內容所屬的表，抽屜打開時先停在關注面板的這張表
+    // 面板內容所屬的表。抽屜開啟時，先停在關注面板的這張表
     table?: TableKey
-    // 互動經由哪個 ref 欄位連動：子表的列表為自己的欄位，父表的詳細面板為子表的欄位。不給時用全部（詳細面板取第一個）
+    // 互動經由的 ref 欄位：子表的列表為自己的欄位，父表的詳細面板為子表的欄位。未提供時使用全部
     via?: string
   }>()
 
@@ -27,7 +27,7 @@
   if (!injected) {
     throw new Error('DashboardPanel 須放在 DashboardPage 之內')
   }
-  // 另存一份已確定存在的，函式宣告（會被提升）中才不必再判斷
+  // 另存一份已確定存在的值，供函數宣告（會被提升）使用
   const dashboard: DashboardContext = injected
 
   provide(dashboardViaKey, via)
@@ -46,17 +46,17 @@
 
   // 面板中的登記（usePanelActive 的使用者）只在關注面板生效，與 TabPage 的頁籤同一套機制
   provide(panelActiveKey, active)
-  // FAB、DetailPage 的上下一筆與左右滑動僅於展開時啟用
+  // FAB、DetailPage 的上一列與下一列、左右滑動，只在展開時啟用
   provide(panelFullPageKey, expanded)
 
-  // App Bar 該顯示什麼由 DashboardPage 決定（見其 appBarActions）；此處只記下面板是否在多選
+  // App Bar 的內容由 DashboardPage 決定（見其 appBarActions），此處只記錄面板是否在多選
   const setSelection = inject(appBarSelectionKey, null)
   provide(appBarSelectionKey, cancel => {
     selecting.value = cancel !== null
     setSelection?.(cancel)
   })
 
-  // 手機自動排版的高度：量測小外殼與內容的實際高度，換算成格數（最多 8 格）
+  // 手機自動排版的高度：量測小外殼與內容的實際高度，換算為格數（最多 8 格）
   const header = useTemplateRef('header')
   const content = useTemplateRef('content')
   const naturalHeight = shallowRef(0)
@@ -88,7 +88,7 @@
     }
     : {})
 
-  // 面板內的轉場進行中才命名，平時不命名，換頁時才會隨整個畫面一起滑動（name 中不能用於 CSS 名稱的字元換成 _）
+  // 只在面板內的轉場進行中命名，換頁時隨整個畫面滑動。name 中不能用於 CSS 名稱的字元換成 _
   const transitionStyle = computed(() => {
     const mode = dashboard.panelTransition.value
     if (mode === 'fade') {
@@ -97,10 +97,10 @@
     return mode === 'slide' && expanded.value ? { viewTransitionName: 'dashboard-panel-active' } : {}
   })
 
-  // 另一個面板在多選時，此面板視為不存在：於捕獲階段攔下點擊與長按（不用 inert，面板自己的捲動才不受影響）
+  // 另一個面板多選時，於捕獲階段攔下點擊與長按。不使用 inert，面板本身的捲動不受影響
   const locked = computed(() => dashboard.selecting.value !== null && dashboard.selecting.value !== name)
 
-  // 點擊面板的任何地方即成為關注點（捕獲階段，長按進入多選前即已移到此面板）
+  // 點擊面板的任何地方，即成為關注點。於捕獲階段處理，長按進入多選前即已移到此面板
   function onPointerdown (event: PointerEvent) {
     if (locked.value) {
       event.stopPropagation()
@@ -141,7 +141,7 @@
       </button>
     </header>
 
-    <!-- 面板在自己的框內捲動；展開時隨整頁捲動 -->
+    <!-- 面板在自己的框內捲動，展開時隨整頁捲動 -->
     <div class="dashboard-panel__body">
       <div ref="content">
         <slot />
@@ -162,13 +162,13 @@
   border-radius: 12px;
 }
 
-/* 關注點以外框標示；用 outline 而非加粗 border，面板大小不變 */
+/* 關注點以外框標示。使用 outline，不加粗 border，面板大小不變 */
 .dashboard-panel--focused {
   outline: 2px solid rgb(var(--v-theme-primary));
   outline-offset: -1px;
 }
 
-/* 另一個面板多選中：稍微調暗，游標不顯示為可點擊 */
+/* 另一個面板多選中：稍微調暗，游標不顯示為可點擊的樣式 */
 .dashboard-panel {
   transition: opacity 0.2s;
 }
@@ -212,7 +212,7 @@
   border-radius: 14px;
 }
 
-/* 內容依面板的寬度切換窄版（見 docs/components/panel/DashboardPanel.md）；一般頁面沒有這個 container，不會觸發 */
+/* 內容依面板的寬度切換窄版。一般頁面沒有這個 container，不會觸發 */
 .dashboard-panel__body {
   flex: 1;
   min-height: 0;

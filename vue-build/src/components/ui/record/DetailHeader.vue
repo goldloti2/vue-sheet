@@ -4,7 +4,7 @@
   import FormattedValue from '@/components/ui/view/FormattedValue.vue'
   import ViewActions from '@/components/ui/view/ViewActions.vue'
 
-  // detail 頁的標頭：僅使用 image、title、subtitle、summary 與這一列的動作（defineView）
+  // 詳細頁的標頭：只使用 image、title、subtitle、summary 與這一列的動作（defineView）
   const { row, view } = defineProps<{
     row: Row
     view: RowView<Row>
@@ -18,7 +18,7 @@
 
 <template>
   <div v-if="fields.image || hasText || hasActions" class="detail-header">
-    <!-- 有圖片時寬度貼齊畫面兩側，文字疊於圖片下緣；沒有圖片時為透明背景，寬度與欄位區相同、高度僅為文字的高度 -->
+    <!-- 有圖片時貼齊畫面兩側，文字疊於圖片下緣。沒有圖片時背景透明，寬度與欄位區相同 -->
     <div class="detail-header__top" :class="{ 'detail-header__top--image': fields.image }">
       <img v-if="fields.image" alt="" class="detail-header__image" :src="fields.image">
 
@@ -48,7 +48,7 @@
   position: relative;
 }
 
-/* 固定 16:9、裁切填滿；寬螢幕上以 40vh 為上限 */
+/* 固定 16:9，裁切填滿。寬螢幕上以 40vh 為上限 */
 .detail-header__image {
   display: block;
   width: 100%;
@@ -61,7 +61,7 @@
   padding-bottom: 0;
 }
 
-/* 疊於圖片下緣的文字墊一層由透明至深色的漸層，圖片再亮也看得清楚 */
+/* 疊於圖片下緣的文字墊一層由透明至深色的漸層，圖片再亮也清楚可見 */
 .detail-header__top--image .detail-header__scrim {
   position: absolute;
   right: 0;
@@ -84,7 +84,7 @@
   opacity: 0.87;
 }
 
-/* 摘要與標題同色、與副標同大小；上方空一行，沒有副標時與標題亦隔開 */
+/* 摘要與標題同色、與副標同大小。上方空一行，沒有副標時也與標題隔開 */
 .detail-header__summary {
   margin-top: 1lh;
 }

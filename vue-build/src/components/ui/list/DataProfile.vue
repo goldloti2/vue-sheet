@@ -15,7 +15,7 @@
     selectable?: boolean
     selectMode?: boolean
     selected?: boolean
-    // dashboard 的互動：是否為選取的那一列，以及點擊是否改為選取（由 ListPage 給）
+    // dashboard 的互動：是否為選取的那一列，以及點擊是否改為選取（由 ListPage 提供）
     current?: boolean
     pickable?: boolean
   }>()
@@ -65,7 +65,7 @@
         size="20"
       />
 
-      <!-- 沒指定的位置不畫；指定了但沒有值的保留位置（頭像留同大小的空白） -->
+      <!-- 未指定的位置不顯示，已指定但沒有值的位置保留（頭像保留同大小的空白） -->
       <img v-if="fields.image" alt="" class="profile-item__avatar" :src="fields.image">
       <span v-else-if="fields.image === null" class="profile-item__avatar" />
 
@@ -89,7 +89,7 @@
   width: 100%;
   padding: 12px 8px 12px 16px;
   margin-bottom: var(--list-card-gap);
-  /* 畫面外的卡片不排版也不繪製；68px 為尚未量得實際高度前的替代值 */
+  /* 畫面外的卡片不排版。68px 為量得實際高度之前的替代值 */
   content-visibility: auto;
   contain-intrinsic-size: auto 68px;
   border-radius: var(--list-card-radius);
@@ -122,7 +122,7 @@
   white-space: nowrap;
 }
 
-/* 指定了但沒有值：以零寬字元撐出一行的高度 */
+/* 已指定但沒有值時，以零寬字元撐出一行的高度 */
 .profile-item__title:empty::before,
 .profile-item__subtitle:empty::before {
   content: '\200b';

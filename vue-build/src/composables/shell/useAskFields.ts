@@ -5,9 +5,9 @@ import { isEmpty, validateRow } from '@/schema/validation'
 
 export interface AskFieldsOptions {
   title?: string
-  // 要改的那幾筆；剛好一筆時，那欄非空就拿現值當初始值。有給時主鍵那一欄唯讀
+  // 要修改的列。只有一列時，以非空的現值為初始值。有提供時主鍵唯讀
   rows?: readonly object[]
-  // 沒有現值時的初始值，函式型的在打開對話框那一刻才求值
+  // 沒有現值時的初始值。函式於開啟對話框時求值
   defaults?: Record<string, ColumnDefault<unknown>>
 }
 
@@ -22,7 +22,7 @@ interface FieldsDialogState {
   lockId: boolean
 }
 
-// 全 App 一個「問幾個欄位」對話框，由 AppShell 渲染（見 docs/topics/actions.md 的「快速編輯對話框」）
+// 全 App 共用一個詢問欄位的對話框，由 AppShell 渲染（見 docs/topics/actions.md 的「快速編輯對話框」）
 export const fieldsDialog = shallowReactive<FieldsDialogState>({
   open: false,
   title: '',
@@ -75,13 +75,13 @@ function validate (): boolean {
   return Object.keys(fieldsDialog.errors).length === 0
 }
 
-// 只問 schema 裡的幾個欄位；resolve 成那幾欄的值，取消是 null
+// 詢問 schema 中指定的欄位，resolve 為這些欄位的值。取消時為 null
 export function askFields<Row extends object> (
   schema: TableSchema,
   keys: (keyof Row & string)[],
   options: AskFieldsOptions = {},
 ): Promise<Partial<Row> | null> {
-  // 上一個還開著就當作取消
+  // 上一個對話框仍開啟時，視為取消
   settle(null)
 
   fieldsDialog.schema = schema
@@ -107,21 +107,21 @@ export function confirmFields (): void {
   }
 }
 
-// 按過一次確定之後才即時更新錯誤，跟表單頁一致
+// 按下一次確定後才即時更新錯誤，與表單頁相同
 watch(() => fieldsDialog.form, () => {
   if (fieldsDialog.showErrors) {
     validate()
   }
 })
 
-// 點對話框外面關掉也算取消
+// 點選對話框外側關閉時也視為取消
 watch(() => fieldsDialog.open, open => {
   if (!open) {
     settle(null)
   }
 })
 
-// 對話框掛在 AppShell 上會跨路由存活，換頁就關掉
+// 對話框位於 AppShell，換頁後仍存在，因此換頁時關閉
 router.afterEach(() => {
   settle(null)
 })

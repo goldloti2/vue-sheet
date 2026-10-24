@@ -20,7 +20,7 @@
     }
   }
 
-  // 登入頁會被 KeepAlive 留著，離開就把密碼清掉，不留在記憶體裡
+  // 登入頁由 KeepAlive 保留，離開時清除密碼，不留在記憶體中
   onDeactivated(() => {
     password.value = ''
   })

@@ -1,7 +1,6 @@
-// dashboard 各面板於方格中的位置（見 docs/components/panel/DashboardPage.md 的「排版」）。純函式：
-// CSS grid 遇到座標重疊時直接讓面板疊在一起，因此位置由這裡算好，CSS 僅照著繪製
+// dashboard 各面板於方格中的位置，純函數。CSS 只依結果繪製（見 DashboardPage.md 的「排版」）
 
-// 設計者給的排版：皆以格數表示，x、y 自 1 起算
+// 設計者指定的排版：皆以格數表示，x、y 自 1 起算
 export interface PanelSize {
   x?: number
   y?: number
@@ -25,8 +24,7 @@ export interface PanelPlacement {
   h: number
 }
 
-// 依宣告的順序逐一放入，重疊時移動後放的那一個：先往右（x + 1），放不下才換到下一列的開頭（y + 1、x 回到 1）。
-// 起點：有給的座標照用；沒給 x 時接在上一個面板之後（只給 y 時從該列的開頭），沒給 y 時與上一個面板同一列
+// 依宣告的順序放入，重疊時後放的往右移，放不下再換到下一列的開頭。起點規則見 DashboardPage.md 的「排版」
 export function placePanels (requests: readonly PanelRequest[], cols: number): Map<string, PanelPlacement> {
   const occupied = new Set<string>()
   const placements = new Map<string, PanelPlacement>()
@@ -51,12 +49,12 @@ export function placePanels (requests: readonly PanelRequest[], cols: number): M
     placements.set(name, { x, y, w, h })
   }
 
-  // 上一個面板的右側，沒給座標的面板從這裡開始找
+  // 上一個面板的右側，沒有座標的面板從此處開始尋找
   let cursorX = 1
   let cursorY = 1
 
   for (const request of requests) {
-    // 寬度不超過整行，x 不讓面板超出右緣
+    // 寬度不超過整行，x 不使面板超出右緣
     const w = Math.min(Math.max(request.w, 1), cols)
     const h = Math.max(request.h, 1)
     const startX = request.x === undefined
@@ -77,7 +75,7 @@ export function placePanels (requests: readonly PanelRequest[], cols: number): M
       }
     }
 
-    // 有給的座標被改動，表示與先放的面板重疊
+    // 指定的座標被改動，表示與先放的面板重疊
     const moved = (request.x !== undefined && x !== startX) || (request.y !== undefined && y !== startY)
     if (import.meta.env.DEV && moved) {
       console.warn(`dashboard：面板「${request.name}」與先宣告的面板重疊，已移至第 ${x} 欄、第 ${y} 列`)

@@ -8,7 +8,7 @@
     schema: TableSchema
     keys: readonly string[]
     errors?: Record<string, string>
-    // 修改既有的列時為 true：主鍵那一欄唯讀
+    // 修改既有的列時為 true：主鍵欄唯讀
     lockId?: boolean
   }
 

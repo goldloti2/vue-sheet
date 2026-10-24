@@ -16,9 +16,9 @@
   import { usePanelFullPage } from '@/composables/shell/usePanelActive'
 
   defineSlots<{
-    // 這張表額外要放的東西，擺在欄位下面。兩個 slot 都是資料到手才渲染，所以 row 一定不是 null
+    // 欄位下方額外放置的內容。兩個 slot 皆於資料取得後才顯示，row 不會是 null
     default?: (props: { row: Row }) => unknown
-    // 同上，但擺在欄位上面（子表才是主體、欄位只是附註的頁面用）
+    // 欄位上方額外放置的內容，用於子表為主體的頁面
     top?: (props: { row: Row }) => unknown
   }>()
 
@@ -31,11 +31,11 @@
     error?: string | null
     // 這一頁的欄位順序，覆寫 schema 的 detailOrder（見 DataDetail）
     order?: readonly RowKey<Row>[]
-    // 欄位 key → 動作，每欄一個（見 DataDetail）
+    // 欄位 key → 動作，每一欄一個（見 DataDetail）
     fieldActions?: FieldActions<Row>
-    // 快速編輯的欄位：直接是輸入元件，改了即寫入（見 DataDetail）
+    // 快速編輯的欄位：直接顯示為輸入元件，修改後即寫入（見 DataDetail）
     editable?: readonly RowKey<Row>[]
-    // 右下角的 FAB，通常是編輯
+    // 右下角的 FAB，通常為編輯
     fab?: (PageAction | null)[]
     // 選用：整頁最上方的標頭區塊（defineView，見 DetailHeader）
     header?: RowView<Row>
@@ -43,11 +43,11 @@
     layout?: DetailFieldLayout
   }>()
 
-  // 左右滑動換上下一筆；RecordNav 的兩顆箭頭是同一份順序。兩者皆只在以整頁呈現時啟用（dashboard 的面板中停用）
+  // 左右滑動與 RecordNav 的箭頭使用同一份順序，只在整頁呈現時啟用，dashboard 的面板中停用
   const { swipe } = useSiblingNav(props.table, () => props.id)
   const fullPage = usePanelFullPage()
 
-  // dashboard 的詳細面板尚無選取時，只顯示欄位名稱，不顯示「找不到這筆資料」
+  // dashboard 的詳細面板尚未選取時，只顯示欄位名稱，不顯示「找不到這筆資料」
   const dashboard = useDashboardSelection()
   const blank = computed(() => dashboard !== null && !props.id)
 </script>
@@ -63,7 +63,7 @@
     />
 
     <PageState v-else :empty="!row" :error="error" :loading="loading">
-      <!-- PageState 已經擋掉 null 了，這層只是讓型別看得出來 -->
+      <!-- PageState 已擋下 null，此層只用於縮小型別 -->
       <template v-if="row">
         <DetailHeader v-if="header" :row="row" :view="header" />
 
@@ -78,7 +78,7 @@
           :schema="schema"
         />
 
-        <!-- 這張表額外要放的東西：子表、說明、圖表… -->
+        <!-- 這張表額外放置的內容，例如子表、說明、圖表 -->
         <slot :row="row" />
       </template>
     </PageState>

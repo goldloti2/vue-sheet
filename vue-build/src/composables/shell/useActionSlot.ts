@@ -6,7 +6,7 @@ import { usePanelActive } from '@/composables/shell/usePanelActive'
 export type SlotSetter<Value> = (value: Value) => void
 export type ActionSlotSetter = SlotSetter<(PageAction | null)[]>
 
-// 把頁面的東西登記到 `AppShell` 上的某一塊，不在畫面上（被 KeepAlive 收起來、或所在頁籤不是當前）就還原成 empty
+// 將頁面的內容登記至 AppShell 的某個位置。頁面不在畫面上時（KeepAlive 保留、非目前頁籤）還原為 empty
 export function registerSlot<Value> (key: InjectionKey<SlotSetter<Value>>, source: () => Value, empty: Value): void {
   const setValue = inject(key)
   if (!setValue) {
@@ -15,8 +15,7 @@ export function registerSlot<Value> (key: InjectionKey<SlotSetter<Value>>, sourc
 
   const panelActive = usePanelActive()
 
-  // KeepAlive 狀態刻意不是 ref：換頁時舊頁的 deactivated 已經排在新頁的 mounted 前面，
-  // 改由 ref 觸發 watcher 的話會被排到那一輪的最後，反而把接手的那一頁清掉
+  // KeepAlive 狀態刻意不是 ref：以 ref 觸發的 watcher 排在該輪最後，會清除接手頁面的登記
   let cached = true
   const onScreen = () => cached && panelActive.value
 
@@ -40,21 +39,21 @@ export function registerSlot<Value> (key: InjectionKey<SlotSetter<Value>>, sourc
     retract()
   })
 
-  // 已經讓出去的就別再清，不然會把接手的那一頁一起清掉
+  // 已讓出位置時不清除，以免清除接手頁面的登記
   onUnmounted(() => {
     if (onScreen()) {
       retract()
     }
   })
 
-  // 內容自己變了（動作數量、搜尋的表…）就跟著更新
+  // 內容改變時（例如動作數量、搜尋的表）跟著更新
   watch(source, value => {
     if (onScreen()) {
       setValue(value)
     }
   })
 
-  // 換頁籤面板：讓場的先清（pre）、進場的後設（post），同一輪裡順序錯了會變成空的
+  // 切換頁籤面板時，離開的面板先清除（pre），進入的面板後登記（post），順序相反時結果為空
   watch(panelActive, active => {
     if (!active) {
       retract()
@@ -68,7 +67,7 @@ export function registerSlot<Value> (key: InjectionKey<SlotSetter<Value>>, sourc
   }, { flush: 'post' })
 }
 
-// 動作版：App Bar、底部列
+// 動作的版本：App Bar 與底部動作列
 export function registerActions (key: InjectionKey<ActionSlotSetter>, source: () => (PageAction | null)[]): void {
   registerSlot(key, source, [])
 }

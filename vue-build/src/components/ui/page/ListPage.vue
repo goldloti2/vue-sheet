@@ -14,28 +14,28 @@
 
   const props = defineProps<{
     table: TableKey
-    // 已經篩選、搜尋過的那些，也就是畫面上實際顯示的順序。分組的列表改給 groups
+    // 已篩選、搜尋的列，即畫面上實際顯示的順序。分組的列表改為提供 groups
     rows?: Row[]
-    // 分組（groupRows 的結果），跟 rows 二選一
+    // 分組（groupRows 的結果），與 rows 擇一提供
     groups?: RowGroup<Row>[]
     loading?: boolean
     error?: string | null
-    // 有給才綁長按多選（useListPage 的 selection）
+    // 提供時才綁定長按多選（useListPage 的 selection）
     selection?: MultiSelect
-    // 右下角的 FAB，通常是新增
+    // 右下角的 FAB，通常為新增
     fab?: (PageAction | null)[]
-    // 各筆的排法：list 依序往下排（預設），grid 為格狀排列（gallery）
+    // 各列的排法：list 依序往下排列（預設），grid 為格狀排列（gallery）
     layout?: 'list' | 'grid'
   }>()
 
   defineSlots<{
-    // props 是每一列的多選綁定，直接 v-bind 到 DataList 上
+    // props 為每一列的多選綁定，直接以 v-bind 綁定至 DataList
     default?: (slotProps: { row: Row, props: object }) => unknown
-    // 整批一次給（表格式列表用）。有這個 slot 就不走上面那個，也沒有多選綁定
+    // 一次提供全部的列，用於表格式列表。提供此 slot 時不使用 default，也沒有多選綁定
     rows?: (slotProps: { rows: Row[] }) => unknown
   }>()
 
-  // 畫面上實際的順序，detail 頁的上/下一筆靠它。分組的話攤平才是真正的先後
+  // 畫面上實際的順序，詳細頁的上一列、下一列依此切換。分組時以攤平後的順序為準
   const shown = computed<Row[]>(() => props.groups ? flattenGroups(props.groups) : props.rows ?? [])
   useListOrder(props.table, () => shown.value.map(row => row.id))
 
@@ -74,7 +74,7 @@
 </template>
 
 <style scoped>
-/* 列表元件以 cqw 依寬度估計畫面外各列的高度（見 DataCard），以內容區為準；不具名，不影響 dashboard 的窄版判斷 */
+/* 列表元件以 cqw 依內容區的寬度估計畫面外各列的高度（見 DataCard）。不具名，不影響 dashboard 的窄版判斷 */
 .list-page__container {
   container-type: inline-size;
 }

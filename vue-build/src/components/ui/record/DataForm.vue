@@ -13,16 +13,16 @@
     errors?: Record<string, string>
     // 這一頁的欄位順序，覆寫 schema 的 formOrder
     order?: readonly string[]
-    // 只顯示這幾個欄位（順序仍照 order／formOrder）；省略就是全部
+    // 只顯示這些欄位，順序仍依 order 或 formOrder。省略時為全部
     only?: readonly string[]
-    // 修改既有的列時為 true：主鍵那一欄唯讀
+    // 修改既有的列時為 true：主鍵欄唯讀
     lockId?: boolean
   }>()
 
-  // 用 object，實際存取時再轉型（見 schema/types.ts 的 formatColumnValue）
+  // 型別為 object，實際存取時再轉型（見 schema/types.ts 的 formatColumnValue）
   const model = defineModel<object>({ required: true })
 
-  // order 優先於 formOrder，皆可排進虛擬欄位（唯讀顯示）；兩者皆省略時只有真實欄位
+  // order 優先於 formOrder，兩者皆可排進虛擬欄位（唯讀顯示）。兩者皆省略時只有真實欄位
   const orderedColumns = computed<AnyColumn[]>(() => {
     const order = props.order ?? props.schema.formOrder
     const columns = order
@@ -51,7 +51,7 @@
     return isVirtual(column) || (column.key === props.schema.idColumn && Boolean(props.lockId))
   }
 
-  // 必填的欄位：標了 required 者，以及沒有 newId 的主鍵；唯讀的欄位不算
+  // 必填的欄位：標示 required 的欄位，以及沒有 newId 的主鍵。唯讀的欄位除外
   function isRequired (column: AnyColumn): boolean {
     if (isVirtual(column) || isLocked(column)) {
       return false
@@ -59,8 +59,7 @@
     return Boolean(column.required) || (column.key === props.schema.idColumn && !props.schema.newId)
   }
 
-  // 各欄共用的屬性：標籤、錯誤訊息，以及唯讀（虛擬欄位、建立後的主鍵）與主鍵的提示。
-  // 唯讀時字色變淡，仍可選取複製；建立後的主鍵另加鎖頭
+  // 各欄共用的屬性：標籤、錯誤訊息、唯讀，以及主鍵的提示與鎖頭
   function fieldProps (column: AnyColumn) {
     const isId = column.key === props.schema.idColumn
     const idLocked = isId && props.lockId
@@ -76,7 +75,7 @@
     }
   }
 
-  // 虛擬欄位與 suggestedValues 讀的列：表單的 row 是普通複本，先掛上與快取相同的 getter，讀父列的值才算得出來，並隨輸入重算
+  // 虛擬欄位與 suggestedValues 讀取的列：表單的列為一般複本，須先掛上與快取相同的 getter，並隨輸入重算
   const store = useTablesStore()
   const ownTable = (Object.keys(schemas) as TableKey[]).find(key => schemas[key] === props.schema)
   const rowWithGetters = computed(() => ownTable ? store.withGetters(ownTable, model.value) : model.value)

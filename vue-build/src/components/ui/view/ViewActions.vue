@@ -5,10 +5,7 @@
   import { useRunAction } from '@/composables/shell/useActionRunner'
   import { useDashboardSelection } from '@/composables/shell/useDashboardSelection'
 
-  // view 的列上動作：（見 docs/topics/actions.md）
-  // row 依陣列順序由左往右排列、整組靠右；
-  // menu 收於 ⋮ 選單；
-  // slots 為左右各兩格，null 保留為空格。row 與 menu 略過 null
+  // view 的列上動作，row 為一排按鈕、menu 為 ⋮ 選單、slots 為左右各兩格（見 docs/components/view/ViewActions.md）
   const { actions, variant = 'row' } = defineProps<{
     actions: (PageAction | null)[]
     variant?: 'row' | 'menu' | 'slots'
@@ -16,16 +13,16 @@
 
   const shown = computed(() => actions.filter(action => action !== null))
 
-  // slots 僅取前四格
+  // slots 只取前四格
   const items = computed(() => variant === 'slots' ? actions.slice(0, 4) : shown.value)
   const visible = computed(() => items.value.some(action => action !== null))
 
-  // dashboard 中文字按鈕另畫圖示，窄面板時改顯示圖示（見 docs/components/panel/DashboardPanel.md）；一般頁面不多建這個 v-icon
+  // dashboard 中，文字按鈕另繪圖示，窄面板時改為顯示圖示。一般頁面不建立這個 v-icon
   const inDashboard = useDashboardSelection() !== null
 
   const runAction = useRunAction()
 
-  // 選單於第一次按下時才掛上，之後的開關交由 v-menu 綁在按鈕上的事件處理
+  // 選單於第一次按下時才掛上，之後的開關交由 v-menu 綁定於按鈕的事件處理
   const menuButton = useTemplateRef('menuButton')
   const menuMounted = ref(false)
   const menuOpen = ref(false)
@@ -64,7 +61,7 @@
       </v-menu>
     </template>
 
-    <!-- slots 的第 3 格起靠右；空格以等寬的空白保留位置 -->
+    <!-- slots 的第 3 格起靠右，空格以等寬的空白保留位置 -->
     <template v-for="(action, index) in items" v-else :key="action?.key ?? `empty-${index}`">
       <button
         v-if="action"
@@ -132,7 +129,7 @@
   color: rgb(var(--v-theme-primary));
 }
 
-/* 行高的上下留白依字型而不對稱，中文字會偏上；裁至大寫字母頂端與基線之間再置中 */
+/* 行高的上下留白因字型而不對稱，中文字偏上。裁至大寫字母頂端與基線之間再置中 */
 .view-actions__label {
   text-box: trim-both cap alphabetic;
 }
@@ -141,7 +138,7 @@
   display: none;
 }
 
-/* dashboard 中 3 格以下的窄面板：文字按鈕改為與其他按鈕相同的圖示；整列靠左，slots 不分左右、不留空格（見 docs/components/panel/DashboardPanel.md） */
+/* dashboard 中 3 格以下的窄面板：文字按鈕改為圖示，整行靠左，slots 不分左右、不留空格 */
 @container dashboard-panel (width < 200px) {
   .view-actions {
     justify-content: flex-start;

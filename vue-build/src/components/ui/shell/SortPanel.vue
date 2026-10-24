@@ -7,11 +7,11 @@
   import { sortableColumns } from '@/schema/sort'
 
   const props = defineProps<{
-    // 跟篩選面板同一批表；只列有給 sort 的那些
+    // 篩選面板的表中有 sort 的那些
     tables: ListTable[]
-    // 頁面的頁籤，沒被使用者換過就跟著它
+    // 頁面目前的頁籤。使用者未切換表時，面板跟隨此頁籤
     current?: string
-    // 抽屜是 AppShell 的，這裡只用來在關起來時回到原狀
+    // 抽屜屬於 AppShell，此處只用於在關閉時回到原狀
     open: boolean
   }>()
 
@@ -34,10 +34,10 @@
 
   const columns = computed(() => table.value ? sortableColumns(table.value.schema) : [])
 
-  // null 就是照 schema.defaultSort
+  // null 表示依 schema.defaultSort 排序
   const sort = computed(() => table.value?.sort?.value ?? null)
 
-  // 改了即時生效，沒有套用鈕。點同一欄換方向，點別欄從小到大開始
+  // 修改即時生效，沒有套用按鈕。點選同一欄時反轉方向，點選他欄時由小到大排序
   function pick (column: AnyColumn) {
     if (!table.value?.sort) {
       return
@@ -48,7 +48,7 @@
       : { key: column.key, direction: 'asc' }
   }
 
-  // 清掉就是回到 schema.defaultSort，跟篩選那顆「清除」同一個位置、同一個意思
+  // 清除後回到 schema.defaultSort。按鈕位置與篩選面板的「清除」相同
   function clear () {
     if (table.value?.sort) {
       table.value.sort.value = null

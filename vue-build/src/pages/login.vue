@@ -3,7 +3,7 @@
   import { useLogin } from '@/composables/auth/useLogin'
   import { appName, authMethod } from '@/config/app'
 
-  // public：沒有 token 也能進來；shell: false：不顯示 App Bar、側邊欄與底部導覽列
+  // public：沒有 token 也可進入。shell: false：不顯示 App Bar、側邊欄與底部導覽列
   definePage({ meta: { title: '登入', public: true, shell: false } })
 
   const { login, submitting, error } = useLogin()

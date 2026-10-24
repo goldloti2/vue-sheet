@@ -18,7 +18,7 @@
     value: DisplayValue
     image?: string | null
     action?: PageAction | null
-    // 快速編輯的欄位才有
+    // 只有快速編輯的欄位有
     editColumn?: SchemaColumn
   }
 
@@ -28,15 +28,15 @@
     row: Row | null
     // 這一頁的欄位順序，覆寫 schema 的 detailOrder
     order?: readonly RowKey<Row>[]
-    // 欄位 key → 動作，每欄一個。沒列的欄位就沒有動作，ref 的前往也要自己列（goToRefAction）
+    // 欄位 key → 動作，每一欄一個。未列出的欄位沒有動作，前往 ref 的父列也須列出（goToRefAction）
     fieldActions?: FieldActions<Row>
-    // 快速編輯：這些欄位直接是輸入元件，改了即寫入；主鍵與虛擬欄位列了也不能編輯
+    // 快速編輯：這些欄位直接顯示為輸入元件，修改後即寫入。主鍵與虛擬欄位列入也不能編輯
     editable?: readonly RowKey<Row>[]
-    // 名稱與值左右並排或上下兩行；省略時照 config/app.ts 的 detailFieldLayout
+    // 名稱與值左右並排或上下兩行。省略時依 config/app.ts 的 detailFieldLayout
     layout?: DetailFieldLayout
   }>()
 
-  // 寫入要用表的代稱。只拿到 schema，從 schemas 反查（schema 物件是單例）
+  // 寫入須使用表的代稱，由 schema 從 schemas 反查（schema 物件為單例）
   const table = (Object.keys(schemas) as TableKey[]).find(key => schemas[key] === props.schema)
 
   function editColumnOf (key: string): SchemaColumn | undefined {
@@ -46,7 +46,7 @@
     return props.schema.columns.find(column => column.key === key)
   }
 
-  // 真實與虛擬欄位一視同仁，照 order（省略時為 detailOrder）排；showIf 不成立的欄位不顯示，row 為 null 時一律顯示
+  // 真實與虛擬欄位依 order（省略時為 detailOrder）排列。showIf 不成立的欄位不顯示，row 為 null 時一律顯示
   const fields = computed<Field[]>(() => {
     const row = props.row
     const columns = allColumns(props.schema).filter(column => !row || !column.showIf || column.showIf(row))
@@ -72,7 +72,7 @@
       .filter((candidate): candidate is Field => candidate !== undefined)
   })
 
-  // 換到另一筆時快速編輯的欄位重新建立，未寫入的值先寫回原本那一筆
+  // 切換到另一列時，快速編輯的欄位重新建立，未寫入的值先寫回原本那一列
   const rowId = computed(() => (props.row as { id?: string } | null)?.id ?? '')
 </script>
 

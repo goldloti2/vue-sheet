@@ -2,7 +2,7 @@ import { computed, onDeactivated, shallowRef, watch } from 'vue'
 import { useCurrentTab } from '@/composables/shell/useAppBarTabs'
 import { useAppBarSelection } from '@/composables/shell/useShellActions'
 
-// 多選狀態：selectMode 直接由「有沒有選取任何一筆」推導，不另外存一個 boolean
+// 多選狀態：是否為多選模式由「是否選取任何一列」推導，不另存 boolean
 export function useMultiSelect () {
   const selectedIds = shallowRef<ReadonlySet<string>>(new Set())
 
@@ -31,13 +31,13 @@ export function useMultiSelect () {
     selectedIds.value = new Set()
   }
 
-  // 離開頁面就取消（列表是 KeepAlive 的，不清的話回來還停在上次的多選模式）
+  // 離開頁面時取消多選。列表由 KeepAlive 保留，不清除時回到頁面仍為多選模式
   onDeactivated(clear)
 
-  // 換頁籤也算離開。頁籤是 TabPage 登記給 AppShell 的，所以頁面層跟面板層都讀得到同一份
+  // 切換頁籤也取消多選。頁面與面板讀取的是 AppShell 提供的同一個目前頁籤
   watch(useCurrentTab(), clear)
 
-  // 每一列多選時需要的物件都綁一起，給 DataList 用 v-bind 一次接上（列表元件與分組列表都同一份）
+  // 一列多選時所需的屬性，供列表元件以 v-bind 一次綁定
   function itemProps (id: string) {
     return {
       selectable: true,
@@ -48,7 +48,7 @@ export function useMultiSelect () {
     }
   }
 
-  // 多選模式的出口。只交出「怎麼退出」，按鈕長怎樣是 AppShell 的事
+  // 多選模式的出口。此處只提供退出的函式，按鈕由 AppShell 顯示
   useAppBarSelection(() => active.value ? clear : null)
 
   return { active, clear, count, enter, isSelected, itemProps, selectedIds, toggle }

@@ -18,12 +18,12 @@
   const props = withDefaults(defineProps<{
     rows: readonly Row[]
     schema: TableSchema
-    // 要顯示的欄位 key 子集（真實欄位與 virtualColumns 都可以）；省略＝全部
+    // 要顯示的欄位 key，真實欄位與虛擬欄位皆可。省略時為全部
     columns?: string[]
     showHeader?: boolean
-    // 有傳的話點一列會導覽過去；不傳就是純顯示，不用猜路由規則
+    // 提供時，點擊一列即導覽。未提供時為純顯示
     rowTo?: (row: Row) => string
-    // 欄寬：欄位 key → 'max'／'default'／'min'，沒列到的（包括省略整個設定時）為 'default'
+    // 欄寬：欄位 key → 'max'／'default'／'min'，未列出的欄為 'default'
     widths?: Partial<Record<string, ColumnWidth>>
     // 放不下的格子換行，而非截斷加上省略號
     wrap?: boolean
@@ -57,7 +57,7 @@
   const columnModes = computed(() => resolvedColumns.value.map(column => props.widths?.[column.key] ?? 'default'))
   const { widths: columnWidths } = useColumnWidths(container, columnModes, () => [props.rows, resolvedColumns.value])
 
-  // 各欄寬度加總比可用寬度寬時照加總（可橫向捲動），否則撐滿
+  // 各欄寬度的加總超過可用寬度時依加總（可橫向捲動），否則撐滿
   const tableWidth = computed(() => {
     const widths = columnWidths.value
     if (!widths || !container.value) {
@@ -67,7 +67,7 @@
     return total > container.value.clientWidth ? `${total}px` : '100%'
   })
 
-  // 固定欄的 class 與位置，依欄的順序；寬度照欄寬規則，左側位置為前面各欄寬度的加總
+  // 固定欄的 class 與位置，依欄的順序。左側位置為前面各欄寬度的加總
   const cellAttrs = computed(() => {
     const widths = columnWidths.value
     const count = Math.min(props.fixed, resolvedColumns.value.length)
@@ -126,7 +126,7 @@
 </template>
 
 <style scoped>
-/* 固定欄寬：不換行，放不下的加上省略號 */
+/* 固定欄寬：不換行，放不下時加上省略號 */
 .data-table--sized :deep(table) {
   width: var(--data-table-width, 100%);
   table-layout: fixed;
@@ -146,7 +146,7 @@
   overflow-wrap: anywhere;
 }
 
-/* 固定欄：不透明的背景蓋住捲到底下的欄，最後一欄的右側以較深的格線分隔 */
+/* 固定欄：背景不透明，蓋住捲到下方的欄。最後一個固定欄的右側以較深的格線分隔 */
 .data-table__fixed {
   position: sticky;
   z-index: 1;

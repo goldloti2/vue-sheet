@@ -3,17 +3,17 @@ import type { ComputedRef, MaybeRefOrGetter } from 'vue'
 import { computed, toValue } from 'vue'
 import { formatColumnValue, listedColumns } from '@/schema/types'
 
-// schema.searchable 裡的欄位，搜尋列只比對這兩種：text 是本文、ref 是父表的名字。其餘型別走篩選抽屜
+// 搜尋列只比對 schema.searchable 中的 text 與 ref 欄位，ref 比對父列的名稱。其餘型別由篩選抽屜處理
 function isSearchable (column: AnyColumn): boolean {
   return column.type === 'text' || column.type === 'ref'
 }
 
-// 一列的可搜尋文字：所有 searchable 欄位的顯示文字接起來（日期／ref 都是顯示的樣子），統一小寫
+// 一列的可搜尋文字：串接所有可搜尋欄位的顯示文字，並轉為小寫
 function searchText (row: object, columns: readonly AnyColumn[]): string {
   return columns.map(column => formatColumnValue(row, column)).join(' ').toLowerCase()
 }
 
-// 依空白切詞，雙引號包起來的當一個詞；引號沒閉合就把剩下的整段當一個詞
+// 依空白切詞，雙引號內的文字為一個詞。引號未閉合時，其後的整段為一個詞
 function searchTerms (query: string): string[] {
   const terms: string[] = []
   const pattern = /"([^"]*)"?|(\S+)/g
@@ -28,7 +28,7 @@ function searchTerms (query: string): string[] {
   return terms
 }
 
-// 每個詞都要出現（AND），順序不限。query 空白就是全部
+// 每個詞皆須出現（AND），順序不限。query 為空時回傳全部的列
 export function useSearch<Row extends object> (
   query: MaybeRefOrGetter<string>,
   rows: MaybeRefOrGetter<readonly Row[]>,
@@ -36,7 +36,7 @@ export function useSearch<Row extends object> (
 ): ComputedRef<Row[]> {
   const columns = listedColumns(schema, schema.searchable).filter(column => isSearchable(column))
 
-  // 文字只跟 rows 一起重算，敲字時只做 includes
+  // 可搜尋文字只隨 rows 重算，輸入時只執行 includes
   const indexed = computed(() => toValue(rows).map(row => ({ row, text: searchText(row, columns) })))
   const terms = computed(() => searchTerms(toValue(query)))
 

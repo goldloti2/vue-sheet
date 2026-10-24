@@ -17,22 +17,22 @@ interface HasId {
   id: string
 }
 
-// 流程存檔點：每張被碰到的表在改動前留一份原值（快取＋佇列），見 docs/topics/store.md
+// 流程存檔點：每張表於首次改動前保留原值（快取與佇列），見 docs/topics/store.md
 interface FlowSnapshot {
   rows: Map<TableKey, unknown[] | undefined>
   queue: Map<TableKey, TableQueue>
 }
 
 export const useTablesStore = defineStore('tables', () => {
-  // 畫面的單一真相。已送出的與還沒送出的混在一起，畫面不需要分辨
+  // 畫面的單一資料來源，包含已推送與未推送的變更，畫面無須區分
   const rows = shallowReactive<Partial<Record<TableKey, unknown[]>>>({})
   const loading = reactive<Partial<Record<TableKey, boolean>>>({})
   const error = reactive<Partial<Record<TableKey, string | null>>>({})
   const activeFlow = shallowRef<FlowSnapshot | null>(null)
-  // 有幾張表單正開著。不為零就不能同步，重抓會把改到一半的沖掉
+  // 開啟中的表單數。不為零時禁止同步，以免重新抓取覆蓋編輯中的內容
   const syncHolds = shallowRef(0)
 
-  // 「要送什麼」的單一真相，與 row 上的 getter
+  // 待推送內容的單一資料來源，以及 row 上的 getter
   const queue = createQueue()
   const { attachGetters } = createRowGetters(rows)
 
@@ -51,7 +51,7 @@ export const useTablesStore = defineStore('tables', () => {
       try {
         const { rows: fetched, modifiedTime } = await fetchTable<HasId>(table)
         rows[table] = fetched.map(row => attachGetters(table, row))
-        // 檔案層級的時間，每張表抓回來都是同一個值；推送時當 since 用
+        // 檔案層級的時間，每張表的值相同。推送時作為 since
         queue.knownModifiedTime.value = modifiedTime
       } catch (loadError) {
         error[table] = loadError instanceof Error ? loadError.message : String(loadError)
@@ -68,14 +68,14 @@ export const useTablesStore = defineStore('tables', () => {
     }
   }
 
-  // 這張表要用就得一起載的其他表：ref 欄位（含虛擬）指到的父表（$欄位key）與指向它的子表（$子表_欄位key、連帶刪除）
+  // 須一併載入的表：ref 欄位（含虛擬）指向的父表，以及指向此表的子表
   function tablesNeededBy (table: TableKey): TableKey[] {
     const parents = allColumns(schemas[table]).flatMap(column => column.type === 'ref' ? [column.refTable as TableKey] : [])
     const children = childRelations(table).map(relation => relation.childTable)
     return [...new Set([...parents, ...children])]
   }
 
-  // 關聯的表一起載，getter 才有東西讀、連帶刪除才找得到子列。seen 擋住父子互相需要的循環
+  // 一併載入關聯的表，供 getter 與連帶刪除使用。seen 防止父子互相需要的循環
   async function ensureLoaded (table: TableKey, seen = new Set<TableKey>()) {
     if (seen.has(table)) {
       return
@@ -88,7 +88,7 @@ export const useTablesStore = defineStore('tables', () => {
     ])
   }
 
-  // 表單頁活著的期間持有一個，離開時釋放
+  // 表單頁作用中時持有一個，離開時釋放
   function holdSync (): () => void {
     syncHolds.value++
     let released = false
@@ -100,7 +100,7 @@ export const useTablesStore = defineStore('tables', () => {
     }
   }
 
-  // 推送 + 重抓；推不出去就不重抓
+  // 推送後重新抓取。推送失敗時不重新抓取
   async function refresh (force = false): Promise<boolean> {
     if (!canSync.value || !await flush(force)) {
       return false
@@ -110,14 +110,14 @@ export const useTablesStore = defineStore('tables', () => {
     return true
   }
 
-  // 重抓用過的表：有資料的，加上載入失敗的。後者還不在 rows 裡，只看 rows 的話第一次就失敗的表永遠不會再試
+  // 重新抓取已載入與載入失敗的表。載入失敗的表不在 rows 中，須另外列入
   async function reload (): Promise<void> {
     const failed = Object.keys(error).filter(table => error[table as TableKey])
     const tables = new Set([...Object.keys(rows), ...failed]) as Set<TableKey>
     await Promise.all([...tables].map(table => load(table)))
   }
 
-  // 流程碰到這張表之前先留一份。同一張表只留第一次，之後的改動都算流程的
+  // 流程首次改動此表前保留原值。同一張表只保留第一次
   function remember (table: TableKey) {
     const flow = activeFlow.value
     if (!flow) {
@@ -141,7 +141,7 @@ export const useTablesStore = defineStore('tables', () => {
     }
   }
 
-  // 佇列自己不管流程，進東西前先讓流程存檔
+  // 佇列不處理流程，加入操作前先建立流程的存檔
   function enqueue (table: TableKey, id: string, kind: PendingOp['kind'], values: Record<string, string>) {
     remember(table)
     queue.enqueue(table, id, kind, values)
@@ -149,7 +149,7 @@ export const useTablesStore = defineStore('tables', () => {
 
   async function flush (force = false): Promise<boolean> {
     if (activeFlow.value) {
-      // 流程還沒跑完，推出去的會是半成品，而且推出去之後就回滾不了了
+      // 流程進行中禁止推送，推送後即無法回滾
       queue.fail('流程進行中，無法推送')
       return false
     }
@@ -157,18 +157,18 @@ export const useTablesStore = defineStore('tables', () => {
     return queue.flush(force)
   }
 
-  // 衝突的兩條出路之一：丟掉未推送的變更、重抓（Sheet 上那份當真相）
+  // 衝突的處理之一：放棄未推送的變更並重新抓取，以 Sheet 的內容為準
   async function discardAndReload (): Promise<void> {
     queue.discard()
     await reload()
   }
 
-  // 另一條：不帶 since 再送一次，只蓋掉自己改過的那幾欄。成功後照常重抓
+  // 衝突的處理之二：不帶 since 再次推送，只覆蓋修改過的欄位。成功後重新抓取
   async function forcePush (): Promise<boolean> {
     return refresh(true)
   }
 
-  // 開存檔點。一次只能一個，套疊直接拒絕（見 docs/topics/actions.md 的「連續動作（流程）」）
+  // 建立存檔點。同一時間只能有一個，巢狀的流程拋出錯誤（見 docs/topics/actions.md 的「連續動作（流程）」）
   function beginFlow (): void {
     if (activeFlow.value) {
       throw new Error('上一個流程還沒結束')
@@ -177,12 +177,12 @@ export const useTablesStore = defineStore('tables', () => {
     activeFlow.value = { rows: new Map(), queue: new Map() }
   }
 
-  // 流程完成：丟掉存檔點，變更留在佇列裡等推送
+  // 流程完成：移除存檔點，變更留在佇列中等待推送
   function commitFlow (): void {
     activeFlow.value = null
   }
 
-  // 流程取消：快取與佇列都還原成流程開始前的樣子，沒碰過的表一個位元都不動
+  // 流程取消：快取與佇列還原為流程開始前的狀態，未改動的表維持原狀
   function rollbackFlow (): void {
     const flow = activeFlow.value
     if (!flow) {
@@ -204,7 +204,7 @@ export const useTablesStore = defineStore('tables', () => {
     activeFlow.value = null
   }
 
-  // 寫入前再驗一次（form 層已經逐欄提示過，這裡擋的是繞過表單的程式 bug）。有錯就拋，什麼都不動
+  // 寫入前再次驗證，攔截繞過表單的寫入。有錯誤時拋出，不做任何修改
   function assertValid (table: TableKey, values: Record<string, unknown>, keys?: readonly string[]): void {
     const errors = validateRow(values, schemas[table], keys)
     const messages = Object.values(errors)
@@ -213,7 +213,7 @@ export const useTablesStore = defineStore('tables', () => {
     }
   }
 
-  // 主鍵那一欄有值就以它為 id，空的才以 newId 發號並填回該欄
+  // 主鍵有值時以其為 id，為空時才以 newId 產生並填回主鍵
   function create<Row extends HasId> (table: TableKey, values: Record<string, unknown>): Row {
     const schema = schemas[table]
     const key = schema.idColumn
@@ -221,7 +221,7 @@ export const useTablesStore = defineStore('tables', () => {
     const filled = generated === undefined ? values : { ...values, [key]: generated }
     assertValid(table, filled)
 
-    // 後端把已存在的 id 當成重送而略過，重複的 id 必須在這裡擋下
+    // 後端將已存在的 id 視為重送而略過，因此須於此攔截重複的 id
     const id = String(filled[key])
     const label = idColumnOf(schema).label
     if ((rows[table] ?? []).some(row => (row as HasId).id === id)) {
@@ -245,14 +245,14 @@ export const useTablesStore = defineStore('tables', () => {
     if (key in values && values[key] !== id) {
       throw new Error(`${idColumnOf(schema).label}建立後不能修改`)
     }
-    // 主鍵不變，不必寫回
+    // 主鍵不變，無須寫回
     const changes = Object.fromEntries(Object.entries(values).filter(([column]) => column !== key))
 
-    // values 可以只給幾欄：只驗給了的，但用合併後的整列驗，跨欄位的 validate 才看得到其他欄
+    // values 可只含部分欄位。只驗證這些欄位，但以合併後的整列驗證，跨欄位的 validate 才能讀取其他欄
     const existing = (rows[table] ?? []).find(row => (row as HasId).id === id) as Record<string, unknown> | undefined
     assertValid(table, { ...existing, ...changes }, Object.keys(changes))
 
-    // 改了 ref 而離開的父列，寫入後檢查是否已空
+    // ref 修改前的父列，寫入後檢查是否已沒有子列
     const leftParents = existing
       ? parentsOf(table, [existing], column => column in changes && changes[column] !== existing[column])
       : new Map<Relation, Set<string>>()
@@ -272,7 +272,7 @@ export const useTablesStore = defineStore('tables', () => {
     return updated
   }
 
-  // 表單等處的暫時列：掛上與快取中相同的 getter（虛擬欄位、$label、父列與子列），不進快取
+  // 表單等處的暫時列：掛上與快取相同的 getter（虛擬欄位、$label、父列與子列），不加入快取
   function withGetters<Row extends object> (table: TableKey, values: Row): Row {
     return attachGetters(table, { ...values } as Row & HasId)
   }
@@ -281,15 +281,14 @@ export const useTablesStore = defineStore('tables', () => {
     removeMany(table, [id])
   }
 
-  // 刪完之後順著標了 cascade 的關聯把指向這些列的子列也刪掉，多層遞迴；
-  // 走同一條 patch + enqueue，佇列合併與流程存檔點都自動涵蓋。子表沒載就找不到子列，所以 ensureLoaded 會把它們一起載
+  // 刪除後沿標示 cascade 的關聯遞迴刪除子列，同樣經過 patch 與 enqueue（見 docs/topics/schema.md 的「連帶刪除」）
   function removeMany (table: TableKey, ids: Iterable<string>): void {
     const targets = new Set(ids)
     if (targets.size === 0) {
       return
     }
 
-    // 先確認子表都在，免得刪到一半才發現
+    // 刪除前先確認子表皆已載入
     const cascades = cascadeRelations(table)
     for (const relation of cascades) {
       if (!rows[relation.childTable]) {
@@ -297,7 +296,7 @@ export const useTablesStore = defineStore('tables', () => {
       }
     }
 
-    // 被刪的列原本指向的父列，刪完後檢查是否已空
+    // 被刪除的列所指向的父列，刪除後檢查是否已沒有子列
     const removed = (rows[table] ?? []).filter(row => targets.has((row as HasId).id)) as Record<string, unknown>[]
     const leftParents = parentsOf(table, removed)
 
@@ -315,7 +314,7 @@ export const useTablesStore = defineStore('tables', () => {
     removeEmptyParents(leftParents)
   }
 
-  // 標了 onEmpty 的關聯：這些列指向的父列 id。filter 用來只看有變動的欄位（update）
+  // 標示 onEmpty 的關聯中，這些列指向的父列 id。filter 用於只檢查有變動的欄位（update）
   function parentsOf (
     table: TableKey,
     list: readonly Record<string, unknown>[],
@@ -336,7 +335,7 @@ export const useTablesStore = defineStore('tables', () => {
     return result
   }
 
-  // 子列減少之後：仍存在、但已沒有任何子列的父列一起刪（走 removeMany，多層往上遞迴）
+  // 子列減少後，刪除仍存在但已沒有子列的父列（經由 removeMany 向上遞迴）
   function removeEmptyParents (parents: Map<Relation, Set<string>>): void {
     for (const [relation, ids] of parents) {
       const children = (rows[relation.childTable] ?? []) as Record<string, unknown>[]

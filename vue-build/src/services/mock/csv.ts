@@ -1,4 +1,4 @@
-// CSV 解析，只有 mock 後端在用；正式後端接上後整個 mock/ 資料夾都會刪掉
+// CSV 解析，只供 mock 後端使用
 
 function splitCsvLine (line: string): string[] {
   const values: string[] = []
@@ -29,7 +29,7 @@ function splitCsvLine (line: string): string[] {
   return values
 }
 
-// 第一列當表頭，回傳 { 表頭: 原始字串 } 的陣列——跟真後端讀 Sheet 拿到的形狀一致
+// 第一行為表頭，回傳 { 表頭: 原始字串 } 的陣列，形狀與真後端讀取 Sheet 的結果相同
 export function parseCsv (text: string): Record<string, string>[] {
   const lines = text.trim().split(/\r?\n/)
   const headers = splitCsvLine(lines[0])

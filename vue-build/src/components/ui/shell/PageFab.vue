@@ -15,16 +15,15 @@
 
   const { mainRect } = useLayout()
 
-  // 疊在目前註冊的 app-bar/底部導覽列上方，不用寫死高度（跟 v-main 自己算 padding 用同一套機制）
+  // 位於底部導覽列上方，高度取自 Vuetify layout（與 v-main 的 padding 相同機制）
   const offsetStyle = computed(() => ({ bottom: `${mainRect.value.bottom + 16}px` }))
 
   const open = shallowRef(false)
 
-  // 篩選抽屜這種蓋整頁的東西開著時先讓開，FAB 的 z-index 本來就在 layout 之上
+  // 篩選抽屜等覆蓋整頁的元件開啟時隱藏。FAB 的 z-index 高於 layout
   const overlayOpen = useOverlayOpen()
 
-  // 被 KeepAlive 收起來、或所在的頁籤面板不是當前的，都不掛出去，免得兩顆 FAB 疊在一起；
-  // dashboard 的面板另外只在展開時允許
+  // 只在頁面為作用中、所在頁籤為目前頁籤、dashboard 面板已展開時顯示
   const cached = shallowRef(true)
   const panelActive = usePanelActive()
   const fullPage = usePanelFullPage()

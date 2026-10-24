@@ -1,7 +1,6 @@
-// 假後端：模擬 Apps Script 那一側的行為，好在後端還沒接上前就能測完整的增刪改流程
-// 跟真的 Sheet 一樣只存原始字串，型別轉換照樣交給呼叫端的 coerceRow 做
-//
-// 純記憶體：重整頁面就回到 CSV 的原始內容
+// 假後端：模擬 Apps Script 的行為，只存原始字串，型別由呼叫端的 coerceRow 轉換
+
+// 只存於記憶體，重新整理頁面即回到 CSV 的原始內容
 
 import type { BatchOperation, LoginCredentials, TableData } from '../types'
 import type { TableKey } from '@/schema'
@@ -15,7 +14,7 @@ import { mockCsv } from './tables'
 
 const tables = new Map<TableKey, Record<string, string>[]>()
 
-// 第一次用到才把 CSV 解析進來
+// 首次使用時才解析 CSV
 function tableRows (table: TableKey): Record<string, string>[] {
   const loaded = tables.get(table)
   if (loaded) {
@@ -51,23 +50,22 @@ function asStrings (values: Record<string, unknown>): Record<string, string> {
   )
 }
 
-// 整個「檔案」的修改時間，對應真後端的 DriveApp.getFileById(id).getLastUpdated()
+// 整個檔案的修改時間，對應真後端的 DriveApp.getFileById(id).getLastUpdated()
 let modifiedTime = new Date().toISOString()
 
-// 跟 Sheet 一樣：開頭的單引號是純文字前綴，不算內容
+// 與 Sheet 相同，開頭的單引號為純文字前綴，不屬於內容
 function readValues (row: Record<string, string>): Record<string, string> {
   return Object.fromEntries(
     Object.entries(row).map(([header, value]) => [header, value.replace(/^'/, '')]),
   )
 }
 
-// 回傳複本，呼叫端改到的東西不會影響這裡存的狀態
+// 回傳複本，呼叫端的修改不影響此處的狀態
 export function mockList (table: TableKey): TableData {
   return { rows: tableRows(table).map(row => readValues(row)), modifiedTime }
 }
 
-// 開發用：模擬「別人在 Sheet 上改了東西」，讓衝突那條路測得到。
-// 假後端是純記憶體的，同一個分頁不可能自己產生衝突，所以在 console 叫這個
+// 開發用：於 console 呼叫 mockTouch()，模擬 Sheet 被別處修改，以測試衝突的處理
 if (import.meta.env.DEV) {
   Object.assign(globalThis, {
     mockTouch: () => {
@@ -84,7 +82,7 @@ function applyOperation (operation: BatchOperation): void {
 
   switch (operation.kind) {
     case 'create': {
-      // id 由呼叫端帶進來。已經存在就當作這次是重送、不重複建立
+      // id 由呼叫端提供。id 已存在時視為重送，不重複建立
       if (rows.some(row => row[idHeaderOf(table)] === id)) {
         return
       }
@@ -93,7 +91,7 @@ function applyOperation (operation: BatchOperation): void {
     }
 
     case 'update': {
-      // 只有改過的欄位會進來，其餘保持原狀（真後端是在鎖裡讀現值再合併，見 docs/topics/store.md）
+      // 只傳入修改過的欄位，其餘保持原狀（見 docs/topics/store.md）
       const index = rowIndexOf(table, id)
       rows[index] = { ...rows[index], ...values }
       return
@@ -105,8 +103,7 @@ function applyOperation (operation: BatchOperation): void {
   }
 }
 
-// 一次推送的整批操作，全有全無：中途失敗就把動到的表還原，跟真後端在 LockService 裡的行為一致。
-// since 對不上就拋 ConflictError、什麼都不做（不給 since 是強制推送）。回傳寫入後的新 modifiedTime
+// 一次推送的整批操作，行為與真後端相同（見 docs/api.md）。回傳寫入後的 modifiedTime
 export function mockBatch (operations: readonly BatchOperation[], since?: string): string {
   if (since !== undefined && since !== modifiedTime) {
     throw new ConflictError()
@@ -136,13 +133,13 @@ export function mockBatch (operations: readonly BatchOperation[], since?: string
 
 const TOKEN_LIFETIME_SECONDS = 30 * 24 * 60 * 60
 
-// 登入：假後端沒有帳號表，收到什麼都算成功；token 的格式跟真後端一樣
+// 登入：假後端沒有帳號表，任何憑證皆成功。token 的格式與真後端相同
 export function mockLogin (credentials: LoginCredentials): { token: string } {
   const exp = Math.floor(Date.now() / 1000) + TOKEN_LIFETIME_SECONDS
   return { token: encodeMessage({ user: credentials.username ?? '', exp }) }
 }
 
-// 跟真後端的 verify 一樣檢查格式與過期、剩不到一半效期就回新的 token（沒有帳號表，所以不查帳號在不在）
+// 與真後端的 verify 相同，檢查格式與過期，並於效期剩不到一半時回傳新的 token。不檢查帳號
 export function mockAuthorize (token: string | null): string | undefined {
   if (authMethod === 'none') {
     return undefined

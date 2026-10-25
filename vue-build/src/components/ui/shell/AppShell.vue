@@ -89,6 +89,9 @@
   const drawerTables = computed(() => controls.value?.drawer?.tables ?? [])
   const filterActive = computed(() => drawerTables.value.some(table => hasActiveFilter(table.filters.value)))
 
+  // 有搜尋字串或篩選條件時，放大鏡為主色
+  const searchActive = computed(() => (controls.value?.query.value ?? '') !== '' || filterActive.value)
+
   // 有 sort 的表才有排序按鈕。任一張表不是預設排序即為排序中
   const sortTables = computed(() => drawerTables.value.filter(table => table.sort))
   const sortActive = computed(() => sortTables.value.some(table => table.sort?.value))
@@ -243,7 +246,13 @@
 
     <template v-if="!(searchOpen && controls)" #append>
       <!-- 多選模式中不顯示搜尋與排序按鈕 -->
-      <v-btn v-if="controls && !cancelSelect" aria-label="搜尋" :icon="mdiMagnify" @click="searchOpen = true" />
+      <v-btn
+        v-if="controls && !cancelSelect"
+        aria-label="搜尋"
+        :color="searchActive ? 'primary' : undefined"
+        :icon="mdiMagnify"
+        @click="searchOpen = true"
+      />
 
       <v-btn
         v-if="sortTables.length > 0 && !cancelSelect"

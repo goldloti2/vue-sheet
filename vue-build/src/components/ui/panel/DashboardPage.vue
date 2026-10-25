@@ -162,7 +162,7 @@
     const table = panels.find(entry => entry.name === focused.value)?.table
     return table ? schemas[table].tableLabel : ''
   })
-  provideSharedListControls(focusedTableLabel)
+  provideSharedListControls(focusedTableLabel, () => interactive)
 
   // 面板內的轉場：先為面板命名並等待 DOM 更新，舊畫面才截得到名稱。轉場進行中再有選取時直接套用
   async function transition (kind: 'fade' | 'forward' | 'back', update: () => void) {

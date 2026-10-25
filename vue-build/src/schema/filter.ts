@@ -102,3 +102,14 @@ export function matchesFilter (value: unknown, filter: ColumnFilter): boolean {
   const max = toNumber(filter.max)
   return (min === null || actual >= min) && (max === null || actual <= max)
 }
+
+// 檢查一列是否符合整張表條件的函數。欄位之間為 AND，只檢查 filterable 的欄位。沒有生效的條件時為 null
+export function rowMatcher (filters: Filters, schema: TableSchema): ((row: object) => boolean) | null {
+  const active = filterableColumns(schema)
+    .map(column => ({ key: column.key, filter: filters[column.key] }))
+    .filter((entry): entry is { key: string, filter: ColumnFilter } => isActiveFilter(entry.filter))
+  if (active.length === 0) {
+    return null
+  }
+  return row => active.every(({ key, filter }) => matchesFilter((row as Record<string, unknown>)[key], filter))
+}

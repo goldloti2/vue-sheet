@@ -2,12 +2,12 @@ import type { TableKey } from '@/schema'
 import type { Filters } from '@/schema/filter'
 import type { SortSpec, TableSchema } from '@/schema/types'
 import type { Ref } from 'vue'
-import { computed, ref } from 'vue'
+import { computed, inject, ref } from 'vue'
 import { useFilter } from '@/composables/data/useFilter'
 import { useSearch } from '@/composables/data/useSearch'
 import { useSortedTableList } from '@/composables/data/useTable'
 import { useMultiSelect } from '@/composables/list/useMultiSelect'
-import { useDashboardSelection } from '@/composables/shell/useDashboardSelection'
+import { dashboardViaKey, useDashboardSelection } from '@/composables/shell/useDashboardSelection'
 import { useListControls } from '@/composables/shell/useListControls'
 import { useSharedListControls } from '@/composables/shell/useSharedListControls'
 
@@ -31,15 +31,17 @@ export function useListPage<Row extends { id: string }> (
     ? { ...shared.join<Row>(table, schema), query: shared.query }
     : ownControls<Row>(table, schema, options)
 
-  // dashboard 的互動：子表只留所選父列的子列，與 scope 位於同一步
+  // dashboard 的互動：子表只留所選父列的子列，且父列須符合上層的條件。與 scope 位於同一步
   const { scope } = options
   const dashboard = useDashboardSelection()
+  const via = inject(dashboardViaKey, undefined)
   const scopedRows = computed(() => {
-    const parentScope = dashboard?.parentScope(table) ?? null
-    if (!scope && !parentScope) {
+    const tests = [scope, dashboard?.parentScope(table), shared?.upperFilter(table, via)]
+      .filter(test => !!test)
+    if (tests.length === 0) {
       return allRows.value
     }
-    return allRows.value.filter(row => (!scope || scope(row)) && (!parentScope || parentScope(row)))
+    return allRows.value.filter(row => tests.every(test => test(row)))
   })
 
   const rows = useSearch(query, useFilter(filters, scopedRows, schema), schema)

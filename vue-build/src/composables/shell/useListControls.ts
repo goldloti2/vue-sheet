@@ -11,6 +11,8 @@ export interface ListTable {
   rows: Ref<readonly object[]>
   // 使用者選擇的排序，null 表示 schema.defaultSort。有提供時才顯示排序按鈕
   sort?: Ref<SortSpec | null>
+  // 條件往下影響此表的上層表（tableLabel），只用於互動 dashboard
+  inheritedFrom?: () => string[]
 }
 
 export interface ListControls {

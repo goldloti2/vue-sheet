@@ -22,7 +22,7 @@
 </script>
 
 <template>
-  <!-- interactive：點擊一列改為選取，父表詳細顯示選取的列，子表只列出其子列 -->
+  <!-- interactive：點擊一列改為選取，父表詳細顯示選取的列，子表只列出其子列。父表的篩選條件也往下連動至子表 -->
   <DashboardPage interactive :layout="layout">
     <DashboardPanel name="parents" table="__parent__" title="父表">
       <ParentList />

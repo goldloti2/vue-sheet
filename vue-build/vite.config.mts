@@ -1,13 +1,13 @@
-import VueRouter from 'vue-router/vite';
 import { fileURLToPath, URL } from 'node:url'
 import Vue from '@vitejs/plugin-vue'
 import Fonts from 'unplugin-fonts/vite'
 import { defineConfig } from 'vite'
 import Vuetify, { transformAssetUrls } from 'vite-plugin-vuetify'
+import VueRouter from 'vue-router/vite'
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  // pages 中任意層的 _ref/ 只供其他頁面引用，不產生路由（見 docs/dashboard.md）
+  // pages 中任意層的 _ref/ 只供其他頁面引用，不產生路由（見 docs/topics/search.md 的「同一頁面中的多張表」）
   plugins: [VueRouter({ dts: 'src/typed-router.d.ts', exclude: ['src/pages/**/_ref/**'] }), Vue({
     template: { transformAssetUrls },
   }), // https://github.com/vuetifyjs/vuetify-loader/tree/master/packages/vite-plugin#readme

@@ -28,7 +28,7 @@ function searchTerms (query: string): string[] {
   return terms
 }
 
-// 每個詞皆須出現（AND），順序不限。query 為空時回傳全部的列
+// 每個詞皆須出現（AND），順序不限。query 為空或沒有可搜尋欄位時回傳全部的列
 export function useSearch<Row extends object> (
   query: MaybeRefOrGetter<string>,
   rows: MaybeRefOrGetter<readonly Row[]>,
@@ -42,7 +42,7 @@ export function useSearch<Row extends object> (
 
   return computed(() => {
     const currentTerms = terms.value
-    if (currentTerms.length === 0) {
+    if (currentTerms.length === 0 || columns.length === 0) {
       return indexed.value.map(entry => entry.row)
     }
 

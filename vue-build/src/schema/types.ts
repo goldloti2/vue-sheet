@@ -169,6 +169,13 @@ export function durationSeconds (value: unknown): number | null {
   return parts ? Number(parts[1]) * 3600 + Number(parts[2]) * 60 + Number(parts[3]) : null
 }
 
+// 將秒數換算為 "時:分:秒"，四捨五入至秒
+export function formatDuration (seconds: number): string {
+  const total = Math.round(seconds)
+  const pad = (value: number) => String(value).padStart(2, '0')
+  return `${Math.floor(total / 3600)}:${pad(Math.floor(total % 3600 / 60))}:${pad(total % 60)}`
+}
+
 function coerceValue (raw: string, type: ColumnType): string | number | boolean | Date | null {
   if (raw === '') {
     return null

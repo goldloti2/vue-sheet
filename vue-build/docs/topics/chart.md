@@ -20,18 +20,27 @@
 | 步驟 | 負責 | 內容 |
 | --- | --- | --- |
 | 1 | 頁面 | 以 `useListPage` 取得 `rows`。以 `defineChart(schema, {…})` 宣告圖表，只執行一次 |
-| 2 | `defineChart` | 建立時查好欄位的定義與比較方式，並於開發模式下檢查輸入。回傳 `type` 與 `compute` 🔲 |
+| 2 | `defineChart` | 於開發模式下檢查輸入，回傳 `type`、`stacked`、`horizontal`、`groupKey` 與 `compute` |
 | 3 | `ChartPage` 🔲 | 整頁層級的事：載入狀態、錯誤、點擊後的處理 |
 | 4 | `DataChart` 🔲 | 以 `computed` 執行 `compute(rows)`，套上顏色後交給 Chart.js。資料改變時更新圖表，卸載時銷毀 Chart.js 的實例 |
 
 分工與 view 相同：`defineView` 準備，`DataList` 以每一列執行（見 [DataList](../components/list/DataList.md#view)）。
 
-**`compute(rows)` 的結果** 🔲：
+**`compute(rows)` 的結果**依圖表分為兩種，皆不含顏色。`DataChart` 依目前的主題套上顏色。
+
+分組類（`kind: 'category'`）：
 - `labels`：各組的名稱，包含「(空白)」與「其他」
-- `datasets`：每個 dataset 為 series 的一組，或一個數值。`data` 與 `labels` 一一對應，`null` 表示留空。另可帶有 `type` 與 `axis`
-- `groups`：與 `labels` 一一對應。`rows` 為該組的列，`filter` 為選取該組的篩選條件
-- 結果不含顏色。`DataChart` 依目前的主題套上顏色
-- scatter 與 bubble 沒有分組，`labels` 與 `groups` 為空。每個點帶有自己的那一列
+- `datasets`：每個 dataset 為一個數值，有系列時為一個數值的一個系列
+  - `data` 與 `labels` 一一對應，`null` 表示留空
+  - `unit` 為 `number`、`duration`、`percent` 或 `date`，供刻度與提示格式化。duration 的值為秒數
+  - 數值指定了 `type`、`axis` 時一併帶上
+- `groups`：與 `labels` 一一對應。`rows` 為該組的列，依 `rows` 原本的順序
+- `groups` 的 `filter` 為選取該組的篩選條件。無法以一個條件表示時為 `null`，例如 date 或 number 分組合併的「其他」
+
+逐列類（`kind: 'point'`，scatter 與 bubble）：
+- `datasets`：沒有 `color` 時一個，有 `color` 時每組一個。沒有任何點的組不列入
+- 每個點為 `{ x, y, r, row }`。date 的值為毫秒，duration 的值為秒數。x 或 y 為空的列不畫出，bubble 另略過半徑為空的列
+- `xUnit`、`yUnit` 為兩軸的單位
 
 ---
 
@@ -64,6 +73,7 @@ text、image、ref 不可分組。須依這些欄位分組時，改為宣告一�
 | `bins` | number、duration 在最小值與最大值之間等分的段數。最大值歸入最後一段 | 5 |
 | `order` | `by` 為依分組本身或依數值排序，`direction` 為升序或降序。依分組本身時，比較的規則與列表的排序相同 | 依分組本身、升序 |
 | `limit` | 只顯示數值最大的前 N 組，其餘合併為「其他」。只用於 bar 與圓餅類 | 圓餅類 5 組，bar 全部 |
+| `excludeBlank` | 分組欄為空的列不列入圖表，百分比的分母也不包含這些列 | 否，保留為「(空白)」一組 |
 
 ### 數值（`values`）
 
@@ -72,7 +82,7 @@ text、image、ref 不可分組。須依這些欄位分組時，改為宣告一�
 | `stat` | count、sum、avg、min 或 max | 必填 |
 | `key` | 計算的欄位。count 不可指定，其餘必填 | — |
 | `percent` | 以百分比顯示，只用於 count 與 sum。boolean 的 sum 為「是」的數量 | 否 |
-| `label` | 圖例的文字 | 由統計方式與欄位名稱組成 |
+| `label` | 圖例的文字 | count 為「數量」，其餘例如「價格的平均」。boolean 的 sum 為「已買為『是』的數量」，加上 `percent` 時為「比例」 |
 | `type` | 改畫成 line，用於 bar 與 line 的混合圖 | 與圖表相同 |
 | `axis` | 使用左軸或右軸，用於 bar 與 line | 左軸 |
 
@@ -93,15 +103,20 @@ text、image、ref 不可分組。須依這些欄位分組時，改為宣告一�
 
 ---
 
-## 計算的規則 🔲
+## 計算的規則
 
-- **空值自成「(空白)」一組**
-- **date 與 number 分組中沒有列的區間**：count 與 sum 為 0，avg、min、max 留空。區間的範圍從資料中最早的一段到最晚的一段
+- **空值自成「(空白)」一組**：依分組本身排序時排在最後。依數值排序時，與其他組一同比較。設定 `excludeBlank` 時，這些列不列入圖表
+- **date 的區間**：範圍從資料中最早的一段到最晚的一段，沒有列的區間也列出。名稱為 `2026`、`2026/01` 或 `2026/01/05`
+- **number 與 duration 的區間**：
+  - 在最小值與最大值之間等分，最大值歸入最後一段。最小值等於最大值時只有一段
+  - 名稱為「下限 ～ 上限」。number 最多保留兩位小數，duration 為「時:分:秒」
+  - 每一段的篩選條件包含兩端，因此恰好落在分界的值，也符合相鄰那一段的條件
+- **沒有列的區間**：count 與 sum 為 0，avg、min、max 留空
 - **百分比的分母**：
-  - 沒有系列時，為全部的列
-  - 有系列且堆疊時，為同一組的列，即 100% 堆疊
-  - 數值為 boolean 時，為同一組的列，即每組中「是」的比例
-- **「其他」**：依數值選出最大的前 N 組，其餘合併為「其他」，再依 `order` 排列
+  - 數值為 boolean 時，為同一組的列數，即每組中「是」的比例
+  - 有系列且堆疊時，為同一組中各系列的總和，即 100% 堆疊
+  - 其他情況，為同一個 dataset 中各組的總和
+- **「其他」**：依第一個數值選出最大的前 N 組，數值相同時保留排序在前的組。其餘合併為「其他」，排在最後
 
 ---
 

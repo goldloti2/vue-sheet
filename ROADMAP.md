@@ -385,7 +385,7 @@ view 的規則：
 
 **chart**（🔲 預定於 v1.7。規則見 [vue-build/docs/topics/chart.md](vue-build/docs/topics/chart.md)，外觀與操作見 [vue-build/docs/design/chart.md](vue-build/docs/design/chart.md)）：以一張表的列畫一張圖表。
 - ✅ `defineChart` 的輸入型別，以及開發模式下的檢查（`schema/chart.ts`）
-- 🔲 `compute`：分組、統計、排序，以及合併為「其他」
+- ✅ `compute`：分組、統計、排序，以及合併為「其他」
 - 🔲 `DataChart`：Chart.js 的建立、更新與銷毀，以及顏色。圖表元件延遲載入
 - 🔲 `ChartPage`：載入狀態、錯誤與點擊
 - 🔲 互動儀表板中，點擊寫入篩選，以及被選的組的高光

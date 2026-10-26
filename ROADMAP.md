@@ -383,68 +383,13 @@ view 的規則：
 - 有圖片時：寬度貼齊畫面兩側，固定 16:9，裁切填滿，高度以 `40vh` 為上限。文字為白色，底下墊一層由透明至深色的漸層
 - 沒有圖片時：背景透明，寬度與欄位區相同，高度只有文字的高度
 
-**chart**（🔲 預定於 v1.7）：以一張表的列畫一張圖表。資料來自 `useListPage` 的 `rows`，因此搜尋與篩選照常生效。
-- 以 Chart.js 繪製，載入 `chart.js/auto`。框架自行包裝。圖表元件延遲載入
-- 可單獨成頁，也可放進 dashboard 的面板或 `TabPage` 的頁籤
-- 圖表的種類由設計者固定。使用者只能點擊圖表、搜尋與篩選
-- 以 `defineChart(schema, {…})` 宣告於頁面，與 `defineView` 相同。輸入為一般物件，以 TypeScript 型別檢查，可填的項目依 `type` 而定
-- 型別檢查不到的規則，於開發模式下以 console 警告。例如 text 欄位不可分組、date 分組須指定 `unit`
-
-輸入中的欄位有三種角色：
-- **分組**：依一欄把列分成幾組。可用 select、boolean、date、number 與 duration。text、image、ref 不可分組，須要時改用虛擬的 select 欄位
-- **數值**：每組計算的值。一張圖可有多個數值
-- **座標**：scatter 與 bubble 不分組，每一列為一個點
-
-分組（`group`）的項目：
-
-| 項目 | 說明 | 預設 |
-| --- | --- | --- |
-| `key` | 分組的欄位 | 必填 |
-| `unit` | date 以年、月或日為一組 | date 必填 |
-| `bins` | number、duration 在最小值與最大值之間等分的段數，最大值歸入最後一段 | 5 |
-| `order` | 依分組本身或依數值排序，升序或降序。依分組本身時，比較的規則與列表的排序相同 | 依分組本身、升序 |
-| `limit` | 只顯示數值最大的前 N 組，其餘合併為「其他」。只用於 bar 與圓餅類 | 圓餅類 5 組，bar 全部 |
-
-數值（`values`）的項目：
-
-| 項目 | 說明 | 預設 |
-| --- | --- | --- |
-| `stat` | count、sum、avg、min 或 max | 必填 |
-| `key` | 計算的欄位，限 number、duration 與 boolean。count 無須指定 | count 以外必填 |
-| `percent` | 以百分比顯示，只用於 count、sum 與 boolean | 否 |
-| `label` | 圖例的文字 | 由統計方式與欄位名稱組成 |
-| `type` | 畫成 line，用於 bar 與 line 的混合圖 | 與圖表相同 |
-| `axis` | 使用左軸或右軸 | 左軸 |
-
-各種圖表可填的項目：
-
-| 種類 | 可填的項目 |
-| --- | --- |
-| bar、line | `group`、`series`、`values`、`stacked`。bar 另有 `horizontal`。`series` 為第二層分組，每一組成為一個 dataset |
-| pie、doughnut | `group`、`values`。多個數值或 `series` 畫成同心圓，兩者擇一，各圈的分組相同 |
-| polarArea | `group`、一個數值 |
-| radar | `group` 為各軸，`series` 為各條線，`values` |
-| scatter、bubble | `x`、`y`，以及 bubble 的 `r`。`color` 依一欄上色，可用的欄位類型與分組相同 |
-
-固定的規則，不設選項：
-- 空值自成「(空白)」一組
-- date 與 number 分組中沒有列的區間：count 與 sum 為 0，avg、min、max 留空
-- 百分比的分母：
-  - 沒有系列時，為全部的列
-  - 有系列且堆疊時，為同一組的列，即 100% 堆疊
-  - 數值為 boolean 時，為同一組的列，即每組之中「是」的比例
-- 顏色依 `plugins/vuetify.ts` 的共用色名清單輪流使用，色數隨清單的長度。切換深淺色主題時重畫
-- 圓餅類依組上色，bar、line 與 radar 依 dataset 上色
-
-點擊：
-- **一般情況**：進入該組第一列的詳細頁，上一列、下一列只在該組中切換。scatter 與 bubble 進入該點的那一列
-- **開啟互動的 dashboard 中**：點擊即寫入該表的篩選條件，與篩選抽屜為同一份。同表的面板與子表隨之改變
-  - 寫入的條件：select 與 boolean 為該值，「(空白)」為 null，「其他」為合併的各值，date 與 number 的區間為範圍
-  - 圖表忽略自己分組欄上的條件，仍畫出全部的組。被選的組加上高光，其他組調淡
-  - 哪些組被選，由篩選條件推算。從篩選抽屜設定的條件也一樣標示
-  - 分組欄須列於 `searchable`，否則開發模式下以 console 警告
-
-不做：雙向長條圖（人口金字塔），以及內外圈分類不同的同心圓（旭日圖）。
+**chart**（🔲 預定於 v1.7。規則見 [vue-build/docs/topics/chart.md](vue-build/docs/topics/chart.md)，外觀與操作見 [vue-build/docs/design/chart.md](vue-build/docs/design/chart.md)）：以一張表的列畫一張圖表。
+- ✅ `defineChart` 的輸入型別，以及開發模式下的檢查（`schema/chart.ts`）
+- 🔲 `compute`：分組、統計、排序，以及合併為「其他」
+- 🔲 `DataChart`：Chart.js 的建立、更新與銷毀，以及顏色。圖表元件延遲載入
+- 🔲 `ChartPage`：載入狀態、錯誤與點擊
+- 🔲 互動儀表板中，點擊寫入篩選，以及被選的組的高光
+- 🔲 範本與元件文件
 
 **tab**：一次只顯示一個面板，以頁籤切換，即現有的 `TabPage`。
 

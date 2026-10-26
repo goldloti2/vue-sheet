@@ -35,7 +35,7 @@ type ColumnExtra<T extends ColumnType> = ColumnTypes[T] extends { extra: infer E
 type AnyRow = any
 
 // Row 中值型別可容納 Value 的欄位名，不含 id 與 $ 開頭的系統欄位
-type ColumnKey<Row extends object, Value> = {
+export type ColumnKey<Row extends object, Value> = {
   [K in keyof Row & string]: K extends 'id' | `$${string}` ? never : Row[K] extends Value ? K : never
 }[keyof Row & string]
 

@@ -62,7 +62,7 @@ src/
   schema/              處理列的純函數（見 topics/schema.md）：
                        types（型別、coerce、format）、sort、group、filter、validation、relations（關聯圖）、
                        image、format（顯示值與條件式格式）、view（列的版面：欄位與位置的對應）、
-                       index（註冊表：代稱 → schema）
+                       chart（圖表的宣告，見 topics/chart.md）、index（註冊表：代稱 → schema）
     tables/            每張表的欄位定義，一張表一個檔案
   config/              app.ts（App 名稱、登入方式、詳細頁欄位的排法）、navigation.ts（導覽列項目）
   plugins/             vuetify.ts（主題，包括共用色名 vuesheet-*）

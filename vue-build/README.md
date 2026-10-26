@@ -36,6 +36,7 @@ npx eslint src && npx vue-tsc --build --force   # 提交前執行這兩項
 | [docs/design/](docs/design/) | 各種頁面的外觀、用途與操作，以及設計時須決定的事 |
 | [docs/topics/search.md](docs/topics/search.md) | 列表的搜尋、篩選與排序的接法與運作方式 |
 | [docs/topics/actions.md](docs/topics/actions.md) | 動作的描述、位置與執行、內建 builder、連續動作、快速編輯對話框 |
+| [docs/topics/chart.md](docs/topics/chart.md) | 🔲 圖表的宣告方式、輸入的規則、計算方式、點擊與儀表板的互動 |
 | [docs/components/](docs/components/) | 每個共用 UI 元件一份用法說明，依 `src/components/ui/` 的子資料夾分類 |
 | [docs/perf.md](docs/perf.md) | 附錄：列表效能的實測數字、量測方法與判讀方式 |
 | [template/README.md](template/README.md) | 初次設定，以及新增一張表時須複製與修改的檔案 |

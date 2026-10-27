@@ -8,7 +8,7 @@
 
 ## 概要
 
-- **以 Chart.js 繪製**：載入 `chart.js/auto`，支援 Chart.js 的全部圖種。框架自行包裝。🔲 圖表元件延遲載入，沒有圖表的頁面不下載 Chart.js
+- **以 Chart.js 繪製**：載入 `chart.js/auto`，支援 Chart.js 的全部圖種。框架自行包裝。Chart.js 於圖表元件掛載時才載入，沒有圖表的頁面不下載
 - **一頁一張圖表**：可單獨成頁，也可置於儀表板的面板或頁籤頁的頁籤
 - **資料來自 `useListPage` 的 `rows`**：搜尋、篩選與 `scope` 照常生效
 - **圖表的種類由設計者固定**：使用者只能點擊圖表、搜尋與篩選
@@ -22,7 +22,7 @@
 | 1 | 頁面 | 以 `useListPage` 取得 `rows`。以 `defineChart(schema, {…})` 宣告圖表，只執行一次 |
 | 2 | `defineChart` | 於開發模式下檢查輸入，回傳 `type`、`stacked`、`horizontal`、`groupKey` 與 `compute` |
 | 3 | `ChartPage` 🔲 | 整頁層級的事：載入狀態、錯誤、點擊後的處理 |
-| 4 | `DataChart` 🔲 | 以 `computed` 執行 `compute(rows)`，套上顏色後交給 Chart.js。資料改變時更新圖表，卸載時銷毀 Chart.js 的實例 |
+| 4 | [`DataChart`](../components/chart/DataChart.md) | 以 `computed` 執行 `compute(rows)`，套上顏色後交給 Chart.js。資料改變時更新圖表，卸載時銷毀 Chart.js 的實例 |
 
 分工與 view 相同：`defineView` 準備，`DataList` 以每一列執行（見 [DataList](../components/list/DataList.md#view)）。
 
@@ -120,7 +120,7 @@ text、image、ref 不可分組。須依這些欄位分組時，改為宣告一�
 
 ---
 
-## 顏色 🔲
+## 顏色
 
 - **依共用色名輪流使用**：清單為 `plugins/vuetify.ts` 中的 `vuesheet-*`，色數隨清單的長度（見 [FormattedValue](../components/view/FormattedValue.md)）
 - **圓餅類依組上色**，bar、line 與 radar 依 dataset 上色

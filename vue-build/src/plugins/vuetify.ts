@@ -32,6 +32,9 @@ const darkColors = {
   'vuesheet-grey': colors.grey.lighten1,
 }
 
+// 共用色名的順序，圖表依此輪流使用（見 docs/topics/chart.md 的「顏色」）
+export const sharedColorNames = Object.keys(lightColors)
+
 // https://vuetifyjs.com/en/introduction/why-vuetify/#feature-guides
 export default createVuetify({
   theme: {

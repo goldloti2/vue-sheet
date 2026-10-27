@@ -38,6 +38,7 @@ src/
                        以及排版的 placePanels、dashboardContext
     view/              ViewActions（view 的列上動作，DataList、DataProfile、DataCard、DataGallery 與 DetailHeader 共用）、
                        FormattedValue（值與條件式格式）
+    chart/             DataChart（以 Chart.js 畫出 defineChart 的圖表）與 chartConfig（Chart.js 設定的組成）
     auth/              PasswordLoginForm（登入頁上的表單，依登入方式替換。登入頁本身在 pages/login.vue）
   composables/
     data/              讀取資料的反應式包裝：useTable（整張表、排序後、單一列）、useSearch、useFilter

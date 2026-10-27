@@ -1,30 +1,27 @@
 import type { TableKey } from '@/schema'
-import type { ComputedRef, MaybeRefOrGetter } from 'vue'
-import { computed, onActivated, onDeactivated, reactive, shallowRef, toValue, watchEffect } from 'vue'
+import type { ComputedRef, InjectionKey, MaybeRefOrGetter } from 'vue'
+import { computed, inject, provide, reactive, toValue } from 'vue'
 import { useRouter } from 'vue-router'
 import { useDashboardSelection } from '@/composables/shell/useDashboardSelection'
-import { usePanelActive } from '@/composables/shell/usePanelActive'
 
-// 列表頁發布畫面上實際的順序，詳細頁以此計算上一列與下一列
+// 點擊一列時發布的順序，詳細頁以此計算上一列與下一列
 const orders = reactive(new Map<TableKey, string[]>())
 
-export function useListOrder (table: TableKey, ids: MaybeRefOrGetter<string[]>): void {
-  // KeepAlive 保留的列表與非目前頁籤的面板仍在運作，因此只由作用中的列表發布順序
-  const cached = shallowRef(true)
-  const panelActive = usePanelActive()
-  onActivated(() => {
-    cached.value = true
-  })
-  onDeactivated(() => {
-    cached.value = false
-  })
+// 直接發布一份順序，例如圖表點擊一組時發布該組的列
+export function publishListOrder (table: TableKey, ids: readonly string[]): void {
+  orders.set(table, [...ids])
+}
 
-  // 只停止更新，不清除。詳細頁於列表離開畫面後才讀取
-  watchEffect(() => {
-    if (cached.value && panelActive.value) {
-      orders.set(table, [...toValue(ids)])
-    }
-  })
+const publishKey: InjectionKey<() => void> = Symbol('publishListOrder')
+
+// 列表提供畫面上的順序，其中的列被點擊時才發布（見 usePublishListOrder）
+export function provideListOrder (table: TableKey, ids: MaybeRefOrGetter<readonly string[]>): void {
+  provide(publishKey, () => publishListOrder(table, toValue(ids)))
+}
+
+// 列的點擊呼叫：發布所在列表的順序。不在提供順序的列表中時不做任何事
+export function usePublishListOrder (): () => void {
+  return inject(publishKey, () => {})
 }
 
 interface Siblings {

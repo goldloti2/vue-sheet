@@ -1,10 +1,10 @@
 # RecordNav
 
 詳細頁左右兩側的「上一列」「下一列」箭頭。
-- 順序來自**列表頁當時實際顯示的順序**，包括篩選、頁籤與分組。例如從「已出貨」頁籤進入，就只在已出貨的那幾列之間切換
+- 順序來自**點擊一列時列表實際顯示的順序**，包括篩選、頁籤與分組。例如從「已出貨」頁籤進入，就只在已出貨的那幾列之間切換
 - 頭尾不循環：到頭時，該側的按鈕直接消失
 
-列表頁須先呼叫 `useListOrder` 發布順序，此元件才有順序可用。以下情況兩個按鈕皆不出現：
+列表須先發布順序，此元件才有順序可用。`ListPage` 於點擊一列時發布。以下情況兩個按鈕皆不出現：
 - 沒有發布過順序
 - 目前這一列不在清單中，例如重新整理、直接貼上網址、從其他表的關聯連結進入
 
@@ -12,28 +12,30 @@
 
 ## Usage
 
-列表頁發布順序：
+不使用 `ListPage` 的列表頁，以 `provideListOrder` 提供畫面上的順序。其中的 `DataList`、`DataProfile`、`DataCard`、`DataGallery` 與 `DataTable` 被點擊時，發布這份順序：
 
 ```vue
 <script lang="ts" setup>
   import { computed } from 'vue'
-  import { useListOrder } from '@/composables/navigation/useListOrder'
+  import { provideListOrder } from '@/composables/navigation/useListOrder'
   import { useSortedTableList } from '@/composables/data/useTable'
   import { __table__Schema } from '@/schema/tables/__table__'
 
   const { data } = useSortedTableList<__Table__Row>('__table__', __table__Schema)
 
-  useListOrder('__table__', computed(() => data.value.map(row => row.id)))
+  provideListOrder('__table__', computed(() => data.value.map(row => row.id)))
 </script>
 ```
 
-有分組時，須發布攤平後的順序。`flattenGroups` 提供的即為畫面上由上往下的順序：
+有分組時，須提供攤平後的順序。`flattenGroups` 提供的即為畫面上由上往下的順序：
 
 ```ts
 import { flattenGroups } from '@/schema/group'
 
-useListOrder('__table__', computed(() => flattenGroups(groupedData.value).map(row => row.id)))
+provideListOrder('__table__', computed(() => flattenGroups(groupedData.value).map(row => row.id)))
 ```
+
+不經由列的點擊時（例如圖表點擊一組），以 `publishListOrder(table, ids)` 直接發布。
 
 詳細頁：
 
@@ -62,7 +64,7 @@ useListOrder('__table__', computed(() => flattenGroups(groupedData.value).map(ro
 
 | prop | 型別 | 說明 |
 | --- | --- | --- |
-| `table` | `TableKey` | **必填**，須與 `useListOrder` 發布時使用的表相同 |
+| `table` | `TableKey` | **必填**，須與發布順序時使用的表相同 |
 | `id` | `string` | **必填**，目前這一列的 id，以 `useRouteId()` 取得 |
 
 ## 備註

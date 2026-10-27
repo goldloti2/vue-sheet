@@ -6,6 +6,7 @@
   import { useRouter } from 'vue-router'
   import FormattedValue from '@/components/ui/view/FormattedValue.vue'
   import { useColumnWidths } from '@/composables/list/useColumnWidths'
+  import { usePublishListOrder } from '@/composables/navigation/useListOrder'
   import { displayValue } from '@/schema/format'
   import { allColumns } from '@/schema/types'
 
@@ -36,6 +37,7 @@
   })
 
   const router = useRouter()
+  const publishOrder = usePublishListOrder()
 
   const resolvedColumns = computed<ResolvedColumn<Row>[]>(() => {
     const columnList: ResolvedColumn<Row>[] = allColumns(props.schema).map(column => ({
@@ -87,6 +89,7 @@
 
   function handleRowClick (row: Row) {
     if (props.rowTo) {
+      publishOrder()
       router.push(props.rowTo(row))
     }
   }

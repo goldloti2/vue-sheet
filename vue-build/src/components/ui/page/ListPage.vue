@@ -8,7 +8,7 @@
   import ListLayout from '@/components/ui/list/ListLayout.vue'
   import PageState from '@/components/ui/page/PageState.vue'
   import PageFab from '@/components/ui/shell/PageFab.vue'
-  import { useListOrder } from '@/composables/navigation/useListOrder'
+  import { provideListOrder } from '@/composables/navigation/useListOrder'
   import { useDashboardSelection } from '@/composables/shell/useDashboardSelection'
   import { flattenGroups } from '@/schema/group'
 
@@ -35,9 +35,9 @@
     rows?: (slotProps: { rows: Row[] }) => unknown
   }>()
 
-  // 畫面上實際的順序，詳細頁的上一列、下一列依此切換。分組時以攤平後的順序為準
+  // 畫面上實際的順序，點擊一列時發布，詳細頁的上一列、下一列依此切換。分組時以攤平後的順序為準
   const shown = computed<Row[]>(() => props.groups ? flattenGroups(props.groups) : props.rows ?? [])
-  useListOrder(props.table, () => shown.value.map(row => row.id))
+  provideListOrder(props.table, () => shown.value.map(row => row.id))
 
   // 每一列的綁定：多選，加上 dashboard 開啟互動時的選取（點擊改為選取、標示選取的那一列）
   const dashboard = useDashboardSelection()

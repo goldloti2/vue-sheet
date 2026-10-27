@@ -1,6 +1,6 @@
 # ListPage
 
-列表頁的整頁版型：載入狀態、逐列顯示、右下角的 FAB，並發布畫面上的順序。詳細頁的上一列、下一列依此順序切換。每一列的外觀由頁面決定。
+列表頁的整頁版型：載入狀態、逐列顯示、右下角的 FAB，並於點擊一列時發布畫面上的順序。詳細頁的上一列、下一列依此順序切換。每一列的外觀由頁面決定。
 
 此元件搭配 `useListPage(table, schema)` 使用：
 - `useListPage` 依序處理：整張表 → `scope` → 篩選 → 搜尋，並提供長按多選
@@ -69,7 +69,7 @@ const groups = computed(() => sort.value ? undefined : groupRows(rows.value, gro
 **頁籤**：
 - 將列表拆成只供引用的元件（`_ref/`），每個頁籤放一個，各自以 `useListPage` 的 `scope` 只保留該頁籤的列
 - 搜尋、篩選與排序由 `TabPage` 統一登記，並跨頁籤共用（見 [search.md](../../topics/search.md#同一頁面中的多張表)）。範本為 `template/pages/tab-list.vue` 與 `template/pages/_ref/list.vue`
-- 每個頁籤各有一個 `ListPage`，各自計算 FAB、多選與列表順序。只有目前頁籤的那一份生效，依 `TabPanel` 的訊號判斷
+- 每個頁籤各有一個 `ListPage`，各自計算 FAB、多選與列表順序。FAB 只有目前頁籤的那一份生效，依 `TabPanel` 的訊號判斷。列表順序由被點擊的那個頁籤發布
 - 發布順序前先執行 `flattenGroups`，順序與畫面上的先後一致
 
 ## 手動登記多張表
@@ -114,6 +114,6 @@ useListControls(query, {
 
 ## 備註
 
-- **版面確實不同時，才自行組合**：總覽頁那類混合的版面不使用此元件，資料層仍可使用 `useListPage`。此時頁面須自行呼叫 `useListOrder(table, computed(() => 畫面上的順序))`
+- **版面確實不同時，才自行組合**：總覽頁那類混合的版面不使用此元件，資料層仍可使用 `useListPage`。此時頁面須自行呼叫 `provideListOrder(table, computed(() => 畫面上的順序))`（見 [RecordNav](../record/RecordNav.md)）
 - 空列表即顯示為空，不顯示「找不到資料」（見 [PageState](PageState.md)）
 - **內容區為不具名的 container**（`container-type: inline-size`）：列表元件以 `cqw` 依寬度估計畫面外各列的高度（見 [DataCard](../list/DataCard.md) 的備註）。此 container 不具名，不影響 dashboard 以 `@container dashboard-panel` 判斷的窄版

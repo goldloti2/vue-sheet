@@ -188,7 +188,7 @@
   - 文字比較時，其中的數字依大小排序，例如 `2` 在 `10` 之前
 - **排序與分組二選一**，框架不介入：
   - 分組會把原本的順序壓縮為組內的順序，因此頁面在 `sort` 不是 null 時，自行以 `rows` 取代 `groups`。有分組的列表頁即如此處理
-  - 排序一改變，`ListPage` 發布的列表順序隨之改變，詳細頁的上一列、下一列自動一致
+  - 點擊一列時，`ListPage` 發布當時畫面上的順序，詳細頁的上一列、下一列與畫面一致
 
 ### 動作系統
 說明見 [vue-build/docs/topics/actions.md](vue-build/docs/topics/actions.md)。
@@ -248,7 +248,7 @@
   - 尚未完成的部分，見「未完成」的「後端」
 - `useRouteId()`：路由參數讀取一次即固定，依 `route.fullPath` 作為 key 成立，離場動畫期間不會被目的地的 id 汙染。拿掉 key 時，開發模式下警告
 - `leaveAfterAction()`：完成動作後以瀏覽器的返回離開，不把已完成的表單頁留在歷史中
-- `useListOrder`、`useSiblingNav`：列表頁發布畫面上的實際順序，詳細頁據此切換上一列、下一列（箭頭與手勢），切換使用 `replace`
+- `provideListOrder`、`useSiblingNav`：點擊一列時，列表發布畫面上的實際順序，詳細頁據此切換上一列、下一列（箭頭與手勢），切換使用 `replace`
 
 ### 後端的對接層與假後端
 - `services/mock/`：記憶體中的資料表，以及可運作的 batch（create、update、delete，全有全無）。與真正的 Sheet 一樣只存放原始字串

@@ -57,6 +57,6 @@
 ## 備註
 
 - **子表的放法**：slot 中放一個 [ChildList](ChildList.md)，`rows` 直接傳入父列上的 `$子表_欄位key` getter，無須另外查詢。`ChildList` 處理標題與列數、顯示上限、右下角的「展開」與新增
-- **左右滑動與箭頭使用同一份順序**，即 `useListOrder` 發布的列表順序。未經過列表頁、直接開啟網址時，兩者皆沒有上一列與下一列，也不顯示提示
+- **左右滑動與箭頭使用同一份順序**，即點擊一列時列表發布的順序（見 [RecordNav](../record/RecordNav.md)）。未經過列表頁、直接開啟網址時，兩者皆沒有上一列與下一列，也不顯示提示
 - **於 dashboard 的面板中**：左右滑動與箭頭只在面板展開時啟用，並改為切換互動選取的上一列、下一列，不離開 dashboard（見 [DashboardPage](../panel/DashboardPage.md#互動)）
 - 載入狀態由 [PageState](PageState.md) 顯示。`DataDetail` 只負責有資料時的欄位顯示

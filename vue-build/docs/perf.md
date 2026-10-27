@@ -151,7 +151,7 @@ contain-intrinsic-size: auto 72px;
 - **掛載頁的 386ms `enter hook`**：Vue 建立 1306 列 × 約 3 個元件實例。只有減少建立的數量才能解決
 - **快取頁的 167ms 排版**：773 個列的盒子，解法同上
 - **快取頁的 70ms JS**：尚未拆解。可能的來源：
-  - KeepAlive 啟用時的一連串處理：`useListOrder` 重新發布幾百個 id、`useListControls` 重新登記、`TabPage` 的相關處理
+  - KeepAlive 啟用時的一連串處理：`useListControls` 重新登記、`TabPage` 的相關處理
   - 列表頁 template 中每次渲染都重新執行的過濾或分組函數（寫成函數而非 computed 時）
 
 可能的下一步，依效益排序：

@@ -1,5 +1,6 @@
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { usePublishListOrder } from '@/composables/navigation/useListOrder'
 import { useLongPress } from './useLongPress'
 
 interface UseRowClickOptions {
@@ -13,10 +14,11 @@ interface UseRowClickOptions {
   onPick: () => void
 }
 
-// 列表中一列的點擊：長按進入多選，多選模式下切換勾選，其餘導覽至 to 或選取。連結為自行組成 href 的 <a>
+// 列表中一列的點擊：長按進入多選，多選模式下切換勾選，其餘發布列表順序後導覽至 to 或選取。連結為自行組成 href 的 <a>
 export function useRowClick (options: UseRowClickOptions) {
   const router = useRouter()
   const longPress = useLongPress(options.onLongpress)
+  const publishOrder = usePublishListOrder()
 
   const href = computed(() => {
     const path = options.to()
@@ -42,6 +44,7 @@ export function useRowClick (options: UseRowClickOptions) {
 
     if (options.pickable()) {
       event.preventDefault()
+      publishOrder()
       options.onPick()
       return
     }
@@ -49,6 +52,7 @@ export function useRowClick (options: UseRowClickOptions) {
     const path = options.to()
     if (path) {
       event.preventDefault()
+      publishOrder()
       void router.push(path)
     }
   }

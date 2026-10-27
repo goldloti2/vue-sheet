@@ -119,4 +119,4 @@
 
 **排序與分組只能擇一**，由頁面自行判斷，框架不介入：`useListPage` 回傳的 `sort` 有值時，交給 `ListPage` 的是 `rows`，不是 `groups`。寫法見 [ListPage.md](../components/page/ListPage.md#分組與頁籤)。
 
-排序改變時，`ListPage` 發布給 `useListOrder` 的順序隨之改變。因此詳細頁的上一列、下一列與左右滑動，自動與畫面一致。
+點擊一列時，`ListPage` 發布當時畫面上的順序。因此詳細頁的上一列、下一列與左右滑動，與點擊時的畫面一致。

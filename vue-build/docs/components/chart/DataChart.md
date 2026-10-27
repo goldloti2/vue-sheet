@@ -4,7 +4,7 @@
 
 ## Usage
 
-頁面以 `useListPage` 取得 `rows`，以 `defineChart` 宣告圖表，兩者交給此元件。點擊時依事件決定後續的動作，例如進入詳細頁。
+頁面通常使用 [ChartPage](../page/ChartPage.md)，由它使用此元件。版面確實不同時，才直接使用此元件：頁面以 `useListPage` 取得 `rows`，以 `defineChart` 宣告圖表，兩者交給此元件。點擊時依事件決定後續的動作，例如進入詳細頁。
 
 ## Props
 
@@ -17,7 +17,7 @@
 
 | 事件 | 參數 | 說明 |
 | --- | --- | --- |
-| `group` | `index: number` | 點擊分組類圖表的一組。`index` 對應 `compute` 結果的 `groups` 與 `labels` |
+| `group` | `group: ChartGroupData<Row>`、`index: number` | 點擊分組類圖表的一組。`group` 為該組的列與篩選條件，`index` 對應 `compute` 結果的 `groups` 與 `labels` |
 | `row` | `row: Row` | 點擊 scatter 或 bubble 的一點，參數為該點的那一列 |
 
 ## 備註
@@ -27,5 +27,5 @@
 - **顏色**依 `plugins/vuetify.ts` 的 `sharedColorNames` 輪流使用，取自目前主題的色值。圓餅類依組上色，其他圖表依 dataset 上色。文字與格線取自主題的 `on-surface`
 - **刻度與提示依 dataset 的 `unit` 格式化**：`percent` 加上「%」，`duration` 為「時:分:秒」，`date` 為 `yyyy/mm/dd`，其餘最多兩位小數
 - **bubble 的半徑換算為 4 至 20 像素**：依資料中半徑欄位的最小值與最大值等比換算。提示中顯示原本的值
-- **高度隨所在的容器**，至少 280px。單獨使用時，由外層指定高度
+- **高度隨所在的容器**，至少 280px。`ChartPage` 指定這個容器的高度。直接使用此元件時，由外層指定高度
 - 設定的組成位於同一資料夾的 `chartConfig.ts`，為純函數

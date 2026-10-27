@@ -1,6 +1,6 @@
 <script generic="Row extends object" lang="ts" setup>
   import type { ChartTheme } from './chartConfig'
-  import type { ChartDefinition } from '@/schema/chart'
+  import type { ChartDefinition, ChartGroupData } from '@/schema/chart'
   import type { Chart } from 'chart.js'
   import { computed, onBeforeUnmount, onMounted, useTemplateRef, watch } from 'vue'
   import { useTheme } from 'vuetify'
@@ -14,8 +14,8 @@
   }>()
 
   const emit = defineEmits<{
-    // 點擊分組類圖表的一組，index 對應 compute 結果的 groups
-    group: [index: number]
+    // 點擊分組類圖表的一組，index 對應 compute 結果的 groups 與 labels
+    group: [group: ChartGroupData<Row>, index: number]
     // 點擊 scatter 或 bubble 的一點
     row: [row: Row]
   }>()
@@ -49,7 +49,10 @@
     }
     const current = data.value
     if (current.kind === 'category') {
-      emit('group', element.index)
+      const group = current.groups[element.index]
+      if (group) {
+        emit('group', group, element.index)
+      }
       return
     }
     const point = current.datasets[element.datasetIndex]?.data[element.index]

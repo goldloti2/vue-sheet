@@ -387,10 +387,9 @@ view 的規則：
 - ✅ `defineChart` 的輸入型別，以及開發模式下的檢查（`schema/chart.ts`）
 - ✅ `compute`：分組、統計、排序，以及合併為「其他」
 - ✅ `DataChart`：Chart.js 的建立、更新與銷毀，以及顏色。Chart.js 延遲載入
-- 🔲 `ChartPage`：載入狀態、錯誤與點擊
+- ✅ `ChartPage`：載入狀態、錯誤、高度與點擊，以及範本 `template/pages/chart.vue`
 - 🔲 圖表忽略自己分組欄上的條件，並為被選的組加上高光
 - 🔲 互動儀表板中，點擊寫入篩選
-- 🔲 範本與元件文件
 
 **tab**：一次只顯示一個面板，以頁籤切換，即現有的 `TabPage`。
 

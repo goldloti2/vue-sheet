@@ -60,6 +60,7 @@
 | `pages/edit.vue` | `src/pages/__table__/[id]/edit.vue` | 編輯表單 → `/__table__/:id/edit` |
 | `pages/child-list.vue` | `src/pages/__parent__/[id]/__table__.vue` | **選用**：父表詳細頁中子表區塊的「展開」頁 → `/__parent__/:id/__table__`。一條父子關聯一個檔案 |
 | `pages/dashboard.vue` | `src/pages/dashboard.vue`（檔名可自訂） | **選用**：同時顯示多個面板的總覽頁 → `/dashboard`。<br>・範本為父表列表、父表詳細與子表列表三個面板，並開啟互動<br>・列表使用各表的 `_ref/list.vue`<br>・須加入導覽列時，另外加至 `src/config/navigation.ts` |
+| `pages/chart.vue` | `src/pages/__table__-chart.vue`（檔名可自訂） | **選用**：一張圖表的頁面 → `/__table__-chart`。<br>・範本為各狀態的列數與金額的總和，長條加折線<br>・也可改為 `_ref/` 中的元件，置於 dashboard 的面板或頁籤頁的頁籤<br>・須加入導覽列時，另外加至 `src/config/navigation.ts` |
 
 > 路由為檔案式（unplugin-vue-router），檔案放進 `pages/` 即自動生效，無須維護路由表。
 >

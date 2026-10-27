@@ -212,12 +212,12 @@
   border-radius: 14px;
 }
 
-/* 內容依面板的寬度切換窄版。一般頁面沒有這個 container，不會觸發 */
+/* 內容依面板的寬度切換窄版，圖表以 cqh 依高度決定大小。一般頁面沒有這個 container，不會觸發 */
 .dashboard-panel__body {
   flex: 1;
   min-height: 0;
   overflow: auto;
-  container: dashboard-panel / inline-size;
+  container: dashboard-panel / size;
 }
 
 /* 展開時與一般頁面相同：沒有外框，高度不受限，隨整頁捲動 */
@@ -227,7 +227,9 @@
   border-radius: 0;
 }
 
+/* 高度隨內容，只保留寬度的 container */
 .dashboard-panel--expanded .dashboard-panel__body {
   overflow: visible;
+  container-type: inline-size;
 }
 </style>

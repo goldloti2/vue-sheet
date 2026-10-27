@@ -55,6 +55,7 @@
   - 互動經由的 ref 欄位（`via`）
 - **登記只在關注面板生效**：篩選抽屜等跟著關注點
 - **FAB、詳細頁的上一列與下一列、左右滑動，只在展開時啟用**
+- **內容區的 container 另含高度**：未展開時，`ChartPage` 以 `cqh` 依內容區的高度決定圖表的高度。展開時只含寬度，高度隨內容
 - **內容區為名為 `dashboard-panel` 的 container**，不含小外殼。面板寬 3 格以下時，內容元件以 `@container dashboard-panel (width < 200px)` 切換窄版：
   - deck：只顯示標題與副標，上下排列
   - card：省略第 3 層

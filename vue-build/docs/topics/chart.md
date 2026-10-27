@@ -15,13 +15,13 @@
 
 ---
 
-## 流程 🔶
+## 流程
 
 | 步驟 | 負責 | 內容 |
 | --- | --- | --- |
 | 1 | 頁面 | 以 `useListPage` 取得 `rows`。以 `defineChart(schema, {…})` 宣告圖表，只執行一次 |
 | 2 | `defineChart` | 於開發模式下檢查輸入，回傳 `type`、`stacked`、`horizontal`、`groupKey` 與 `compute` |
-| 3 | `ChartPage` 🔲 | 整頁層級的事：載入狀態、錯誤、點擊後的處理 |
+| 3 | [`ChartPage`](../components/page/ChartPage.md) | 整頁層級的事：載入狀態、錯誤、高度、點擊後的處理。範本為 `template/pages/chart.vue` |
 | 4 | [`DataChart`](../components/chart/DataChart.md) | 以 `computed` 執行 `compute(rows)`，套上顏色後交給 Chart.js。資料改變時更新圖表，卸載時銷毀 Chart.js 的實例 |
 
 分工與 view 相同：`defineView` 準備，`DataList` 以每一列執行（見 [DataList](../components/list/DataList.md#view)）。
@@ -136,10 +136,10 @@ text、image、ref 不可分組。須依這些欄位分組時，改為宣告一�
 
 ---
 
-## 點擊 🔲
+## 點擊 🔶
 
-- **一般情況**：進入該組第一列的詳細頁，上一列、下一列只在該組的列之間切換。scatter 與 bubble 進入該點的那一列
-- **開啟互動的儀表板中**：點擊即寫入該表的篩選條件，與篩選抽屜為同一份條件。同表的面板與子表隨之改變（見 [DashboardPage](../components/panel/DashboardPage.md) 的「互動」）
+- **一般情況**：進入該組第一列的詳細頁，上一列、下一列只在該組的列之間切換。scatter 與 bubble 進入該點的那一列，沒有上一列與下一列
+- 🔲 **開啟互動的儀表板中**：點擊即寫入該表的篩選條件，與篩選抽屜為同一份條件。同表的面板與子表隨之改變（見 [DashboardPage](../components/panel/DashboardPage.md) 的「互動」）
 
 寫入的條件：
 

@@ -33,7 +33,7 @@ src/
     dialog/            AppDialog、ConfirmDialog、FieldsDialog
     list/              DataList、DataProfile、DataCard、DataGallery、ListLayout、ListField、GroupedList、DataTable、CountLabel
     record/            DataDetail、DetailField、DetailHeader、DataForm、FieldInput、InlineField、RecordNav
-    page/              整頁的版型：PageState（載入中、失敗、找不到）、FormPage、DetailPage、ListPage、ChildList
+    page/              整頁的版型：PageState（載入中、失敗、找不到）、FormPage、DetailPage、ListPage、ChildList、ChartPage
     panel/             含多個面板的頁面：TabPage、TabPanel（頁籤）、DashboardPage、DashboardPanel（dashboard），
                        以及排版的 placePanels、dashboardContext
     view/              ViewActions（view 的列上動作，DataList、DataProfile、DataCard、DataGallery 與 DetailHeader 共用）、
@@ -87,7 +87,7 @@ src/
 
 ---
 
-## 頁面範本的五種型態
+## 頁面範本的六種型態
 
 不論套用於哪張表，皆為同一套範本，差別只在開啟了哪些功能。實際的檔案見 [template/](../template/)，各頁面的外觀與用途見 [design/](design/README.md)。
 
@@ -100,6 +100,7 @@ src/
 | **詳細**（detail） | `detail.vue`。子表的完整列表為 `child-list.vue` | `useRecordPage` + `DetailPage` | 選用的標頭、欄位的動作、子表區塊等 slot 中的內容 |
 | **表單**（form） | `new.vue`、`edit.vue` | `useCreateForm` 或 `useEditForm` + `FormPage` | 幾乎無須撰寫，欄位與順序由 schema 決定 |
 | **儀表板**（dashboard） | `dashboard.vue` | `DashboardPage` + `DashboardPanel`，面板中放置各表 `_ref/` 中的列表與詳細頁 | 放入哪些面板、各自的大小、是否開啟互動模式 |
+| **圖表**（chart） | `chart.vue` | `useListPage` + `defineChart` + `ChartPage` | 圖表的種類、分組的欄位與每組的數值 |
 
 - 版面與上述皆不同時（例如自訂的排列方式），不套用版型元件，資料層仍可共用。此時須自行以 `provideListOrder` 提供畫面上的順序
 - 各型態的載入中、載入失敗與找不到資料，皆由同一個 `PageState` 處理

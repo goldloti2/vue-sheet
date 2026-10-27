@@ -4,12 +4,16 @@ import { isEmpty } from './validation'
 
 // 篩選：條件的形狀與純函數。反應式的包裝位於 composables/data/useFilter.ts
 
+type Bound = number | Date | string
+
 // 一欄的篩選條件：select 與 boolean 使用 values（null 為「空白」選項），其餘使用 min、max。空的條件不篩選
 export interface ColumnFilter {
   values?: (string | null)[]
-  // number 為數字，date 為 Date，duration 為 "時:分:秒" 字串
-  min?: number | Date | string | null
-  max?: number | Date | string | null
+  // 包含兩端。number 為數字，date 為 Date，duration 為 "時:分:秒" 字串
+  min?: Bound | null
+  max?: Bound | null
+  // 圖表寫入的區間：≥ min 且 < below，沒有 below 時不設上限。抽屜的輸入框不顯示此區間
+  segment?: { min: Bound, below?: Bound }
 }
 
 // 欄位 key → 條件。未列出的欄位不篩選
@@ -63,7 +67,7 @@ export function isActiveFilter (filter: ColumnFilter | undefined): boolean {
   if (!filter) {
     return false
   }
-  return (filter.values?.length ?? 0) > 0 || filter.min != null || filter.max != null
+  return (filter.values?.length ?? 0) > 0 || filter.min != null || filter.max != null || filter.segment !== undefined
 }
 
 // 任一欄有條件即為篩選中（用於 App Bar 的圖示標記）
@@ -100,7 +104,14 @@ export function matchesFilter (value: unknown, filter: ColumnFilter): boolean {
   }
   const min = toNumber(filter.min)
   const max = toNumber(filter.max)
-  return (min === null || actual >= min) && (max === null || actual <= max)
+  if ((min !== null && actual < min) || (max !== null && actual > max)) {
+    return false
+  }
+  if (filter.segment) {
+    const below = toNumber(filter.segment.below)
+    return actual >= (toNumber(filter.segment.min) ?? -Infinity) && (below === null || actual < below)
+  }
+  return true
 }
 
 // 檢查一列是否符合整張表條件的函數。欄位之間為 AND，只檢查 filterable 的欄位。沒有生效的條件時為 null

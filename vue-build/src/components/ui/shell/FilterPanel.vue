@@ -6,7 +6,7 @@
   import { computed, shallowRef, watch } from 'vue'
   import TableChips from '@/components/ui/shell/TableChips.vue'
   import { filterableColumns, isActiveFilter, presentValues } from '@/schema/filter'
-  import { booleanText, formatDate } from '@/schema/types'
+  import { booleanText, formatDate, formatDuration } from '@/schema/types'
 
   const props = defineProps<{
     // 每張表各有一份條件，同時生效。上方的表選單只決定目前編輯哪一張
@@ -80,9 +80,11 @@
     return (filters.value[column.key]?.values ?? []).map(value => value ?? BLANK)
   }
 
+  // 使用者輸入範圍時，取代圖表寫入的區間
   function patch (key: string, change: ColumnFilter) {
     if (table.value) {
-      table.value.filters.value = { ...filters.value, [key]: { ...filters.value[key], ...change } }
+      const segment = 'min' in change || 'max' in change ? undefined : filters.value[key]?.segment
+      table.value.filters.value = { ...filters.value, [key]: { ...filters.value[key], ...change, segment } }
     }
   }
 
@@ -112,8 +114,27 @@
   }
 
   function isActive (column: AnyColumn): boolean {
-    const filter = filters.value[column.key]
-    return (filter?.values?.length ?? 0) > 0 || filter?.min != null || filter?.max != null
+    return isActiveFilter(filters.value[column.key])
+  }
+
+  function boundText (column: AnyColumn, value: unknown): string {
+    if (value instanceof Date) {
+      return formatDate(value)
+    }
+    if (typeof value !== 'number') {
+      return String(value)
+    }
+    return column.type === 'duration' ? formatDuration(value) : String(Math.round(value * 100) / 100)
+  }
+
+  // 圖表寫入的區間，例如「≥ 0、< 20」。沒有時為空字串
+  function segmentText (column: AnyColumn): string {
+    const segment = filters.value[column.key]?.segment
+    if (!segment) {
+      return ''
+    }
+    const low = `≥ ${boundText(column, segment.min)}`
+    return segment.below === undefined ? low : `${low}、< ${boundText(column, segment.below)}`
   }
 
   // 摘要的字數上限，超過時截斷並加上「…共 X 項」
@@ -136,6 +157,10 @@
     if (filter.values && filter.values.length > 0) {
       const text = filter.values.map(value => value === null ? '(空白)' : valueTitle(column, value)).join('、')
       return text.length <= SUMMARY_MAX ? text : `${text.slice(0, SUMMARY_MAX)}…共 ${filter.values.length} 項`
+    }
+
+    if (filter.segment) {
+      return segmentText(column)
     }
 
     if (column.type === 'duration') {
@@ -219,6 +244,9 @@
         <v-btn aria-label="返回欄位清單" :icon="mdiChevronLeft" variant="text" @click="editing = null" />
       </template>
     </v-toolbar>
+
+    <!-- 圖表寫入的區間只顯示文字，輸入範圍後即取代 -->
+    <v-container v-if="segmentText(editing)" class="text-medium-emphasis pb-0">圖表選取：{{ segmentText(editing) }}</v-container>
 
     <v-list v-if="editing.type === 'select' || editing.type === 'boolean'" density="compact">
       <v-list-item

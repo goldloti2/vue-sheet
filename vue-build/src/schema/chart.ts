@@ -157,7 +157,7 @@ export interface ChartDefinition<Row extends object> {
   type: ChartInput<Row>['type']
   stacked: boolean
   horizontal: boolean
-  // 分組欄。互動儀表板中，圖表忽略此欄的篩選條件
+  // 分組欄。圖表忽略此欄的篩選條件
   groupKey: string | null
   compute: (rows: readonly Row[]) => ChartData<Row>
 }
@@ -324,10 +324,9 @@ function dateBuckets<Row> (rows: readonly Row[], column: AnyColumn, unit: DateUn
   const last = Math.max(...starts.keys())
   while (start.getTime() <= last) {
     const next = dateNext(start, unit)
-    const end = new Date(next.getFullYear(), next.getMonth(), next.getDate() - 1)
     buckets.push({
       label: dateLabel(start, unit),
-      filter: { key: column.key, condition: { min: start, max: end } },
+      filter: { key: column.key, condition: { segment: { min: start, below: next } } },
       rows: starts.get(start.getTime()) ?? [],
     })
     start = next
@@ -335,7 +334,7 @@ function dateBuckets<Row> (rows: readonly Row[], column: AnyColumn, unit: DateUn
   return buckets
 }
 
-// number、duration 在最小值與最大值之間等分。最大值歸入最後一段，區間的條件包含兩端
+// number、duration 在最小值與最大值之間等分。區間為 ≥ 下限且 < 上限，最後一段不設上限。duration 的區間以秒數表示
 function rangeBuckets<Row> (rows: readonly Row[], column: AnyColumn, bins: number, blank: Row[]): Bucket<Row>[] {
   const entries: { row: Row, value: number }[] = []
   for (const row of rows) {
@@ -355,14 +354,14 @@ function rangeBuckets<Row> (rows: readonly Row[], column: AnyColumn, bins: numbe
   const count = max === min ? 1 : Math.max(1, Math.floor(bins))
   const width = (max - min) / count
   const text = column.type === 'duration' ? formatDuration : numberText
-  const bound = (value: number) => column.type === 'duration' ? formatDuration(value) : value
 
   const buckets: Bucket<Row>[] = Array.from({ length: count }, (_, index) => {
     const low = min + index * width
-    const high = index === count - 1 ? max : min + (index + 1) * width
+    const last = index === count - 1
+    const high = last ? max : min + (index + 1) * width
     return {
       label: count === 1 ? text(low) : `${text(low)} ～ ${text(high)}`,
-      filter: { key: column.key, condition: { min: bound(low), max: bound(high) } },
+      filter: { key: column.key, condition: { segment: last ? { min: low } : { min: low, below: high } } },
       rows: [],
     }
   })

@@ -152,6 +152,8 @@ text、image、ref 不可分組。須依這些欄位分組時，改為宣告一�
 
 點擊圖表與圖例寫入的條件，與篩選抽屜為同一份條件。`ChartPage` 以 `v-model:filters` 寫回 `useListPage` 的 `filters`。
 
+`ChartPage` 的 `clickable` 為 `false` 時，點擊圖表與圖例皆沒有反應，以下的規則皆不適用。滑鼠移上時的提示照常顯示。
+
 **點擊圖表**：
 - **一般情況**：進入該組第一列的詳細頁，上一列、下一列只在該組的列之間切換
 - **開啟互動的儀表板中**：寫入分組欄的條件，只選這一組。有系列時，一併寫入該長條或該點所屬系列的條件。同表的面板與子表隨之改變（見 [DashboardPage](../components/panel/DashboardPage.md) 的「互動」）

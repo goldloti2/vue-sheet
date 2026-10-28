@@ -11,13 +11,15 @@
   import { pickElement, toggleLegend } from '@/schema/chart'
 
   // 圖表的整頁版型：載入狀態、高光，以及點擊後進入詳細頁或寫入條件（見 docs/components/page/ChartPage.md）
-  const { table, chart, rows, loading = false, error = null } = defineProps<{
+  const { table, chart, rows, loading = false, error = null, clickable = true } = defineProps<{
     table: TableKey
     chart: ChartDefinition<Row>
     // 已篩選、搜尋的列，通常為 useListPage 的 rows
     rows: readonly Row[]
     loading?: boolean
     error?: string | null
+    // false：點擊圖表與圖例皆沒有反應，不進入詳細頁，也不寫入條件
+    clickable?: boolean
   }>()
 
   // 該表的篩選條件，通常為 useListPage 的 filters。分組欄與系列欄上的條件以高光標示，點擊圖例與互動儀表板中的點擊寫入此處
@@ -62,6 +64,7 @@
       <PageState :error="error" :loading="loading" spinner="linear">
         <DataChart
           :chart="chart"
+          :clickable="clickable"
           :filters="filters"
           :rows="rows"
           @group="onGroup"

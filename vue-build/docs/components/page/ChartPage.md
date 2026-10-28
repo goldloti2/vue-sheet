@@ -21,6 +21,7 @@
 | `rows` | `readonly Row[]` | **必填**，已篩選、搜尋過的列，通常為 `useListPage` 的 `rows` |
 | `loading` | `boolean?` | 載入中，於圖表上方顯示長條進度列 |
 | `error` | `string \| null?` | 載入失敗的訊息 |
+| `clickable` | `boolean?` | 預設 `true`。`false` 時點擊圖表與圖例皆沒有反應，見下方「點擊」 |
 
 ## v-model
 
@@ -37,6 +38,7 @@
 - **點擊圖例**：切換該組或該系列的值是否勾選，可複選，與篩選抽屜相同
 - 寫入的條件與例外見 [chart.md](../../topics/chart.md#點擊) 的「點擊」
 - 順序以 `publishListOrder` 發布，與列表點擊一列時相同（見 [RecordNav](../record/RecordNav.md)）
+- **`clickable` 為 `false` 時**，以上皆不發生：不進入詳細頁，不寫入條件，也不在圖表內標示。滑鼠移上時的提示照常顯示。分組欄與系列欄上已有的條件仍以高光標示
 
 ## 備註
 

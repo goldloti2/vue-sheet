@@ -9,11 +9,13 @@
   import { buildConfig, withAlpha } from './chartConfig'
 
   // 以 Chart.js 畫出 defineChart 的圖表（見 docs/topics/chart.md）
-  const { chart, rows, filters = {} } = defineProps<{
+  const { chart, rows, filters = {}, clickable = true } = defineProps<{
     chart: ChartDefinition<Row>
     rows: readonly Row[]
     // 篩選條件。分組欄與系列欄上的條件以高光標示
     filters?: Filters
+    // false：點擊圖表與圖例皆沒有反應，提示照常顯示
+    clickable?: boolean
   }>()
 
   const emit = defineEmits<{
@@ -121,11 +123,12 @@
   function config () {
     const built = buildConfig(chart, data.value, theme.value, marks.value)
     const plugins = built.options?.plugins
+    // 不可點擊時，圖例也不照 Chart.js 的預設隱藏 dataset
     built.options = {
       ...built.options,
-      onClick,
+      onClick: clickable ? onClick : undefined,
       onResize,
-      plugins: { ...plugins, legend: { ...plugins?.legend, position: legendPosition, onClick: onLegend } },
+      plugins: { ...plugins, legend: { ...plugins?.legend, position: legendPosition, onClick: clickable ? onLegend : () => {} } },
     }
     return built
   }

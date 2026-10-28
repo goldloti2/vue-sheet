@@ -3,9 +3,10 @@
 圖表頁的整頁版型：載入狀態、圖表的高度，以及點擊後進入詳細頁。圖表本身由 [DataChart](../chart/DataChart.md) 繪製，宣告方式與計算規則見 [chart.md](../../topics/chart.md)。
 
 此元件搭配 `useListPage(table, schema)` 使用：
-- 回傳的 `rows`、`loading`、`error` 直接對應此元件的 prop
+- 回傳的 `rows`、`filters`、`loading`、`error` 直接對應此元件的 prop
 - 搜尋、篩選與 `scope` 照常生效，圖表只畫出剩下的列
-- 圖表以 `defineChart` 宣告於頁面，只執行一次
+- 圖表以 `defineChart` 宣告於頁面，只執行一次。宣告於 `useListPage` 之前，`filterKeys` 傳入 `useListPage` 的 `ignoreFilter`
+- 分組欄與系列欄上的條件因此不篩選列，改由圖表加上高光（見 [chart.md](../../topics/chart.md#分組欄與系列欄上的條件)）
 
 ## Usage
 
@@ -18,6 +19,7 @@
 | `table` | `TableKey` | **必填**，點擊後進入此表的詳細頁 |
 | `chart` | `ChartDefinition<Row>` | **必填**，`defineChart` 的回傳值 |
 | `rows` | `readonly Row[]` | **必填**，已篩選、搜尋過的列，通常為 `useListPage` 的 `rows` |
+| `filters` | `Filters?` | 該表的篩選條件，通常為 `useListPage` 的 `filters`。分組欄與系列欄上的條件以高光標示，省略時不標示 |
 | `loading` | `boolean?` | 載入中，於圖表上方顯示長條進度列 |
 | `error` | `string \| null?` | 載入失敗的訊息 |
 

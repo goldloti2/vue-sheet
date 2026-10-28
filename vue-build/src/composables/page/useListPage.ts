@@ -18,6 +18,8 @@ export interface ListPageOptions<Row> {
   query?: Ref<string>
   // 只保留符合的列（例如頁籤的狀態），於篩選與搜尋之前套用。函式讀取的 ref 改變時重算
   scope?: (row: Row) => boolean
+  // 這些欄的篩選條件不套用至 rows，例如圖表的分組欄與系列欄（見 docs/topics/chart.md）
+  ignoreFilter?: readonly string[]
 }
 
 // 列表頁的資料層：整表 → scope（含 dashboard 的互動）→ 篩選 → 搜尋，以及多選（見 docs/components/page/ListPage.md）
@@ -44,7 +46,11 @@ export function useListPage<Row extends { id: string }> (
     return allRows.value.filter(row => tests.every(test => test(row)))
   })
 
-  const rows = useSearch(query, useFilter(filters, scopedRows, schema), schema)
+  const ignored = options.ignoreFilter ?? []
+  const applied = () => ignored.length === 0
+    ? filters.value
+    : Object.fromEntries(Object.entries(filters.value).filter(([key]) => !ignored.includes(key)))
+  const rows = useSearch(query, useFilter(applied, scopedRows, schema), schema)
 
   return { rows, allRows, loading, error, query, filters, sort, selection: useMultiSelect() }
 }

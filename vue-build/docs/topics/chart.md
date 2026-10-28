@@ -10,7 +10,7 @@
 
 - **以 Chart.js 繪製**：載入 `chart.js/auto`，支援 Chart.js 的全部圖種。框架自行包裝。Chart.js 於圖表元件掛載時才載入，沒有圖表的頁面不下載
 - **一頁一張圖表**：可單獨成頁，也可置於儀表板的面板或頁籤頁的頁籤
-- **資料來自 `useListPage` 的 `rows`**：搜尋、篩選與 `scope` 照常生效
+- **資料來自 `useListPage` 的 `rows`**：搜尋、篩選與 `scope` 照常生效。分組欄與系列欄上的條件除外，見「分組欄與系列欄上的條件」
 - **圖表的種類由設計者固定**：使用者只能點擊圖表、搜尋與篩選
 
 ---
@@ -19,10 +19,10 @@
 
 | 步驟 | 負責 | 內容 |
 | --- | --- | --- |
-| 1 | 頁面 | 以 `useListPage` 取得 `rows`。以 `defineChart(schema, {…})` 宣告圖表，只執行一次 |
-| 2 | `defineChart` | 於開發模式下檢查輸入，回傳 `type`、`stacked`、`horizontal`、`groupKey` 與 `compute` |
+| 1 | 頁面 | 以 `defineChart(schema, {…})` 宣告圖表，只執行一次。以 `useListPage` 取得 `rows` 與 `filters`，`ignoreFilter` 傳入圖表的 `filterKeys` |
+| 2 | `defineChart` | 於開發模式下檢查輸入，回傳 `type`、`stacked`、`horizontal`、`groupKey`、`seriesKey`、`filterKeys` 與 `compute` |
 | 3 | [`ChartPage`](../components/page/ChartPage.md) | 整頁層級的事：載入狀態、錯誤、高度、點擊後的處理。範本為 `template/pages/chart.vue` |
-| 4 | [`DataChart`](../components/chart/DataChart.md) | 以 `computed` 執行 `compute(rows)`，套上顏色後交給 Chart.js。資料改變時更新圖表，卸載時銷毀 Chart.js 的實例 |
+| 4 | [`DataChart`](../components/chart/DataChart.md) | 以 `computed` 執行 `compute(rows)`，依 `filters` 標示高光，套上顏色後交給 Chart.js。資料改變時更新圖表，卸載時銷毀 Chart.js 的實例 |
 
 分工與 view 相同：`defineView` 準備，`DataList` 以每一列執行（見 [DataList](../components/list/DataList.md#view)）。
 
@@ -34,11 +34,14 @@
   - `data` 與 `labels` 一一對應，`null` 表示留空
   - `unit` 為 `number`、`duration`、`percent` 或 `date`，供刻度與提示格式化。duration 的值為秒數
   - 數值指定了 `type`、`axis` 時一併帶上
+  - 有系列時，`series` 為該 dataset 所屬系列於 `series` 中的索引
 - `groups`：與 `labels` 一一對應。`rows` 為該組的列，依 `rows` 原本的順序
 - `groups` 的 `filter` 為選取該組的篩選條件。無法以一個條件表示時為 `null`，例如 date 或 number 分組合併的「其他」
+- `series`：各系列的 `rows` 與 `filter`，形狀與 `groups` 相同。沒有系列時為空陣列
 
 逐列類（`kind: 'point'`，scatter 與 bubble）：
 - `datasets`：沒有 `color` 時一個，有 `color` 時每組一個。沒有任何點的組不列入
+- 有 `color` 時，`series` 為 `color` 的各組，dataset 的 `series` 為所屬的組於其中的索引
 - 每個點為 `{ x, y, r, row }`。date 的值為毫秒，duration 的值為秒數。x 或 y 為空的列不畫出，bubble 另略過半徑為空的列
 - `xUnit`、`yUnit` 為兩軸的單位
 
@@ -126,14 +129,21 @@ text、image、ref 不可分組。須依這些欄位分組時，改為宣告一�
 - **依組上色**：圓餅類，以及只有一個 dataset 的 bar。圖例列出各組
 - **依 dataset 上色**：其他的 bar，以及 line 與 radar。圖例列出各 dataset，只有一個 dataset 時不顯示圖例
 - **切換深淺色主題時重新上色**，無須重新計算
+- **沒被選的部分調淡**為原本不透明度的 25%，見「分組欄與系列欄上的條件」
 
 ---
 
-## 分組欄上的條件 🔲
+## 分組欄與系列欄上的條件
 
-- **圖表忽略自己分組欄上的篩選條件**：不論單獨成頁、置於頁籤頁或儀表板，皆仍畫出全部的組。其他欄位的條件、搜尋與 `scope` 照常生效
-- **符合分組欄條件的組加上高光**，其他組調淡。條件可來自篩選抽屜，或互動儀表板中的點擊
-- **哪些組被選，由篩選條件推算**：勾選多個值時標示多組。date 與 number 的區間，範圍完全落在條件之內的才標示
+- **圖表忽略自己分組欄與系列欄上的篩選條件**：不論單獨成頁、置於頁籤頁或儀表板，皆仍畫出全部的組與系列。scatter 與 bubble 的 `color` 視為系列欄
+- **其他欄位的條件、搜尋與 `scope` 照常生效**
+- **忽略的方式**：頁面將 `defineChart` 回傳的 `filterKeys` 傳入 `useListPage` 的 `ignoreFilter`，`rows` 便不套用這些欄的條件。`filters` 另外傳入 `ChartPage`，供圖表標示高光
+- **哪些組被選，由該組的列判斷**：一組有列，且每一列皆符合分組欄的條件時，該組被選。勾選多個值時標示多組。沒有列的組，例如沒有資料的區間，不標示
+- **哪些系列被選，判斷方式與組相同**：一個系列有列，且每一列皆符合系列欄的條件時，該系列的 dataset 被選
+- **分組欄有條件時，沒被選的組調淡**：長條、扇形與折線上的點皆調淡，圖例中的組同樣調淡
+- **系列欄有條件時，沒被選的系列調淡**：整個 dataset 調淡，圖例中的系列同樣調淡
+- **兩欄皆有條件時**，一個長條或一個點只在組與系列皆被選時照常顯示
+- 條件可來自篩選抽屜，或互動儀表板中的點擊
 
 ---
 

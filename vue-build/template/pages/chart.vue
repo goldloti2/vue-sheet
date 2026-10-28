@@ -12,18 +12,28 @@
   import { defineChart } from '@/schema/chart'
   import { __table__Schema } from '@/schema/tables/__table__'
 
-  // 整表 → 篩選 → 搜尋（搜尋、篩選與排序按鈕自動登記至 App Bar）
-  const { rows, loading, error } = useListPage<__Table__Row>('__table__', __table__Schema)
-
   // 各狀態的列數與金額的總和。可填的項目依 type 而定
   const chart = defineChart(__table__Schema, {
     type: 'bar',
     group: { key: 'status' },
     values: [{ stat: 'count' }, { stat: 'sum', key: 'amount', type: 'line', axis: 'right' }],
   })
+
+  // 整表 → 篩選 → 搜尋（搜尋、篩選與排序按鈕自動登記至 App Bar）
+  // 分組欄與系列欄的條件不篩選列，改由圖表加上高光
+  const { rows, filters, loading, error } = useListPage<__Table__Row>('__table__', __table__Schema, {
+    ignoreFilter: chart.filterKeys,
+  })
 </script>
 
 <template>
-  <!-- 載入狀態與點擊後的詳細頁（含上一列、下一列的順序）皆由 ChartPage 處理 -->
-  <ChartPage :chart="chart" :error="error" :loading="loading" :rows="rows" table="__table__" />
+  <!-- 載入狀態、高光與點擊後的詳細頁（含上一列、下一列的順序）皆由 ChartPage 處理 -->
+  <ChartPage
+    :chart="chart"
+    :error="error"
+    :filters="filters"
+    :loading="loading"
+    :rows="rows"
+    table="__table__"
+  />
 </template>

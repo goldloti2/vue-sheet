@@ -12,6 +12,7 @@
 | --- | --- | --- |
 | `chart` | `ChartDefinition<Row>` | **必填**，`defineChart` 的回傳值 |
 | `rows` | `readonly Row[]` | **必填**，要畫成圖表的列，通常為 `useListPage` 的 `rows` |
+| `filters` | `Filters?` | 該表的篩選條件。分組欄與系列欄上的條件以高光標示，省略時不標示 |
 
 ## Emits
 
@@ -23,7 +24,9 @@
 ## 備註
 
 - **Chart.js 於元件掛載時才載入**：以動態 import 載入 `chart.js/auto`，打包時成為獨立的檔案。沒有圖表的頁面不下載 Chart.js
-- **`rows` 或主題改變時更新圖表**：元件以 `computed` 執行 `compute(rows)`，換上新的設定後呼叫 Chart.js 的 `update()`。卸載時銷毀 Chart.js 的實例
+- **`rows`、`filters` 或主題改變時更新圖表**：元件以 `computed` 執行 `compute(rows)`，換上新的設定後呼叫 Chart.js 的 `update()`。卸載時銷毀 Chart.js 的實例
+- **更新時沿用原本的 dataset 物件**，只換上新的屬性。顏色與數值由原本的狀態過渡，圖表不從零重畫
+- **高光**：沒被選的組與系列調淡，判斷方式見 [chart.md](../../topics/chart.md#分組欄與系列欄上的條件) 的「分組欄與系列欄上的條件」。此元件只標示，不篩選 `rows`
 - **顏色**依 `plugins/vuetify.ts` 的 `sharedColorNames` 輪流使用，取自目前主題的色值。圓餅類與只有一個 dataset 的 bar 依組上色，其他圖表依 dataset 上色（見 [chart.md](../../topics/chart.md#顏色) 的「顏色」）。文字與格線取自主題的 `on-surface`
 - **刻度與提示依 dataset 的 `unit` 格式化**：`percent` 加上「%」，`duration` 為「時:分:秒」，`date` 為 `yyyy/mm/dd`，其餘最多兩位小數
 - **bubble 的半徑換算為 4 至 20 像素**：依資料中半徑欄位的最小值與最大值等比換算。提示中顯示原本的值

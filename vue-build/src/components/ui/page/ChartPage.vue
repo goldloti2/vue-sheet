@@ -1,6 +1,7 @@
 <script generic="Row extends { id: string }" lang="ts" setup>
   import type { TableKey } from '@/schema'
   import type { ChartDefinition, ChartGroupData } from '@/schema/chart'
+  import type { Filters } from '@/schema/filter'
   import { useRouter } from 'vue-router'
   import DataChart from '@/components/ui/chart/DataChart.vue'
   import PageState from '@/components/ui/page/PageState.vue'
@@ -8,11 +9,13 @@
   import { usePanelFullPage } from '@/composables/shell/usePanelActive'
 
   // 圖表的整頁版型：載入狀態，以及點擊後進入詳細頁（見 docs/components/page/ChartPage.md）
-  const { table, chart, rows, loading = false, error = null } = defineProps<{
+  const { table, chart, rows, filters = {}, loading = false, error = null } = defineProps<{
     table: TableKey
     chart: ChartDefinition<Row>
     // 已篩選、搜尋的列，通常為 useListPage 的 rows
     rows: readonly Row[]
+    // 該表的篩選條件，通常為 useListPage 的 filters。分組欄與系列欄上的條件以高光標示
+    filters?: Filters
     loading?: boolean
     error?: string | null
   }>()
@@ -43,7 +46,13 @@
   <v-container class="chart-page" :class="{ 'chart-page--panel': !fullPage }">
     <div class="chart-page__chart">
       <PageState :error="error" :loading="loading" spinner="linear">
-        <DataChart :chart="chart" :rows="rows" @group="onGroup" @row="onRow" />
+        <DataChart
+          :chart="chart"
+          :filters="filters"
+          :rows="rows"
+          @group="onGroup"
+          @row="onRow"
+        />
       </PageState>
     </div>
   </v-container>

@@ -1,5 +1,6 @@
-import type { ColumnFilter } from './filter'
+import type { ColumnFilter, Filters } from './filter'
 import type { AnyColumn, ColumnKey, RowKey, TableSchema } from './types'
+import { isActiveFilter, matchesFilter } from './filter'
 import { sortRows } from './sort'
 import { booleanText, durationSeconds, findColumn, formatDate, formatDuration } from './types'
 import { isEmpty } from './validation'
@@ -122,6 +123,8 @@ export interface CategoryDataset {
   unit: ChartUnit
   type?: 'bar' | 'line'
   axis?: 'left' | 'right'
+  // 有系列時，為 compute 結果中 series 的索引
+  series?: number
 }
 
 export interface ChartPoint<Row> {
@@ -134,6 +137,8 @@ export interface ChartPoint<Row> {
 export interface PointDataset<Row> {
   label: string
   data: ChartPoint<Row>[]
+  // 有 color 時，為 compute 結果中 series 的索引
+  series?: number
 }
 
 // 選取一組的篩選條件。無法以一個條件表示時（例如區間合併的「其他」）為 null
@@ -147,19 +152,31 @@ export interface ChartGroupData<Row> {
   filter: GroupFilter | null
 }
 
-// compute 的結果，不含顏色
+// compute 的結果，不含顏色。series 為各系列（scatter 與 bubble 為 color 的各組），沒有時為空陣列
 export type ChartData<Row>
-  = | { kind: 'category', labels: string[], datasets: CategoryDataset[], groups: ChartGroupData<Row>[] }
-    | { kind: 'point', datasets: PointDataset<Row>[], xUnit: ChartUnit, yUnit: ChartUnit }
+  = | { kind: 'category', labels: string[], datasets: CategoryDataset[], groups: ChartGroupData<Row>[], series: ChartGroupData<Row>[] }
+    | { kind: 'point', datasets: PointDataset<Row>[], series: ChartGroupData<Row>[], xUnit: ChartUnit, yUnit: ChartUnit }
 
 // defineChart 的結果，交給圖表元件
 export interface ChartDefinition<Row extends object> {
   type: ChartInput<Row>['type']
   stacked: boolean
   horizontal: boolean
-  // 分組欄。圖表忽略此欄的篩選條件
   groupKey: string | null
+  // 系列欄。scatter 與 bubble 為 color 的欄位
+  seriesKey: string | null
+  // 分組欄與系列欄。圖表忽略這些欄的篩選條件，改為加上高光，交給 useListPage 的 ignoreFilter
+  filterKeys: string[]
   compute: (rows: readonly Row[]) => ChartData<Row>
+}
+
+// 各組是否符合 key 欄的條件：有列，且每一列皆符合。該欄沒有條件時為 null
+export function highlightOf<Row> (groups: readonly ChartGroupData<Row>[], key: string | null, filters: Filters): boolean[] | null {
+  const filter = key ? filters[key] : undefined
+  if (!key || !filter || !isActiveFilter(filter)) {
+    return null
+  }
+  return groups.map(group => group.rows.length > 0 && group.rows.every(row => matchesFilter((row as Record<string, unknown>)[key], filter)))
 }
 
 const GROUP_TYPES = new Set(['select', 'boolean', 'date', 'number', 'duration'])
@@ -523,6 +540,7 @@ function valueDatasets<Row> (value: Value, column: AnyColumn | undefined, bucket
       unit,
       ...(mixed.type ? { type: mixed.type } : {}),
       ...(mixed.axis ? { axis: mixed.axis } : {}),
+      ...(series ? { series: seriesIndex } : {}),
     }
   })
 }
@@ -530,7 +548,7 @@ function valueDatasets<Row> (value: Value, column: AnyColumn | undefined, bucket
 function computeCategory<Row> (schema: TableSchema, input: CategoryInput, rows: readonly Row[]): ChartData<Row> {
   const groupColumn = findColumn(schema, input.group.key)
   if (!groupColumn) {
-    return { kind: 'category', labels: [], datasets: [], groups: [] }
+    return { kind: 'category', labels: [], datasets: [], groups: [], series: [] }
   }
 
   const values = input.values as Value[]
@@ -552,6 +570,7 @@ function computeCategory<Row> (schema: TableSchema, input: CategoryInput, rows: 
     labels: buckets.map(bucket => bucket.label),
     datasets: values.flatMap((value, index) => valueDatasets(value, columns[index], buckets, series, options)),
     groups: buckets.map(bucket => ({ rows: bucket.rows, filter: bucket.filter })),
+    series: series?.buckets.map(bucket => ({ rows: bucket.rows, filter: bucket.filter })) ?? [],
   }
 }
 
@@ -561,7 +580,7 @@ function computePoints<Row> (schema: TableSchema, input: ScatterChart<AnyRow> | 
   const rColumn = input.type === 'bubble' ? findColumn(schema, input.r) : undefined
   const colorColumn = input.color ? findColumn(schema, input.color) : undefined
   if (!xColumn || !yColumn) {
-    return { kind: 'point', datasets: [], xUnit: 'number', yUnit: 'number' }
+    return { kind: 'point', datasets: [], series: [], xUnit: 'number', yUnit: 'number' }
   }
 
   const points = (list: readonly Row[]) => list.flatMap(row => {
@@ -572,12 +591,19 @@ function computePoints<Row> (schema: TableSchema, input: ScatterChart<AnyRow> | 
   })
 
   // 沒有任何點的組不列入，圖例不出現
+  const buckets = colorColumn ? groupBuckets(schema, rows, colorColumn, { key: colorColumn.key }) : []
   const datasets = colorColumn
-    ? groupBuckets(schema, rows, colorColumn, { key: colorColumn.key })
-        .map(bucket => ({ label: bucket.label, data: points(bucket.rows) }))
+    ? buckets
+        .map((bucket, index) => ({ label: bucket.label, data: points(bucket.rows), series: index }))
         .filter(dataset => dataset.data.length > 0)
     : [{ label: schema.tableLabel, data: points(rows) }]
-  return { kind: 'point', datasets, xUnit: unitOf(xColumn), yUnit: unitOf(yColumn) }
+  return {
+    kind: 'point',
+    datasets,
+    series: buckets.map(bucket => ({ rows: bucket.rows, filter: bucket.filter })),
+    xUnit: unitOf(xColumn),
+    yUnit: unitOf(yColumn),
+  }
 }
 
 export function defineChart<Row extends object> (schema: TableSchema<Row>, input: ChartInput<Row>): ChartDefinition<Row> {
@@ -587,11 +613,20 @@ export function defineChart<Row extends object> (schema: TableSchema<Row>, input
 
   const spec = input as AnyChartInput
   const isPoint = spec.type === 'scatter' || spec.type === 'bubble'
+  const groupKey = isPoint ? null : spec.group.key
+  let seriesKey: string | null
+  if (isPoint) {
+    seriesKey = spec.color ?? null
+  } else {
+    seriesKey = 'series' in spec ? spec.series?.key ?? null : null
+  }
   return {
     type: spec.type,
     stacked: 'stacked' in spec && Boolean(spec.stacked),
     horizontal: 'horizontal' in spec && Boolean(spec.horizontal),
-    groupKey: isPoint ? null : spec.group.key,
+    groupKey,
+    seriesKey,
+    filterKeys: [groupKey, seriesKey].filter((key): key is string => key !== null),
     compute: rows => spec.type === 'scatter' || spec.type === 'bubble'
       ? computePoints(schema, spec, rows)
       : computeCategory(schema, spec, rows),

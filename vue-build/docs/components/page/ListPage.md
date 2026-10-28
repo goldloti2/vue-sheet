@@ -6,6 +6,7 @@
 - `useListPage` 依序處理：整張表 → `scope` → 篩選 → 搜尋，並提供長按多選
 - 回傳的 `rows`、`loading`、`error`、`selection` 直接對應此元件的 prop
 - 選用的 `scope`（`row => boolean`）在篩選與搜尋之前只保留部分的列，例如頁籤的狀態。儀表板的互動篩選（依所選的父列篩出子列）也位於這一步
+- 選用的 `ignoreFilter`（欄位 key 的陣列）指定不套用至 `rows` 的條件，抽屜中仍顯示這些條件。圖表以此忽略分組欄與系列欄（見 [chart.md](../../topics/chart.md#分組欄與系列欄上的條件)）
 
 **搜尋與排序來自 `useListPage`，不來自此元件**：
 - `useListPage` 內部呼叫 `useListControls`，因此使用它時，App Bar 即出現放大鏡、篩選按鈕與排序按鈕。欄位須列於 `searchable`、`sortable`

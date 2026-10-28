@@ -4,13 +4,16 @@ import { formatDate, formatDuration } from '@/schema/types'
 
 // 由 compute 的結果與目前的主題組成 Chart.js 的設定。純函數，不建立圖表
 
-// 目前主題的顏色：colors 依共用色名的順序輪流使用
+// 目前主題的文字、格線與底色。資料的顏色不隨主題改變
 export interface ChartTheme {
-  colors: string[]
   text: string
   grid: string
   surface: string
 }
+
+// 與 Chart.js 的 Colors plugin 相同的色盤，依序輪流使用。填色為半透明，邊線與線條為原色
+const CHART_COLORS = ['#36a2eb', '#ff6384', '#ff9f40', '#ffcd56', '#4bc0c0', '#9966ff', '#c9cbcf']
+const FILL_OPACITY = 0.5
 
 // 高光：false 的組或 dataset 調淡。null 表示該欄沒有條件，全部照常
 export interface ChartMarks {
@@ -49,8 +52,8 @@ export function formatValue (value: unknown, unit: ChartUnit): string {
   return (Math.round(value * 100) / 100).toLocaleString()
 }
 
-function colorAt (theme: ChartTheme, index: number): string {
-  return theme.colors[index % theme.colors.length] ?? theme.text
+function colorAt (index: number): string {
+  return CHART_COLORS[index % CHART_COLORS.length] ?? CHART_COLORS[0]!
 }
 
 // 沒被選的部分調淡。opacity 為照常時的不透明度
@@ -77,31 +80,32 @@ function categoryConfig (definition: ChartShape, data: Extract<ChartData<object>
   // 只有一個 dataset 的長條圖與圓餅類相同，依組上色
   const groupBar = type === 'bar' && data.datasets.length === 1 && !data.datasets[0]?.type
   const byGroup = round || groupBar
-  const groupColors = data.labels.map((_, groupIndex) => colorAt(theme, groupIndex))
   const hasRight = data.datasets.some(dataset => dataset.axis === 'right')
   const groupOn = (groupIndex: number) => marks.groups?.[groupIndex] ?? true
   const datasetOn = (index: number) => marks.datasets?.[index] ?? true
 
   const datasets = data.datasets.map((dataset, index) => {
-    const color = colorAt(theme, index)
+    const color = colorAt(index)
     const on = datasetOn(index)
     const line = dataset.type === 'line' || (type === 'line' && dataset.type !== 'bar')
     // 每一組的顏色：組與 dataset 皆被選時照常，否則調淡
-    const perGroup = data.labels.map((_, groupIndex) => shade(byGroup ? groupColors[groupIndex] : color, on && groupOn(groupIndex)))
+    const perGroup = (opacity: number) => data.labels.map((_, groupIndex) =>
+      shade(byGroup ? colorAt(groupIndex) : color, on && groupOn(groupIndex), opacity))
     let colors
     if (round) {
-      colors = { backgroundColor: perGroup, borderColor: theme.surface }
+      colors = { backgroundColor: perGroup(FILL_OPACITY), borderColor: theme.surface }
     } else if (line || type === 'radar') {
       colors = {
-        backgroundColor: shade(color, on, type === 'radar' ? 0.2 : 1),
+        // radar 的面積彼此重疊，填色較淡
+        backgroundColor: shade(color, on, type === 'radar' ? 0.2 : FILL_OPACITY),
         borderColor: shade(color, on),
-        pointBackgroundColor: perGroup,
-        pointBorderColor: perGroup,
+        pointBackgroundColor: perGroup(FILL_OPACITY),
+        pointBorderColor: perGroup(1),
         fill: type === 'radar',
         ...(line ? { tension: 0 } : {}),
       }
     } else {
-      colors = { backgroundColor: perGroup, borderColor: perGroup }
+      colors = { backgroundColor: perGroup(FILL_OPACITY), borderColor: perGroup(1) }
     }
     return {
       label: dataset.label,
@@ -119,9 +123,9 @@ function categoryConfig (definition: ChartShape, data: Extract<ChartData<object>
       labels: {
         generateLabels: (chart: Chart) => data.labels.map((text, groupIndex) => ({
           text,
-          fillStyle: shade(groupColors[groupIndex] ?? theme.text, groupOn(groupIndex)),
-          strokeStyle: shade(groupColors[groupIndex] ?? theme.text, groupOn(groupIndex)),
-          lineWidth: 0,
+          fillStyle: shade(colorAt(groupIndex), groupOn(groupIndex), FILL_OPACITY),
+          strokeStyle: shade(colorAt(groupIndex), groupOn(groupIndex)),
+          lineWidth: 1,
           hidden: !chart.getDataVisibility(groupIndex),
           index: groupIndex,
           fontColor: theme.text,
@@ -135,9 +139,9 @@ function categoryConfig (definition: ChartShape, data: Extract<ChartData<object>
       labels: {
         generateLabels: (chart: Chart) => data.datasets.map((dataset, index) => ({
           text: dataset.label,
-          fillStyle: shade(colorAt(theme, index), datasetOn(index)),
-          strokeStyle: shade(colorAt(theme, index), datasetOn(index)),
-          lineWidth: 0,
+          fillStyle: shade(colorAt(index), datasetOn(index), FILL_OPACITY),
+          strokeStyle: shade(colorAt(index), datasetOn(index)),
+          lineWidth: 1,
           hidden: !chart.isDatasetVisible(index),
           datasetIndex: index,
           fontColor: theme.text,
@@ -201,12 +205,12 @@ function pointConfig (definition: ChartShape, data: Extract<ChartData<object>, {
     : BUBBLE_MIN_RADIUS + (spanR === 0 ? 0.5 : (r - minR) / spanR) * (BUBBLE_MAX_RADIUS - BUBBLE_MIN_RADIUS)
 
   const datasets = data.datasets.map((dataset, index) => {
-    const color = colorAt(theme, index)
+    const color = colorAt(index)
     const on = marks.datasets?.[index] ?? true
     return {
       label: dataset.label,
       data: dataset.data.map(point => ({ x: point.x, y: point.y, ...(point.r === undefined ? {} : { r: pixels(point.r), value: point.r }) })),
-      backgroundColor: shade(color, on, 0.6),
+      backgroundColor: shade(color, on, FILL_OPACITY),
       borderColor: shade(color, on),
     }
   })

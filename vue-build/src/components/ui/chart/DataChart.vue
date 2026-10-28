@@ -5,7 +5,6 @@
   import type { Chart, LegendItem } from 'chart.js'
   import { computed, onBeforeUnmount, onMounted, useTemplateRef, watch } from 'vue'
   import { useTheme } from 'vuetify'
-  import { sharedColorNames } from '@/plugins/vuetify'
   import { highlightOf } from '@/schema/chart'
   import { buildConfig, withAlpha } from './chartConfig'
 
@@ -48,7 +47,6 @@
       return typeof value === 'string' ? value : fallback
     }
     return {
-      colors: sharedColorNames.map(name => color(name, '#9e9e9e')),
       text: withAlpha(color('on-surface', '#000000'), 0.7),
       grid: withAlpha(color('on-surface', '#000000'), 0.12),
       surface: color('surface', '#ffffff'),
@@ -103,10 +101,32 @@
     }
   }
 
+  // 圖例的位置依圖表的比例：寬至少為高的 WIDE_RATIO 倍時置於右側，否則置於上方
+  const WIDE_RATIO = 1.2
+  let legendPosition: 'top' | 'right' = 'top'
+
+  function positionFor (width: number, height: number): 'top' | 'right' {
+    return width >= height * WIDE_RATIO ? 'right' : 'top'
+  }
+
+  // Chart.js 於改變大小後自行更新，此處只換上新的位置
+  function onResize (resized: Chart, size: { width: number, height: number }) {
+    legendPosition = positionFor(size.width, size.height)
+    const legend = resized.options.plugins?.legend
+    if (legend) {
+      legend.position = legendPosition
+    }
+  }
+
   function config () {
     const built = buildConfig(chart, data.value, theme.value, marks.value)
     const plugins = built.options?.plugins
-    built.options = { ...built.options, onClick, plugins: { ...plugins, legend: { ...plugins?.legend, onClick: onLegend } } }
+    built.options = {
+      ...built.options,
+      onClick,
+      onResize,
+      plugins: { ...plugins, legend: { ...plugins?.legend, position: legendPosition, onClick: onLegend } },
+    }
     return built
   }
 
@@ -115,6 +135,10 @@
     const { default: ChartJs } = await import('chart.js/auto')
     if (unmounted || !canvas.value) {
       return
+    }
+    const box = canvas.value.parentElement?.getBoundingClientRect()
+    if (box) {
+      legendPosition = positionFor(box.width, box.height)
     }
     instance = new ChartJs(canvas.value, config())
   })
@@ -166,10 +190,9 @@
 </template>
 
 <style scoped>
-/* 高度隨所在的容器，至少 280px。Chart.js 依此容器的大小重畫 */
+/* 高度隨所在的容器，由外層指定。Chart.js 依此容器的大小重畫 */
 .data-chart {
   position: relative;
   height: 100%;
-  min-height: 280px;
 }
 </style>

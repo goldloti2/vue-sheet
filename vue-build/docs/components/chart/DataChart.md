@@ -30,8 +30,9 @@
 - **`rows`、`filters` 或主題改變時更新圖表**：元件以 `computed` 執行 `compute(rows)`，換上新的設定後呼叫 Chart.js 的 `update()`。卸載時銷毀 Chart.js 的實例
 - **更新時沿用原本的 dataset 物件**，只換上新的屬性。顏色與數值由原本的狀態過渡，圖表不從零重畫
 - **高光**：沒被選的組與系列調淡，判斷方式見 [chart.md](../../topics/chart.md#分組欄與系列欄上的條件) 的「分組欄與系列欄上的條件」。此元件只標示，不篩選 `rows`
-- **顏色**依 `plugins/vuetify.ts` 的 `sharedColorNames` 輪流使用，取自目前主題的色值。圓餅類與只有一個 dataset 的 bar 依組上色，其他圖表依 dataset 上色（見 [chart.md](../../topics/chart.md#顏色) 的「顏色」）。文字與格線取自主題的 `on-surface`
+- **顏色**使用 Chart.js 預設的色盤，填色為半透明。圓餅類與只有一個 dataset 的 bar 依組上色，其他圖表依 dataset 上色（見 [chart.md](../../topics/chart.md#顏色) 的「顏色」）。文字與格線取自主題的 `on-surface`
 - **刻度與提示依 dataset 的 `unit` 格式化**：`percent` 加上「%」，`duration` 為「時:分:秒」，`date` 為 `yyyy/mm/dd`，其餘最多兩位小數
 - **bubble 的半徑換算為 4 至 20 像素**：依資料中半徑欄位的最小值與最大值等比換算。提示中顯示原本的值
-- **高度隨所在的容器**，至少 280px。`ChartPage` 指定這個容器的高度。直接使用此元件時，由外層指定高度
+- **圖例的位置依圖表的比例**：寬至少為高的 1.2 倍時置於右側，否則置於上方。圖表改變大小時重新判斷
+- **高度隨所在的容器**，此元件不設最小高度。`ChartPage` 指定這個容器的高度。直接使用此元件時，由外層指定高度
 - 設定的組成位於同一資料夾的 `chartConfig.ts`，為純函數

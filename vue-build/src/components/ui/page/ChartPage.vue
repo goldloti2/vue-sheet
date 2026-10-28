@@ -84,9 +84,10 @@
   padding: 0;
 }
 
-/* 面板中為面板內容區的高度（見 DashboardPanel） */
+/* 面板中為面板內容區的高度（見 DashboardPanel），不設最小高度 */
 .chart-page--panel {
   height: 100cqh;
+  min-height: 0;
 }
 
 /* 圖表置中，寬與高各為 90%，四邊各留白 5% */

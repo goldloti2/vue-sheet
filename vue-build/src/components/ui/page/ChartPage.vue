@@ -1,27 +1,31 @@
 <script generic="Row extends { id: string }" lang="ts" setup>
   import type { TableKey } from '@/schema'
-  import type { ChartDefinition, ChartGroupData } from '@/schema/chart'
+  import type { ChartDefinition, ChartGroupData, GroupFilter } from '@/schema/chart'
   import type { Filters } from '@/schema/filter'
   import { useRouter } from 'vue-router'
   import DataChart from '@/components/ui/chart/DataChart.vue'
   import PageState from '@/components/ui/page/PageState.vue'
   import { publishListOrder } from '@/composables/navigation/useListOrder'
+  import { useDashboardSelection } from '@/composables/shell/useDashboardSelection'
   import { usePanelFullPage } from '@/composables/shell/usePanelActive'
+  import { pickElement, toggleLegend } from '@/schema/chart'
 
-  // 圖表的整頁版型：載入狀態，以及點擊後進入詳細頁（見 docs/components/page/ChartPage.md）
-  const { table, chart, rows, filters = {}, loading = false, error = null } = defineProps<{
+  // 圖表的整頁版型：載入狀態、高光，以及點擊後進入詳細頁或寫入條件（見 docs/components/page/ChartPage.md）
+  const { table, chart, rows, loading = false, error = null } = defineProps<{
     table: TableKey
     chart: ChartDefinition<Row>
     // 已篩選、搜尋的列，通常為 useListPage 的 rows
     rows: readonly Row[]
-    // 該表的篩選條件，通常為 useListPage 的 filters。分組欄與系列欄上的條件以高光標示
-    filters?: Filters
     loading?: boolean
     error?: string | null
   }>()
 
+  // 該表的篩選條件，通常為 useListPage 的 filters。分組欄與系列欄上的條件以高光標示，點擊圖例與互動儀表板中的點擊寫入此處
+  const filters = defineModel<Filters>('filters', { default: () => ({}) })
+
   const router = useRouter()
   const fullPage = usePanelFullPage()
+  const dashboard = useDashboardSelection()
 
   // 進入一列的詳細頁，上一列、下一列在 ids 之間切換
   function open (id: string, ids: readonly string[]) {
@@ -29,12 +33,22 @@
     void router.push(`/${table}/${id}`)
   }
 
-  // 沒有列的組（例如沒有資料的區間）不換頁
-  function onGroup (group: ChartGroupData<Row>) {
+  // 互動儀表板中寫入這一組與其系列的條件，否則進入詳細頁。沒有列的組（例如沒有資料的區間）不換頁
+  function onGroup (group: ChartGroupData<Row>, series: ChartGroupData<Row> | null) {
+    if (dashboard?.interactive()) {
+      if (group.filter) {
+        filters.value = pickElement(filters.value, series?.filter ? [group.filter, series.filter] : [group.filter])
+      }
+      return
+    }
     const first = group.rows[0]
     if (first) {
       open(first.id, group.rows.map(row => row.id))
     }
+  }
+
+  function onLegend (pick: GroupFilter) {
+    filters.value = toggleLegend(filters.value, pick)
   }
 
   function onRow (row: Row) {
@@ -51,6 +65,7 @@
           :filters="filters"
           :rows="rows"
           @group="onGroup"
+          @legend="onLegend"
           @row="onRow"
         />
       </PageState>

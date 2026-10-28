@@ -27,11 +27,11 @@
 </script>
 
 <template>
-  <!-- 載入狀態、高光與點擊後的詳細頁（含上一列、下一列的順序）皆由 ChartPage 處理 -->
+  <!-- 載入狀態、高光、點擊後的詳細頁（含上一列、下一列的順序）與寫入的條件皆由 ChartPage 處理 -->
   <ChartPage
+    v-model:filters="filters"
     :chart="chart"
     :error="error"
-    :filters="filters"
     :loading="loading"
     :rows="rows"
     table="__table__"

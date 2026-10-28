@@ -1,8 +1,8 @@
 <script generic="Row extends object" lang="ts" setup>
   import type { ChartMarks, ChartTheme } from './chartConfig'
-  import type { ChartDefinition, ChartGroupData } from '@/schema/chart'
+  import type { ChartDefinition, ChartGroupData, GroupFilter } from '@/schema/chart'
   import type { Filters } from '@/schema/filter'
-  import type { Chart } from 'chart.js'
+  import type { Chart, LegendItem } from 'chart.js'
   import { computed, onBeforeUnmount, onMounted, useTemplateRef, watch } from 'vue'
   import { useTheme } from 'vuetify'
   import { sharedColorNames } from '@/plugins/vuetify'
@@ -18,10 +18,12 @@
   }>()
 
   const emit = defineEmits<{
-    // 點擊分組類圖表的一組，index 對應 compute 結果的 groups 與 labels
-    group: [group: ChartGroupData<Row>, index: number]
+    // 點擊分組類圖表的一組。series 為點擊的 dataset 所屬的系列，沒有系列時為 null
+    group: [group: ChartGroupData<Row>, series: ChartGroupData<Row> | null]
     // 點擊 scatter 或 bubble 的一點
     row: [row: Row]
+    // 點擊圖例中的一組或一個系列，參數為選取它的條件
+    legend: [pick: GroupFilter]
   }>()
 
   const canvas = useTemplateRef<HTMLCanvasElement>('canvas')
@@ -65,8 +67,9 @@
     const current = data.value
     if (current.kind === 'category') {
       const group = current.groups[element.index]
+      const series = current.datasets[element.datasetIndex]?.series
       if (group) {
-        emit('group', group, element.index)
+        emit('group', group, series === undefined ? null : current.series[series] ?? null)
       }
       return
     }
@@ -76,9 +79,34 @@
     }
   }
 
+  // 圖例的一項為一組或一個系列時發出條件。沒有系列的 dataset 照 Chart.js 預設隱藏或顯示
+  function onLegend (_event: unknown, item: LegendItem) {
+    const current = data.value
+    const index = item.datasetIndex
+    if (index === undefined) {
+      const filter = current.kind === 'category' && item.index !== undefined ? current.groups[item.index]?.filter : null
+      if (filter) {
+        emit('legend', filter)
+      }
+      return
+    }
+    const datasets: { series?: number }[] = current.datasets
+    const series = datasets[index]?.series
+    if (series === undefined) {
+      instance?.setDatasetVisibility(index, !instance.isDatasetVisible(index))
+      instance?.update()
+      return
+    }
+    const filter = current.series[series]?.filter
+    if (filter) {
+      emit('legend', filter)
+    }
+  }
+
   function config () {
     const built = buildConfig(chart, data.value, theme.value, marks.value)
-    built.options = { ...built.options, onClick }
+    const plugins = built.options?.plugins
+    built.options = { ...built.options, onClick, plugins: { ...plugins, legend: { ...plugins?.legend, onClick: onLegend } } }
     return built
   }
 

@@ -179,6 +179,57 @@ export function highlightOf<Row> (groups: readonly ChartGroupData<Row>[], key: s
   return groups.map(group => group.rows.length > 0 && group.rows.every(row => matchesFilter((row as Record<string, unknown>)[key], filter)))
 }
 
+function boundOf (value: unknown): unknown {
+  return value instanceof Date ? value.getTime() : value
+}
+
+// 兩個條件是否相同：values 視為集合，區間比較兩端
+function sameCondition (current: ColumnFilter | undefined, condition: ColumnFilter): boolean {
+  if (!current || !isActiveFilter(current)) {
+    return false
+  }
+  if (condition.values) {
+    const values = current.values ?? []
+    return values.length === condition.values.length && condition.values.every(value => values.includes(value))
+  }
+  return current.segment !== undefined && condition.segment !== undefined
+    && boundOf(current.segment.min) === boundOf(condition.segment.min)
+    && boundOf(current.segment.below) === boundOf(condition.segment.below)
+}
+
+// 以一份複製的條件取代 key 欄的條件。condition 為 null 時移除該欄的條件
+function withCondition (filters: Filters, key: string, condition: ColumnFilter | null): Filters {
+  const next = { ...filters }
+  if (condition && isActiveFilter(condition)) {
+    next[key] = {
+      ...(condition.values ? { values: [...condition.values] } : {}),
+      ...(condition.segment ? { segment: { ...condition.segment } } : {}),
+    }
+  } else {
+    Reflect.deleteProperty(next, key)
+  }
+  return next
+}
+
+// 點擊圖例：切換一組或一個系列的值，可複選。區間只能選一段，再點同一段即移除
+export function toggleLegend (filters: Filters, pick: GroupFilter): Filters {
+  const values = pick.condition.values
+  if (!values) {
+    return withCondition(filters, pick.key, sameCondition(filters[pick.key], pick.condition) ? null : pick.condition)
+  }
+  const selected = filters[pick.key]?.values ?? []
+  const next = values.every(value => selected.includes(value))
+    ? selected.filter(value => !values.includes(value))
+    : [...selected, ...values.filter(value => !selected.includes(value))]
+  return withCondition(filters, pick.key, { values: next })
+}
+
+// 互動儀表板中點擊圖表：只選這一組與其系列。各欄皆已為這些條件時，改為移除
+export function pickElement (filters: Filters, picks: readonly GroupFilter[]): Filters {
+  const same = picks.every(pick => sameCondition(filters[pick.key], pick.condition))
+  return picks.reduce((next, pick) => withCondition(next, pick.key, same ? null : pick.condition), filters)
+}
+
 const GROUP_TYPES = new Set(['select', 'boolean', 'date', 'number', 'duration'])
 const VALUE_TYPES = new Set(['number', 'duration', 'boolean'])
 const COORDINATE_TYPES = new Set(['number', 'date', 'duration'])
@@ -214,6 +265,13 @@ function checkInput (schema: TableSchema, input: LooseInput): void {
     return found
   }
 
+  // 點擊寫入的條件只篩選 searchable 中的欄位
+  function checkSearchable (found: AnyColumn | undefined) {
+    if (found && !(schema.searchable as readonly string[] | undefined)?.includes(found.key)) {
+      warn(`${found.label} 未列於 searchable，點擊圖例或圖表寫入的條件不篩選列，也不顯示於篩選抽屜`)
+    }
+  }
+
   function checkGroup (group: LooseGroup | undefined, role: string) {
     if (!group) {
       return
@@ -222,17 +280,20 @@ function checkInput (schema: TableSchema, input: LooseInput): void {
     if (found?.type === 'date' && !group.unit) {
       warn(`${found.label} 為 date，須指定 unit`)
     }
+    checkSearchable(found)
   }
 
   for (const [key, allowed, role] of [
     [input.x, COORDINATE_TYPES, 'x 座標'],
     [input.y, COORDINATE_TYPES, 'y 座標'],
     [input.r, new Set(['number']), '半徑'],
-    [input.color, GROUP_TYPES, '顏色的分組'],
   ] as const) {
     if (key) {
       column(key, allowed, role)
     }
+  }
+  if (input.color) {
+    checkSearchable(column(input.color, GROUP_TYPES, '顏色的分組'))
   }
 
   checkGroup(input.group, '分組')

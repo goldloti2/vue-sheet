@@ -18,8 +18,11 @@
 
 | 事件 | 參數 | 說明 |
 | --- | --- | --- |
-| `group` | `group: ChartGroupData<Row>`、`index: number` | 點擊分組類圖表的一組。`group` 為該組的列與篩選條件，`index` 對應 `compute` 結果的 `groups` 與 `labels` |
+| `group` | `group: ChartGroupData<Row>`、`series: ChartGroupData<Row> \| null` | 點擊分組類圖表的一組。`group` 為該組的列與篩選條件，`series` 為點擊的長條或點所屬的系列，沒有系列時為 `null` |
 | `row` | `row: Row` | 點擊 scatter 或 bubble 的一點，參數為該點的那一列 |
+| `legend` | `pick: GroupFilter` | 點擊圖例中的一組或一個系列，參數為選取該項的篩選條件。該項沒有條件時不發出 |
+
+- 圖例的一項為沒有系列的 dataset 時，此元件照 Chart.js 的預設隱藏或顯示該 dataset，不發出事件
 
 ## 備註
 

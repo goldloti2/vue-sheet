@@ -112,12 +112,10 @@ function categoryConfig (definition: ChartShape, data: Extract<ChartData<object>
     }
   })
 
-  // 圖例：依組上色時列出各組，其餘列出各 dataset。只有一個 dataset 且不依組上色時（line、radar）不顯示
+  // 圖例：依組上色時列出各組（項目帶 index），其餘列出各 dataset（項目帶 datasetIndex）。只有一個 dataset 且不依組上色時（line、radar）不顯示
   let legend: object
   if (byGroup) {
     legend = {
-      // 依組上色的長條圖：點擊圖例的處理尚未決定，先停用 Chart.js 預設的隱藏 dataset
-      ...(groupBar ? { onClick: () => {} } : {}),
       labels: {
         generateLabels: (chart: Chart) => data.labels.map((text, groupIndex) => ({
           text,

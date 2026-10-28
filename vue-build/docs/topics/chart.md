@@ -123,7 +123,8 @@ text、image、ref 不可分組。須依這些欄位分組時，改為宣告一�
 ## 顏色
 
 - **依共用色名輪流使用**：清單為 `plugins/vuetify.ts` 中的 `vuesheet-*`，色數隨清單的長度（見 [FormattedValue](../components/view/FormattedValue.md)）
-- **圓餅類依組上色**，bar、line 與 radar 依 dataset 上色
+- **依組上色**：圓餅類，以及只有一個 dataset 的 bar。圖例列出各組
+- **依 dataset 上色**：其他的 bar，以及 line 與 radar。圖例列出各 dataset，只有一個 dataset 時不顯示圖例
 - **切換深淺色主題時重新上色**，無須重新計算
 
 ---

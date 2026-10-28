@@ -24,7 +24,7 @@
 
 - **Chart.js 於元件掛載時才載入**：以動態 import 載入 `chart.js/auto`，打包時成為獨立的檔案。沒有圖表的頁面不下載 Chart.js
 - **`rows` 或主題改變時更新圖表**：元件以 `computed` 執行 `compute(rows)`，換上新的設定後呼叫 Chart.js 的 `update()`。卸載時銷毀 Chart.js 的實例
-- **顏色**依 `plugins/vuetify.ts` 的 `sharedColorNames` 輪流使用，取自目前主題的色值。圓餅類依組上色，其他圖表依 dataset 上色。文字與格線取自主題的 `on-surface`
+- **顏色**依 `plugins/vuetify.ts` 的 `sharedColorNames` 輪流使用，取自目前主題的色值。圓餅類與只有一個 dataset 的 bar 依組上色，其他圖表依 dataset 上色（見 [chart.md](../../topics/chart.md#顏色) 的「顏色」）。文字與格線取自主題的 `on-surface`
 - **刻度與提示依 dataset 的 `unit` 格式化**：`percent` 加上「%」，`duration` 為「時:分:秒」，`date` 為 `yyyy/mm/dd`，其餘最多兩位小數
 - **bubble 的半徑換算為 4 至 20 像素**：依資料中半徑欄位的最小值與最大值等比換算。提示中顯示原本的值
 - **高度隨所在的容器**，至少 280px。`ChartPage` 指定這個容器的高度。直接使用此元件時，由外層指定高度

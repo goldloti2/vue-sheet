@@ -59,27 +59,56 @@ type ChartShape = Pick<ChartDefinition<object>, 'type' | 'stacked' | 'horizontal
 function categoryConfig (definition: ChartShape, data: Extract<ChartData<object>, { kind: 'category' }>, theme: ChartTheme): ChartConfiguration {
   const type = definition.type
   const round = ['pie', 'doughnut', 'polarArea'].includes(type)
+  // 只有一個 dataset 的長條圖與圓餅類相同，依組上色
+  const groupBar = type === 'bar' && data.datasets.length === 1 && !data.datasets[0]?.type
+  const groupColors = data.labels.map((_, groupIndex) => colorAt(theme, groupIndex))
   const hasRight = data.datasets.some(dataset => dataset.axis === 'right')
 
   const datasets = data.datasets.map((dataset, index) => {
     const color = colorAt(theme, index)
     const line = dataset.type === 'line' || (type === 'line' && dataset.type !== 'bar')
+    let colors
+    if (round) {
+      colors = { backgroundColor: groupColors, borderColor: theme.surface }
+    } else if (groupBar) {
+      colors = { backgroundColor: groupColors, borderColor: groupColors }
+    }
     return {
       label: dataset.label,
       data: dataset.data,
       ...(dataset.type ? { type: dataset.type } : {}),
       ...(dataset.axis === 'right' ? { [definition.horizontal ? 'xAxisID' : 'yAxisID']: 'right' } : {}),
-      ...(round
-        ? { backgroundColor: data.labels.map((_, groupIndex) => colorAt(theme, groupIndex)), borderColor: theme.surface }
-        : {
-            backgroundColor: type === 'radar' ? withAlpha(color, 0.2) : color,
-            borderColor: color,
-            pointBackgroundColor: color,
-            fill: type === 'radar',
-            ...(line ? { tension: 0 } : {}),
-          }),
+      ...(colors ?? {
+        backgroundColor: type === 'radar' ? withAlpha(color, 0.2) : color,
+        borderColor: color,
+        pointBackgroundColor: color,
+        fill: type === 'radar',
+        ...(line ? { tension: 0 } : {}),
+      }),
     }
   })
+
+  // 圖例：依組上色的長條圖列出各組。其餘只有一個 dataset 時（line、radar）不顯示
+  let legend: object = {}
+  if (groupBar) {
+    legend = {
+      // 點擊圖例的處理尚未決定，先停用 Chart.js 預設的隱藏 dataset
+      onClick: () => {},
+      labels: {
+        generateLabels: () => data.labels.map((text, groupIndex) => ({
+          text,
+          fillStyle: groupColors[groupIndex],
+          strokeStyle: groupColors[groupIndex],
+          lineWidth: 0,
+          hidden: false,
+          index: groupIndex,
+          fontColor: theme.text,
+        })),
+      },
+    }
+  } else if (!round && data.datasets.length === 1) {
+    legend = { display: false }
+  }
 
   const leftUnit = data.datasets.find(dataset => dataset.axis !== 'right')?.unit ?? 'number'
   const rightUnit = data.datasets.find(dataset => dataset.axis === 'right')?.unit ?? 'number'
@@ -115,6 +144,7 @@ function categoryConfig (definition: ChartShape, data: Extract<ChartData<object>
       indexAxis: definition.horizontal ? 'y' : 'x',
       scales,
       plugins: {
+        legend,
         tooltip: {
           callbacks: {
             label: context => `${context.dataset.label ?? ''}：${formatValue(context.raw, unitOf(context.datasetIndex))}`,
@@ -171,12 +201,13 @@ export function buildConfig (definition: ChartShape, data: ChartData<object>, th
   const config = data.kind === 'category'
     ? categoryConfig(definition, data, theme)
     : pointConfig(definition, data, theme)
+  const plugins = config.options?.plugins
   config.options = {
     ...config.options,
     responsive: true,
     maintainAspectRatio: false,
     color: theme.text,
-    plugins: { ...config.options?.plugins, legend: { labels: { color: theme.text } } },
+    plugins: { ...plugins, legend: { ...plugins?.legend, labels: { ...plugins?.legend?.labels, color: theme.text } } },
   }
   return config
 }

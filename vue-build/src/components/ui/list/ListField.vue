@@ -18,6 +18,14 @@
 
   const hasTopRow = computed(() => props.title !== undefined || props.subtitle !== undefined || props.selectMode)
   const hasBottomRow = computed(() => props.summary !== undefined || props.aside !== undefined)
+
+  // 一側的兩個位置皆未指定時，另一側延伸至整行。依 view 而定，各列一致
+  const span = computed(() => {
+    if (props.subtitle === undefined && props.aside === undefined) {
+      return 'left'
+    }
+    return props.title === undefined && props.summary === undefined ? 'right' : null
+  })
 </script>
 
 <template>
@@ -25,9 +33,9 @@
     <img v-if="image" alt="" class="list-item__thumb" :src="image">
     <span v-else-if="image === null" class="list-item__thumb" />
 
-    <div class="list-item__rows">
+    <div class="list-item__rows" :class="span && `list-item__rows--${span}`">
       <div v-if="hasTopRow" class="list-item__row">
-        <div class="list-item__title-wrap">
+        <div v-if="title !== undefined || selectMode" class="list-item__title-wrap">
           <v-icon
             v-if="selectMode"
             :color="selected ? 'primary' : undefined"
@@ -102,6 +110,16 @@
   text-align: right;
 }
 
+/* 右側皆未指定：左側佔滿整行 */
+.list-item__rows--left .list-item__row {
+  grid-template-columns: 1fr;
+}
+
+/* 左側皆未指定：右側佔滿整行，靠右。第一欄只在多選時放勾選圖示 */
+.list-item__rows--right .list-item__row {
+  grid-template-columns: auto 1fr;
+}
+
 /* 已指定但沒有值時，以零寬字元撐出一行的高度 */
 .list-item__title:empty::before,
 .list-item__field:empty::before {
@@ -110,7 +128,7 @@
 
 /* dashboard 中 3 格以下的窄面板：只留標題與副標，上下排列並靠左（門檻見 docs/components/panel/DashboardPanel.md） */
 @container dashboard-panel (width < 200px) {
-  .list-item__row {
+  .list-item__rows .list-item__row {
     grid-template-columns: 1fr;
   }
 

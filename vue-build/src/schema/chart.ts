@@ -1,5 +1,5 @@
 import type { ColumnFilter, Filters } from './filter'
-import type { AnyColumn, ColumnKey, FormatColor, RowKey, TableSchema } from './types'
+import type { AnyColumn, ColorName, ColumnKey, RowKey, TableSchema } from './types'
 import { isActiveFilter, matchesFilter } from './filter'
 import { sortRows } from './sort'
 import { booleanText, durationSeconds, findColumn, formatDate, formatDuration } from './types'
@@ -51,7 +51,7 @@ type MixedValue<Row extends object> = ChartValue<Row> & {
 type StatValue<Row extends object> = ChartValue<Row> & StatFormat
 
 // 數字的顏色：固定的顏色，或依數值決定，回傳 undefined 時為一般的文字顏色
-export type StatTextColor = FormatColor | ((value: number | null) => FormatColor | undefined)
+export type StatTextColor = ColorName | ((value: number | null) => ColorName | undefined)
 
 interface StatFormat {
   // 正數前方加「+」
@@ -102,12 +102,12 @@ interface RadarChart<Row extends object> {
   values: ChartValue<Row>[]
 }
 
-// 每一列為一個點。color 依一欄上色，可用的欄位與分組相同
+// 每一列為一個點。series 依一欄將點分組上色
 interface ScatterChart<Row extends object> {
   type: 'scatter'
   x: CoordinateKey<Row>
   y: CoordinateKey<Row>
-  color?: GroupKey<Row>
+  series?: ChartGroup<Row>
 }
 
 interface BubbleChart<Row extends object> {
@@ -115,7 +115,7 @@ interface BubbleChart<Row extends object> {
   x: CoordinateKey<Row>
   y: CoordinateKey<Row>
   r: ColumnKey<Row, number | null>
-  color?: GroupKey<Row>
+  series?: ChartGroup<Row>
 }
 
 // 文字統計：每一組的每一個數值以文字顯示為一格，不使用 Chart.js。沒有 group 時全部的列為一組
@@ -125,15 +125,24 @@ interface StatChart<Row extends object> {
   values: StatValue<Row>[]
 }
 
-type ChartInput<Row extends object>
-  = | BarChart<Row>
-    | LineChart<Row>
-    | PieChart<Row>
-    | PolarAreaChart<Row>
-    | RadarChart<Row>
-    | ScatterChart<Row>
-    | BubbleChart<Row>
-    | StatChart<Row>
+// 依名稱指定顏色：依組上色時為組名，否則為圖例上 dataset 的名稱。「(空白)」與「其他」以 chartBlank、chartOthers 指定
+export type ChartColors = Partial<Record<string, ColorName>> & {
+  chartBlank?: ColorName
+  chartOthers?: ColorName
+}
+
+type ChartInput<Row extends object> = (
+  | BarChart<Row>
+  | LineChart<Row>
+  | PieChart<Row>
+  | PolarAreaChart<Row>
+  | RadarChart<Row>
+  | ScatterChart<Row>
+  | BubbleChart<Row>
+  | StatChart<Row>
+) & {
+  colors?: ChartColors
+}
 
 // 數值的單位，供圖表元件格式化刻度與提示
 export type ChartUnit = 'number' | 'duration' | 'percent' | 'date'
@@ -147,6 +156,8 @@ export interface CategoryDataset {
   axis?: 'left' | 'right'
   // 有系列時，為 compute 結果中 series 的索引
   series?: number
+  // 於 colors 中的名稱，見 ChartGroupData
+  colorKey: string
   // stat 的格式，見 StatFormat
   sign?: boolean
   suffix?: string
@@ -163,7 +174,9 @@ export interface ChartPoint<Row> {
 export interface PointDataset<Row> {
   label: string
   data: ChartPoint<Row>[]
-  // 有 color 時，為 compute 結果中 series 的索引
+  // 於 colors 中的名稱，見 ChartGroupData
+  colorKey: string
+  // 有系列時，為 compute 結果中 series 的索引
   series?: number
 }
 
@@ -176,9 +189,11 @@ export interface GroupFilter {
 export interface ChartGroupData<Row> {
   rows: Row[]
   filter: GroupFilter | null
+  // 於 colors 中的名稱：一般為組名，「(空白)」為 chartBlank，「其他」為 chartOthers
+  colorKey: string
 }
 
-// compute 的結果，不含顏色。series 為各系列（scatter 與 bubble 為 color 的各組），沒有時為空陣列
+// compute 的結果，不含顏色。series 為各系列，沒有時為空陣列
 export type ChartData<Row>
   = | { kind: 'category', labels: string[], datasets: CategoryDataset[], groups: ChartGroupData<Row>[], series: ChartGroupData<Row>[] }
     | { kind: 'point', datasets: PointDataset<Row>[], series: ChartGroupData<Row>[], xUnit: ChartUnit, yUnit: ChartUnit }
@@ -189,10 +204,10 @@ export interface ChartDefinition<Row extends object> {
   stacked: boolean
   horizontal: boolean
   groupKey: string | null
-  // 系列欄。scatter 與 bubble 為 color 的欄位
   seriesKey: string | null
   // 分組欄與系列欄。圖表忽略這些欄的篩選條件，改為加上高光，交給 useListPage 的 ignoreFilter
   filterKeys: string[]
+  colors: ChartColors
   compute: (rows: readonly Row[]) => ChartData<Row>
 }
 
@@ -274,7 +289,6 @@ interface LooseInput {
   x?: string
   y?: string
   r?: string
-  color?: string
 }
 
 // 型別檢查不到的規則，開發模式下以 console 警告
@@ -318,10 +332,6 @@ function checkInput (schema: TableSchema, input: LooseInput): void {
       column(key, allowed, role)
     }
   }
-  if (input.color) {
-    checkSearchable(column(input.color, GROUP_TYPES, '顏色的分組'))
-  }
-
   checkGroup(input.group, '分組')
   checkGroup(input.series, '系列')
   for (const value of input.values ?? []) {
@@ -355,6 +365,12 @@ interface Bucket<Row> {
   label: string
   filter: GroupFilter | null
   rows: Row[]
+  // 於 colors 中的名稱，省略時為 label
+  colorKey?: string
+}
+
+function groupData<Row> (bucket: Bucket<Row>): ChartGroupData<Row> {
+  return { rows: bucket.rows, filter: bucket.filter, colorKey: bucket.colorKey ?? bucket.label }
 }
 
 function pad (value: number): string {
@@ -520,7 +536,7 @@ function groupBuckets<Row> (schema: TableSchema, rows: readonly Row[], column: A
   }
 
   if (blank.length > 0 && !group.excludeBlank) {
-    buckets.push({ label: BLANK_LABEL, filter: { key: column.key, condition: { values: [null] } }, rows: blank })
+    buckets.push({ label: BLANK_LABEL, colorKey: 'chartBlank', filter: { key: column.key, condition: { values: [null] } }, rows: blank })
   }
   return buckets
 }
@@ -530,6 +546,7 @@ function mergeOther<Row> (buckets: Bucket<Row>[], key: string): Bucket<Row> {
   const values = buckets.flatMap(bucket => bucket.filter?.condition.values ?? [undefined])
   return {
     label: OTHER_LABEL,
+    colorKey: 'chartOthers',
     filter: values.includes(undefined) ? null : { key, condition: { values: values as (string | null)[] } },
     rows: buckets.flatMap(bucket => bucket.rows),
   }
@@ -624,9 +641,11 @@ function valueDatasets<Row> (value: Value, column: AnyColumn | undefined, bucket
       return percentOf(cell.stat, options.stacked && series ? groupTotal(groupIndex) : datasetTotal)
     })
 
-    const seriesLabel = series?.buckets[seriesIndex]?.label
+    const seriesBucket = series?.buckets[seriesIndex]
+    const name = (seriesName: string) => options.multiple ? `${label}（${seriesName}）` : seriesName
     return {
-      label: seriesLabel === undefined ? label : (options.multiple ? `${label}（${seriesLabel}）` : seriesLabel),
+      label: seriesBucket ? name(seriesBucket.label) : label,
+      colorKey: seriesBucket ? name(seriesBucket.colorKey ?? seriesBucket.label) : label,
       data,
       unit,
       ...(mixed.type ? { type: mixed.type } : {}),
@@ -673,8 +692,8 @@ function computeCategory<Row> (schema: TableSchema, input: CategoryInput, rows: 
     kind: 'category',
     labels: buckets.map(bucket => bucket.label),
     datasets: values.flatMap((value, index) => valueDatasets(value, columns[index], buckets, series, options)),
-    groups: buckets.map(bucket => ({ rows: bucket.rows, filter: bucket.filter })),
-    series: series?.buckets.map(bucket => ({ rows: bucket.rows, filter: bucket.filter })) ?? [],
+    groups: buckets.map(bucket => groupData(bucket)),
+    series: series?.buckets.map(bucket => groupData(bucket)) ?? [],
   }
 }
 
@@ -682,7 +701,7 @@ function computePoints<Row> (schema: TableSchema, input: ScatterChart<AnyRow> | 
   const xColumn = findColumn(schema, input.x)
   const yColumn = findColumn(schema, input.y)
   const rColumn = input.type === 'bubble' ? findColumn(schema, input.r) : undefined
-  const colorColumn = input.color ? findColumn(schema, input.color) : undefined
+  const seriesColumn = input.series ? findColumn(schema, input.series.key) : undefined
   if (!xColumn || !yColumn) {
     return { kind: 'point', datasets: [], series: [], xUnit: 'number', yUnit: 'number' }
   }
@@ -695,16 +714,16 @@ function computePoints<Row> (schema: TableSchema, input: ScatterChart<AnyRow> | 
   })
 
   // 沒有任何點的組不列入，圖例不出現
-  const buckets = colorColumn ? groupBuckets(schema, rows, colorColumn, { key: colorColumn.key }) : []
-  const datasets = colorColumn
+  const buckets = input.series && seriesColumn ? groupBuckets(schema, rows, seriesColumn, input.series) : []
+  const datasets = seriesColumn
     ? buckets
-        .map((bucket, index) => ({ label: bucket.label, data: points(bucket.rows), series: index }))
+        .map((bucket, index) => ({ label: bucket.label, colorKey: bucket.colorKey ?? bucket.label, data: points(bucket.rows), series: index }))
         .filter(dataset => dataset.data.length > 0)
-    : [{ label: schema.tableLabel, data: points(rows) }]
+    : [{ label: schema.tableLabel, colorKey: schema.tableLabel, data: points(rows) }]
   return {
     kind: 'point',
     datasets,
-    series: buckets.map(bucket => ({ rows: bucket.rows, filter: bucket.filter })),
+    series: buckets.map(bucket => groupData(bucket)),
     xUnit: unitOf(xColumn),
     yUnit: unitOf(yColumn),
   }
@@ -718,12 +737,7 @@ export function defineChart<Row extends object> (schema: TableSchema<Row>, input
   const spec = input as AnyChartInput
   const isPoint = spec.type === 'scatter' || spec.type === 'bubble'
   const groupKey = isPoint ? null : spec.group?.key ?? null
-  let seriesKey: string | null
-  if (isPoint) {
-    seriesKey = spec.color ?? null
-  } else {
-    seriesKey = 'series' in spec ? spec.series?.key ?? null : null
-  }
+  const seriesKey = 'series' in spec ? spec.series?.key ?? null : null
   return {
     type: spec.type,
     stacked: 'stacked' in spec && Boolean(spec.stacked),
@@ -731,6 +745,7 @@ export function defineChart<Row extends object> (schema: TableSchema<Row>, input
     groupKey,
     seriesKey,
     filterKeys: [groupKey, seriesKey].filter((key): key is string => key !== null),
+    colors: spec.colors ?? {},
     compute: rows => spec.type === 'scatter' || spec.type === 'bubble'
       ? computePoints(schema, spec, rows)
       : computeCategory(schema, spec, rows),

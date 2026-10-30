@@ -1,4 +1,5 @@
-import type { ChartData, ChartDefinition, ChartUnit } from '@/schema/chart'
+import type { ChartColors, ChartData, ChartDefinition, ChartUnit } from '@/schema/chart'
+import type { ColorName } from '@/schema/types'
 import type { Chart, ChartConfiguration } from 'chart.js'
 import { formatDate, formatDuration } from '@/schema/types'
 
@@ -11,8 +12,17 @@ export interface ChartTheme {
   surface: string
 }
 
-// 與 Chart.js 的 Colors plugin 相同的色盤，依序輪流使用。填色為半透明，邊線與線條為原色
-const CHART_COLORS = ['#36a2eb', '#ff6384', '#ff9f40', '#ffcd56', '#4bc0c0', '#9966ff', '#c9cbcf']
+// 圖表的色盤：色名與條件式格式相同，色值與 Chart.js 的 Colors plugin 相同。依此順序輪流使用，填色為半透明，邊線與線條為原色
+const CHART_PALETTE: Record<ColorName, string> = {
+  blue: '#36a2eb',
+  red: '#ff6384',
+  orange: '#ff9f40',
+  yellow: '#ffcd56',
+  green: '#4bc0c0',
+  purple: '#9966ff',
+  grey: '#c9cbcf',
+}
+const PALETTE_ORDER = Object.keys(CHART_PALETTE) as ColorName[]
 const FILL_OPACITY = 0.5
 
 // 高光：false 的組或 dataset 調淡。null 表示該欄沒有條件，全部照常
@@ -59,8 +69,24 @@ export function formatValue (value: unknown, unit: ChartUnit): string {
   return text + suffix
 }
 
-export function colorAt (index: number): string {
-  return CHART_COLORS[index % CHART_COLORS.length] ?? CHART_COLORS[0]!
+// 依名稱上色：指定的使用指定的顏色，其餘從上一個顏色之後輪流，跳過已指定的顏色（見 docs/topics/chart.md 的「顏色」）
+export function paletteColors (names: readonly string[], pinned: ChartColors): string[] {
+  const taken = new Set(names.map(name => pinned[name]).filter(color => color !== undefined))
+  // 七色皆已指定時不跳過
+  const skip = taken.size < PALETTE_ORDER.length ? taken : new Set<ColorName>()
+  let next = 0
+  return names.map(name => {
+    let color = pinned[name]
+    if (!color) {
+      let index = next % PALETTE_ORDER.length
+      while (skip.has(PALETTE_ORDER[index]!)) {
+        index = (index + 1) % PALETTE_ORDER.length
+      }
+      color = PALETTE_ORDER[index]!
+    }
+    next = PALETTE_ORDER.indexOf(color) + 1
+    return CHART_PALETTE[color]
+  })
 }
 
 // 沒被選的部分調淡。opacity 為照常時的不透明度
@@ -79,7 +105,7 @@ function axisStyle (theme: ChartTheme, unit: ChartUnit) {
 }
 
 // 設定所需的 defineChart 結果
-type ChartShape = Pick<ChartDefinition<object>, 'type' | 'stacked' | 'horizontal'>
+type ChartShape = Pick<ChartDefinition<object>, 'type' | 'stacked' | 'horizontal' | 'colors'>
 
 function categoryConfig (definition: ChartShape, data: Extract<ChartData<object>, { kind: 'category' }>, theme: ChartTheme, marks: ChartMarks): ChartConfiguration {
   const type = definition.type
@@ -87,6 +113,9 @@ function categoryConfig (definition: ChartShape, data: Extract<ChartData<object>
   // 只有一個 dataset 的長條圖與圓餅類相同，依組上色
   const groupBar = type === 'bar' && data.datasets.length === 1 && !data.datasets[0]?.type
   const byGroup = round || groupBar
+  // 依組上色時為各組的顏色，否則為各 dataset 的顏色
+  const palette = paletteColors(byGroup ? data.groups.map(group => group.colorKey) : data.datasets.map(dataset => dataset.colorKey), definition.colors)
+  const colorAt = (index: number) => palette[index] ?? ''
   const hasRight = data.datasets.some(dataset => dataset.axis === 'right')
   const groupOn = (groupIndex: number) => marks.groups?.[groupIndex] ?? true
   const datasetOn = (index: number) => marks.datasets?.[index] ?? true
@@ -211,8 +240,9 @@ function pointConfig (definition: ChartShape, data: Extract<ChartData<object>, {
     ? undefined
     : BUBBLE_MIN_RADIUS + (spanR === 0 ? 0.5 : (r - minR) / spanR) * (BUBBLE_MAX_RADIUS - BUBBLE_MIN_RADIUS)
 
+  const palette = paletteColors(data.datasets.map(dataset => dataset.colorKey), definition.colors)
   const datasets = data.datasets.map((dataset, index) => {
-    const color = colorAt(index)
+    const color = palette[index] ?? ''
     const on = marks.datasets?.[index] ?? true
     return {
       label: dataset.label,

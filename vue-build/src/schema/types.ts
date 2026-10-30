@@ -117,15 +117,15 @@ export interface TableSchema<Row extends object = AnyRow> {
   formatRules?: FormatRule<Row>[]
 }
 
-/** 條件式格式的顏色。淺色與深色主題各有一組色值 */
-export type FormatColor = 'red' | 'orange' | 'yellow' | 'green' | 'blue' | 'purple' | 'grey'
+/** 共用的色名：條件式格式、圖表與文字統計皆使用。文字的色值隨深淺色主題切換，圖表另有一組色值 */
+export type ColorName = 'red' | 'orange' | 'yellow' | 'green' | 'blue' | 'purple' | 'grey'
 
 export interface FormatRule<Row extends object = AnyRow> {
   /** 條件。row 的 getter 已掛上 */
   when: (row: Row) => boolean
   /** 套用的欄位，真實與虛擬欄位皆可 */
   columns: RowKey<Row>[]
-  color?: FormatColor
+  color?: ColorName
   bold?: boolean
   italic?: boolean
   underline?: boolean
@@ -133,7 +133,7 @@ export interface FormatRule<Row extends object = AnyRow> {
   /** 值前方的圖示（@mdi/js 的 path） */
   icon?: string
   /** 圖示的顏色。省略時與文字同色 */
-  iconColor?: FormatColor
+  iconColor?: ColorName
 }
 
 function columnHeader (column: SchemaColumn): string {

@@ -33,7 +33,7 @@
   - 位於 dashboard 中時，以 dashboard 的格子換算
   - 不在 dashboard 中時，此元件量測自身的寬度，依 `useCompactLayout()` 選用手機或電腦的格數，換算一格的大小
   - 外圍的留白由外層負責，並以 CSS 變數 `--data-stat-inset` 告知此元件。`ChartPage` 已指定這個變數
-- **左側色塊的顏色**與 `DataChart` 使用同一個色盤：有 `group` 時依組，沒有 `group` 時依數值
+- **左側色塊的顏色**與 `DataChart` 使用同一個色盤，同樣依 `colors` 指定：有 `group` 時依組，沒有 `group` 時依數值
 - **數字的顏色**：`textColor` 的色名以 `text-vuesheet-*` class 套上，數字與單位同色
 - **高光**：分組欄上有條件時，沒被選的組調淡，判斷方式與 `DataChart` 相同
 - **高度隨內容**，不使用 `cqh`。格數較多時，由外層捲動

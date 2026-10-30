@@ -1,15 +1,15 @@
-import type { AnyColumn, FormatColor, TableSchema } from './types'
+import type { AnyColumn, ColorName, TableSchema } from './types'
 import { formatColumnValue } from './types'
 
 // 條件式格式：純函數，計算一欄顯示的文字與套用的格式。顯示由 components/ui/view/FormattedValue.vue 處理
 
 export interface FieldFormat {
-  color?: FormatColor
+  color?: ColorName
   bold: boolean
   italic: boolean
   underline: boolean
   strike: boolean
-  icons: { icon: string, color?: FormatColor }[]
+  icons: { icon: string, color?: ColorName }[]
 }
 
 // 顯示用的值，包含文字與格式。沒有符合的規則時 format 為 undefined

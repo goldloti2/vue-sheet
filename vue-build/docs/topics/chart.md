@@ -20,7 +20,7 @@
 | 步驟 | 負責 | 內容 |
 | --- | --- | --- |
 | 1 | 頁面 | 以 `defineChart(schema, {…})` 宣告圖表，只執行一次。以 `useListPage` 取得 `rows` 與 `filters`，`ignoreFilter` 傳入圖表的 `filterKeys` |
-| 2 | `defineChart` | 於開發模式下檢查輸入，回傳 `type`、`stacked`、`horizontal`、`groupKey`、`seriesKey`、`filterKeys` 與 `compute` |
+| 2 | `defineChart` | 於開發模式下檢查輸入，回傳 `type`、`stacked`、`horizontal`、`groupKey`、`seriesKey`、`filterKeys`、`colors` 與 `compute` |
 | 3 | [`ChartPage`](../components/page/ChartPage.md) | 整頁層級的事：載入狀態、錯誤、高度、點擊後的處理。範本為 `template/pages/chart.vue` |
 | 4-1 | [`DataChart`](../components/chart/DataChart.md) | 以 `computed` 執行 `compute(rows)`，依 `filters` 標示高光，套上顏色後交給 Chart.js。資料改變時更新圖表，卸載時銷毀 Chart.js 的實例 |
 | 4-2 | [`DataStat`](../components/chart/DataStat.md) | 只用於 stat：同樣執行 `compute(rows)` 並標示高光，以文字顯示，不使用 Chart.js |
@@ -38,12 +38,13 @@
   - 有系列時，`series` 為該 dataset 所屬系列於 `series` 中的索引
 - `groups`：與 `labels` 一一對應。`rows` 為該組的列，依 `rows` 原本的順序
 - `groups` 的 `filter` 為選取該組的篩選條件。無法以一個條件表示時為 `null`，例如 date 或 number 分組合併的「其他」
+- `groups` 與各 dataset 皆帶有 `colorKey`，為該項於 `colors` 中的名稱（見「指定顏色」）
 - `series`：各系列的 `rows` 與 `filter`，形狀與 `groups` 相同。沒有系列時為空陣列
 - stat 沒有 `group` 時，全部的列為一組：`labels` 只有一個空字串，該組的 `filter` 為 `null`
 
 逐列類（`kind: 'point'`，scatter 與 bubble）：
-- `datasets`：沒有 `color` 時一個，有 `color` 時每組一個。沒有任何點的組不列入
-- 有 `color` 時，`series` 為 `color` 的各組，dataset 的 `series` 為所屬的組於其中的索引
+- `datasets`：沒有 `series` 時一個，有 `series` 時每組一個。沒有任何點的組不列入
+- 有 `series` 時，結果的 `series` 為各組，dataset 的 `series` 為所屬的組於其中的索引
 - 每個點為 `{ x, y, r, row }`。date 的值為毫秒，duration 的值為秒數。x 或 y 為空的列不畫出，bubble 另略過半徑為空的列
 - `xUnit`、`yUnit` 為兩軸的單位
 
@@ -57,7 +58,7 @@
   - 欄位不存在
   - 欄位的類型不能擔任該角色，例如 text 欄位作為分組
   - date 分組未指定 `unit`
-  - 分組欄、系列欄或 `color` 未列於 `searchable`。點擊寫入這些欄的條件只用於高光，不篩選列，也不顯示於篩選抽屜
+  - 分組欄或系列欄未列於 `searchable`。點擊寫入這些欄的條件只用於高光，不篩選列，也不顯示於篩選抽屜
   - duration 的數值指定了 `suffix`
 
 ### 欄位的角色
@@ -107,12 +108,13 @@ text、image、ref 不可分組。須依這些欄位分組時，改為宣告一�
 | pie、doughnut | `group`、`values`、`series`。多個數值或 `series` 畫成同心圓，兩者擇一，各圈的分組相同 |
 | polarArea | `group`，以及一個數值 |
 | radar | `group` 為各軸，`series` 為各條線，`values` |
-| scatter | `x`、`y`、`color` |
-| bubble | `x`、`y`、`r`、`color` |
+| scatter | `x`、`y`、`series` |
+| bubble | `x`、`y`、`r`、`series` |
 | stat | `group`（可省略）、`values`。以文字顯示每一組的每一個數值 |
 
 - `series` 為第二層分組，每一組成為一個 dataset。項目與 `group` 相同，但沒有 `limit`
-- `color` 依一欄為各點上色，可用的類型與分組相同
+- scatter 與 bubble 的 `series` 依一欄將點分組上色
+- 每一種圖表皆可指定 `colors`，見「顏色」
 - stat 沒有 `group` 時，全部的列為一組，每個數值一格。stat 沒有 `series`
 
 ---
@@ -136,19 +138,29 @@ text、image、ref 不可分組。須依這些欄位分組時，改為宣告一�
 
 ## 顏色
 
-- **使用 Chart.js 預設的色盤**：與 Chart.js 的 Colors plugin 相同，依序為藍、紅、橙、黃、青、紫、灰，七色輪流使用。深淺色主題使用相同的色盤
+- **色盤**：依序為 `blue`、`red`、`orange`、`yellow`、`green`、`purple`、`grey`，七色輪流使用。色名與條件式格式相同，色值與 Chart.js 的 Colors plugin 相同。深淺色主題使用相同的色盤
 - **填色為 50% 的不透明度**，邊線、線條與點的外框為原色。radar 的面積彼此重疊，填色為 20%
-- **依組上色**：圓餅類，以及只有一個 dataset 的 bar。圖例列出各組
-- **依 dataset 上色**：其他的 bar，以及 line 與 radar。圖例列出各 dataset，只有一個 dataset 時不顯示圖例
-- **stat 的色塊**：有 `group` 時依組上色，沒有 `group` 時依數值上色。stat 沒有圖例。數字的顏色由 `textColor` 指定，與色塊無關
+- **依組上色**：圓餅類、只有一個 dataset 的 bar，以及有 `group` 的 stat。圖例列出各組
+- **依 dataset 上色**：其他的 bar、line、radar、scatter、bubble，以及沒有 `group` 的 stat。圖例列出各 dataset，只有一個 dataset 時不顯示圖例。stat 沒有圖例
 - **切換深淺色主題時**，文字、格線與扇形之間的分隔線改為新主題的顏色，無須重新計算
 - **沒被選的部分調淡**為原本不透明度的 25%，見「分組欄與系列欄上的條件」
+
+### 指定顏色（`colors`）
+
+`colors` 以名稱對應色名，例如「完成」為 `green`、「未完成」為 `orange`：
+
+- **名稱為圖上顯示的名稱**：依組上色時為組名。依 dataset 上色時為圖例上 dataset 的名稱，即系列的名稱或數值的 `label`
+- **「(空白)」與「其他」的名稱為 `chartBlank` 與 `chartOthers`**：與顯示的文字無關，因此不與名為「其他」的選項混淆。有多個數值又有系列時，dataset 的名稱為「數值的名稱（系列的名稱）」，系列為「(空白)」時寫成「數值的名稱（chartBlank）」
+- **數值的名稱未指定 `label` 時由框架產生**，例如「價格的平均」。須指定顏色的數值，宜一併指定 `label`
+- **未指定的項目依序輪流**：從前一個項目的顏色之後接續，跳過已指定給其他項目的顏色。七色皆已指定時不跳過
+- **名稱不在圖上時**，該項指定不生效
+- stat 數字的顏色由 `textColor` 指定，與 `colors` 無關。`textColor` 使用條件式格式的色值，`colors` 使用圖表的色盤
 
 ---
 
 ## 分組欄與系列欄上的條件
 
-- **圖表忽略自己分組欄與系列欄上的篩選條件**：不論單獨成頁、置於頁籤頁或儀表板，皆仍畫出全部的組與系列。scatter 與 bubble 的 `color` 視為系列欄
+- **圖表忽略自己分組欄與系列欄上的篩選條件**：不論單獨成頁、置於頁籤頁或儀表板，皆仍畫出全部的組與系列
 - **其他欄位的條件、搜尋與 `scope` 照常生效**
 - **忽略的方式**：頁面將 `defineChart` 回傳的 `filterKeys` 傳入 `useListPage` 的 `ignoreFilter`，`rows` 便不套用這些欄的條件。`filters` 另外以 `v-model:filters` 傳入 `ChartPage`，供圖表標示高光與寫入條件
 - **哪些組被選，由該組的列判斷**：一組有列，且每一列皆符合分組欄的條件時，該組被選。勾選多個值時標示多組。沒有列的組，例如沒有資料的區間，不標示

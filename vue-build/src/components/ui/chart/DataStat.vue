@@ -5,7 +5,7 @@
   import { COLS, dashboardKey, GAP } from '@/components/ui/panel/dashboardContext'
   import { useCompactLayout } from '@/composables/shell/useCompactLayout'
   import { highlightOf } from '@/schema/chart'
-  import { colorAt, DIM_OPACITY, formatParts } from './chartConfig'
+  import { DIM_OPACITY, formatParts, paletteColors } from './chartConfig'
 
   // 以文字顯示 type 為 stat 的圖表：每一組的每一個數值為一格（見 docs/components/chart/DataStat.md）
   const { chart, rows, filters = {}, clickable = true } = defineProps<{
@@ -76,6 +76,8 @@
     }
     const grouped = chart.groupKey !== null
     const marks = highlightOf(data.groups, chart.groupKey, filters)
+    // 有分組時依組上色，否則依數值上色
+    const palette = paletteColors(grouped ? data.groups.map(group => group.colorKey) : data.datasets.map(dataset => dataset.colorKey), chart.colors)
     return data.groups.flatMap((group, groupIndex) => data.datasets.map((dataset, datasetIndex) => {
       const value = dataset.data[groupIndex] ?? null
       const { text, suffix } = formatParts(value, dataset.unit, dataset)
@@ -87,7 +89,7 @@
         value: text || '—',
         suffix: text ? suffix : '',
         textClass: textColor ? `text-vuesheet-${textColor}` : null,
-        color: colorAt(grouped ? groupIndex : datasetIndex),
+        color: palette[grouped ? groupIndex : datasetIndex] ?? '',
         on: marks?.[groupIndex] ?? true,
         group: clickable && grouped && group.rows.length > 0 ? group : null,
       }

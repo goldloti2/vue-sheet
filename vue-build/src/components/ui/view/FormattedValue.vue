@@ -1,6 +1,6 @@
 <script lang="ts" setup>
   import type { DisplayValue } from '@/schema/format'
-  import type { FormatColor } from '@/schema/types'
+  import type { ColorName } from '@/schema/types'
   import { computed } from 'vue'
 
   // 顯示一欄的值與其條件式格式：圖示依序在前，文字套上顏色與字形。值為空時不顯示，元素維持 :empty
@@ -9,7 +9,7 @@
   }>()
 
   // 顏色為 Vuetify 主題的共用色名（plugins/vuetify.ts）
-  function colorClass (color: FormatColor | undefined): string | undefined {
+  function colorClass (color: ColorName | undefined): string | undefined {
     return color ? `text-vuesheet-${color}` : undefined
   }
 

@@ -12,7 +12,7 @@
 
 - **值為空時不顯示任何內容**：所在的元素維持 `:empty`，各版面「保留一行高度」的處理照常作用
 - **字形**使用 Vuetify 的 class：`font-weight-bold`、`font-italic`、`text-decoration-underline`、`text-decoration-line-through`。底線與刪除線同時套用時，兩條線都顯示
-- **顏色**為 Vuetify 主題的共用色名，登記於 `plugins/vuetify.ts`：`vuesheet-red`、`vuesheet-orange`、`vuesheet-yellow`、`vuesheet-green`、`vuesheet-blue`、`vuesheet-purple`、`vuesheet-grey`
+- **顏色**為 Vuetify 主題的共用色名，登記於 `plugins/vuetify.ts`：`vuesheet-red`、`vuesheet-orange`、`vuesheet-yellow`、`vuesheet-green`、`vuesheet-blue`、`vuesheet-purple`、`vuesheet-grey`。色名的型別為 `ColorName`（`schema/types.ts`），圖表也使用同一組色名
   - 此元件套用 `text-vuesheet-*` 的 class
   - 其他地方也可使用：元件的 `color="vuesheet-red"`，或 `text-vuesheet-red`、`bg-vuesheet-red` 等 class，皆隨深淺色主題切換
   - 色值取自 Material Design 色板。淺色主題使用較深的色值，深色主題（`.v-theme--dark`）使用較淺的色值。兩者皆以 APCA 對 Vuetify 預設的底色（淺色 `#FFFFFF`、深色 `#212121`）檢查，達 Lc 60 以上

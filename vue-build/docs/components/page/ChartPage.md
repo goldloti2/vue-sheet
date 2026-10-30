@@ -1,6 +1,6 @@
 # ChartPage
 
-圖表頁的整頁版型：載入狀態、圖表的高度、高光，以及點擊後進入詳細頁或寫入條件。圖表本身由 [DataChart](../chart/DataChart.md) 繪製，宣告方式與計算規則見 [chart.md](../../topics/chart.md)。
+圖表頁的整頁版型：載入狀態、圖表的高度、高光，以及點擊後進入詳細頁或寫入條件。圖表本身由 [DataChart](../chart/DataChart.md) 繪製，`type` 為 `stat` 時改由 [DataStat](../chart/DataStat.md) 以文字顯示。宣告方式與計算規則見 [chart.md](../../topics/chart.md)。
 
 此元件搭配 `useListPage(table, schema)` 使用：
 - 回傳的 `rows`、`loading`、`error` 直接對應此元件的 prop，`filters` 以 `v-model:filters` 傳入
@@ -34,6 +34,7 @@
 - **點擊分組類圖表的一組**：進入該組第一列的詳細頁。上一列、下一列在該組的列之間切換，順序與 `rows` 相同
 - **開啟互動的儀表板中，點擊一組改為寫入條件**：寫入分組欄的條件，有系列時一併寫入系列欄的條件。再點擊同一組時移除這些條件
 - **點擊 scatter 或 bubble 的一點**：進入該點那一列的詳細頁，沒有上一列與下一列
+- **點擊 stat 的一格**：與點擊一組相同。沒有 `group` 的 stat 不能點擊
 - **沒有列的組不換頁**，例如沒有資料的日期區間
 - **點擊圖例**：切換該組或該系列的值是否勾選，可複選，與篩選抽屜相同
 - 寫入的條件與例外見 [chart.md](../../topics/chart.md#點擊) 的「點擊」
@@ -46,4 +47,5 @@
 - **位於 dashboard 的面板中時，可用的空間為面板的內容區**（見 [DashboardPanel](../panel/DashboardPanel.md) 的備註），不設最小高度。面板展開時，視為整頁
 - **圖表置中，寬與高各為可用空間的 90%**，四邊各留白 5%。可用空間不另加內距
 - 沒有列時，畫出空的圖表
+- **stat 的高度隨內容**：不使用以上的高度與留白。此元件於外圍留白，並以 `--data-stat-inset` 告知 `DataStat`（留白的寬度見 [design/chart.md](../../design/chart.md#文字統計) 的「文字統計」）
 - 標題由頁面決定：單獨成頁時為 App Bar 的標題，面板中為面板的標題

@@ -4,6 +4,7 @@
   import type { Filters } from '@/schema/filter'
   import { useRouter } from 'vue-router'
   import DataChart from '@/components/ui/chart/DataChart.vue'
+  import DataStat from '@/components/ui/chart/DataStat.vue'
   import PageState from '@/components/ui/page/PageState.vue'
   import { publishListOrder } from '@/composables/navigation/useListOrder'
   import { useDashboardSelection } from '@/composables/shell/useDashboardSelection'
@@ -59,7 +60,20 @@
 </script>
 
 <template>
-  <v-container class="chart-page" :class="{ 'chart-page--panel': !fullPage }">
+  <!-- stat 以文字顯示，高度隨內容，不使用 Chart.js -->
+  <div v-if="chart.type === 'stat'" class="chart-page-stat">
+    <PageState :error="error" :loading="loading" spinner="linear">
+      <DataStat
+        :chart="chart"
+        :clickable="clickable"
+        :filters="filters"
+        :rows="rows"
+        @group="onGroup"
+      />
+    </PageState>
+  </div>
+
+  <v-container v-else class="chart-page" :class="{ 'chart-page--panel': !fullPage }">
     <div class="chart-page__chart">
       <PageState :error="error" :loading="loading" spinner="linear">
         <DataChart
@@ -77,6 +91,13 @@
 </template>
 
 <style scoped>
+/* stat 的外圍留白，以 --data-stat-inset 告知 DataStat，供其計算格的大小（見 docs/design/chart.md 的「文字統計」） */
+.chart-page-stat {
+  --data-stat-inset: 4px;
+
+  padding: var(--data-stat-inset);
+}
+
 /* 整頁時為 App Bar 與底部之間的高度。內距由 chart-page__chart 的留白取代 */
 .chart-page {
   display: flex;

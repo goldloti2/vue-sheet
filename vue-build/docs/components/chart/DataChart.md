@@ -10,7 +10,7 @@
 
 | prop | 型別 | 說明 |
 | --- | --- | --- |
-| `chart` | `ChartDefinition<Row>` | **必填**，`defineChart` 的回傳值 |
+| `chart` | `ChartDefinition<Row>` | **必填**，`defineChart` 的回傳值。`type` 為 `stat` 時改用 [DataStat](DataStat.md) |
 | `rows` | `readonly Row[]` | **必填**，要畫成圖表的列，通常為 `useListPage` 的 `rows` |
 | `filters` | `Filters?` | 該表的篩選條件。分組欄與系列欄上的條件以高光標示，省略時不標示 |
 | `clickable` | `boolean?` | 預設 `true`。`false` 時點擊圖表與圖例皆沒有反應，不發出事件，圖例也不隱藏 dataset。滑鼠移上時的提示照常顯示 |

@@ -12,7 +12,7 @@
   import { defineChart } from '@/schema/chart'
   import { __table__Schema } from '@/schema/tables/__table__'
 
-  // 各狀態的列數與金額的總和。可填的項目依 type 而定
+  // 各狀態的列數與金額的總和。可填的項目依 type 而定，type 為 'stat' 時以文字顯示
   const chart = defineChart(__table__Schema, {
     type: 'bar',
     group: { key: 'status' },

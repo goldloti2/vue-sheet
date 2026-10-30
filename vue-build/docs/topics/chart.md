@@ -22,22 +22,24 @@
 | 1 | 頁面 | 以 `defineChart(schema, {…})` 宣告圖表，只執行一次。以 `useListPage` 取得 `rows` 與 `filters`，`ignoreFilter` 傳入圖表的 `filterKeys` |
 | 2 | `defineChart` | 於開發模式下檢查輸入，回傳 `type`、`stacked`、`horizontal`、`groupKey`、`seriesKey`、`filterKeys` 與 `compute` |
 | 3 | [`ChartPage`](../components/page/ChartPage.md) | 整頁層級的事：載入狀態、錯誤、高度、點擊後的處理。範本為 `template/pages/chart.vue` |
-| 4 | [`DataChart`](../components/chart/DataChart.md) | 以 `computed` 執行 `compute(rows)`，依 `filters` 標示高光，套上顏色後交給 Chart.js。資料改變時更新圖表，卸載時銷毀 Chart.js 的實例 |
+| 4-1 | [`DataChart`](../components/chart/DataChart.md) | 以 `computed` 執行 `compute(rows)`，依 `filters` 標示高光，套上顏色後交給 Chart.js。資料改變時更新圖表，卸載時銷毀 Chart.js 的實例 |
+| 4-2 | [`DataStat`](../components/chart/DataStat.md) | 只用於 stat：同樣執行 `compute(rows)` 並標示高光，以文字顯示，不使用 Chart.js |
 
 分工與 view 相同：`defineView` 準備，`DataList` 以每一列執行（見 [DataList](../components/list/DataList.md#view)）。
 
-**`compute(rows)` 的結果**依圖表分為兩種，皆不含顏色。`DataChart` 依目前的主題套上顏色。
+**`compute(rows)` 的結果**依圖表分為兩種，皆不含色值。`DataChart` 與 `DataStat` 依目前的主題套上顏色。stat 的 `textColor` 只是色名，由 `DataStat` 換成目前主題的色值。
 
 分組類（`kind: 'category'`）：
 - `labels`：各組的名稱，包含「(空白)」與「其他」
 - `datasets`：每個 dataset 為一個數值，有系列時為一個數值的一個系列
   - `data` 與 `labels` 一一對應，`null` 表示留空
   - `unit` 為 `number`、`duration`、`percent` 或 `date`，供刻度與提示格式化。duration 的值為秒數
-  - 數值指定了 `type`、`axis` 時一併帶上
+  - 數值指定了 `type`、`axis`，或 stat 的 `sign`、`suffix`、`textColor` 時一併帶上
   - 有系列時，`series` 為該 dataset 所屬系列於 `series` 中的索引
 - `groups`：與 `labels` 一一對應。`rows` 為該組的列，依 `rows` 原本的順序
 - `groups` 的 `filter` 為選取該組的篩選條件。無法以一個條件表示時為 `null`，例如 date 或 number 分組合併的「其他」
 - `series`：各系列的 `rows` 與 `filter`，形狀與 `groups` 相同。沒有系列時為空陣列
+- stat 沒有 `group` 時，全部的列為一組：`labels` 只有一個空字串，該組的 `filter` 為 `null`
 
 逐列類（`kind: 'point'`，scatter 與 bubble）：
 - `datasets`：沒有 `color` 時一個，有 `color` 時每組一個。沒有任何點的組不列入
@@ -56,6 +58,7 @@
   - 欄位的類型不能擔任該角色，例如 text 欄位作為分組
   - date 分組未指定 `unit`
   - 分組欄、系列欄或 `color` 未列於 `searchable`。點擊寫入這些欄的條件只用於高光，不篩選列，也不顯示於篩選抽屜
+  - duration 的數值指定了 `suffix`
 
 ### 欄位的角色
 
@@ -75,7 +78,7 @@ text、image、ref 不可分組。須依這些欄位分組時，改為宣告一�
 | `unit` | date 以年、月或日為一組 | date 必填 |
 | `bins` | number、duration 在最小值與最大值之間等分的段數。最大值歸入最後一段 | 5 |
 | `order` | `by` 為依分組本身或依數值排序，`direction` 為升序或降序。依分組本身時，比較的規則與列表的排序相同 | 依分組本身、升序 |
-| `limit` | 只顯示數值最大的前 N 組，其餘合併為「其他」。只用於 bar 與圓餅類 | 圓餅類 5 組，bar 全部 |
+| `limit` | 只顯示數值最大的前 N 組，其餘合併為「其他」。只用於 bar、圓餅類與 stat | 圓餅類 5 組，bar 與 stat 全部 |
 | `excludeBlank` | 分組欄為空的列不列入圖表，百分比的分母也不包含這些列 | 否，保留為「(空白)」一組 |
 
 ### 數值（`values`）
@@ -88,6 +91,12 @@ text、image、ref 不可分組。須依這些欄位分組時，改為宣告一�
 | `label` | 圖例的文字 | count 為「數量」，其餘例如「價格的平均」。boolean 的 sum 為「已買為『是』的數量」，加上 `percent` 時為「比例」 |
 | `type` | 改畫成 line，用於 bar 與 line 的混合圖 | 與圖表相同 |
 | `axis` | 使用左軸或右軸，用於 bar 與 line | 左軸 |
+| `sign` | 正數前方加「+」，只用於 stat | 否 |
+| `suffix` | 數字後方的單位，取代百分比的「%」，只用於 stat。duration 不適用 | 無，百分比為「%」 |
+| `textColor` | 數字的顏色，只用於 stat。可為固定的色名，或以數值為參數、回傳色名的函數。回傳 `undefined` 時為一般的文字顏色 | 一般的文字顏色 |
+
+- **`textColor` 的色名**與條件式格式相同：`red`、`orange`、`yellow`、`green`、`blue`、`purple`、`grey`，色值隨深淺色主題切換（見 [FormattedValue](../components/view/FormattedValue.md)）
+- 函數的參數為該格的值，沒有值時為 `null`
 
 ### 各種圖表
 
@@ -100,9 +109,11 @@ text、image、ref 不可分組。須依這些欄位分組時，改為宣告一�
 | radar | `group` 為各軸，`series` 為各條線，`values` |
 | scatter | `x`、`y`、`color` |
 | bubble | `x`、`y`、`r`、`color` |
+| stat | `group`（可省略）、`values`。以文字顯示每一組的每一個數值 |
 
 - `series` 為第二層分組，每一組成為一個 dataset。項目與 `group` 相同，但沒有 `limit`
 - `color` 依一欄為各點上色，可用的類型與分組相同
+- stat 沒有 `group` 時，全部的列為一組，每個數值一格。stat 沒有 `series`
 
 ---
 
@@ -129,6 +140,7 @@ text、image、ref 不可分組。須依這些欄位分組時，改為宣告一�
 - **填色為 50% 的不透明度**，邊線、線條與點的外框為原色。radar 的面積彼此重疊，填色為 20%
 - **依組上色**：圓餅類，以及只有一個 dataset 的 bar。圖例列出各組
 - **依 dataset 上色**：其他的 bar，以及 line 與 radar。圖例列出各 dataset，只有一個 dataset 時不顯示圖例
+- **stat 的色塊**：有 `group` 時依組上色，沒有 `group` 時依數值上色。stat 沒有圖例。數字的顏色由 `textColor` 指定，與色塊無關
 - **切換深淺色主題時**，文字、格線與扇形之間的分隔線改為新主題的顏色，無須重新計算
 - **沒被選的部分調淡**為原本不透明度的 25%，見「分組欄與系列欄上的條件」
 
@@ -160,6 +172,7 @@ text、image、ref 不可分組。須依這些欄位分組時，改為宣告一�
 - **再點擊同一組時**：分組欄與系列欄皆已為這些條件，因此移除這些條件
 - **條件無法以一個條件表示的組**，例如區間合併的「其他」，在互動儀表板中點擊時不寫入
 - **scatter 與 bubble**：一律進入該點的那一列，沒有上一列與下一列
+- **stat**：點擊一格與點擊一組相同。沒有 `group` 時不能點擊
 
 **點擊圖例**（各處相同）：
 - **圖例的一項為一組或一個系列時**，切換該項的值是否勾選，與篩選抽屜的勾選相同，可複選。「其他」一次切換合併進來的各值

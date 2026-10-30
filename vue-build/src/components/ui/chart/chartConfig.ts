@@ -23,7 +23,7 @@ export interface ChartMarks {
 
 const BUBBLE_MIN_RADIUS = 4
 const BUBBLE_MAX_RADIUS = 20
-const DIM_OPACITY = 0.25
+export const DIM_OPACITY = 0.25
 
 // 以 #rrggbb 加上不透明度。不是 #rrggbb 時原樣回傳
 export function withAlpha (color: string, opacity: number): string {
@@ -35,24 +35,31 @@ export function withAlpha (color: string, opacity: number): string {
   return `rgba(${r}, ${g}, ${b}, ${opacity})`
 }
 
-// 刻度與提示的文字。duration 的值為秒數，date 的值為毫秒
-export function formatValue (value: unknown, unit: ChartUnit): string {
+// 數值的文字分為數字與單位兩段，沒有單位時 suffix 為空字串。options 為 stat 的 sign 與 suffix，date 不套用
+export function formatParts (value: unknown, unit: ChartUnit, options: { sign?: boolean, suffix?: string } = {}): { text: string, suffix: string } {
   if (typeof value !== 'number' || Number.isNaN(value)) {
-    return ''
-  }
-  if (unit === 'percent') {
-    return `${Math.round(value * 10) / 10}%`
-  }
-  if (unit === 'duration') {
-    return formatDuration(value)
+    return { text: '', suffix: '' }
   }
   if (unit === 'date') {
-    return formatDate(new Date(value))
+    return { text: formatDate(new Date(value)), suffix: '' }
   }
-  return (Math.round(value * 100) / 100).toLocaleString()
+  const plus = options.sign && value > 0 ? '+' : ''
+  if (unit === 'duration') {
+    return { text: plus + formatDuration(value), suffix: '' }
+  }
+  if (unit === 'percent') {
+    return { text: plus + `${Math.round(value * 10) / 10}`, suffix: options.suffix ?? '%' }
+  }
+  return { text: plus + (Math.round(value * 100) / 100).toLocaleString(), suffix: options.suffix ?? '' }
 }
 
-function colorAt (index: number): string {
+// 刻度與提示的文字。duration 的值為秒數，date 的值為毫秒
+export function formatValue (value: unknown, unit: ChartUnit): string {
+  const { text, suffix } = formatParts(value, unit)
+  return text + suffix
+}
+
+export function colorAt (index: number): string {
   return CHART_COLORS[index % CHART_COLORS.length] ?? CHART_COLORS[0]!
 }
 

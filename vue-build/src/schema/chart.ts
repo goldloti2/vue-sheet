@@ -1,5 +1,5 @@
 import type { ColumnFilter, Filters } from './filter'
-import type { AnyColumn, ColumnKey, RowKey, TableSchema } from './types'
+import type { AnyColumn, ColumnKey, FormatColor, RowKey, TableSchema } from './types'
 import { isActiveFilter, matchesFilter } from './filter'
 import { sortRows } from './sort'
 import { booleanText, durationSeconds, findColumn, formatDate, formatDuration } from './types'
@@ -26,7 +26,7 @@ interface ChartGroup<Row extends object> {
   excludeBlank?: boolean
 }
 
-// 只顯示數值最大的前 N 組，其餘合併為「其他」。圓餅類預設 5，bar 預設全部
+// 只顯示數值最大的前 N 組，其餘合併為「其他」。圓餅類預設 5，bar 與 stat 預設全部
 interface LimitedGroup<Row extends object> extends ChartGroup<Row> {
   limit?: number
 }
@@ -45,6 +45,20 @@ type ChartValue<Row extends object> = (
 type MixedValue<Row extends object> = ChartValue<Row> & {
   type?: 'bar' | 'line'
   axis?: 'left' | 'right'
+}
+
+// stat 的數值可指定格式
+type StatValue<Row extends object> = ChartValue<Row> & StatFormat
+
+// 數字的顏色：固定的顏色，或依數值決定，回傳 undefined 時為一般的文字顏色
+export type StatTextColor = FormatColor | ((value: number | null) => FormatColor | undefined)
+
+interface StatFormat {
+  // 正數前方加「+」
+  sign?: boolean
+  // 數字後方的單位，取代百分比的「%」。duration 不適用
+  suffix?: string
+  textColor?: StatTextColor
 }
 
 interface BarChart<Row extends object> {
@@ -104,6 +118,13 @@ interface BubbleChart<Row extends object> {
   color?: GroupKey<Row>
 }
 
+// 文字統計：每一組的每一個數值以文字顯示為一格，不使用 Chart.js。沒有 group 時全部的列為一組
+interface StatChart<Row extends object> {
+  type: 'stat'
+  group?: LimitedGroup<Row>
+  values: StatValue<Row>[]
+}
+
 type ChartInput<Row extends object>
   = | BarChart<Row>
     | LineChart<Row>
@@ -112,6 +133,7 @@ type ChartInput<Row extends object>
     | RadarChart<Row>
     | ScatterChart<Row>
     | BubbleChart<Row>
+    | StatChart<Row>
 
 // 數值的單位，供圖表元件格式化刻度與提示
 export type ChartUnit = 'number' | 'duration' | 'percent' | 'date'
@@ -125,6 +147,10 @@ export interface CategoryDataset {
   axis?: 'left' | 'right'
   // 有系列時，為 compute 結果中 series 的索引
   series?: number
+  // stat 的格式，見 StatFormat
+  sign?: boolean
+  suffix?: string
+  textColor?: StatTextColor
 }
 
 export interface ChartPoint<Row> {
@@ -244,7 +270,7 @@ interface LooseInput {
   type: ChartInput<object>['type']
   group?: LooseGroup
   series?: LooseGroup
-  values?: { key?: string }[]
+  values?: { key?: string, suffix?: string }[]
   x?: string
   y?: string
   r?: string
@@ -299,8 +325,9 @@ function checkInput (schema: TableSchema, input: LooseInput): void {
   checkGroup(input.group, '分組')
   checkGroup(input.series, '系列')
   for (const value of input.values ?? []) {
-    if (value.key) {
-      column(value.key, VALUE_TYPES, '數值')
+    const found = value.key ? column(value.key, VALUE_TYPES, '數值') : undefined
+    if (found?.type === 'duration' && value.suffix !== undefined) {
+      warn(`${found.label} 為 duration，suffix 不適用`)
     }
   }
 }
@@ -319,6 +346,8 @@ type Cell = Record<string, unknown>
 type AnyRow = any
 type AnyChartInput = ChartInput<AnyRow>
 type CategoryInput = Exclude<AnyChartInput, ScatterChart<AnyRow> | BubbleChart<AnyRow>>
+// 有分組的輸入。stat 的 group 可省略，其餘皆必填
+type GroupedInput = CategoryInput & { group: LimitedGroup<AnyRow> }
 type Value = ChartValue<AnyRow>
 
 // 一組列，以及選取這一組的篩選條件
@@ -545,7 +574,7 @@ function percentOf (part: number | null, whole: number): number | null {
 }
 
 // 依數值排序，並將數值最大的前 N 組以外合併為「其他」。rank 為各組的第一個數值
-function orderAndLimit<Row> (buckets: Bucket<Row>[], input: CategoryInput, rank: (bucket: Bucket<Row>) => number, key: string): Bucket<Row>[] {
+function orderAndLimit<Row> (buckets: Bucket<Row>[], input: GroupedInput, rank: (bucket: Bucket<Row>) => number, key: string): Bucket<Row>[] {
   let ordered = buckets
   if (input.group.order?.by === 'value') {
     const sign = input.group.order.direction === 'desc' ? -1 : 1
@@ -573,6 +602,7 @@ interface SeriesSplit<Row> {
 function valueDatasets<Row> (value: Value, column: AnyColumn | undefined, buckets: Bucket<Row>[], series: SeriesSplit<Row> | undefined, options: { stacked: boolean, multiple: boolean }): CategoryDataset[] {
   const label = valueLabel(value, column)
   const mixed = value as MixedValue<AnyRow>
+  const format = value as StatFormat
   const percent = 'percent' in value && Boolean(value.percent)
   const unit: ChartUnit = percent ? 'percent' : (value.stat === 'count' || !column ? 'number' : unitOf(column))
 
@@ -602,20 +632,33 @@ function valueDatasets<Row> (value: Value, column: AnyColumn | undefined, bucket
       ...(mixed.type ? { type: mixed.type } : {}),
       ...(mixed.axis ? { axis: mixed.axis } : {}),
       ...(series ? { series: seriesIndex } : {}),
+      ...(format.sign ? { sign: true } : {}),
+      ...(format.suffix === undefined ? {} : { suffix: format.suffix }),
+      ...(format.textColor ? { textColor: format.textColor } : {}),
     }
   })
 }
 
-function computeCategory<Row> (schema: TableSchema, input: CategoryInput, rows: readonly Row[]): ChartData<Row> {
+// 依 group 分組。沒有 group 時（只有 stat），全部的列為一組，名稱為空字串。分組欄不存在時為 null
+function categoryBuckets<Row> (schema: TableSchema, input: CategoryInput, rows: readonly Row[], rank: (bucket: Bucket<Row>) => number): Bucket<Row>[] | null {
+  if (!input.group) {
+    return [{ label: '', filter: null, rows: [...rows] }]
+  }
   const groupColumn = findColumn(schema, input.group.key)
   if (!groupColumn) {
-    return { kind: 'category', labels: [], datasets: [], groups: [], series: [] }
+    return null
   }
+  return orderAndLimit(groupBuckets(schema, rows, groupColumn, input.group), input as GroupedInput, rank, groupColumn.key)
+}
 
+function computeCategory<Row> (schema: TableSchema, input: CategoryInput, rows: readonly Row[]): ChartData<Row> {
   const values = input.values as Value[]
   const columns = values.map(value => value.key ? findColumn(schema, value.key) : undefined)
   const rank = (bucket: Bucket<Row>) => statOf(bucket.rows, values[0], columns[0]) ?? -Infinity
-  const buckets = orderAndLimit(groupBuckets(schema, rows, groupColumn, input.group), input, rank, groupColumn.key)
+  const buckets = categoryBuckets(schema, input, rows, rank)
+  if (!buckets) {
+    return { kind: 'category', labels: [], datasets: [], groups: [], series: [] }
+  }
 
   const seriesGroup = 'series' in input ? input.series : undefined
   const seriesColumn = seriesGroup ? findColumn(schema, seriesGroup.key) : undefined
@@ -674,7 +717,7 @@ export function defineChart<Row extends object> (schema: TableSchema<Row>, input
 
   const spec = input as AnyChartInput
   const isPoint = spec.type === 'scatter' || spec.type === 'bubble'
-  const groupKey = isPoint ? null : spec.group.key
+  const groupKey = isPoint ? null : spec.group?.key ?? null
   let seriesKey: string | null
   if (isPoint) {
     seriesKey = spec.color ?? null

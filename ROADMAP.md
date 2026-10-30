@@ -394,7 +394,7 @@ view 的規則：
 **tab**：一次只顯示一個面板，以頁籤切換，即現有的 `TabPage`。
 
 **dashboard**（✅ `DashboardPage`、`DashboardPanel`，外觀與操作見 [vue-build/docs/design/dashboard.md](vue-build/docs/design/dashboard.md)）：所有面板同時出現。
-- 手機與電腦皆以方格座標二維排版，手機寬 6 格，電腦寬 24 格。每個面板可指定寬與高的格數，或交由自動排版
+- 手機與電腦皆以方格座標二維排版，手機寬 12 格，電腦寬 48 格。每個面板可指定寬與高的格數，或交由自動排版
 - 面板可就地展開為整頁
 - 以一個 `interactive` 開關決定面板之間是否連動：
   - **關**：各面板各自獨立
@@ -410,7 +410,7 @@ view 的規則：
 
 ### 桌面版
 - 桌面版的導覽 UI 待定：是否改為常駐的側邊欄、底部導覽列是否在桌面上隱藏，等處理桌面的體驗時再決定
-- 手機與電腦排版的切換門檻待定：`useCompactLayout()` 暫時沿用 Vuetify `mobile` 的 1145px。平板直放應使用 dashboard 的 24 格，門檻可能須調低，例如 840px
+- 手機與電腦排版的切換門檻待定：`useCompactLayout()` 暫時沿用 Vuetify `mobile` 的 1145px。平板直放應使用 dashboard 的 48 格，門檻可能須調低，例如 840px
 
 ### 部署
 - 前端的靜態託管（Vercel、Cloudflare Pages），須注意 SPA fallback

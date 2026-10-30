@@ -57,4 +57,4 @@ card 式列表的**單一張卡片**：上下共四層，未指定任何位置�
   - 各層的高度以 CSS 變數由 inline style 傳入
   - 大圖的高度以 `100cqw * 9 / 16` 依卡片寬度估算。`ListPage` 的內容區為不具名的 container，因此 `100cqw` 即為卡片的寬度。不在 `ListPage` 中時，改以視窗寬度估算
   - 各層的版型大幅變動時，須一併調整此計算
-- **dashboard 中的窄版**：所在面板寬度小於 200px（3 格以下）時，省略第 3 層，替代高度也不計入第 3 層（見 [DashboardPanel](../panel/DashboardPanel.md)）。一般頁面不會觸發窄版
+- **dashboard 中的窄版**：所在面板為[窄面板](../../design/dashboard.md#窄面板)時，省略第 3 層，替代高度也不計入第 3 層。一般頁面不會觸發窄版

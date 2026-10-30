@@ -138,7 +138,7 @@
   display: none;
 }
 
-/* dashboard 中 3 格以下的窄面板：文字按鈕改為圖示，整行靠左，slots 不分左右、不留空格 */
+/* dashboard 的窄面板：文字按鈕改為圖示，整行靠左，slots 不分左右、不留空格（門檻見 docs/design/dashboard.md） */
 @container dashboard-panel (width < 200px) {
   .view-actions {
     justify-content: flex-start;

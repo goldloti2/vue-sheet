@@ -1,6 +1,6 @@
 <!-- 選用：同時顯示多個面板的總覽頁，複製到 src/pages/dashboard.vue（檔名即路由，可自訂）→ /dashboard
      __parent__ 為父表，__table__ 為子表（子表有 ref 欄位指向父表）。兩張表各需一份 _ref/list.vue，父表另需 detail.vue
-     排版、互動與各面板的行為見 docs/components/panel/DashboardPage.md 與 DashboardPanel.md -->
+     排版見 docs/design/dashboard.md，互動與各面板的行為見 docs/components/panel/DashboardPage.md 與 DashboardPanel.md -->
 <route lang="json5">
 { meta: { title: '總覽' } }
 </route>
@@ -13,11 +13,11 @@
   import ParentList from './__parent__/_ref/__Parent__List.vue'
   import ChildTableList from './__table__/_ref/__Table__List.vue'
 
-  // 以面板的 name 對應，手機（寬 6 格）與電腦（寬 24 格）分別指定（規則見 docs/components/panel/DashboardPage.md 的「排版」）
+  // 以面板的 name 對應，手機與電腦分別指定（格數與規則見 docs/design/dashboard.md）
   const layout = {
-    parents: { desktop: { w: 8, h: 14 } },
-    parent: { mobile: { h: 6 }, desktop: { w: 16, h: 7 } },
-    children: { desktop: { w: 16, h: 7 } },
+    parents: { desktop: { w: 16, h: 28 } },
+    parent: { mobile: { h: 12 }, desktop: { w: 32, h: 14 } },
+    children: { desktop: { w: 32, h: 14 } },
   }
 </script>
 

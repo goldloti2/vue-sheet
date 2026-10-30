@@ -133,7 +133,7 @@
   text-align: left;
 }
 
-/* dashboard 中 3 格以下的窄面板：不論設定，一律上下兩行（門檻見 DashboardPanel.md） */
+/* dashboard 的窄面板：不論設定，一律上下兩行（門檻見 docs/design/dashboard.md） */
 @container dashboard-panel (width < 200px) {
   .detail-field {
     grid-template-columns: minmax(0, 1fr);

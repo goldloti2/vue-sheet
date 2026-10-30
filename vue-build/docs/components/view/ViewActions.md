@@ -54,7 +54,7 @@ view 中列上動作（`actions`）的呈現元件，依 `variant` 提供三種�
 - **`menu` 的選單於第一次按下 ⋮ 時才掛上**：每一列平時只有一個原生按鈕。`v-menu` 在該列第一次開啟時才建立，之後的開關交由 `v-menu` 綁定於該按鈕的事件處理
 - **按鈕為原生 `<button>` 加上 `v-icon`，不是 `v-btn`**，沒有波紋等效果
 - **放不下時換行**：`row` 與 `slots` 皆為 `flex-wrap`。一般頁面中放得下，不會換行
-- **dashboard 中的窄版**（見 [DashboardPanel](../panel/DashboardPanel.md)）：
+- **dashboard 中的窄版**：
   - 位於 dashboard 的面板中時，`'text'` 的按鈕另外繪製一個圖示，並一律帶有 `aria-label`。一般頁面不繪製這個圖示
-  - 所在面板寬度小於 200px（3 格以下）時，`'text'` 的按鈕改為顯示圖示，外觀與其他圖示按鈕相同
+  - 所在面板為[窄面板](../../design/dashboard.md#窄面板)時，`'text'` 的按鈕改為顯示圖示，外觀與其他圖示按鈕相同
   - 此時整行靠左，`slots` 不分左右，也不保留空格

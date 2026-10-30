@@ -56,7 +56,7 @@
     setSelection?.(cancel)
   })
 
-  // 手機自動排版的高度：量測小外殼與內容的實際高度，換算為格數（最多 8 格）
+  // 手機自動排版的高度：量測小外殼與內容的實際高度，換算為格數（最多 AUTO_ROWS_MAX）
   const header = useTemplateRef('header')
   const content = useTemplateRef('content')
   const naturalHeight = shallowRef(0)
@@ -212,7 +212,7 @@
   border-radius: 14px;
 }
 
-/* 內容依面板的寬度切換窄版，圖表以 cqh 依高度決定大小。一般頁面沒有這個 container，不會觸發 */
+/* 內容依面板的寬度切換窄版（門檻見 docs/design/dashboard.md），圖表以 cqh 依高度決定大小。一般頁面沒有這個 container，不會觸發 */
 .dashboard-panel__body {
   flex: 1;
   min-height: 0;

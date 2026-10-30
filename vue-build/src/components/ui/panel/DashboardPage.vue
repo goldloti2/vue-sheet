@@ -4,7 +4,7 @@
   import type { PageAction } from '@/composables/actions/useTableActions'
   import { computed, nextTick, onBeforeUnmount, onMounted, provide, shallowReactive, shallowRef, useTemplateRef } from 'vue'
   import { useRouter } from 'vue-router'
-  import { AUTO_ROWS_MAX, dashboardKey } from '@/components/ui/panel/dashboardContext'
+  import { AUTO_ROWS_MAX, COLS, dashboardKey, GAP } from '@/components/ui/panel/dashboardContext'
   import { placePanels } from '@/components/ui/panel/placePanels'
   import { useCompactLayout } from '@/composables/shell/useCompactLayout'
   import { provideDashboardSelection } from '@/composables/shell/useDashboardSelection'
@@ -21,12 +21,10 @@
     interactive?: boolean
   }>()
 
-  const GAP = 8
-  // 寬的格數：手機 6，電腦 24。面板最少 2 格寬
-  const COLS = { mobile: 6, desktop: 24 }
-  const MIN_WIDTH = 2
-  // 電腦的自動大小：一個畫面放得下 3×2 個面板
-  const DESKTOP_AUTO = { w: 8, h: 7 }
+  // 面板的最小寬度（格數）
+  const MIN_WIDTH = 4
+  // 電腦的自動大小（見 docs/design/dashboard.md）
+  const DESKTOP_AUTO = { w: 16, h: 14 }
 
   const compact = useCompactLayout()
   const cols = computed(() => compact.value ? COLS.mobile : COLS.desktop)

@@ -24,7 +24,7 @@ export interface PanelPlacement {
   h: number
 }
 
-// 依宣告的順序放入，重疊時後放的往右移，放不下再換到下一列的開頭。起點規則見 DashboardPage.md 的「排版」
+// 依宣告的順序放入，重疊時後放的往右移，放不下再換到下一列的開頭。起點規則見 docs/design/dashboard.md 的「排版」
 export function placePanels (requests: readonly PanelRequest[], cols: number): Map<string, PanelPlacement> {
   const occupied = new Set<string>()
   const placements = new Map<string, PanelPlacement>()

@@ -10,7 +10,7 @@ export interface DashboardPanelEntry {
   // 有小外殼才能成為關注點
   framed: boolean
   table?: TableKey
-  // 手機自動排版時依內容量得的格數（最多 8 格），尚未量得時為 null
+  // 手機自動排版時依內容量得的格數（最多 AUTO_ROWS_MAX），尚未量得時為 null
   measuredRows: Ref<number | null>
   // 面板中正在多選。多選期間關注點不移動
   selecting: Ref<boolean>
@@ -36,5 +36,11 @@ export interface DashboardContext {
 
 export const dashboardKey: InjectionKey<DashboardContext> = Symbol('dashboard')
 
+// 方格的尺寸見 docs/design/dashboard.md
 // 手機自動排版的高度上限
-export const AUTO_ROWS_MAX = 8
+export const AUTO_ROWS_MAX = 16
+
+// 格子的間隔（px）
+export const GAP = 8
+// 寬的格數
+export const COLS = { mobile: 12, desktop: 48 }

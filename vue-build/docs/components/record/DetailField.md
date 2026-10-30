@@ -39,4 +39,4 @@
   - 欄位動作的圖示仍在值的右側
   - 快速編輯的輸入元件佔滿值的那一行
   - 圖片置於標籤下方
-- **dashboard 中的窄版**：所在面板寬度小於 200px（3 格以下）時，不論 `layout` 為何，一律上下兩行（見 [DashboardPanel](../panel/DashboardPanel.md)）。一般頁面不會觸發窄版
+- **dashboard 中的窄版**：所在面板為[窄面板](../../design/dashboard.md#窄面板)時，不論 `layout` 為何，一律上下兩行。一般頁面不會觸發窄版

@@ -210,7 +210,7 @@
   content: '\200b';
 }
 
-/* dashboard 中 3 格以下的窄面板：省略第 3 層（門檻見 docs/components/panel/DashboardPanel.md） */
+/* dashboard 的窄面板：省略第 3 層（門檻見 docs/design/dashboard.md） */
 @container dashboard-panel (width < 200px) {
   .card-item {
     --card-body-shown: 0px;

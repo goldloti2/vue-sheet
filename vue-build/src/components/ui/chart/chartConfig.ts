@@ -2,6 +2,7 @@ import type { ChartColors, ChartData, ChartDefinition, ChartUnit } from '@/schem
 import type { ColorName } from '@/schema/types'
 import type { Chart, ChartConfiguration } from 'chart.js'
 import { formatDate, formatDuration } from '@/schema/types'
+import { SPACED_SCALE } from './chartScale'
 
 // 由 compute 的結果與目前的主題組成 Chart.js 的設定。純函數，不建立圖表
 
@@ -97,10 +98,15 @@ function shade (color: string, on: boolean, opacity = 1): string {
   return withAlpha(color, on ? opacity : opacity * DIM_OPACITY)
 }
 
-function axisStyle (theme: ChartTheme, unit: ChartUnit) {
+// 軸上的值皆為整數時，刻度只取整數
+function tickPrecision (values: readonly (number | null)[]) {
+  return values.every(value => value === null || Number.isInteger(value)) ? { precision: 0 } : {}
+}
+
+function axisStyle (theme: ChartTheme, unit: ChartUnit, values: readonly (number | null)[]) {
   return {
     grid: { color: theme.grid },
-    ticks: { color: theme.text, callback: (value: number | string) => formatValue(Number(value), unit) },
+    ticks: { color: theme.text, callback: (value: number | string) => formatValue(Number(value), unit), ...tickPrecision(values) },
   }
 }
 
@@ -189,16 +195,20 @@ function categoryConfig (definition: ChartShape, data: Extract<ChartData<object>
   const leftUnit = data.datasets.find(dataset => dataset.axis !== 'right')?.unit ?? 'number'
   const rightUnit = data.datasets.find(dataset => dataset.axis === 'right')?.unit ?? 'number'
   const unitOf = (datasetIndex: number) => data.datasets[datasetIndex]?.unit ?? 'number'
+  const leftValues = data.datasets.filter(dataset => dataset.axis !== 'right').flatMap(dataset => dataset.data)
+  const rightValues = data.datasets.filter(dataset => dataset.axis === 'right').flatMap(dataset => dataset.data)
 
   let scales = {}
   if (type === 'bar' || type === 'line') {
     const valueAxis = definition.horizontal ? 'x' : 'y'
     const indexAxis = definition.horizontal ? 'y' : 'x'
+    // 直的數值軸使用刻度間距有下限的軸
+    const valueType = definition.horizontal ? {} : { type: SPACED_SCALE }
     scales = {
       [indexAxis]: { stacked: definition.stacked, grid: { color: theme.grid }, ticks: { color: theme.text } },
-      [valueAxis]: { stacked: definition.stacked, beginAtZero: true, ...axisStyle(theme, leftUnit) },
+      [valueAxis]: { ...valueType, stacked: definition.stacked, beginAtZero: true, ...axisStyle(theme, leftUnit, leftValues) },
       ...(hasRight
-        ? { right: { position: definition.horizontal ? 'top' : 'right', beginAtZero: true, ...axisStyle(theme, rightUnit), grid: { drawOnChartArea: false } } }
+        ? { right: { ...valueType, position: definition.horizontal ? 'top' : 'right', beginAtZero: true, ...axisStyle(theme, rightUnit, rightValues), grid: { drawOnChartArea: false } } }
         : {}),
     }
   } else if (type === 'radar' || type === 'polarArea') {
@@ -208,7 +218,7 @@ function categoryConfig (definition: ChartShape, data: Extract<ChartData<object>
         grid: { color: theme.grid },
         angleLines: { color: theme.grid },
         pointLabels: { color: theme.text },
-        ticks: { color: theme.text, backdropColor: 'transparent', callback: (value: number | string) => formatValue(Number(value), leftUnit) },
+        ticks: { color: theme.text, backdropColor: 'transparent', callback: (value: number | string) => formatValue(Number(value), leftUnit), ...tickPrecision(leftValues) },
       },
     }
   }
@@ -257,8 +267,8 @@ function pointConfig (definition: ChartShape, data: Extract<ChartData<object>, {
     data: { datasets },
     options: {
       scales: {
-        x: { type: 'linear', ...axisStyle(theme, data.xUnit) },
-        y: { type: 'linear', ...axisStyle(theme, data.yUnit) },
+        x: { type: 'linear', ...axisStyle(theme, data.xUnit, data.datasets.flatMap(dataset => dataset.data.map(point => point.x))) },
+        y: { type: SPACED_SCALE, ...axisStyle(theme, data.yUnit, data.datasets.flatMap(dataset => dataset.data.map(point => point.y))) },
       },
       plugins: {
         tooltip: {

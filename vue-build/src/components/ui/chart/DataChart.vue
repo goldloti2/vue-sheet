@@ -7,6 +7,7 @@
   import { useTheme } from 'vuetify'
   import { highlightOf } from '@/schema/chart'
   import { buildConfig, withAlpha } from './chartConfig'
+  import { registerSpacedScale } from './chartScale'
 
   // 以 Chart.js 畫出 defineChart 的圖表（見 docs/topics/chart.md）
   const { chart, rows, filters = {}, clickable = true } = defineProps<{
@@ -135,10 +136,11 @@
 
   // Chart.js 於掛載時才載入，沒有圖表的頁面不下載
   onMounted(async () => {
-    const { default: ChartJs } = await import('chart.js/auto')
+    const { default: ChartJs, LinearScale } = await import('chart.js/auto')
     if (unmounted || !canvas.value) {
       return
     }
+    registerSpacedScale(ChartJs, LinearScale)
     const box = canvas.value.parentElement?.getBoundingClientRect()
     if (box) {
       legendPosition = positionFor(box.width, box.height)

@@ -86,10 +86,11 @@ text、image、ref 不可分組。須依這些欄位分組時，改為宣告一�
 
 | 項目 | 說明 | 預設 |
 | --- | --- | --- |
-| `stat` | count、sum、avg、min 或 max | 必填 |
-| `key` | 計算的欄位。count 不可指定，其餘必填 | — |
+| `stat` | count、sum、avg、min、max，或自訂的函數 | 必填 |
+| `key` | 計算的欄位。count 與函數不可指定，其餘必填 | — |
 | `percent` | 以百分比顯示，只用於 count 與 sum。boolean 的 sum 為「是」的數量 | 否 |
-| `label` | 圖例的文字 | count 為「數量」，其餘例如「價格的平均」。boolean 的 sum 為「已買為『是』的數量」，加上 `percent` 時為「比例」 |
+| `unit` | 函數回傳的值的單位：`number`、`duration`（秒數）、`percent` 或 `date`（毫秒）。只用於函數 | `number` |
+| `label` | 圖例的文字。`stat` 為函數時必填 | count 為「數量」，其餘例如「價格的平均」。boolean 的 sum 為「已買為『是』的數量」，加上 `percent` 時為「比例」 |
 | `type` | 改畫成 line，用於 bar 與 line 的混合圖 | 與圖表相同 |
 | `axis` | 使用左軸或右軸，用於 bar 與 line | 左軸 |
 | `sign` | 正數前方加「+」，只用於 stat | 否 |
@@ -98,6 +99,14 @@ text、image、ref 不可分組。須依這些欄位分組時，改為宣告一�
 
 - **`textColor` 的色名**與條件式格式相同：`red`、`orange`、`yellow`、`green`、`blue`、`purple`、`grey`，色值隨深淺色主題切換（見 [FormattedValue](../components/view/FormattedValue.md)）
 - 函數的參數為該格的值，沒有值時為 `null`
+
+自訂的統計（`stat` 為函數）：
+- **第一個參數為一組的列**，回傳該組的值。沒有值時回傳 `null`，圖表在此留空
+- **第二個參數為 `{ index, groups }`**：`groups` 為各組的列，依圖上的順序。`index` 為此組於 `groups` 中的位置。須比較其他組時使用，例如與前一組相比的增長、累計
+- **有系列時**，兩個參數皆只含屬於該系列的列。「其他」的參數為合併後的全部列
+- **依數值排序與 `limit`** 使用函數回傳的值，與內建的統計相同。此時圖上的順序尚未決定，`index` 與 `groups` 依分組本身的順序
+- **參數的列已套用搜尋、篩選與 `scope`**。例如比較本週與上週時，日期的篩選可能使上週的列不在參數中
+- 須以百分比顯示時，函數回傳百分比的數字，`unit` 指定為 `percent`
 
 ### 各種圖表
 

@@ -31,11 +31,22 @@ interface LimitedGroup<Row extends object> extends ChartGroup<Row> {
   limit?: number
 }
 
+// 自訂的統計的第二個參數。groups 為各組的列，依圖上的順序，有系列時只含同一個系列的列。index 為此組於 groups 中的位置
+export interface StatContext<Row> {
+  index: number
+  groups: readonly (readonly Row[])[]
+}
+
+// 自訂的統計：接收一組的列，回傳數值。null 為留空
+export type StatFunction<Row extends object> = (rows: readonly Row[], context: StatContext<Row>) => number | null
+
 // count 無須欄位。百分比只用於 count 與 sum（boolean 的 sum 為「是」的數量）
+// stat 為函數時無須欄位，label 必填，unit 預設為 number（duration 為秒數，date 為毫秒）
 type ChartValue<Row extends object> = (
-  | { stat: 'count', key?: never, percent?: boolean }
-  | { stat: 'sum', key: ValueKey<Row>, percent?: boolean }
-  | { stat: 'avg' | 'min' | 'max', key: ValueKey<Row>, percent?: never }
+  | { stat: 'count', key?: never, percent?: boolean, unit?: never }
+  | { stat: 'sum', key: ValueKey<Row>, percent?: boolean, unit?: never }
+  | { stat: 'avg' | 'min' | 'max', key: ValueKey<Row>, percent?: never, unit?: never }
+  | { stat: StatFunction<Row>, key?: never, percent?: never, unit?: ChartUnit, label: string }
 ) & {
   // 圖例的文字，預設由統計方式與欄位名稱組成
   label?: string
@@ -285,7 +296,7 @@ interface LooseInput {
   type: ChartInput<object>['type']
   group?: LooseGroup
   series?: LooseGroup
-  values?: { key?: string, suffix?: string }[]
+  values?: { key?: string, unit?: string, suffix?: string }[]
   x?: string
   y?: string
   r?: string
@@ -336,8 +347,8 @@ function checkInput (schema: TableSchema, input: LooseInput): void {
   checkGroup(input.series, '系列')
   for (const value of input.values ?? []) {
     const found = value.key ? column(value.key, VALUE_TYPES, '數值') : undefined
-    if (found?.type === 'duration' && value.suffix !== undefined) {
-      warn(`${found.label} 為 duration，suffix 不適用`)
+    if ((found?.type === 'duration' || value.unit === 'duration') && value.suffix !== undefined) {
+      warn(`${found?.label ?? '自訂的統計'} 為 duration，suffix 不適用`)
     }
   }
 }
@@ -553,7 +564,10 @@ function mergeOther<Row> (buckets: Bucket<Row>[], key: string): Bucket<Row> {
 }
 
 // 一組列的統計值。沒有列時 count 與 sum 為 0，avg、min、max 為 null
-function statOf<Row> (rows: readonly Row[], value: Value, column: AnyColumn | undefined): number | null {
+function statOf<Row> (rows: readonly Row[], value: Value, column: AnyColumn | undefined, context: StatContext<Row>): number | null {
+  if (typeof value.stat === 'function') {
+    return value.stat(rows, context)
+  }
   if (value.stat === 'count' || !column) {
     return rows.length
   }
@@ -574,6 +588,9 @@ function statOf<Row> (rows: readonly Row[], value: Value, column: AnyColumn | un
 }
 
 function valueLabel (value: Value, column: AnyColumn | undefined): string {
+  if (typeof value.stat === 'function') {
+    return value.label
+  }
   if (value.label) {
     return value.label
   }
@@ -621,12 +638,19 @@ function valueDatasets<Row> (value: Value, column: AnyColumn | undefined, bucket
   const mixed = value as MixedValue<AnyRow>
   const format = value as StatFormat
   const percent = 'percent' in value && Boolean(value.percent)
-  const unit: ChartUnit = percent ? 'percent' : (value.stat === 'count' || !column ? 'number' : unitOf(column))
+  let unit: ChartUnit = 'number'
+  if (percent) {
+    unit = 'percent'
+  } else if (value.unit) {
+    unit = value.unit
+  } else if (column) {
+    unit = unitOf(column)
+  }
 
-  const cells = (series?.buckets ?? [undefined]).map(seriesBucket => buckets.map(bucket => {
-    const rows = seriesBucket ? bucket.rows.filter(row => series?.of.get(row) === seriesBucket) : bucket.rows
-    return { rows, stat: statOf(rows, value, column) }
-  }))
+  const cells = (series?.buckets ?? [undefined]).map(seriesBucket => {
+    const groups = buckets.map(bucket => seriesBucket ? bucket.rows.filter(row => series?.of.get(row) === seriesBucket) : bucket.rows)
+    return groups.map((rows, index) => ({ rows, stat: statOf(rows, value, column, { index, groups }) }))
+  })
   const groupTotal = (groupIndex: number) => cells.reduce((sum, seriesCells) => sum + (seriesCells[groupIndex].stat ?? 0), 0)
 
   return cells.map((seriesCells, seriesIndex) => {
@@ -659,7 +683,7 @@ function valueDatasets<Row> (value: Value, column: AnyColumn | undefined, bucket
 }
 
 // 依 group 分組。沒有 group 時（只有 stat），全部的列為一組，名稱為空字串。分組欄不存在時為 null
-function categoryBuckets<Row> (schema: TableSchema, input: CategoryInput, rows: readonly Row[], rank: (bucket: Bucket<Row>) => number): Bucket<Row>[] | null {
+function categoryBuckets<Row> (schema: TableSchema, input: CategoryInput, rows: readonly Row[], rankOf: (buckets: Bucket<Row>[]) => (bucket: Bucket<Row>) => number): Bucket<Row>[] | null {
   if (!input.group) {
     return [{ label: '', filter: null, rows: [...rows] }]
   }
@@ -667,14 +691,25 @@ function categoryBuckets<Row> (schema: TableSchema, input: CategoryInput, rows: 
   if (!groupColumn) {
     return null
   }
-  return orderAndLimit(groupBuckets(schema, rows, groupColumn, input.group), input as GroupedInput, rank, groupColumn.key)
+  const buckets = groupBuckets(schema, rows, groupColumn, input.group)
+  return orderAndLimit(buckets, input as GroupedInput, rankOf(buckets), groupColumn.key)
 }
 
 function computeCategory<Row> (schema: TableSchema, input: CategoryInput, rows: readonly Row[]): ChartData<Row> {
   const values = input.values as Value[]
   const columns = values.map(value => value.key ? findColumn(schema, value.key) : undefined)
-  const rank = (bucket: Bucket<Row>) => statOf(bucket.rows, values[0], columns[0]) ?? -Infinity
-  const buckets = categoryBuckets(schema, input, rows, rank)
+  // 排序與 limit 依第一個數值。自訂的統計此時依分組本身的順序取得 index 與 groups。只在用到時計算
+  const rankOf = (unordered: Bucket<Row>[]) => {
+    let ranks: Map<Bucket<Row>, number> | undefined
+    return (bucket: Bucket<Row>) => {
+      if (!ranks) {
+        const groups = unordered.map(item => item.rows)
+        ranks = new Map(unordered.map((item, index) => [item, statOf(item.rows, values[0], columns[0], { index, groups }) ?? -Infinity]))
+      }
+      return ranks.get(bucket) ?? -Infinity
+    }
+  }
+  const buckets = categoryBuckets(schema, input, rows, rankOf)
   if (!buckets) {
     return { kind: 'category', labels: [], datasets: [], groups: [], series: [] }
   }

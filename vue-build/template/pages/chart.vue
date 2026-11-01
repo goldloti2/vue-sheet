@@ -13,6 +13,7 @@
   import { __table__Schema } from '@/schema/tables/__table__'
 
   // 各狀態的列數與金額的總和。可填的項目依 type 而定，type 為 'stat' 時以文字顯示
+  // stat 也可為以一組的列與 { index, groups } 為參數、回傳數值的函數，此時 label 必填
   const chart = defineChart(__table__Schema, {
     type: 'bar',
     group: { key: 'status' },

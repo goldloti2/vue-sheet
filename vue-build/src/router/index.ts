@@ -13,7 +13,7 @@ import { routes } from 'vue-router/auto-routes'
 import { siblingDirection } from '@/composables/navigation/useListOrder'
 import { beginTransition, canAnimate, markTransition } from '@/composables/shell/viewTransition'
 import { authMethod } from '@/config/app'
-import { navItems } from '@/config/navigation'
+import { drawerSections, navItems } from '@/config/navigation'
 import { token } from '@/services/auth/token'
 
 declare module 'vue-router' {
@@ -113,9 +113,12 @@ router.afterEach((_to, _from, failure) => {
   }
 })
 
+// 導覽項目的順序：底部導覽列在前，側邊欄依組接在其後。兩處皆有的頁面以底部的位置為準
+const navOrder = [...navItems, ...drawerSections.flatMap(section => section.items)].map(item => item.to)
+
 // 換頁動畫的方向，判定規則見 docs/topics/pages.md 的「換頁動畫」
 function navIndexOf (path: string): number {
-  return navItems.findIndex(item => item.to === path)
+  return navOrder.indexOf(path)
 }
 
 function routeId (route: RouteLocationNormalized): string | null {

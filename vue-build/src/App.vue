@@ -1,14 +1,14 @@
 <script lang="ts" setup>
   import { useRoute } from 'vue-router'
   import AppShell from '@/components/ui/shell/AppShell.vue'
-  import { navItems } from '@/config/navigation'
+  import { drawerSections, navItems } from '@/config/navigation'
 
   const route = useRoute()
 </script>
 
 <template>
   <v-app>
-    <AppShell :nav-items="navItems">
+    <AppShell :drawer-sections="drawerSections" :nav-items="navItems">
       <!-- 換頁動畫由 router 以 View Transitions 處理（見 docs/topics/pages.md 的「換頁動畫」） -->
       <router-view v-slot="{ Component }">
         <keep-alive :max="50">

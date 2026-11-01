@@ -3,24 +3,24 @@
   import type { AppBarTabs } from '@/composables/shell/useAppBarTabs'
   import type { ListControls } from '@/composables/shell/useListControls'
   import type { AppBarHeading } from '@/composables/shell/useShellActions'
-  import { mdiArrowLeft, mdiClose, mdiDotsVertical, mdiFilterVariant, mdiLogout, mdiMagnify, mdiRefresh, mdiSort } from '@mdi/js'
+  import { mdiArrowLeft, mdiClose, mdiDotsVertical, mdiFilterVariant, mdiMagnify, mdiRefresh, mdiSort } from '@mdi/js'
   import { computed, onBeforeUnmount, onMounted, provide, shallowRef, watch } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
   import ConfirmDialog from '@/components/ui/dialog/ConfirmDialog.vue'
   import FieldsDialog from '@/components/ui/dialog/FieldsDialog.vue'
   import FilterPanel from '@/components/ui/shell/FilterPanel.vue'
+  import NavDrawer from '@/components/ui/shell/NavDrawer.vue'
   import SortPanel from '@/components/ui/shell/SortPanel.vue'
   import { provideActionRunner } from '@/composables/shell/useActionRunner'
   import { appBarTabsKey, currentTabKey } from '@/composables/shell/useAppBarTabs'
   import { confirmFields, fieldsDialog } from '@/composables/shell/useAskFields'
-  import { choose, confirm, confirmDialog, notice, notify, pickChoice } from '@/composables/shell/useDialogs'
+  import { choose, confirmDialog, notice, notify, pickChoice } from '@/composables/shell/useDialogs'
   import { listControlsKey } from '@/composables/shell/useListControls'
   import { overlayOpenKey } from '@/composables/shell/useOverlay'
   import { appBarActionsKey, appBarHeadingKey, appBarSelectionKey, bottomActionsKey } from '@/composables/shell/useShellActions'
-  import { appName, authMethod } from '@/config/app'
+  import { appName } from '@/config/app'
   import { navigationCount } from '@/router'
   import { hasActiveFilter } from '@/schema/filter'
-  import { clearToken } from '@/services/auth/token'
   import { useTablesStore } from '@/stores/tables'
 
   export interface AppNavItem {
@@ -29,13 +29,31 @@
     to: string
   }
 
+  // 側邊欄的一組頁面。有 title 時可展開與收合，icon 顯示於組的標題前。沒有 title 時直接列出
+  export interface AppNavSection {
+    title?: string
+    icon?: string
+    items: AppNavItem[]
+  }
+
   interface AppShellProps {
+    // 底部導覽列，最多 BOTTOM_NAV_MAX 項
     navItems?: AppNavItem[]
+    // 側邊欄的頁面，依組列出
+    drawerSections?: AppNavSection[]
   }
 
   const props = withDefaults(defineProps<AppShellProps>(), {
     navItems: () => [],
+    drawerSections: () => [],
   })
+
+  // 底部導覽列的項目數上限，依 Material Design 的建議。超過的不顯示
+  const BOTTOM_NAV_MAX = 5
+  if (import.meta.env.DEV && props.navItems.length > BOTTOM_NAV_MAX) {
+    console.warn(`[AppShell] 底部導覽列最多 ${BOTTOM_NAV_MAX} 項，第 ${BOTTOM_NAV_MAX + 1} 項起不顯示。其他頁面可改放側邊欄（drawerSections）`)
+  }
+  const bottomItems = computed(() => props.navItems.slice(0, BOTTOM_NAV_MAX))
 
   const drawer = shallowRef(false)
   const route = useRoute()
@@ -139,8 +157,9 @@
   // AppShell 執行動作並顯示確認框，頁面只註冊動作
   const runAction = provideActionRunner()
 
-  // 導覽列的目的地以外的頁面（例如詳細頁）顯示返回按鈕。頁面取代標題時一律顯示
-  const showBack = computed(() => heading.value !== null || !props.navItems.some(item => item.to === route.path))
+  // 底部導覽列與側邊欄的目的地以外的頁面（例如詳細頁）顯示返回按鈕。頁面取代標題時一律顯示
+  const topLevel = computed(() => [...bottomItems.value, ...props.drawerSections.flatMap(section => section.items)])
+  const showBack = computed(() => heading.value !== null || !topLevel.value.some(item => item.to === route.path))
 
   const store = useTablesStore()
   const syncing = shallowRef(false)
@@ -179,14 +198,6 @@
     if (store.hasPending) {
       event.preventDefault()
     }
-  }
-
-  // 清除 token 後 router 導向登入頁。未推送的變更留在佇列中，重新登入後照常推送
-  async function logout () {
-    if (store.hasPending && !await confirm('登出', '有尚未推送的變更，確定要登出嗎？')) {
-      return
-    }
-    clearToken()
   }
 
   onMounted(() => window.addEventListener('beforeunload', warnUnsaved))
@@ -364,17 +375,7 @@
 
   <v-snackbar v-model="notice.open" :color="notice.color">{{ notice.text }}</v-snackbar>
 
-  <v-navigation-drawer
-    v-if="showShell"
-    v-model="drawer"
-    class="shell-nav-drawer"
-    disable-resize-watcher
-    order="-1"
-  >
-    <v-list v-if="authMethod !== 'none'" nav>
-      <v-list-item :prepend-icon="mdiLogout" title="登出" @click="logout" />
-    </v-list>
-  </v-navigation-drawer>
+  <NavDrawer v-if="showShell" v-model:open="drawer" :sections="drawerSections" />
 
   <v-main>
     <slot />
@@ -390,16 +391,17 @@
     </v-btn>
   </v-bottom-navigation>
 
-  <v-bottom-navigation v-else-if="showShell" class="shell-bottom-bar" :model-value="route.path">
+  <!-- 按鈕平分寬度，上限為 Vuetify 預設的最大寬（見 docs/design/README.md 的「導覽」） -->
+  <v-bottom-navigation v-else-if="showShell" class="shell-bottom-bar shell-bottom-bar--nav" grow :model-value="route.path">
     <v-btn
-      v-for="item in navItems"
+      v-for="item in bottomItems"
       :key="item.to"
       replace
       :to="item.to"
       :value="item.to"
     >
       <v-icon :icon="item.icon" />
-      <span>{{ item.title }}</span>
+      <span class="shell-bottom-bar__label">{{ item.title }}</span>
     </v-btn>
   </v-bottom-navigation>
 </template>
@@ -410,11 +412,20 @@
   view-transition-name: app-bar;
 }
 
-.shell-nav-drawer {
-  view-transition-name: nav-drawer;
-}
-
 .shell-bottom-bar {
   view-transition-name: bottom-bar;
+}
+
+/* 不設最小寬，畫面窄時按鈕縮小，不超出畫面 */
+.shell-bottom-bar--nav :deep(.v-btn) {
+  min-width: 0;
+}
+
+/* 名稱放不下時加「…」 */
+.shell-bottom-bar__label {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 </style>

@@ -29,10 +29,10 @@
 | **同步按鈕** | `AppShell` | 不屬於任何頁面 |
 | **頁籤列** | `TabPage` | 登記為 App Bar 下方的 extension |
 | **內容區** | `pages/*.vue` | 換頁時左右滑動的即為此區 |
-| **側邊欄** | `AppShell` | 目前只有「登出」，在 `config/app.ts` 的 `authMethod` 不是 `'none'` 時出現 |
+| **側邊欄** | [`NavDrawer`](../components/shell/NavDrawer.md) | 項目為 `config/navigation.ts` 的 `drawerSections`。「登出」在 `config/app.ts` 的 `authMethod` 不是 `'none'` 時出現 |
 | **篩選、排序抽屜** | `AppShell` 與 `FilterPanel`、`SortPanel` | 抽屜本身屬於 `AppShell`，兩個面板只提供內容，一次顯示一種（見 [search.md](search.md)） |
 | **FAB** | `PageFab` | 頁面或版型元件以 `fab` 交給 `PageFab` |
-| **底部導覽列** | `config/navigation.ts` | 項目清單 |
+| **底部導覽列** | `config/navigation.ts` | 項目為 `navItems`，最多 5 項。超過時只顯示前 5 項，開發模式下以 console 警告 |
 | **底部動作列** | `useBottomActions()` | 表單頁時**暫時取代**底部導覽列 |
 | **snackbar** | `notify()` | 全 App 同時只有一則，例如 `notify('已推送')`、`notify('推送失敗', 'error')`。第二個參數為 Vuetify 的 color |
 | **上一列、下一列的箭頭** | `RecordNav` | 由 `DetailPage` 放置 |
@@ -41,7 +41,8 @@
 
 - **左側圖示依目前的路由自動切換**為漢堡選單或返回箭頭：以 router 累計的導覽次數判斷是否確實有 App 內的上一頁，沒有時不顯示返回箭頭
 - **頁面可以不使用外殼**：將 `definePage` 的 `meta.shell` 設為 `false`，App Bar、側邊欄與底部導覽列皆不顯示，整頁由頁面自行排版，例如登入頁 `pages/login.vue`
-- 🔲 **電腦版的導覽待定**：是否改為常駐的側邊欄、底部導覽列是否於電腦上隱藏，待處理電腦版的體驗時再決定
+- **電腦版的側邊欄開啟後與內容並排**，換頁時不收起（見 [NavDrawer](../components/shell/NavDrawer.md)）
+- 🔲 **底部導覽列是否於電腦上隱藏**，待處理電腦版的體驗時再決定
 
 ---
 
@@ -88,7 +89,7 @@
 - **方向寫在 `<html>` 的 `data-dir`**：於 `afterEach` 寫入，CSS 於動畫開始時才讀取。同時寫入 `data-transition="page"`，與儀表板面板內的轉場（`data-transition="panel"`）區分，`root` 只在換頁時滑動
 - **方向的判定**依下列順序，採用第一個符合的規則：
   1. 網址相同（儀表板的展開與縮回）：依瀏覽器歷史為前進或後退
-  2. 兩端皆為導覽項目：依導覽列上的順序，往右為前進
+  2. 兩端皆為導覽項目：依導覽項目的順序，往後為前進。順序為底部導覽列的各項，再接側邊欄各組的各項。兩處皆有的頁面以底部導覽列的位置為準
   3. 只有目的地為導覽項目：一律為後退
   4. 同一個路由切換 id，且兩列皆在列表發布的順序中：依兩列在列表中的先後
   5. 其他：依瀏覽器歷史為前進或後退。點選連結或動作為前進，返回鍵為後退

@@ -37,7 +37,7 @@
 | --- | --- |
 | `src/config/app.ts` | `appName`：App 名稱，未指定 `route.meta.title` 的頁面以此作為標題<br>`authMethod`：登入方式，須與後端相符（見 [docs/auth.md](../../docs/auth.md)）。登入頁的外觀見 `src/pages/login.vue`<br>`detailFieldLayout`：詳細頁欄位的排法，`'side'`（標籤與值左右並排）或 `'stacked'`（上下兩行）。單一頁面以 `DetailPage` 的 `layout` 覆寫 |
 | `index.html` | `<title>` 填寫相同的名稱。`lang` 依介面的語言 |
-| `src/config/navigation.ts` | 導覽列項目，隨表增減（見下方第 1 節） |
+| `src/config/navigation.ts` | 底部導覽列與側邊欄的項目，隨表增減（見下方第 1 節） |
 
 ---
 
@@ -59,8 +59,8 @@
 | `pages/new.vue` | `src/pages/__table__/new.vue` | 新增表單 → `/__table__/new` |
 | `pages/edit.vue` | `src/pages/__table__/[id]/edit.vue` | 編輯表單 → `/__table__/:id/edit` |
 | `pages/child-list.vue` | `src/pages/__parent__/[id]/__table__.vue` | **選用**：父表詳細頁中子表區塊的「展開」頁 → `/__parent__/:id/__table__`。一條父子關聯一個檔案 |
-| `pages/dashboard.vue` | `src/pages/dashboard.vue`（檔名可自訂） | **選用**：同時顯示多個面板的總覽頁 → `/dashboard`。<br>・範本為父表列表、父表詳細與子表列表三個面板，並開啟互動<br>・列表使用各表的 `_ref/list.vue`<br>・須加入導覽列時，另外加至 `src/config/navigation.ts` |
-| `pages/chart.vue` | `src/pages/__table__-chart.vue`（檔名可自訂） | **選用**：一張圖表的頁面 → `/__table__-chart`。<br>・範本為各狀態的列數與金額的總和，長條加折線<br>・也可改為 `_ref/` 中的元件，置於 dashboard 的面板或頁籤頁的頁籤<br>・須加入導覽列時，另外加至 `src/config/navigation.ts` |
+| `pages/dashboard.vue` | `src/pages/dashboard.vue`（檔名可自訂） | **選用**：同時顯示多個面板的總覽頁 → `/dashboard`。<br>・範本為父表列表、父表詳細與子表列表三個面板，並開啟互動<br>・列表使用各表的 `_ref/list.vue`<br>・須加入底部導覽列或側邊欄時，另外加至 `src/config/navigation.ts` |
+| `pages/chart.vue` | `src/pages/__table__-chart.vue`（檔名可自訂） | **選用**：一張圖表的頁面 → `/__table__-chart`。<br>・範本為各狀態的列數與金額的總和，長條加折線<br>・也可改為 `_ref/` 中的元件，置於 dashboard 的面板或頁籤頁的頁籤<br>・須加入底部導覽列或側邊欄時，另外加至 `src/config/navigation.ts` |
 
 > 路由為檔案式（unplugin-vue-router），檔案放進 `pages/` 即自動生效，無須維護路由表。
 >
@@ -90,7 +90,7 @@
    - 第一列為 Sheet 的表頭（對外的名稱），須與 schema 的 `sheetHeader` 或 `label` 相符
    - 須包含主鍵欄（`idColumn` 指向的欄位）的表頭
 
-4. **`src/config/navigation.ts`**：須加入導覽列時才修改：
+4. **`src/config/navigation.ts`**：須加入導覽時才修改。`navItems` 為底部導覽列，最多 5 項。`drawerSections` 為側邊欄，依組列出。有 `title` 的組可展開與收合，`icon` 選填。兩處的項目寫法相同：
    ```ts
    { title: '範本', icon: mdiLabel, to: '/__table__' }
    ```
@@ -126,7 +126,7 @@
 - 動作：FAB（通常為新增）、多選與刪除選取的列、每一列的動作
 - 搜尋、篩選與排序，由 schema 的清單決定
 - 是否以頁籤分頁，以及頁籤的名稱
-- 導覽列的入口、位置與圖示
+- 底部導覽列或側邊欄的入口、位置與圖示
 
 **詳細**
 - 欄位與順序（`detailOrder` 或頁面的 `order`）

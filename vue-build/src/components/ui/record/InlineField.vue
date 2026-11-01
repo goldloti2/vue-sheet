@@ -84,8 +84,8 @@
 </script>
 
 <template>
-  <!-- 攔下觸控事件，在輸入框中拖曳不觸發詳細頁以左右滑動切換列 -->
-  <div class="inline-field" @touchend.stop @touchmove.stop @touchstart.stop>
+  <!-- 攔下觸控事件，在輸入框中拖曳不觸發詳細頁以左右滑動切換列。只停止傳遞，不阻止捲動，因此為 passive -->
+  <div class="inline-field" @touchend.stop.passive @touchmove.stop.passive @touchstart.stop.passive>
     <FieldInput
       :column="column"
       density="compact"

@@ -310,8 +310,9 @@
     </template>
 
     <!-- 頁籤隨 App Bar 固定於頂端，搜尋模式下仍顯示 -->
+    <!-- 頁籤不同時重建 v-tabs：沿用時，舊頁籤移除的當下 Vuetify 會自動選取剩下的舊頁籤，並寫入新頁面的 v-model -->
     <template v-if="tabs" #extension>
-      <v-tabs v-model="tabs.current.value" align-tabs="center" grow>
+      <v-tabs :key="tabs.tabs.join('\n')" v-model="tabs.current.value" align-tabs="center" grow>
         <v-tab v-for="tab in tabs.tabs" :key="tab" :value="tab">{{ tab }}</v-tab>
       </v-tabs>
     </template>

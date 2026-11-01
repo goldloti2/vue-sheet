@@ -4,6 +4,7 @@
   import { computed, inject, onBeforeUnmount, onMounted, shallowRef, useTemplateRef } from 'vue'
   import { COLS, dashboardKey, GAP } from '@/components/ui/panel/dashboardContext'
   import { useCompactLayout } from '@/composables/shell/useCompactLayout'
+  import { usePanelBordered } from '@/composables/shell/usePanelActive'
   import { highlightOf } from '@/schema/chart'
   import { DIM_OPACITY, formatParts, paletteColors } from './chartConfig'
 
@@ -23,6 +24,8 @@
   }>()
 
   const dashboard = inject(dashboardKey, null)
+  // 位於有外框的面板中時，格子以面板的外框為框
+  const bordered = usePanelBordered()
   const compact = useCompactLayout()
   const space = dashboard?.gap ?? GAP
 
@@ -98,7 +101,7 @@
 </script>
 
 <template>
-  <div ref="root" class="data-stat" :style="sizeStyle">
+  <div ref="root" class="data-stat" :class="{ 'data-stat--bordered': bordered }" :style="sizeStyle">
     <component
       :is="cell.group ? 'button' : 'div'"
       v-for="cell in cells"
@@ -148,6 +151,14 @@
   border-left: 4px solid var(--data-stat-color);
   border-radius: 8px;
   transition: opacity 0.2s;
+}
+
+/* 位於有外框的面板中：格子只保留左側的色塊，以面板的外框為框，色塊貼齊面板的邊 */
+.data-stat--bordered .data-stat__cell {
+  border-top: none;
+  border-right: none;
+  border-bottom: none;
+  border-radius: 0;
 }
 
 .data-stat__cell--clickable {

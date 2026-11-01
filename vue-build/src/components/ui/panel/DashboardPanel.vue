@@ -5,7 +5,7 @@
   import { computed, inject, onBeforeUnmount, onMounted, provide, shallowRef, useTemplateRef, watch } from 'vue'
   import { AUTO_ROWS_MAX, dashboardKey } from '@/components/ui/panel/dashboardContext'
   import { dashboardViaKey } from '@/composables/shell/useDashboardSelection'
-  import { panelActiveKey, panelFullPageKey } from '@/composables/shell/usePanelActive'
+  import { panelActiveKey, panelBorderedKey, panelFullPageKey } from '@/composables/shell/usePanelActive'
   import { appBarSelectionKey } from '@/composables/shell/useShellActions'
   import { relations } from '@/schema/relations'
 
@@ -48,6 +48,8 @@
   provide(panelActiveKey, active)
   // FAB、DetailPage 的上一列與下一列、左右滑動，只在展開時啟用
   provide(panelFullPageKey, expanded)
+  // 展開時沒有外框
+  provide(panelBorderedKey, computed(() => !expanded.value))
 
   // App Bar 的內容由 DashboardPage 決定（見其 appBarActions），此處只記錄面板是否在多選
   const setSelection = inject(appBarSelectionKey, null)

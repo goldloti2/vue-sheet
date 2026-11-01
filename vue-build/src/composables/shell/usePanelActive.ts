@@ -20,3 +20,13 @@ export const panelFullPageKey: InjectionKey<PanelActive> = Symbol('panelFullPage
 export function usePanelFullPage (): PanelActive {
   return inject(panelFullPageKey, ALWAYS_ACTIVE)
 }
+
+// 面板目前是否有外框，由 DashboardPanel 提供，展開時為 false。內容可據此省略自己的外框
+export const panelBorderedKey: InjectionKey<PanelActive> = Symbol('panelBordered')
+
+// 不在面板中時沒有外框
+const NEVER_BORDERED: PanelActive = shallowRef(false)
+
+export function usePanelBordered (): PanelActive {
+  return inject(panelBorderedKey, NEVER_BORDERED)
+}

@@ -8,7 +8,7 @@
   import PageState from '@/components/ui/page/PageState.vue'
   import { publishListOrder } from '@/composables/navigation/useListOrder'
   import { useDashboardSelection } from '@/composables/shell/useDashboardSelection'
-  import { usePanelFullPage } from '@/composables/shell/usePanelActive'
+  import { usePanelBordered, usePanelFullPage } from '@/composables/shell/usePanelActive'
   import { pickElement, toggleLegend } from '@/schema/chart'
 
   // 圖表的整頁版型：載入狀態、高光，以及點擊後進入詳細頁或寫入條件（見 docs/components/page/ChartPage.md）
@@ -29,6 +29,8 @@
   const router = useRouter()
   const fullPage = usePanelFullPage()
   const dashboard = useDashboardSelection()
+  // 位於有外框的面板中時，stat 沒有外圍留白
+  const bordered = usePanelBordered()
 
   // 進入一列的詳細頁，上一列、下一列在 ids 之間切換
   function open (id: string, ids: readonly string[]) {
@@ -61,7 +63,7 @@
 
 <template>
   <!-- stat 以文字顯示，高度隨內容，不使用 Chart.js -->
-  <div v-if="chart.type === 'stat'" class="chart-page-stat">
+  <div v-if="chart.type === 'stat'" class="chart-page-stat" :class="{ 'chart-page-stat--bordered': bordered }">
     <PageState :error="error" :loading="loading" spinner="linear">
       <DataStat
         :chart="chart"
@@ -96,6 +98,10 @@
   --data-stat-inset: 4px;
 
   padding: var(--data-stat-inset);
+}
+
+.chart-page-stat--bordered {
+  --data-stat-inset: 0px;
 }
 
 /* 整頁時為 App Bar 與底部之間的高度。內距由 chart-page__chart 的留白取代 */

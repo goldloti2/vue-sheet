@@ -26,7 +26,7 @@
     <template v-if="isActive">
       <v-btn
         v-if="siblings.prev"
-        aria-label="上一筆"
+        aria-label="上一列"
         class="record-nav record-nav--left"
         rounded="0"
         variant="text"
@@ -37,7 +37,7 @@
 
       <v-btn
         v-if="siblings.next"
-        aria-label="下一筆"
+        aria-label="下一列"
         class="record-nav record-nav--right"
         rounded="0"
         variant="text"

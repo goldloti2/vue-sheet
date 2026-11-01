@@ -64,7 +64,7 @@
 列表頁與詳細頁皆由 `<KeepAlive :max="50">` 快取，key 為 `route.fullPath`。由此而來的規則：
 
 - **`[id]` 頁面一律使用 `useRouteId()`**，不自行 `watch` `route.params.id`。一個實例終其一生只對應一個網址，路由參數對該實例而言是常數。拿掉 `:key` 時，`useRouteId()` 於開發模式下印出警告
-- **快取改變時任其改變**：資料被刪除時，離開中的頁面顯示「找不到這筆資料」
+- **快取改變時任其改變**：資料被刪除時，離開中的頁面顯示「找不到這一列」
 - **每次進入都須重算的內容放在 `onActivated`**：同一個網址共用同一份實例，`setup` 不會重新執行。兩種表單皆於 `onActivated` 重建表單並清除錯誤
 - **Teleport 出去的浮動元件自行處理進場與出場**：`PageFab`、`RecordNav` 送至 `body`，以 `onActivated`、`onDeactivated` 控制
 - **列表載入中時，不以 `v-if` 整個替換列表**，改用 `PageState` 的 `spinner="linear"`。進度條加在內容上方，不取代內容

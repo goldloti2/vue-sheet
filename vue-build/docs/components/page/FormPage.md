@@ -14,7 +14,7 @@
 
 | prop | 型別 | 說明 |
 | --- | --- | --- |
-| `v-model` | `object \| null` | **必填**，表單的列。`null` 時顯示「找不到這筆資料」 |
+| `v-model` | `object \| null` | **必填**，表單的列。`null` 時顯示「找不到這一列」 |
 | `schema` | `TableSchema` | **必填**，決定欄位、順序與輸入元件 |
 | `order` | `string[]?` | 這一頁的欄位順序，覆寫 schema 的 `formOrder`，例如新增頁與編輯頁須顯示不同的欄位時。此元件不帶 Row 型別，須檢查 key 時，於頁面標示為 `RowKey<XxxRow>[]` |
 | `lockId` | `boolean?` | 主鍵欄是否唯讀。省略時自動判斷：已有 `id`（編輯頁）時唯讀，否則可填寫。新增頁的主鍵只能由預設值帶入時，傳入 `true` |
@@ -32,6 +32,6 @@
 ## 備註
 
 - **狀態的優先順序**為 loading → loadError → 找不到資料 → 表單。前三種狀態由 [PageState](PageState.md) 顯示
-- 「找不到這筆資料」使用 `warning`，不使用 `error`
+- 「找不到這一列」使用 `warning`，不使用 `error`
 - 欄位的錯誤訊息由 `DataForm` 顯示於各欄下方。此處的 `error` 屬於整張表單，例如送出失敗、後端錯誤
 - **列已有 `id` 時（編輯頁），主鍵欄唯讀**。新增頁的 `id` 為空，可填寫，或留空由 `newId` 發號（見 [schema.md](../../topics/schema.md#主鍵)）

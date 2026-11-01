@@ -99,10 +99,10 @@
 - 佇列 `pending`、合併規則、`flush`、`hasPending`、`flushing`、`flushError`
 - 四個寫入 action 改為同步，只修改快取與佇列
 - 流程存檔點 `beginFlow`、`commitFlow`、`rollbackFlow`，供連續動作使用。流程進行中 `flush` 被擋下
-- App Bar 最右側的同步按鈕：`refresh()` 即推送，再重抓所有已載入與載入失敗的表。未推送時有圓點標記（失敗時轉紅），並以 `beforeunload` 攔截關閉
+- App Bar 最右側的同步按鈕：`refresh()` 即推送，再重新抓取所有已載入與載入失敗的表。未推送時有圓點標記（失敗時轉紅），並以 `beforeunload` 攔截關閉
 - 表單開啟時，同步按鈕停用：`useSyncHold` 持有 `holdSync()`，以 `canSync` 判斷
 - flush 失敗時保持「未推送」的狀態，並以 snackbar 回報錯誤，使用者再按一次即可。整批重送，不做逐列補償
-- **重抓前一定先 flush**，佇列未清空時不重抓。沒有「只重抓一張表」的 API
+- **重新抓取前一定先 flush**，佇列未清空時不重新抓取。沒有「只重新抓取一張表」的 API
 - 跨表的寫入順序不影響結果：Sheet 沒有外鍵約束，後端也不做合法性驗證，因此父表與子表的寫入先後不影響結果
 - `flush` 把整個佇列（跨所有表）攤平成一串 operations，**以一個請求送出，全有全無**：成功才清空佇列，失敗時佇列不變，使用者再按一次即可（見 [docs/api.md](docs/api.md)）
 - 佇列只存於記憶體，不寫入 `localStorage`
@@ -244,7 +244,7 @@
 - 登入頁與導向（`config/app.ts` 的 `authMethod` 不是 `'none'` 時）：
   - 全域 guard 連第一次開啟都會檢查。沒有 token 時，轉到 `/login?redirect=…`，登入後回到原本的目的地。側邊欄可登出
   - 每個請求帶上 token。後端回傳過期或無效時，清除 token，回到登入頁
-  - 重新登入後，重抓用過的表，包括載入失敗的表，不推送
+  - 重新登入後，重新抓取用過的表，包括載入失敗的表，不推送
   - 尚未完成的部分，見「未完成」的「後端」
 - `useRouteId()`：路由參數讀取一次即固定，依 `route.fullPath` 作為 key 成立，離場動畫期間不會被目的地的 id 汙染。拿掉 key 時，開發模式下警告
 - `leaveAfterAction()`：完成動作後以瀏覽器的返回離開，不把已完成的表單頁留在歷史中
@@ -268,7 +268,7 @@
 - 待處理的項目（Google 登入、Hooks），見「未完成」
 
 ### 資料一致性
-- 推送前比對整個試算表檔案的 `modifiedTime`，由後端在同一把鎖中比對。衝突時詢問使用者「放棄並重抓」或「強制推送」。約定見 [docs/api.md](docs/api.md) 的「資料一致性」，前端的處置見 [vue-build/docs/topics/store.md](vue-build/docs/topics/store.md)
+- 推送前比對整個試算表檔案的 `modifiedTime`，由後端在同一把鎖中比對。衝突時詢問使用者「放棄並重新抓取」或「強制推送」。約定見 [docs/api.md](docs/api.md) 的「資料一致性」，前端的處置見 [vue-build/docs/topics/store.md](vue-build/docs/topics/store.md)
 - 衝突時，不把佇列重新套用到新資料上
 
 ### 列表效能

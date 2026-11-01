@@ -56,7 +56,7 @@ npx eslint src && npx vue-tsc --build --force   # 提交前執行這兩項
 | **快取**（`store.rows`） | store 中每張表一份、全 App 共用的資料。畫面只讀取快取 |
 | **佇列**（`pending`） | 尚未寫回 Sheet 的修改。按同步時才實際送出 |
 | **推送**（flush） | 把整個佇列以一個請求送至後端，全有全無 |
-| **同步**（`refresh`） | 推送，再重抓所有已載入與載入失敗的表，即 App Bar 最右側的按鈕 |
+| **同步**（`refresh`） | 推送，再重新抓取所有已載入與載入失敗的表，即 App Bar 最右側的按鈕 |
 | **版型**（page layout） | `components/ui/page/` 的元件（`ListPage`、`DetailPage`、`FormPage`、`PageState`），包好一種頁面共通的骨架，頁面只填入這張表專屬的部分 |
 | **動作**（`PageAction`） | 一個按鈕的定義，可以放在 FAB、App Bar、底部或某個欄位旁 |
 | **流程**（flow） | 多個步驟一次完成的動作，中途取消時整條還原 |

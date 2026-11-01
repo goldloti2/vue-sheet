@@ -23,7 +23,7 @@
 | `table` | `TableKey` | **必填**，上一列、下一列的順序與導覽皆依此表 |
 | `id` | `string` | **必填**，網址上的那一列。dashboard 中為互動選取的那一列，尚未選取時為空字串 |
 | `schema` | `TableSchema` | **必填**，決定顯示的欄位與順序 |
-| `row` | `Row \| null` | **必填**，`null` 時顯示「找不到這筆資料」。dashboard 中 `id` 為空字串時，改為只顯示欄位名稱，標頭與兩個 slot 皆不顯示 |
+| `row` | `Row \| null` | **必填**，`null` 時顯示「找不到這一列」。dashboard 中 `id` 為空字串時，改為只顯示欄位名稱，標頭與兩個 slot 皆不顯示 |
 | `loading` | `boolean?` | 載入中 |
 | `error` | `string \| null?` | 載入失敗的訊息 |
 | `order` | `RowKey<Row>[]?` | 這一頁的欄位順序，覆寫 schema 的 `detailOrder`（見 [DataDetail](../record/DataDetail.md)） |

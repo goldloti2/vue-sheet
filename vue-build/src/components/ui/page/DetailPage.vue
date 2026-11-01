@@ -47,7 +47,7 @@
   const { swipe } = useSiblingNav(props.table, () => props.id)
   const fullPage = usePanelFullPage()
 
-  // dashboard 的詳細面板尚未選取時，只顯示欄位名稱，不顯示「找不到這筆資料」
+  // dashboard 的詳細面板尚未選取時，只顯示欄位名稱，不顯示「找不到這一列」
   const dashboard = useDashboardSelection()
   const blank = computed(() => dashboard !== null && !props.id)
 </script>

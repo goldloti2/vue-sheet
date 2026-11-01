@@ -10,7 +10,7 @@
     spinner?: 'circular' | 'linear'
   }>(), {
     error: null,
-    emptyText: '找不到這筆資料',
+    emptyText: '找不到這一列',
     spinner: 'circular',
   })
 </script>

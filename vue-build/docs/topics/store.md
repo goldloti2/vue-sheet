@@ -26,7 +26,7 @@ const { row, loading, error } = useTableRow<OrderRow>('order', id)              
 
 - **型別轉換只發生在 `fetchTable` 這一處**：後端的形狀為 `Record<string, string>`，前端的形狀為已轉換型別的 Row（`Date`、`number`、`null`）
 - **關聯的表一起載入**：ref 欄位指向的父表（虛擬的 ref 也包括在內），以及指向此表的子表
-- **沒有「只重抓一張表」的 API**。重抓即整個 App 一起重抓，經由同步按鈕
+- **沒有「只重新抓取一張表」的 API**。重新抓取即整個 App 一起重新抓取，經由同步按鈕
 
 ---
 
@@ -112,7 +112,7 @@ mutateBatch([
 
 | 選擇 | 結果 |
 | --- | --- |
-| **放棄並重抓** | `store.discardAndReload()`：丟棄未推送的變更，重抓所有已載入與載入失敗的表，以 Sheet 上的資料為準 |
+| **放棄並重新抓取** | `store.discardAndReload()`：丟棄未推送的變更，重新抓取所有已載入與載入失敗的表，以 Sheet 上的資料為準 |
 | **強制推送** | `store.forcePush()`：不帶 `since` 再送一次。只覆蓋進入佇列的那幾欄，其餘欄保留 Sheet 上的值 |
 | 關閉對話框 | 不做任何事，佇列保留，下次按同步時再詢問 |
 
@@ -120,12 +120,12 @@ mutateBatch([
 >
 > 啟用登入時，後端回傳 token 過期或無效：
 > - store 的 `error` 與 `flushError` 帶有該訊息，router 同時把畫面帶到登入頁
-> - 重新登入後，`store.reload()` 重抓已載入與載入失敗的表，範圍與同步按鈕的重抓相同，但不推送
+> - 重新登入後，`store.reload()` 重新抓取已載入與載入失敗的表，範圍與同步按鈕的重新抓取相同，但不推送
 > - 佇列等待使用者按同步（見 [docs/auth.md](../../../docs/auth.md)）
 >
 > 推送與讀取的 payload 在開發模式下印至 console（`[api] → / ← / ✗`，`console.debug` 層級）。真後端與假後端都印出，兩邊不一致時可直接比對。
 
-**同步按鈕**固定置於 App Bar 最右側，執行 `store.refresh()`：**先推送，再重抓所有已載入的表**，推送失敗時不重抓。重抓的範圍也包括**載入失敗、尚無資料的表**。
+**同步按鈕**固定置於 App Bar 最右側，執行 `store.refresh()`：**先推送，再重新抓取所有已載入的表**，推送失敗時不重新抓取。重新抓取的範圍也包括**載入失敗、尚無資料的表**。
 
 - 平時一律可按
 - `store.hasPending` 為真時，圖示右下角加一個圓點：有未推送的變更時為 `warning` 色，上次推送失敗時為 `error` 色

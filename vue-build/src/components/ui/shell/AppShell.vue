@@ -179,7 +179,7 @@
       }
 
       const picked = await choose('Sheet已被別處修改', '要強制推送，還是重新抓取？', [
-        { key: 'discard', label: '放棄並重抓' },
+        { key: 'discard', label: '放棄並重新抓取' },
         { key: 'force', label: '強制推送', color: 'error' },
       ])
 

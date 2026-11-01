@@ -31,7 +31,7 @@
 | `loading` | `boolean?` | 載入中 |
 | `error` | `string \| null?` | 載入失敗的訊息 |
 | `empty` | `boolean?` | 已載入完成，但沒有內容可顯示。列表不使用此 prop，空列表即顯示為空 |
-| `emptyText` | `string?` | 預設「找不到這筆資料」 |
+| `emptyText` | `string?` | 預設「找不到這一列」 |
 | `spinner` | `'circular' \| 'linear'?` | 預設 `circular`：置中的圓圈，**取代**內容，用於單一列的頁面。列表使用 `linear`：長條貼在內容上緣，**保留**內容 |
 
 ## Slots

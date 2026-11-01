@@ -93,7 +93,7 @@
 </template>
 
 <style scoped>
-/* stat 的外圍留白，以 --data-stat-inset 告知 DataStat，供其計算格的大小（見 docs/design/chart.md 的「文字統計」） */
+/* stat 的外圍留白，以 --data-stat-inset 告知 DataStat，供其計算格的大小（見 docs/design/chart.md 的「尺寸與樣式」） */
 .chart-page-stat {
   --data-stat-inset: 4px;
 
@@ -120,7 +120,7 @@
   min-height: 0;
 }
 
-/* 圖表置中，寬與高各為 90%，四邊各留白 5% */
+/* 圖表置中，四邊留白（見 docs/design/chart.md 的「尺寸與樣式」） */
 .chart-page__chart {
   width: 90%;
   height: 90%;

@@ -15,7 +15,6 @@
 - **顏色**為 Vuetify 主題的共用色名，登記於 `plugins/vuetify.ts`：`vuesheet-red`、`vuesheet-orange`、`vuesheet-yellow`、`vuesheet-green`、`vuesheet-blue`、`vuesheet-purple`、`vuesheet-grey`。色名的型別為 `ColorName`（`schema/types.ts`），圖表也使用同一組色名
   - 此元件套用 `text-vuesheet-*` 的 class
   - 其他地方也可使用：元件的 `color="vuesheet-red"`，或 `text-vuesheet-red`、`bg-vuesheet-red` 等 class，皆隨深淺色主題切換
-  - 色值取自 Material Design 色板。淺色主題使用較深的色值，深色主題（`.v-theme--dark`）使用較淺的色值。兩者皆以 APCA 對 Vuetify 預設的底色（淺色 `#FFFFFF`、深色 `#212121`）檢查，達 Lc 60 以上
-  - 黃色例外：深色主題為 yellow A700（`#ffd600`）。淺色主題為同一色相（OKLCH）降低亮度至達標的 `#a58a08`，不在色板上
+  - 淺色主題與深色主題（`.v-theme--dark`）各有一組色值，見 [design/README.md](../../design/README.md#尺寸與樣式) 的「尺寸與樣式」
   - 未指定顏色時，沿用所在元素的文字顏色
-- **圖示**的大小約與文字同高。未指定 `iconColor` 時，圖示與文字同色
+- **圖示**的大小見 [design/README.md](../../design/README.md#尺寸與樣式) 的「尺寸與樣式」。未指定 `iconColor` 時，圖示與文字同色

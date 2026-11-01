@@ -205,7 +205,7 @@
   color: rgb(var(--v-theme-error));
 }
 
-/* 有標籤時：標籤與按鈕組兩欄為 38:62，與詳細頁相同。標籤再長也只在左欄內換行 */
+/* 有標籤時：標籤與按鈕組兩欄的比例與詳細頁相同，標籤再長也只在左欄內換行（見 docs/design/detail.md 的「尺寸與樣式」） */
 .field-input__boolean--labeled :deep(.v-input__control) {
   display: grid;
   grid-template-columns: minmax(0, 38fr) minmax(0, 62fr);
@@ -217,7 +217,7 @@
   color: rgba(var(--v-theme-on-surface), var(--v-medium-emphasis-opacity));
 }
 
-/* 按鈕組一律佔所在空間的 62% 並置中。所在空間在有標籤時為右欄，沒有標籤時為整欄 */
+/* 按鈕組佔所在空間的固定比例並置中。所在空間在有標籤時為右欄，沒有標籤時為整欄 */
 .field-input__boolean-toggle {
   width: 62%;
   margin-inline: auto;

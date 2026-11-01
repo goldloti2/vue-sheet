@@ -1,6 +1,6 @@
 import type { Chart, LinearScale, LinearScaleOptions } from 'chart.js'
 
-// 直的數值軸：刻度的間距下限較 Chart.js 的預設大，上限沿用 Chart.js（見 docs/design/chart.md 的「外觀」）
+// 直的數值軸：刻度的間距下限較 Chart.js 的預設大，上限沿用 Chart.js（見 docs/design/chart.md 的「尺寸與樣式」）
 export const SPACED_SCALE = 'spacedLinear'
 const MIN_TICK_SPACING = 28
 

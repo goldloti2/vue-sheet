@@ -59,8 +59,7 @@
   box-shadow: inset 3px 0 0 rgb(var(--v-theme-primary)), var(--list-card-shadow);
 }
 
-/* 動作選單（ViewActions 的 menu、App Bar 的 ⋮）。v-list-item 預設的圖示與文字間距為 32px，
-   圖示為中等強調的透明度；此處縮小間距，圖示則與其他位置同樣深淺 */
+/* 動作選單（ViewActions 的 menu、App Bar 的 ⋮）：縮小 v-list-item 預設的圖示與文字間距，圖示與其他位置同樣深淺（見 docs/design/list.md 的「尺寸與樣式」） */
 .action-menu {
   --v-list-prepend-gap: 20px;
 }

@@ -86,7 +86,7 @@
 </template>
 
 <style scoped>
-/* 整格為 3:4：上方為寬度撐滿的正方形圖片，下方剩餘的 1/4 為文字區 */
+/* 整格的比例固定：上方為正方形圖片，下方剩餘的高度為文字區（見 docs/design/list.md 的「尺寸與樣式」） */
 .gallery-item {
   box-sizing: border-box;
   aspect-ratio: 3 / 4;
@@ -110,7 +110,7 @@
   border-radius: 50%;
 }
 
-/* 圖片上、左、右各留白 8px，仍為正方形 */
+/* 圖片上、左、右留白，仍為正方形 */
 .gallery-item__image {
   display: block;
   flex: none;
@@ -134,7 +134,7 @@
   padding: 8px 12px;
 }
 
-/* 右側留出 ⋮ 的寬度（按鈕 32px + 距右緣 4px，扣除文字區的內距 12px，再留 4px 間隔） */
+/* 右側留出 ⋮ 的寬度：按鈕的寬與距右緣的距離，扣除文字區的內距，再留一點間隔 */
 .gallery-item__subtitle {
   margin-right: 28px;
 }
@@ -150,7 +150,7 @@
   content: '\200b';
 }
 
-/* 文字區右下，距右緣與底緣各 2px。疊於連結之上由 list-row-above-link 負責 */
+/* 文字區右下。疊於連結之上由 list-row-above-link 負責 */
 .gallery-item__actions {
   position: absolute;
   right: 2px;

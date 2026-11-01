@@ -163,7 +163,7 @@ export const orderSchema: TableSchema<OrderRow> = {
   - `DataList` 顯示為縮圖，`DataProfile` 顯示為圓形頭像
   - `DataCard` 依所在的組顯示為頭像或大圖
   - `DataGallery` 顯示為正方形圖片
-  - 未指定時不顯示，`DataGallery` 以灰色方塊佔位
+  - 未指定時不顯示，`DataGallery` 以方塊佔位
 - **表單為純文字欄位**：貼上網址、Drive 連結或整段 SVG。上傳到 Drive 尚未實作
 - **不進入搜尋與篩選**
 
@@ -208,7 +208,7 @@ export const orderSchema: TableSchema<OrderRow> = {
   - 顏色取第一條有指定顏色的規則
   - 圖示依規則的順序全部顯示，各自帶有自己的顏色
   - 粗體等字形，任一條規則有即套用
-- **顏色在深淺色主題各有一組色值**：淺色主題較深，深色主題較淺，兩者皆清楚可見。這些顏色登記為 Vuetify 主題的共用色名 `vuesheet-*`，條件式格式以外的地方也可使用（色值見 [FormattedValue](../components/view/FormattedValue.md)）
+- **顏色在深淺色主題各有一組色值**：這些顏色登記為 Vuetify 主題的共用色名 `vuesheet-*`，條件式格式以外的地方也可使用（使用方式見 [FormattedValue](../components/view/FormattedValue.md)，色值見 [design/README.md](../design/README.md#尺寸與樣式) 的「尺寸與樣式」）
 - **值為空時完全空白**，不顯示圖示
 - **套用於所有顯示值的地方**：詳細頁的欄位與標頭、列表 view 的各位置、表格的儲存格
 - **不套用的地方**：表單與快速編輯的輸入框、圖片欄位，以及 `id`、`$label` 這類不是 schema 欄位的位置

@@ -45,11 +45,11 @@ view 中列上動作（`actions`）的呈現元件，依 `variant` 提供三種�
 ## 備註
 
 - **`display`**：適用於 `row` 與 `slots`
-  - `'text'` 以主色文字顯示
+  - `'text'` 以文字按鈕顯示
   - 其餘值（包括未指定）以圖示顯示，並以 `label` 作為 `aria-label`
 - **`menu` 的樣式**：
   - 一律同時顯示圖示與文字
-  - 選單帶有 `action-menu` class：圖示與文字的間距縮小為 20px，圖示不套用 `v-list-item` 預設的中等強調透明度，與其他位置的圖示深淺相同
+  - 選單帶有 `action-menu` class：圖示與文字的間距較 `v-list-item` 的預設小，圖示不套用預設的中等強調透明度，與其他位置的圖示深淺相同。間距見 [design/list.md](../../design/list.md#尺寸與樣式) 的「尺寸與樣式」
   - App Bar 的 ⋮ 選單也帶有此 class。樣式定義於 `src/styles/list.css`
 - **`menu` 的選單於第一次按下 ⋮ 時才掛上**：每一列平時只有一個原生按鈕。`v-menu` 在該列第一次開啟時才建立，之後的開關交由 `v-menu` 綁定於該按鈕的事件處理
 - **按鈕為原生 `<button>` 加上 `v-icon`，不是 `v-btn`**，沒有波紋等效果

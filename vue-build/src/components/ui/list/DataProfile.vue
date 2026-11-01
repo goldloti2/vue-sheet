@@ -89,7 +89,7 @@
   width: 100%;
   padding: 12px 8px 12px 16px;
   margin-bottom: var(--list-card-gap);
-  /* 畫面外的卡片不排版。68px 為量得實際高度之前的替代值 */
+  /* 畫面外的卡片不排版。替代值為卡片的高度（見 docs/design/list.md 的「尺寸與樣式」） */
   content-visibility: auto;
   contain-intrinsic-size: auto 68px;
   border-radius: var(--list-card-radius);

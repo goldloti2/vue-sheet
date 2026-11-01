@@ -43,9 +43,9 @@
 
 ## 備註
 
-- **整頁時，可用的空間為 App Bar 與底部之間**，高度至少 280px
+- **整頁時，可用的空間為 App Bar 與底部之間**，高度有下限（見 [design/chart.md](../../design/chart.md#尺寸與樣式) 的「尺寸與樣式」）
 - **位於 dashboard 的面板中時，可用的空間為面板的內容區**（見 [DashboardPanel](../panel/DashboardPanel.md) 的備註），不設最小高度。面板展開時，視為整頁
-- **圖表置中，寬與高各為可用空間的 90%**，四邊各留白 5%。可用空間不另加內距
+- **圖表置中，四邊留白**，留白的比例見同一處。可用空間不另加內距
 - 沒有列時，畫出空的圖表
-- **stat 的高度隨內容**：不使用以上的高度與留白。此元件於外圍留白，並以 `--data-stat-inset` 告知 `DataStat`（留白的寬度見 [design/chart.md](../../design/chart.md#文字統計) 的「文字統計」）
+- **stat 的高度隨內容**：不使用以上的高度與留白。此元件於外圍留白，並以 `--data-stat-inset` 告知 `DataStat`（留白的寬度見 [design/chart.md](../../design/chart.md#尺寸與樣式) 的「尺寸與樣式」）
 - 標題由頁面決定：單獨成頁時為 App Bar 的標題，面板中為面板的標題

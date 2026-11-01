@@ -91,7 +91,7 @@
   overflow: visible;
 }
 
-/* 展開箭頭與標題之間的間距：Vuetify 預設 32px，dashboard 的窄面板中會擠掉標題，改為 8px */
+/* 展開箭頭與標題之間的間距較 Vuetify 的預設小，窄面板中也放得下標題（見 docs/design/list.md 的「尺寸與樣式」） */
 .grouped-list :deep(.v-list-group__header) {
   --v-list-prepend-gap: 8px;
 }

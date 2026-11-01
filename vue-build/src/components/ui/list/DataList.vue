@@ -81,7 +81,7 @@
   box-sizing: border-box;
   width: 100%;
   padding: 12px 16px;
-  /* 畫面外的列不排版。72px 為量得實際高度之前的替代值 */
+  /* 畫面外的列不排版。替代值為一列的高度（見 docs/design/list.md 的「尺寸與樣式」） */
   content-visibility: auto;
   contain-intrinsic-size: auto 72px;
   border-left: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
@@ -89,7 +89,7 @@
   border-bottom: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
 }
 
-/* 多出一行 32px 的按鈕與 4px 的間距 */
+/* 另加動作列的高度 */
 .list-item--with-actions {
   contain-intrinsic-size: auto 108px;
 }

@@ -48,7 +48,7 @@
   position: relative;
 }
 
-/* 固定 16:9，裁切填滿。寬螢幕上以 40vh 為上限 */
+/* 比例固定，裁切填滿，高度有上限（見 docs/design/detail.md 的「尺寸與樣式」） */
 .detail-header__image {
   display: block;
   width: 100%;

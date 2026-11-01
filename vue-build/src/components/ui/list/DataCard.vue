@@ -146,7 +146,7 @@
   border-radius: 50%;
 }
 
-/* 第 1 層：12px 上下內距 + 40px 頭像 = 64px */
+/* 第 1 層：上下內距加頭像（見 docs/design/list.md 的「尺寸與樣式」） */
 .card-item__header {
   display: flex;
   align-items: center;
@@ -166,7 +166,7 @@
   min-width: 0;
 }
 
-/* 第 2 層：固定 16:9、裁切填滿，載入前即確定高度 */
+/* 第 2 層：比例固定、裁切填滿，載入前即確定高度 */
 .card-item__image {
   display: block;
   width: 100%;
@@ -221,7 +221,7 @@
   }
 }
 
-/* 第 4 層：8px 上下內距 + 32px 按鈕 = 48px。只有按鈕接收點擊，空白處仍落在連結上 */
+/* 第 4 層：上下內距加按鈕。只有按鈕接收點擊，空白處仍落在連結上 */
 .card-item__actions {
   padding: 8px;
   pointer-events: none;

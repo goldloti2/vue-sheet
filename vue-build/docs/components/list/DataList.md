@@ -26,7 +26,7 @@
 | `subtitle` | 右上 |
 | `summary` | 左下 |
 | `aside` | 右下 |
-| `image` | 左側 48×48 的縮圖，經由 `imageSrc` 轉換 |
+| `image` | 左側的縮圖，經由 `imageSrc` 轉換。大小見 [design/list.md](../../design/list.md#尺寸與樣式) 的「尺寸與樣式」 |
 | `actions` | 右下角欄位的下一行，由 [ViewActions](../view/ViewActions.md) 呈現：由左往右排列，整組靠右，`null` 略過。沒有動作時不佔高度。多選模式下隱藏 |
 
 - 格式化的方式依欄位型別而定，與詳細頁相同（`formatColumnValue`）。例如日期依日期格式顯示，`ref` 欄位顯示父列的名稱
@@ -45,7 +45,7 @@
 | `selectable` | `boolean?` | 預設 `false`。開啟時才綁定長按的監聽，並禁止選取文字與拖曳 |
 | `selectMode` | `boolean?` | 目前是否為多選模式 |
 | `selected` | `boolean?` | 這一列是否已選取 |
-| `current` | `boolean?` | dashboard 開啟互動時，這一列是否為選取的那一列。選取的那一列左側有一條主色的細邊，可與多選的淡底同時出現 |
+| `current` | `boolean?` | dashboard 開啟互動時，這一列是否為選取的那一列。選取的那一列左側有一條細邊，可與多選的淡底同時出現 |
 | `pickable` | `boolean?` | dashboard 開啟互動時為 `true`：點擊改為發出 `pick`，不導覽 |
 
 ## Emits
@@ -67,5 +67,5 @@
   - 整列的外層為一個 `div`，連結與動作列並列
   - 連結以 `::after` 覆蓋整列，動作列疊於連結之上，寬度只包住按鈕
   - 因此動作列的空白處仍屬於連結：點擊進入詳細頁，長按進入多選。按鈕本身不觸發導覽與長按
-- **`content-visibility: auto`**：瀏覽器不排版與繪製畫面外的列。`contain-intrinsic-size: auto 72px` 為量得實際高度之前的替代值。有動作列時為 `108px`，多出一行 32px 的按鈕與 4px 的間距。dashboard 的窄版沿用同一個值。列的版型大幅變動時，須一併調整此數值
+- **`content-visibility: auto`**：瀏覽器不排版與繪製畫面外的列。`contain-intrinsic-size` 為量得實際高度之前的替代值，取一列的高度，有動作列時另加動作列的高度（見 [design/list.md](../../design/list.md#尺寸與樣式) 的「尺寸與樣式」）。dashboard 的窄版沿用同一個值。列的版型大幅變動時，須一併調整此數值
 - **dashboard 中的窄版**：所在面板為[窄面板](../../design/dashboard.md#窄面板)時，只顯示標題與副標，兩者上下排列並靠左，左下與右下隱藏。一般頁面不會觸發窄版

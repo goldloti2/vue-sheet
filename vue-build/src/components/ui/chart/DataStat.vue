@@ -126,7 +126,7 @@
 </template>
 
 <style scoped>
-/* 格的大小見 docs/design/chart.md 的「文字統計」。--data-stat-unit 與 --data-stat-space 由 script 指定，--data-stat-inset 由外層指定 */
+/* 格的大小見 docs/design/chart.md 的「文字統計」與「尺寸與樣式」。--data-stat-unit 與 --data-stat-space 由 script 指定，--data-stat-inset 由外層指定 */
 /* 算式為格數加間隔，扣除兩側的留白與外框 2px。再少 1px，避免小數誤差產生捲軸 */
 .data-stat {
   display: grid;

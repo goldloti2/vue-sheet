@@ -38,6 +38,6 @@
 | `subtitle` | `DisplayValue?` | 右上 |
 | `summary` | `DisplayValue?` | 左下 |
 | `aside` | `DisplayValue?` | 右下 |
-| `image` | `(string \| null)?` | 左側 48×48 的縮圖，須為已轉換的 src。為 `null` 時保留同大小的空白，為 `undefined` 時不顯示 |
+| `image` | `(string \| null)?` | 左側的縮圖，須為已轉換的 src。為 `null` 時保留同大小的空白，為 `undefined` 時不顯示 |
 | `selectMode` | `boolean?` | 顯示勾選圖示 |
 | `selected` | `boolean?` | 勾選圖示是否為已選取的狀態 |

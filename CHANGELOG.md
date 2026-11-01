@@ -1,5 +1,43 @@
 # 版本紀錄
 
+## v1.7
+
+- **圖表**：頁面以 `defineChart` 宣告一張表的列如何畫成一張圖表，交給整頁版型 `ChartPage`。圖表可單獨成頁，也可置於儀表板的面板或頁籤頁的頁籤。以 Chart.js 繪製，支援 bar、line、pie、doughnut、polarArea、radar、scatter 與 bubble。Chart.js 於圖表掛載時才載入，沒有圖表的頁面不下載。範本見 `vue-build/template/pages/chart.vue`，說明見 [vue-build/docs/topics/chart.md](vue-build/docs/topics/chart.md)，外觀與用途見 [vue-build/docs/design/chart.md](vue-build/docs/design/chart.md)
+  - 分組類的圖表依一欄分組，可再依另一欄分成系列。每組算出數量、總和、平均、最大或最小，可以百分比顯示
+  - `stat` 也可為函數，以一組的列為參數、回傳數值，例如中位數。第二個參數提供各組的列與此組的位置，可計算與前一組相比的增長或累計。此時 `label` 必填，`unit` 指定值的格式。說明見 [vue-build/docs/topics/chart.md](vue-build/docs/topics/chart.md) 的「數值」
+  - 日期依年、月或日分組，數字與時長等分成幾段。組數較多時，較小的組合併為「其他」
+  - scatter 與 bubble 每一列為一個點
+  - 點擊一組時進入該組第一列的詳細頁，上一列、下一列只在該組的列之間切換。`ChartPage` 的 `clickable` 設為 `false` 時，點擊圖表與圖例皆沒有反應
+  - 顏色使用 Chart.js 預設的七色色盤，填色為半透明。圖例依圖表的比例置於右側或上方。圖例與橫向長條圖的分組名稱放不下時換行
+  - `colors` 依名稱指定組或 dataset 的顏色，色名與條件式格式相同。「(空白)」與「其他」以 `chartBlank`、`chartOthers` 指定。未指定的依序輪流，不與已指定的顏色重複
+  - 軸上的值皆為整數時，例如數量，刻度只取整數
+  - 直的數值軸，刻度的間距至少 28px，矮的圖表格線不再密集。說明見 [vue-build/docs/design/chart.md](vue-build/docs/design/chart.md) 的「尺寸與樣式」
+  - 置於儀表板的面板時，圖表填滿面板的內容區，不設最小高度
+- **文字統計**：`defineChart` 新增 `type: 'stat'`，以文字顯示每一組的每一個數值，不使用 Chart.js。`group` 可省略，此時全部的列為一組。數值可指定 `sign`（正數加「+」）、`suffix`（單位）與 `textColor`（數字的顏色，可依數值決定）。格的大小固定，儀表板中並排的文字統計彼此對齊。放在儀表板的面板中時，格子以面板的外框為框，左側的色塊貼齊面板的邊。說明見 [vue-build/docs/topics/chart.md](vue-build/docs/topics/chart.md)，外觀見 [vue-build/docs/design/chart.md](vue-build/docs/design/chart.md) 的「文字統計」
+- **圖表的高光**：圖表忽略自己分組欄與系列欄上的篩選條件，仍畫出全部的組與系列。符合條件的加上高光，其他的調淡。`useListPage` 新增 `ignoreFilter`，指定不套用至 `rows` 的欄位。說明見 [vue-build/docs/topics/chart.md](vue-build/docs/topics/chart.md) 的「分組欄與系列欄上的條件」
+- **以圖表篩選**：點擊圖例時，勾選或取消該組或該系列，與篩選抽屜的勾選相同，可複選。開啟互動的儀表板中，點擊圖表的一組即篩選出這一組，再點擊同一組即取消。日期與數字的區間以新的條件 `segment` 寫入，篩選抽屜以「圖表選取：」顯示。說明見 [vue-build/docs/topics/chart.md](vue-build/docs/topics/chart.md) 的「點擊」
+- **側邊欄的頁面清單**：`config/navigation.ts` 新增 `drawerSections`，列出放在側邊欄的頁面。頁面可以分組，有標題的組可以展開與收合，目前的頁面所在的組自動展開。側邊欄的頁面與底部導覽列相同，為頂層頁面。電腦版開啟後與內容並排，換頁時不收起。側邊欄改為獨立的元件 `NavDrawer`，上方顯示 App 名稱，「登出」移至最下方。說明見 [vue-build/docs/components/shell/NavDrawer.md](vue-build/docs/components/shell/NavDrawer.md)
+- **底部導覽列最多 5 項**：超過時只顯示前 5 項，開發模式下以 console 警告。按鈕平分整列的寬度，不再有最小寬。修正項目過多或畫面較窄時，頭尾的按鈕超出畫面
+- App 中的文字依用詞表統一：詳細頁箭頭的 `aria-label` 改為「上一列」「下一列」，「找不到這筆資料」改為「找不到這一列」，衝突時的選項「放棄並重抓」改為「放棄並重新抓取」
+- 儀表板面板的內容區改為 size container，面板中的內容可依面板的高度排版，例如以 `cqh` 指定高度
+- **共用色名**：條件式格式的七種顏色登記為 Vuetify 主題色 `vuesheet-red`、`vuesheet-orange`、`vuesheet-yellow`、`vuesheet-green`、`vuesheet-blue`、`vuesheet-purple`、`vuesheet-grey`，隨深淺色主題切換。其他地方也可使用：元件的 `color="vuesheet-red"`，或 `text-vuesheet-red`、`bg-vuesheet-red` 等 class。色值改為引用 `vuetify/util/colors` 的色板，結果不變。說明見 [vue-build/docs/components/view/FormattedValue.md](vue-build/docs/components/view/FormattedValue.md)
+- 文件依新的寫作規則改寫：不用分號、限制句長、一句一事，並統一用詞，例如「列」不寫成「筆」
+- 外觀的尺寸、間距與顏色集中於 `vue-build/docs/design/` 各文件的「尺寸與樣式」。元件與機制的文件只寫位置與行為，並連至該處
+- **放大鏡標示過濾中**：有搜尋字串或篩選條件時，App Bar 的放大鏡為主色，搜尋列收起時也看得出列表正被過濾
+- **儀表板的篩選往下連動**：開啟互動時，子表的列，其父列也須符合父表的篩選條件，多層皆適用。子表的篩選抽屜顯示「另受『父表』的條件影響」，點選即切換至該表。說明見 [vue-build/docs/components/panel/DashboardPage.md](vue-build/docs/components/panel/DashboardPage.md) 的「互動」
+- **列表順序改為點擊時發布**：點擊一列時，列表才發布畫面上的順序，詳細頁的上一列、下一列依此切換。一般換頁的行為不變。互動儀表板中，選取一列後再修改篩選，詳細面板的上一列、下一列仍依選取時的順序。說明見 [vue-build/docs/components/record/RecordNav.md](vue-build/docs/components/record/RecordNav.md)
+- **deck 的單側延伸**：view 省略右側的兩個位置（副標與補充）時，左側延伸至整行。省略左側的兩個位置（標題與摘要）時，右側延伸至整行並靠右。說明見 [vue-build/docs/components/list/DataList.md](vue-build/docs/components/list/DataList.md)
+- 修正：沒有可搜尋欄位（`searchable` 中沒有 `text` 或 `ref`）的表，輸入搜尋字串後一列都不剩。這類表現在不受搜尋影響
+- 修正：從一個頁籤頁換到頁籤名稱不同的另一個頁籤頁時，新頁面的內容滑出，畫面空白
+- 修正：詳細頁的就地編輯欄位以非 passive 的觸控事件攔截滑動，Chrome 於 console 顯示效能警告
+
+### 不相容的變更
+
+- `useListOrder(table, ids)` 移除，改為 `provideListOrder(table, ids)`。只有不使用 `ListPage`、自行發布順序的頁面須修改
+- `config/navigation.ts` 須另外 export `drawerSections`（側邊欄沒有頁面時為空陣列）。底部導覽列超過 5 項時，第 6 項起須移至 `drawerSections`
+- 條件式格式的色名型別 `FormatColor` 改名為 `ColorName`，圖表也使用這個型別。只有 import 這個型別的程式須修改
+- 儀表板的格子細分為原本的一半：手機寬 12 格，電腦寬 48 格。`layout` 中的寬與高須乘以 2，座標 n 須改為 2n − 1。面板的實際大小不變。說明見 [vue-build/docs/design/dashboard.md](vue-build/docs/design/dashboard.md) 的「尺寸」與「排版」
+
 ## v1.6
 
 - **條件式格式**：表層級的 `formatRules` 依條件改變指定欄位的顏色、粗體、斜體、底線、刪除線，或在值前面加上圖示，套用於詳細頁、列表的各版面與表格。說明見 [vue-build/docs/topics/schema.md](vue-build/docs/topics/schema.md) 的「條件式格式」

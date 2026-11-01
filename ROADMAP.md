@@ -10,7 +10,8 @@
 
 ### 前端骨架
 - Vue 3 + TypeScript + Vuetify，unplugin-vue-router 檔案式路由，Pinia
-- `AppShell`：頂部的 App Bar（標題來自 `route.meta.title`）、底部導覽列與側邊欄（目前只有登出）。`meta.shell: false` 的頁面三者皆不顯示
+- `AppShell`：頂部的 App Bar（標題來自 `route.meta.title`）、底部導覽列與側邊欄。`meta.shell: false` 的頁面三者皆不顯示
+- 底部導覽列最多 5 項，其他的頂層頁面置於側邊欄（`NavDrawer`）。側邊欄的頁面可以分組，有標題的組可以展開與收合，最下方為登出
 - App Bar 左側的圖示依路由自動切換漢堡選單或返回箭頭
 - 頁面前進、後退的轉場動畫：
   - 方向依五層規則判定：網址相同時依瀏覽器歷史的前後 → 導覽列的順序 → 回到頂層 → 同一路由換 id 時依列表順序 → 瀏覽器歷史的前後
@@ -328,7 +329,7 @@
 | card（小） | **profile** | ✅ `DataProfile`，見下方 |
 | card（大） | **card** | ✅ `DataCard`，見下方 |
 | gallery | **gallery** | ✅ `DataGallery`，圖片加上標題的格狀排列，見下方 |
-| chart | **chart** | 🔲 預定於 v1.7，見下方 |
+| chart | **chart** | ✅ `ChartPage`、`DataChart`、`DataStat`，見下方 |
 | dashboard（分頁） | **tab** | ✅ `TabPage` |
 | dashboard（全部顯示、連動） | **dashboard** | ✅ `DashboardPage`，見下方 |
 | calendar | — | 把資料當成事件放上日曆，通常依日期與時間欄位。暫不考慮 |
@@ -383,7 +384,7 @@ view 的規則：
 - 有圖片時：寬度貼齊畫面兩側，固定 16:9，裁切填滿，高度以 `40vh` 為上限。文字為白色，底下墊一層由透明至深色的漸層
 - 沒有圖片時：背景透明，寬度與欄位區相同，高度只有文字的高度
 
-**chart**（🔲 預定於 v1.7。規則見 [vue-build/docs/topics/chart.md](vue-build/docs/topics/chart.md)，外觀與操作見 [vue-build/docs/design/chart.md](vue-build/docs/design/chart.md)）：以一張表的列畫一張圖表。
+**chart**（✅ v1.7。規則見 [vue-build/docs/topics/chart.md](vue-build/docs/topics/chart.md)，外觀與操作見 [vue-build/docs/design/chart.md](vue-build/docs/design/chart.md)）：以一張表的列畫一張圖表。
 - ✅ `defineChart` 的輸入型別，以及開發模式下的檢查（`schema/chart.ts`）
 - ✅ `compute`：分組、統計、排序，以及合併為「其他」
 - ✅ `DataChart`：Chart.js 的建立、更新與銷毀，以及顏色。Chart.js 延遲載入
@@ -394,7 +395,9 @@ view 的規則：
 - ✅ 以 `colors` 依名稱指定組或 dataset 的顏色，色名與條件式格式相同
 - ✅ 軸上的值皆為整數時，刻度只取整數
 - ✅ 直的數值軸，刻度間距的下限加大為約兩行字高
-- ✅ 自訂的統計：`stat` 可為以一組的列為參數、回傳數值的函數
+- ✅ 自訂的統計：`stat` 可為以一組的列為參數、回傳數值的函數。第二個參數提供各組的列與此組的位置
+- ✅ 圖例與橫向長條圖的分組名稱放不下時換行
+- ✅ 文字統計置於儀表板的面板中時，以面板的外框為框（`usePanelBordered`）
 
 **tab**：一次只顯示一個面板，以頁籤切換，即現有的 `TabPage`。
 
@@ -414,7 +417,7 @@ view 的規則：
 - App 圖示尚未決定，名稱在 `src/config/app.ts`
 
 ### 桌面版
-- 桌面版的導覽 UI 待定：是否改為常駐的側邊欄、底部導覽列是否在桌面上隱藏，等處理桌面的體驗時再決定
+- 桌面版的導覽 UI 待定：側邊欄是否預設開啟、底部導覽列是否在桌面上隱藏，等處理桌面的體驗時再決定。側邊欄目前於電腦版開啟後與內容並排，換頁時不收起
 - 手機與電腦排版的切換門檻待定：`useCompactLayout()` 暫時沿用 Vuetify `mobile` 的 1145px。平板直放應使用 dashboard 的 48 格，門檻可能須調低，例如 840px
 
 ### 部署

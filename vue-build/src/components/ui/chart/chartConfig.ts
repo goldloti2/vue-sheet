@@ -1,6 +1,6 @@
 import type { ChartColors, ChartData, ChartDefinition, ChartUnit } from '@/schema/chart'
 import type { ColorName } from '@/schema/types'
-import type { Chart, ChartConfiguration } from 'chart.js'
+import type { Chart, ChartConfiguration, LegendItem, Scale } from 'chart.js'
 import { formatDate, formatDuration } from '@/schema/types'
 import { SPACED_SCALE } from './chartScale'
 
@@ -35,6 +35,84 @@ export interface ChartMarks {
 const BUBBLE_MIN_RADIUS = 4
 const BUBBLE_MAX_RADIUS = 20
 export const DIM_OPACITY = 0.25
+const LEGEND_BOX_WIDTH = 12
+
+// 中日韓文字逐字為一段，其他文字以空白分段
+const WRAP_TOKENS = /[\p{sc=Han}\p{sc=Hiragana}\p{sc=Katakana}\p{sc=Hangul}]|[^\s\p{sc=Han}\p{sc=Hiragana}\p{sc=Katakana}\p{sc=Hangul}]+|\s+/gu
+
+// 依寬度將文字分成多行：中日韓文字可於任何字之間斷開，其他文字優先於空白處斷開，單字仍放不下時逐字斷開。只有一行時回傳字串
+export function wrapText (text: string, maxWidth: number, measure: (part: string) => number): string | string[] {
+  if (maxWidth <= 0 || measure(text) <= maxWidth) {
+    return text
+  }
+  const lines: string[] = []
+  let line = ''
+  const push = (token: string) => {
+    if (line === '' || measure(line + token) <= maxWidth) {
+      line += token
+      return
+    }
+    lines.push(line.trimEnd())
+    line = token.trimStart()
+  }
+  for (const token of text.match(WRAP_TOKENS) ?? []) {
+    if (measure(token) <= maxWidth) {
+      push(token)
+    } else {
+      for (const char of token) {
+        push(char)
+      }
+    }
+  }
+  if (line.trim() !== '') {
+    lines.push(line.trimEnd())
+  }
+  return lines.length > 1 ? lines : lines[0] ?? text
+}
+
+// Chart.js 解析後的字型選項
+interface ResolvedFont {
+  size: number
+  family: string
+  style?: string
+  weight?: string | number | null
+}
+
+// 以指定的字型量測文字的寬度，完成後還原 ctx。未指定的項目取自圖表的全域字型
+function withFont<T> (chart: Chart, font: Partial<ResolvedFont> | undefined, run: (measure: (part: string) => number) => T): T {
+  const base = chart.options.font as ResolvedFont
+  const size = font?.size ?? base.size
+  const ctx = chart.ctx
+  ctx.save()
+  ctx.font = [font?.style ?? base.style, font?.weight ?? base.weight, `${size}px`, font?.family ?? base.family].filter(Boolean).join(' ')
+  const result = run(part => ctx.measureText(part).width)
+  ctx.restore()
+  return result
+}
+
+// 圖例的文字依 Chart.js 分給圖例的寬度換行。Chart.js 於呼叫 generateLabels 之前已設定圖例的 maxWidth
+function wrapLegend (chart: Chart, items: LegendItem[]): LegendItem[] {
+  const legend = (chart as unknown as { legend?: { maxWidth?: number, options: { labels: { padding: number, font?: Partial<ResolvedFont> } } } }).legend
+  if (!legend?.maxWidth) {
+    return items
+  }
+  const { padding, font } = legend.options.labels
+  const size = font?.size ?? (chart.options.font as ResolvedFont).size
+  // 圖例的寬為留白、色塊、色塊與文字的間距與文字。Chart.js 於直排的圖例另加 10px
+  const width = legend.maxWidth - padding - 10 - LEGEND_BOX_WIDTH - size / 2
+  return withFont(chart, font, measure => items.map(item => ({ ...item, text: wrapText(item.text, width, measure) as string })))
+}
+
+// 分組軸的名稱依軸的寬度換行，用於橫向的長條圖。Chart.js 於此 hook 之前已設定軸的 maxWidth，之後才量測名稱的大小
+function wrapAxisLabels (scale: Scale): void {
+  const { grid, ticks } = scale.options as unknown as { grid: { tickLength: number }, ticks: { padding: number, font?: Partial<ResolvedFont> } }
+  const width = scale.maxWidth - grid.tickLength - ticks.padding
+  withFont(scale.chart, ticks.font, measure => {
+    for (const tick of scale.ticks) {
+      tick.label = typeof tick.label === 'string' ? wrapText(tick.label, width, measure) : tick.label
+    }
+  })
+}
 
 // 以 #rrggbb 加上不透明度。不是 #rrggbb 時原樣回傳
 export function withAlpha (color: string, opacity: number): string {
@@ -205,7 +283,12 @@ function categoryConfig (definition: ChartShape, data: Extract<ChartData<object>
     // 直的數值軸使用刻度間距有下限的軸
     const valueType = definition.horizontal ? {} : { type: SPACED_SCALE }
     scales = {
-      [indexAxis]: { stacked: definition.stacked, grid: { color: theme.grid }, ticks: { color: theme.text } },
+      [indexAxis]: {
+        stacked: definition.stacked,
+        grid: { color: theme.grid },
+        ticks: { color: theme.text },
+        ...(definition.horizontal ? { afterTickToLabelConversion: wrapAxisLabels } : {}),
+      },
       [valueAxis]: { ...valueType, stacked: definition.stacked, beginAtZero: true, ...axisStyle(theme, leftUnit, leftValues) },
       ...(hasRight
         ? { right: { ...valueType, position: definition.horizontal ? 'top' : 'right', beginAtZero: true, ...axisStyle(theme, rightUnit, rightValues), grid: { drawOnChartArea: false } } }
@@ -271,6 +354,24 @@ function pointConfig (definition: ChartShape, data: Extract<ChartData<object>, {
         y: { type: SPACED_SCALE, ...axisStyle(theme, data.yUnit, data.datasets.flatMap(dataset => dataset.data.map(point => point.y))) },
       },
       plugins: {
+        // 與分組類的圖表相同，圖例列出各 dataset，只有一個 dataset 時不顯示
+        legend: {
+          display: data.datasets.length > 1,
+          labels: {
+            generateLabels: (chart: Chart) => data.datasets.map((dataset, index) => {
+              const on = marks.datasets?.[index] ?? true
+              return {
+                text: dataset.label,
+                fillStyle: shade(palette[index] ?? '', on, FILL_OPACITY),
+                strokeStyle: shade(palette[index] ?? '', on),
+                lineWidth: 1,
+                hidden: !chart.isDatasetVisible(index),
+                datasetIndex: index,
+                fontColor: theme.text,
+              }
+            }),
+          },
+        },
         tooltip: {
           callbacks: {
             label: context => {
@@ -290,12 +391,26 @@ export function buildConfig (definition: ChartShape, data: ChartData<object>, th
     ? categoryConfig(definition, data, theme, marks)
     : pointConfig(definition, data, theme, marks)
   const plugins = config.options?.plugins
+  const labels = plugins?.legend?.labels
+  const generate = labels?.generateLabels
   config.options = {
     ...config.options,
     responsive: true,
     maintainAspectRatio: false,
     color: theme.text,
-    plugins: { ...plugins, legend: { ...plugins?.legend, labels: { ...plugins?.legend?.labels, color: theme.text } } },
+    plugins: {
+      ...plugins,
+      legend: {
+        ...plugins?.legend,
+        labels: {
+          ...labels,
+          color: theme.text,
+          boxWidth: LEGEND_BOX_WIDTH,
+          // 各種圖表的圖例文字皆依寬度換行
+          ...(generate ? { generateLabels: (chart: Chart) => wrapLegend(chart, generate(chart)) } : {}),
+        },
+      },
+    },
   }
   return config
 }

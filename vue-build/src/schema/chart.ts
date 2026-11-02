@@ -506,8 +506,8 @@ function rangeBuckets<Row> (rows: readonly Row[], column: AnyColumn, bins: numbe
   return buckets
 }
 
-// select、boolean 等依值本身分組，每個出現過的值為一組
-function valueBuckets<Row> (rows: readonly Row[], column: AnyColumn, blank: Row[]): Bucket<Row>[] {
+// select、boolean 等依值本身分組，每個出現過的值為一組，以值的字串為鍵
+function valueBuckets<Row> (rows: readonly Row[], column: AnyColumn, blank: Row[]): Map<string, Bucket<Row>> {
   const buckets = new Map<string, Bucket<Row>>()
   for (const row of rows) {
     const value = (row as Cell)[column.key]
@@ -516,15 +516,27 @@ function valueBuckets<Row> (rows: readonly Row[], column: AnyColumn, blank: Row[
       continue
     }
     const id = String(value)
-    const bucket = buckets.get(id) ?? {
-      label: typeof value === 'boolean' ? booleanText(value) : id,
-      filter: { key: column.key, condition: { values: [id] } },
-      rows: [],
-    }
+    const bucket = buckets.get(id) ?? valueBucket<Row>(column, id)
     bucket.rows.push(row)
     buckets.set(id, bucket)
   }
-  return [...buckets.values()]
+  return buckets
+}
+
+function valueBucket<Row> (column: AnyColumn, id: string): Bucket<Row> {
+  return {
+    label: column.type === 'boolean' ? booleanText(id === 'true') : id,
+    filter: { key: column.key, condition: { values: [id] } },
+    rows: [],
+  }
+}
+
+// 沒有列也要成為一組的值：select 的 options，boolean 的否與是
+function declaredValues (column: AnyColumn): string[] {
+  if (column.type === 'select') {
+    return column.options
+  }
+  return column.type === 'boolean' ? ['false', 'true'] : []
 }
 
 // 依分組本身排序。「(空白)」一律排在最後
@@ -541,9 +553,17 @@ function groupBuckets<Row> (schema: TableSchema, rows: readonly Row[], column: A
       buckets.reverse()
     }
   } else {
-    // 以各組的第一列交給 sortRows，排序規則與列表相同
-    const byFirstRow = new Map(valueBuckets(rows, column, blank).map(bucket => [bucket.rows[0], bucket]))
-    buckets = sortRows([...byFirstRow.keys()], schema, [{ key: column.key, direction }]).map(row => byFirstRow.get(row)!)
+    // 宣告的值依宣告的順序在前，其餘的值以各組的第一列交給 sortRows，排序規則與列表相同。降序時反轉
+    const found = valueBuckets(rows, column, blank)
+    const declared = declaredValues(column)
+    const byFirstRow = new Map([...found].filter(([id]) => !declared.includes(id)).map(([, bucket]) => [bucket.rows[0], bucket]))
+    buckets = [
+      ...declared.map(id => found.get(id) ?? valueBucket<Row>(column, id)),
+      ...sortRows([...byFirstRow.keys()], schema, [{ key: column.key, direction: 'asc' }]).map(row => byFirstRow.get(row)!),
+    ]
+    if (direction === 'desc') {
+      buckets.reverse()
+    }
   }
 
   if (blank.length > 0 && !group.excludeBlank) {

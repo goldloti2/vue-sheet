@@ -38,6 +38,10 @@
 - 條件式格式的色名型別 `FormatColor` 改名為 `ColorName`，圖表也使用這個型別。只有 import 這個型別的程式須修改
 - 儀表板的格子細分為原本的一半：手機寬 12 格，電腦寬 48 格。`layout` 中的寬與高須乘以 2，座標 n 須改為 2n − 1。面板的實際大小不變。說明見 [vue-build/docs/design/dashboard.md](vue-build/docs/design/dashboard.md) 的「尺寸」與「排版」
 
+### 版本後修正
+
+- 修正：圖表依選項類的欄位分組時，只列出資料中出現過的選項。現在依 `options` 的順序列出每個選項，沒有列的選項數量與總和為 0。boolean 一律列出「否」與「是」。系列也依同樣的規則。說明見 [vue-build/docs/topics/chart.md](vue-build/docs/topics/chart.md) 的「計算的規則」
+
 ## v1.6
 
 - **條件式格式**：表層級的 `formatRules` 依條件改變指定欄位的顏色、粗體、斜體、底線、刪除線，或在值前面加上圖示，套用於詳細頁、列表的各版面與表格。說明見 [vue-build/docs/topics/schema.md](vue-build/docs/topics/schema.md) 的「條件式格式」

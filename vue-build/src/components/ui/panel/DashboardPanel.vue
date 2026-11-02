@@ -9,10 +9,11 @@
   import { dashboardPanelKey } from '@/composables/shell/useDashboardLinks'
   import { listControlsKey } from '@/composables/shell/useListControls'
   import { panelActiveKey, panelBorderedKey, panelFullPageKey, usePanelActive } from '@/composables/shell/usePanelActive'
+  import { provideSharedListControls } from '@/composables/shell/useSharedListControls'
   import { appBarSelectionKey } from '@/composables/shell/useShellActions'
 
   // dashboard 的一個面板：小外殼、關注點，以及面板內容各項登記生效的時機（見 docs/components/panel/DashboardPanel.md）
-  const { name, title, frame = true, table, selects = false, scope = null } = defineProps<{
+  const { name, title, frame = true, table, shared = false, selects = false, scope = null } = defineProps<{
     // 對應 DashboardPage 的 layout，也是連動中心中此面板的名稱
     name: string
     // 小外殼上的標題
@@ -21,6 +22,8 @@
     frame?: boolean
     // 面板內容所屬的表。抽屜開啟時，先停在關注面板的這張表
     table?: TableKey
+    // 加入 dashboard 共用的搜尋、篩選與排序。關閉時面板中的列表使用面板自己的一份，與一般頁面相同。建立後不可切換
+    shared?: boolean
     // 點擊一列為選取，不換頁
     selects?: boolean
     // 面板內容的輸入：列表只保留其中的列，沒有條件時不限制。詳細頁在剛好一列時顯示這一列
@@ -59,6 +62,7 @@
   // 面板的輸入與輸出，由 ListPage、ChartPage、useListPage、useRecordPage 與詳細頁的導覽讀取
   const links = dashboard.links
   provide(dashboardPanelKey, {
+    shared: () => shared,
     selects: () => selects,
     selected: () => links.output(name)?.selected ?? null,
     toggle: id => dashboard.transition('fade', () => links.select(name, links.output(name)?.selected === id ? null : id)),
@@ -82,7 +86,11 @@
 
   // 面板內容的多選出口與搜尋先交到此處，由 DashboardPage 只取關注面板的那一份登記
   const selection = relaySlot(appBarSelectionKey, null)
-  const controls = relaySlot(listControlsKey, null)
+  const relayedControls = relaySlot(listControlsKey, null)
+
+  // 不加入共用時，面板中的列表加入面板自己的一份。內容自己登記的一份（例如 TabPage）優先
+  const ownControls = shared ? null : provideSharedListControls()
+  const controls = computed(() => relayedControls.value ?? ownControls?.value ?? null)
 
   const measuredRows = shallowRef<number | null>(null)
   onBeforeUnmount(dashboard.register({ name, title: title ?? '', framed: frame, table, measuredRows, selection, controls }))

@@ -2,7 +2,7 @@
   import type { ListTable } from '@/composables/shell/useListControls'
   import type { ColumnFilter, Filters } from '@/schema/filter'
   import type { AnyColumn } from '@/schema/types'
-  import { mdiChevronLeft, mdiChevronRight, mdiCircle, mdiInformationOutline } from '@mdi/js'
+  import { mdiChevronLeft, mdiChevronRight, mdiCircle } from '@mdi/js'
   import { computed, shallowRef, watch } from 'vue'
   import TableChips from '@/components/ui/shell/TableChips.vue'
   import { filterableColumns, isActiveFilter, presentValues } from '@/schema/filter'
@@ -43,15 +43,6 @@
       editing.value = null
     },
   })
-
-  // 互動 dashboard 中，條件往下影響此表的上層表，以及其有條件的欄位
-  const inherited = computed(() => (table.value?.inheritedFrom?.() ?? []).map(label => {
-    const upper = props.tables.find(item => item.schema.tableLabel === label)
-    const columns = upper
-      ? filterableColumns(upper.schema).filter(column => isActiveFilter(upper.filters.value[column.key])).map(column => column.label)
-      : []
-    return { label, columns: columns.join('、') }
-  }))
 
   // select 多一個「空白」選項，對應的值為 null
   const BLANK = '__blank__'
@@ -200,24 +191,6 @@
     </v-toolbar>
 
     <TableChips v-model="tableName" :tables="tables" />
-
-    <!-- 上層表的條件也影響此表，點選即切換至該表 -->
-    <v-list v-if="inherited.length > 0" class="text-medium-emphasis" density="compact" lines="two">
-      <v-list-item
-        v-for="item in inherited"
-        :key="item.label"
-        :prepend-icon="mdiInformationOutline"
-        :subtitle="item.columns"
-        :title="`另受「${item.label}」的條件影響`"
-        @click="tableName = item.label"
-      >
-        <template #append>
-          <v-icon :icon="mdiChevronRight" />
-        </template>
-      </v-list-item>
-    </v-list>
-
-    <v-divider v-if="inherited.length > 0" />
 
     <v-list v-if="columns.length > 0" density="compact" lines="two">
       <v-list-item

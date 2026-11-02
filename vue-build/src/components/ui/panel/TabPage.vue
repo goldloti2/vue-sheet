@@ -3,6 +3,7 @@
   import TabPanel from '@/components/ui/panel/TabPanel.vue'
   import { registerSlot } from '@/composables/shell/useActionSlot'
   import { currentTabKey } from '@/composables/shell/useCurrentTab'
+  import { useDashboardPanel } from '@/composables/shell/useDashboardLinks'
   import { listControlsKey } from '@/composables/shell/useListControls'
   import { provideSharedListControls } from '@/composables/shell/useSharedListControls'
 
@@ -15,9 +16,12 @@
   // 目前的頁籤，供頁籤中的頁面得知使用者切換頁籤（例如取消多選）
   provide(currentTabKey, model)
 
-  // 各頁籤中的列表共用一條搜尋字串，同一張表共用篩選與排序，由此統一登記（見 search.md 的「同一頁面中的多張表」）
-  const controls = provideSharedListControls(model)
-  registerSlot(listControlsKey, () => controls.value, null)
+  // 各頁籤中的列表共用一條搜尋字串，同一張表共用篩選與排序，由此統一登記（見 search.md 的「同一頁面中的多張表」）。
+  // 位於加入共用的 dashboard 面板中時不另外建立，頁籤中的列表直接加入 dashboard 的一份
+  if (!useDashboardPanel()?.shared()) {
+    const controls = provideSharedListControls(model)
+    registerSlot(listControlsKey, () => controls.value, null)
+  }
 </script>
 
 <template>

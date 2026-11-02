@@ -57,7 +57,7 @@
 
 ### 同一頁面中的多張表
 
-**將各列表放入 `TabPage` 的頁籤即可，無須另外登記**（見 [TabPage.md](../components/panel/TabPage.md)）。同時顯示多個列表時，放入 `DashboardPage` 的面板，行為相同（見 [DashboardPage.md](../components/panel/DashboardPage.md)）。
+**將各列表放入 `TabPage` 的頁籤即可，無須另外登記**（見 [TabPage.md](../components/panel/TabPage.md)）。同時顯示多個列表時，放入 `DashboardPage` 的面板。開啟 `shared` 的面板加入全頁共用的一份，其他面板各有一份，規則與下方相同（見 [DashboardPage.md](../components/panel/DashboardPage.md)）。
 
 `TabPage` provide 一份共用的列表控制（`useSharedListControls`）。其中的 `useListPage` 不自行登記，改為加入這份控制：
 
@@ -66,7 +66,8 @@
 - **不同的表各有一份**，同時生效。抽屜第一層的上方多出一排表的 chip
 - **其中沒有列表時不登記**，App Bar 不出現放大鏡
 - 頁籤的值與某張表的 `tableLabel` 相符時，抽屜開啟時先停在該表
-- **列表只加入最近的一個容器**：`TabPage` 置於 `DashboardPanel` 中時，頁籤中的列表加入 `TabPage` 的一份，不加入 `DashboardPage` 的一份。該面板為關注點時，App Bar 操作 `TabPage` 的一份
+- **列表只加入最近的一份**：依序為 `TabPage`、未開啟 `shared` 的 `DashboardPanel`、`DashboardPage`。`TabPage` 置於開啟 `shared` 的面板中時不建立自己的一份
+- **`search: false` 的列表不加入任何一份**，也不自行登記
 
 抽屜的行為：
 

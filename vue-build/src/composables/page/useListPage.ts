@@ -33,11 +33,11 @@ export function useListPage<Row extends { id: string }> (
     ? { ...shared.join<Row>(table, schema), query: shared.query }
     : ownControls<Row>(table, schema, options)
 
-  // dashboard 面板的輸入與上層的條件，與 scope 位於同一步
+  // dashboard 面板的輸入，與 scope 位於同一步
   const { scope } = options
   const panel = useDashboardPanel()
   const scopedRows = computed(() => {
-    const tests = [scope, panel?.scope(), shared?.upperFilter(table)]
+    const tests = [scope, panel?.scope()]
       .filter(test => !!test)
     if (tests.length === 0) {
       return allRows.value

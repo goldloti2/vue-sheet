@@ -15,7 +15,7 @@
     selectable?: boolean
     selectMode?: boolean
     selected?: boolean
-    // dashboard 的互動：是否為選取的那一列，以及點擊是否改為選取（由 ListPage 提供）
+    // dashboard 面板的選取：是否為選取的那一列，以及點擊是否改為選取（由 ListPage 提供）
     current?: boolean
     pickable?: boolean
   }>()

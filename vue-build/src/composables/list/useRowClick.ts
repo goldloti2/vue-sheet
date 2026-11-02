@@ -9,7 +9,7 @@ interface UseRowClickOptions {
   selectMode: () => boolean
   onLongpress: (event: PointerEvent) => void
   onToggle: () => void
-  // 為 true 時，點擊改為 onPick 而不導覽（dashboard 的互動）
+  // 為 true 時，點擊改為 onPick 而不導覽（dashboard 面板的 selects）
   pickable: () => boolean
   onPick: () => void
 }

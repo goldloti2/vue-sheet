@@ -310,6 +310,8 @@ export function linksState (links: DashboardLinks): LinksState {
 
 // DashboardPanel 提供給內容：面板的輸入，以及寫入輸出的方式（見 docs/components/panel/DashboardPanel.md）
 export interface DashboardPanelContext {
+  // 加入 dashboard 共用的搜尋、篩選與排序
+  shared: () => boolean
   // 點擊一列為選取
   selects: () => boolean
   selected: () => string | null

@@ -276,7 +276,7 @@ export function toggleLegend (filters: Filters, pick: GroupFilter): Filters {
   return withCondition(filters, pick.key, { values: next })
 }
 
-// 互動儀表板中點擊圖表：只選這一組與其系列。各欄皆已為這些條件時，改為移除
+// 加入共用的儀表板面板中點擊圖表：只選這一組與其系列。各欄皆已為這些條件時，改為移除
 export function pickElement (filters: Filters, picks: readonly GroupFilter[]): Filters {
   const same = picks.every(pick => sameCondition(filters[pick.key], pick.condition))
   return picks.reduce((next, pick) => withCondition(next, pick.key, same ? null : pick.condition), filters)

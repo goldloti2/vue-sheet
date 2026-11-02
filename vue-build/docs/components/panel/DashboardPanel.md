@@ -42,7 +42,7 @@
 | 頁面中的換頁（例如前往編輯頁） | 照常換頁，離開 dashboard。這類動作只在展開時出現 |
 
 - **列表順序的發布**：點擊一列時，`ListPage` 照常發布該表目前的列表順序。從 dashboard 進入詳細頁時，上一列、下一列依面板中的順序切換，例如只在所選父列的子列之間切換
-- **含 `TabPage` 的頁面不能放入**：將頁籤以外的部分拆成 `_ref/` 中的單純列表，由頁籤頁與 dashboard 各自使用。放入 dashboard 時不提供頁籤的條件（例如 `status`），即列出整張表
+- **含 `TabPage` 的頁面可以放入**：頁籤列固定於面板的上緣。頁籤中的列表加入該 `TabPage` 自己的搜尋、篩選與排序，不加入 dashboard 共用的一份。此面板為關注點時，App Bar 操作這一份（見 [DashboardPage](DashboardPage.md) 的「App Bar、FAB 與搜尋」）
 - **App Bar 的標題由 `title` 指定**：以元件 import 的頁面讀不到自己的 `meta.title`
 
 ## 備註
@@ -54,6 +54,9 @@
   - 是否已展開（`usePanelFullPage`）。不在面板中時一律為 `true`
   - 互動經由的 ref 欄位（`via`）
   - 面板目前是否有外框（`usePanelBordered`），展開時沒有。不在面板中時一律為 `false`。內容可據此省略自己的外框與外圍留白，例如 [DataStat](../chart/DataStat.md) 的格子
+- **此元件以 `relaySlot` 收下內容登記的兩個值**，交由 `DashboardPage` 決定是否登記於 App Bar：
+  - 多選的出口
+  - 內容自己的搜尋、篩選與排序，例如面板中的 `TabPage`
 - **登記只在關注面板生效**：篩選抽屜等跟著關注點
 - **FAB、詳細頁的上一列與下一列、左右滑動，只在展開時啟用**
 - **內容區的 container 另含高度**：未展開時，`ChartPage` 以 `cqh` 依內容區的高度決定圖表的高度。展開時只含寬度，高度隨內容

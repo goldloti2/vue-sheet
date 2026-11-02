@@ -2,14 +2,16 @@
   import type { DashboardContext, DashboardPanelEntry } from '@/components/ui/panel/dashboardContext'
   import type { PanelRequest, PanelSize } from '@/components/ui/panel/placePanels'
   import type { PageAction } from '@/composables/actions/useTableActions'
-  import { computed, nextTick, onBeforeUnmount, onMounted, provide, shallowReactive, shallowRef, useTemplateRef } from 'vue'
+  import { computed, inject, nextTick, onBeforeUnmount, onMounted, provide, shallowReactive, shallowRef, useTemplateRef } from 'vue'
   import { useRouter } from 'vue-router'
   import { AUTO_ROWS_MAX, COLS, dashboardKey, GAP } from '@/components/ui/panel/dashboardContext'
   import { placePanels } from '@/components/ui/panel/placePanels'
+  import { registerSlot, relaySlot } from '@/composables/shell/useActionSlot'
   import { useCompactLayout } from '@/composables/shell/useCompactLayout'
   import { provideDashboardSelection } from '@/composables/shell/useDashboardSelection'
+  import { listControlsKey } from '@/composables/shell/useListControls'
   import { provideSharedListControls } from '@/composables/shell/useSharedListControls'
-  import { appBarActionsKey, useAppBarActions, useAppBarHeading } from '@/composables/shell/useShellActions'
+  import { appBarActionsKey, useAppBarActions, useAppBarHeading, useAppBarSelection } from '@/composables/shell/useShellActions'
   import { beginTransition, canAnimate, markTransition } from '@/composables/shell/viewTransition'
   import { schemas } from '@/schema'
 
@@ -20,6 +22,10 @@
     // 開啟時，點擊一列改為選取，與該列直接相關的面板跟著改變
     interactive?: boolean
   }>()
+
+  if (import.meta.env.DEV && inject(dashboardKey, null)) {
+    console.warn('DashboardPage 不可嵌套自身')
+  }
 
   // 面板的最小寬度（格數）
   const MIN_WIDTH = 4
@@ -51,7 +57,7 @@
   }
 
   // 同一時間只有一個面板能多選
-  const selecting = computed(() => panels.find(entry => entry.selecting.value)?.name ?? null)
+  const selecting = computed(() => panels.find(entry => entry.selection.value)?.name ?? null)
 
   // 沒有小外殼的面板不能成為關注點。多選期間關注點不移動
   function focus (name: string) {
@@ -131,12 +137,13 @@
 
   const focusedEntry = computed(() => panels.find(entry => entry.name === focused.value))
 
+  // 多選的面板一定是關注面板：關注點在多選期間不移動
+  const focusedSelection = computed(() => focusedEntry.value?.selection.value ?? null)
+  useAppBarSelection(() => focusedSelection.value)
+
   // App Bar 的動作：平時沒有。關注面板多選中或已展開時，為該面板交到此處的動作
-  const panelActions = shallowRef<(PageAction | null)[]>([])
-  useAppBarActions(() => expanded.value || focusedEntry.value?.selecting.value ? panelActions.value : [])
-  provide(appBarActionsKey, actions => {
-    panelActions.value = actions
-  })
+  const panelActions = relaySlot<(PageAction | null)[]>(appBarActionsKey, [])
+  useAppBarActions(() => expanded.value || focusedSelection.value ? panelActions.value : [])
 
   // 展開時 App Bar 顯示 ← 與面板的標題
   useAppBarHeading(() => expanded.value ? { title: focusedEntry.value?.title ?? '', back: collapse } : null)
@@ -160,7 +167,10 @@
     const table = panels.find(entry => entry.name === focused.value)?.table
     return table ? schemas[table].tableLabel : ''
   })
-  provideSharedListControls(focusedTableLabel, () => interactive)
+  const sharedControls = provideSharedListControls(focusedTableLabel, () => interactive)
+
+  // App Bar 的搜尋：關注面板有自己的一份時為該份，沒有時為共用的一份
+  registerSlot(listControlsKey, () => focusedEntry.value?.controls.value ?? sharedControls.value, null)
 
   // 面板內的轉場：先為面板命名並等待 DOM 更新，舊畫面才截得到名稱。轉場進行中再有選取時直接套用
   async function transition (kind: 'fade' | 'forward' | 'back', update: () => void) {

@@ -1,7 +1,9 @@
 <script lang="ts" setup>
   import { provide } from 'vue'
   import TabPanel from '@/components/ui/panel/TabPanel.vue'
+  import { registerSlot } from '@/composables/shell/useActionSlot'
   import { currentTabKey } from '@/composables/shell/useCurrentTab'
+  import { listControlsKey } from '@/composables/shell/useListControls'
   import { provideSharedListControls } from '@/composables/shell/useSharedListControls'
 
   defineProps<{
@@ -14,7 +16,8 @@
   provide(currentTabKey, model)
 
   // 各頁籤中的列表共用一條搜尋字串，同一張表共用篩選與排序，由此統一登記（見 search.md 的「同一頁面中的多張表」）
-  provideSharedListControls(model)
+  const controls = provideSharedListControls(model)
+  registerSlot(listControlsKey, () => controls.value, null)
 </script>
 
 <template>

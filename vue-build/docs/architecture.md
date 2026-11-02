@@ -46,7 +46,7 @@ src/
                        （比對與排序本身為 schema/ 中的純函數）
     form/              表單頁：useTableForm、useLeaveGuard、useSyncHold
     shell/             與 AppShell 溝通：
-                       useActionSlot（登記機制）、useShellActions（App Bar、底部、多選的出口）、
+                       useActionSlot（登記機制，以及容器收下內容登記的 relaySlot）、useShellActions（App Bar、底部、多選的出口）、
                        useListControls、useSharedListControls（TabPage 與 DashboardPage 中的列表共用搜尋）、
                        useDashboardSelection（dashboard 的互動）、useCompactLayout、
                        viewTransition（換頁與面板內轉場共用的函數）、useCurrentTab、usePanelActive、

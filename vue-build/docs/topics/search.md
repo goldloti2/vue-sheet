@@ -66,6 +66,7 @@
 - **不同的表各有一份**，同時生效。抽屜第一層的上方多出一排表的 chip
 - **其中沒有列表時不登記**，App Bar 不出現放大鏡
 - 頁籤的值與某張表的 `tableLabel` 相符時，抽屜開啟時先停在該表
+- **列表只加入最近的一個容器**：`TabPage` 置於 `DashboardPanel` 中時，頁籤中的列表加入 `TabPage` 的一份，不加入 `DashboardPage` 的一份。該面板為關注點時，App Bar 操作 `TabPage` 的一份
 
 抽屜的行為：
 

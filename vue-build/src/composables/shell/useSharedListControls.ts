@@ -1,11 +1,10 @@
+import type { ListControls } from '@/composables/shell/useListControls'
 import type { TableKey } from '@/schema'
 import type { Filters } from '@/schema/filter'
 import type { SortSpec, TableSchema } from '@/schema/types'
 import type { ComputedRef, InjectionKey, Ref } from 'vue'
-import { effectScope, inject, provide, ref, shallowReactive } from 'vue'
+import { computed, effectScope, inject, provide, ref, shallowReactive } from 'vue'
 import { useSortedTableList } from '@/composables/data/useTable'
-import { registerSlot } from '@/composables/shell/useActionSlot'
-import { listControlsKey } from '@/composables/shell/useListControls'
 import { hasActiveFilter, rowMatcher } from '@/schema/filter'
 import { relations } from '@/schema/relations'
 
@@ -37,13 +36,8 @@ function parentRelations (table: TableKey, via?: string) {
     && (!via || relation.column === via))
 }
 
-// TabPage 與 DashboardPage 的共用控制，統一登記一次（見 docs/topics/search.md 的「同一頁面中的多張表」）。cascade 開啟時篩選往下連動
-export function provideSharedListControls (current?: Readonly<Ref<string>>, cascade: () => boolean = () => false): void {
-  // TabPage 與 DashboardPage 不可互相嵌套，亦不可嵌套自身
-  if (import.meta.env.DEV && inject(sharedListControlsKey, null)) {
-    console.warn('TabPage 與 DashboardPage 不可互相嵌套，亦不可嵌套自身')
-  }
-
+// TabPage 與 DashboardPage 的共用控制（見 docs/topics/search.md 的「同一頁面中的多張表」）。回傳交給 App Bar 的值，由容器登記。cascade 開啟時篩選往下連動
+export function provideSharedListControls (current?: Readonly<Ref<string>>, cascade: () => boolean = () => false): ComputedRef<ListControls | null> {
   const query = ref('')
   const tables = shallowReactive(new Map<TableKey, SharedTable & { schema: TableSchema }>())
   // 共用的部分屬於容器，不隨第一個加入的列表卸載而停止
@@ -122,8 +116,8 @@ export function provideSharedListControls (current?: Readonly<Ref<string>>, casc
 
   provide(sharedListControlsKey, { query, join, upperFilter })
 
-  // 容器中沒有列表時不登記，App Bar 不顯示搜尋按鈕
-  registerSlot(listControlsKey, () => tables.size > 0
+  // 容器中沒有列表時為 null，App Bar 不顯示搜尋按鈕。表沒有增減時為同一個物件
+  return computed(() => tables.size > 0
     ? {
         query,
         drawer: {
@@ -137,7 +131,7 @@ export function provideSharedListControls (current?: Readonly<Ref<string>>, casc
           current,
         },
       }
-    : null, null)
+    : null)
 }
 
 // 不在 TabPage 或 DashboardPage 之內時為 null，列表自行登記

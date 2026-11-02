@@ -1,6 +1,6 @@
 import type { PageAction } from '@/composables/actions/useTableActions'
-import type { InjectionKey } from 'vue'
-import { inject, onActivated, onDeactivated, onMounted, onUnmounted, watch } from 'vue'
+import type { InjectionKey, ShallowRef } from 'vue'
+import { inject, onActivated, onDeactivated, onMounted, onUnmounted, provide, shallowRef, watch } from 'vue'
 import { usePanelActive } from '@/composables/shell/usePanelActive'
 
 export type SlotSetter<Value> = (value: Value) => void
@@ -65,6 +65,15 @@ export function registerSlot<Value> (key: InjectionKey<SlotSetter<Value>>, sourc
       publish()
     }
   }, { flush: 'post' })
+}
+
+// 容器收下內容登記至某個位置的值，再自行決定登記給外層的值（例如 DashboardPage 只取關注面板的那一份）
+export function relaySlot<Value> (key: InjectionKey<SlotSetter<Value>>, empty: Value): Readonly<ShallowRef<Value>> {
+  const received = shallowRef(empty)
+  provide(key, value => {
+    received.value = value
+  })
+  return received
 }
 
 // 動作的版本：App Bar 與底部動作列

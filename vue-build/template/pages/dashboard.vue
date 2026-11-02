@@ -8,7 +8,7 @@
 <script lang="ts" setup>
   import DashboardPage from '@/components/ui/panel/DashboardPage.vue'
   import DashboardPanel from '@/components/ui/panel/DashboardPanel.vue'
-  // 既有的頁面以元件 import，其 <route> 不生效。含 TabPage 的頁面不可放入，改用 _ref/ 中的列表
+  // 既有的頁面以元件 import，其 <route> 不生效
   import ParentDetail from './__parent__/[id]/index.vue'
   import ParentList from './__parent__/_ref/__Parent__List.vue'
   import ChildTableList from './__table__/_ref/__Table__List.vue'

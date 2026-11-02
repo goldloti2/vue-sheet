@@ -53,7 +53,8 @@
 ## 備註
 
 - 只需要頁籤列、不需要內容區時，直接使用 Vuetify 的 `v-tabs`，不使用此元件。頁面自行放置的 `v-tabs` 會隨內容捲動
-- **不可嵌套**：`TabPage` 與 `DashboardPage` 不可互相嵌套，也不可嵌套自身。開發模式下於 console 警告
+- **可置於 `DashboardPanel` 中**：頁籤列固定於面板的上緣。此元件照常建立自己的搜尋、篩選與排序，面板為關注點時由 App Bar 操作（見 [DashboardPage](DashboardPage.md) 的「App Bar、FAB 與搜尋」）
+- **不支援直接置於另一個 `TabPage` 的頁籤中**：兩條頁籤列固定於同一個位置而重疊，兩份搜尋也互相覆蓋。中間隔著 `DashboardPanel` 時可以
 - **頁籤中的列表自動共用搜尋**（見 [search.md](../../topics/search.md#同一頁面中的多張表)）：
   - 此元件 provide 一份共用的列表控制。各頁籤中的 `useListPage` 不自行登記，改為加入這份控制
   - 搜尋字串共用一條。同一張表共用一份篩選與排序，不同的表各有一份

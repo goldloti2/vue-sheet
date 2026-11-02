@@ -586,8 +586,18 @@ FAB 的 z-index 位於 layout 之上，不讓開時會浮在抽屜上。
 - App Bar 不知道下方是否有頁籤列。移動陰影時，`TabPage` 須另外通知 App Bar，或由 AppShell 的樣式寫死 `TabPage` 的 class
 - 分隔線只改動 `TabPage` 自己的樣式
 
-**為什麼 `TabPage` 與 `DashboardPage` 不可互相嵌套**
-- 兩者皆將搜尋登記於 App Bar，列表只加入最近的一層。兩層各自登記時，搜尋會互相覆蓋
+**為什麼面板內容的登記先交到容器，由容器決定交給 App Bar 的值**
+- `registerSlot` 為最後寫入者勝，任一登記者撤回時寫入空值。面板中的 `TabPage` 與 `DashboardPage` 各自登記時，搜尋會互相覆蓋，失去關注時也會清空
+- 由 `DashboardPage` 統一登記「關注面板的一份，沒有時為共用的一份」，失去關注即回到共用的一份
+- 動作、多選的出口與搜尋皆以 `relaySlot` 收下，容器收下登記的寫法只有一種，各處無須各寫一次
+- `provideSharedListControls` 只回傳值、不自行登記，`DashboardPage` 才能把它與面板的一份合併後登記一次
+
+**為什麼 `DashboardPage` 不可嵌套自身**
+- 展開的面板記於 history state 的同一個鍵，App Bar 的標題與縮回也只有一份。兩層各自展開時會互相覆蓋
+
+**為什麼 `TabPage` 不支援直接嵌套自身**
+- 兩條頁籤列皆固定於 `--v-layout-top`，位置相同而重疊。兩份搜尋也皆直接登記於 App Bar，互相覆蓋
+- 目前沒有需要兩層頁籤的頁面，因此不另外處理。中間隔著 `DashboardPanel` 時，面板把變數設為 0，登記也經過面板
 
 **為什麼 `TabPage` 關閉 `v-window` 的 `show-arrows` 與 `touch`**
 - `show-arrows` 的預設值為 `undefined`，而判斷式為 `showArrows !== false`。不明確關閉時，內容上會疊一層左右箭頭

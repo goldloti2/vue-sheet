@@ -1,4 +1,5 @@
 import type { PanelPlacement } from './placePanels'
+import type { ListControls } from '@/composables/shell/useListControls'
 import type { TableKey } from '@/schema'
 import type { ComputedRef, InjectionKey, Ref } from 'vue'
 
@@ -12,8 +13,10 @@ export interface DashboardPanelEntry {
   table?: TableKey
   // 手機自動排版時依內容量得的格數（最多 AUTO_ROWS_MAX），尚未量得時為 null
   measuredRows: Ref<number | null>
-  // 面板中正在多選。多選期間關注點不移動
-  selecting: Ref<boolean>
+  // 面板內容登記的多選出口，不為 null 時正在多選。多選期間關注點不移動
+  selection: Readonly<Ref<(() => void) | null>>
+  // 面板內容自己登記的搜尋、篩選與排序（例如面板中的 TabPage）。沒有時為 null
+  controls: Readonly<Ref<ListControls | null>>
 }
 
 // DashboardPage 提供給面板的部分

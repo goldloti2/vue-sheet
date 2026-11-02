@@ -4,7 +4,9 @@
   import { mdiArrowExpand } from '@mdi/js'
   import { computed, inject, onBeforeUnmount, onMounted, provide, shallowRef, useTemplateRef, watch } from 'vue'
   import { AUTO_ROWS_MAX, dashboardKey } from '@/components/ui/panel/dashboardContext'
+  import { relaySlot } from '@/composables/shell/useActionSlot'
   import { dashboardViaKey } from '@/composables/shell/useDashboardSelection'
+  import { listControlsKey } from '@/composables/shell/useListControls'
   import { panelActiveKey, panelBorderedKey, panelFullPageKey, usePanelActive } from '@/composables/shell/usePanelActive'
   import { appBarSelectionKey } from '@/composables/shell/useShellActions'
   import { relations } from '@/schema/relations'
@@ -35,9 +37,12 @@
     console.warn(`[DashboardPanel] 面板 ${name} 的 via "${via}" 不是任何一張表的 ref 欄位`)
   }
 
+  // 面板內容的多選出口與搜尋先交到此處，由 DashboardPage 只取關注面板的那一份登記
+  const selection = relaySlot(appBarSelectionKey, null)
+  const controls = relaySlot(listControlsKey, null)
+
   const measuredRows = shallowRef<number | null>(null)
-  const selecting = shallowRef(false)
-  onBeforeUnmount(dashboard.register({ name, title: title ?? '', framed: frame, table, measuredRows, selecting }))
+  onBeforeUnmount(dashboard.register({ name, title: title ?? '', framed: frame, table, measuredRows, selection, controls }))
 
   const active = computed(() => dashboard.focused.value === name)
   const expanded = computed(() => dashboard.expanded.value === name)
@@ -51,13 +56,6 @@
   provide(panelFullPageKey, expanded)
   // 展開時沒有外框
   provide(panelBorderedKey, computed(() => !expanded.value))
-
-  // App Bar 的內容由 DashboardPage 決定（見其 appBarActions），此處只記錄面板是否在多選
-  const setSelection = inject(appBarSelectionKey, null)
-  provide(appBarSelectionKey, cancel => {
-    selecting.value = cancel !== null
-    setSelection?.(cancel)
-  })
 
   // 手機自動排版的高度：量測小外殼與內容的實際高度，換算為格數（最多 AUTO_ROWS_MAX）
   const header = useTemplateRef('header')

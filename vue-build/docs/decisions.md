@@ -574,11 +574,20 @@ FAB 的 z-index 位於 layout 之上，不讓開時會浮在抽屜上。
 無須另外維護一份重複的清單。
 
 **為什麼 `usePanelActive()` 與 `useCurrentTab()` 只接其中一個**
-面板外的程式 `inject` 不到面板，面板中的程式也不知道自己是哪個頁籤，因此依程式所在的位置選擇。
+面板中的程式不知道自己是哪個頁籤，`usePanelActive()` 也不能回答「使用者是否切換了頁籤」，因此依規則回答的問題選擇。
+
+**為什麼頁籤列畫在 `TabPage` 之中，不登記於 App Bar**
+- App Bar 只有一條，頁籤列登記於 App Bar 時，儀表板的面板無法各自放一個頁籤頁
+- 以 `position: sticky` 固定於 `--v-layout-top`，捲動時同樣不離開畫面。面板中把變數設為 0，同一份樣式即固定於面板的上緣
+- 每個頁籤頁各有自己的 `v-tabs`，換頁時不再沿用上一頁的 `v-tabs`，因此不會把舊頁籤寫入新頁面的 `v-model`
+- 代價是換頁時頁籤列隨頁面滑動
+
+**為什麼頁籤列以分隔線與內容區隔，不把 App Bar 的陰影移到頁籤列下方**
+- App Bar 不知道下方是否有頁籤列。移動陰影時，`TabPage` 須另外通知 App Bar，或由 AppShell 的樣式寫死 `TabPage` 的 class
+- 分隔線只改動 `TabPage` 自己的樣式
 
 **為什麼 `TabPage` 與 `DashboardPage` 不可互相嵌套**
 - 兩者皆將搜尋登記於 App Bar，列表只加入最近的一層。兩層各自登記時，搜尋會互相覆蓋
-- `TabPage` 將頁籤列登記於 App Bar，儀表板的多個面板無法共用
 
 **為什麼 `TabPage` 關閉 `v-window` 的 `show-arrows` 與 `touch`**
 - `show-arrows` 的預設值為 `undefined`，而判斷式為 `showArrows !== false`。不明確關閉時，內容上會疊一層左右箭頭

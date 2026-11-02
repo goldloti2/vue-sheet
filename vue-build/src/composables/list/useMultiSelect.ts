@@ -1,5 +1,5 @@
 import { computed, onDeactivated, shallowRef, watch } from 'vue'
-import { useCurrentTab } from '@/composables/shell/useAppBarTabs'
+import { useCurrentTab } from '@/composables/shell/useCurrentTab'
 import { useAppBarSelection } from '@/composables/shell/useShellActions'
 
 // 多選狀態：是否為多選模式由「是否選取任何一列」推導，不另存 boolean
@@ -34,7 +34,7 @@ export function useMultiSelect () {
   // 離開頁面時取消多選。列表由 KeepAlive 保留，不清除時回到頁面仍為多選模式
   onDeactivated(clear)
 
-  // 切換頁籤也取消多選。頁面與面板讀取的是 AppShell 提供的同一個目前頁籤
+  // 切換頁籤也取消多選。目前的頁籤由所在的 TabPage 提供
   watch(useCurrentTab(), clear)
 
   // 一列多選時所需的屬性，供列表元件以 v-bind 一次綁定

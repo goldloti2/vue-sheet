@@ -1,6 +1,5 @@
 <script lang="ts" setup>
   import type { PageAction } from '@/composables/actions/useTableActions'
-  import type { AppBarTabs } from '@/composables/shell/useAppBarTabs'
   import type { ListControls } from '@/composables/shell/useListControls'
   import type { AppBarHeading } from '@/composables/shell/useShellActions'
   import { mdiArrowLeft, mdiClose, mdiDotsVertical, mdiFilterVariant, mdiMagnify, mdiRefresh, mdiSort } from '@mdi/js'
@@ -12,7 +11,6 @@
   import NavDrawer from '@/components/ui/shell/NavDrawer.vue'
   import SortPanel from '@/components/ui/shell/SortPanel.vue'
   import { provideActionRunner } from '@/composables/shell/useActionRunner'
-  import { appBarTabsKey, currentTabKey } from '@/composables/shell/useAppBarTabs'
   import { confirmFields, fieldsDialog } from '@/composables/shell/useAskFields'
   import { choose, confirmDialog, notice, notify, pickChoice } from '@/composables/shell/useDialogs'
   import { listControlsKey } from '@/composables/shell/useListControls'
@@ -86,15 +84,6 @@
   provide(appBarSelectionKey, cancel => {
     cancelSelect.value = cancel
   })
-
-  // TabPage 登記的頁籤列置於 App Bar 下方，因此不隨內容捲動
-  const tabs = shallowRef<AppBarTabs | null>(null)
-  provide(appBarTabsKey, value => {
-    tabs.value = value
-  })
-
-  // 目前的頁籤，供下層的頁面與面板得知使用者切換頁籤（例如取消多選）
-  provide(currentTabKey, computed(() => tabs.value?.current.value ?? null))
 
   // 頁面登記搜尋時才顯示搜尋按鈕，按下後 App Bar 換成輸入框。query 為頁面的 ref，關閉時清空
   const controls = shallowRef<ListControls | null>(null)
@@ -318,14 +307,6 @@
           <v-icon :icon="mdiRefresh" />
         </v-badge>
       </v-btn>
-    </template>
-
-    <!-- 頁籤隨 App Bar 固定於頂端，搜尋模式下仍顯示 -->
-    <!-- 頁籤不同時重建 v-tabs：沿用時，舊頁籤移除的當下 Vuetify 會自動選取剩下的舊頁籤，並寫入新頁面的 v-model -->
-    <template v-if="tabs" #extension>
-      <v-tabs :key="tabs.tabs.join('\n')" v-model="tabs.current.value" align-tabs="center" grow>
-        <v-tab v-for="tab in tabs.tabs" :key="tab" :value="tab">{{ tab }}</v-tab>
-      </v-tabs>
     </template>
   </v-app-bar>
 

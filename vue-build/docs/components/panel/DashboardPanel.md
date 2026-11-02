@@ -50,13 +50,14 @@
 - **點擊面板的任何地方，該面板即成為關注點**，以外框標示（樣式見 [design/dashboard.md](../../design/dashboard.md)）。預設的關注點為第一個有小外殼的面板。長按時，關注點先移到此面板，再進入多選
 - **小外殼除了右側的展開按鈕，不放其他動作**
 - **此元件向內 provide 四件事**：
-  - 是否為目前的面板（`usePanelActive`），與 `TabPage` 的頁籤使用同一套機制
+  - 是否為目前的面板（`usePanelActive`），與 `TabPage` 的頁籤使用同一套機制。外層的面板也須作用中
   - 是否已展開（`usePanelFullPage`）。不在面板中時一律為 `true`
   - 互動經由的 ref 欄位（`via`）
   - 面板目前是否有外框（`usePanelBordered`），展開時沒有。不在面板中時一律為 `false`。內容可據此省略自己的外框與外圍留白，例如 [DataStat](../chart/DataStat.md) 的格子
 - **登記只在關注面板生效**：篩選抽屜等跟著關注點
 - **FAB、詳細頁的上一列與下一列、左右滑動，只在展開時啟用**
 - **內容區的 container 另含高度**：未展開時，`ChartPage` 以 `cqh` 依內容區的高度決定圖表的高度。展開時只含寬度，高度隨內容
+- **未展開時，內容區把 `--v-layout-top` 設為 0**：內容在面板內捲動，以這個變數固定位置的元素（例如 `TabPage` 的頁籤列）因此固定於面板的上緣。展開時隨整頁捲動，沿用 App Bar 的高度
 - **內容區為名為 `dashboard-panel` 的 container**，不含小外殼。面板為[窄面板](../../design/dashboard.md#窄面板)時，內容元件以 `@container dashboard-panel` 依寬度切換窄版：
   - deck：只顯示標題與副標，上下排列
   - card：省略第 3 層

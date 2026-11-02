@@ -5,7 +5,7 @@
   import { computed, inject, onBeforeUnmount, onMounted, provide, shallowRef, useTemplateRef, watch } from 'vue'
   import { AUTO_ROWS_MAX, dashboardKey } from '@/components/ui/panel/dashboardContext'
   import { dashboardViaKey } from '@/composables/shell/useDashboardSelection'
-  import { panelActiveKey, panelBorderedKey, panelFullPageKey } from '@/composables/shell/usePanelActive'
+  import { panelActiveKey, panelBorderedKey, panelFullPageKey, usePanelActive } from '@/composables/shell/usePanelActive'
   import { appBarSelectionKey } from '@/composables/shell/useShellActions'
   import { relations } from '@/schema/relations'
 
@@ -44,8 +44,9 @@
   const hidden = computed(() => dashboard.expanded.value !== null && !expanded.value)
   const placement = dashboard.placement(name)
 
-  // 面板中的登記（usePanelActive 的使用者）只在關注面板生效，與 TabPage 的頁籤同一套機制
-  provide(panelActiveKey, active)
+  // 面板中的登記（usePanelActive 的使用者）只在關注面板生效，與 TabPage 的頁籤同一套機制。外層的面板（例如頁籤）也須作用中
+  const outer = usePanelActive()
+  provide(panelActiveKey, computed(() => active.value && outer.value))
   // FAB、DetailPage 的上一列與下一列、左右滑動，只在展開時啟用
   provide(panelFullPageKey, expanded)
   // 展開時沒有外框
@@ -220,6 +221,11 @@
   min-height: 0;
   overflow: auto;
   container: dashboard-panel / size;
+}
+
+/* 內容在面板內捲動，固定於上緣的元素（例如頁籤列）以面板的上緣為準。展開時隨整頁捲動，沿用 App Bar 的高度 */
+.dashboard-panel:not(.dashboard-panel--expanded) .dashboard-panel__body {
+  --v-layout-top: 0px;
 }
 
 /* 展開時與一般頁面相同：沒有外框，高度不受限，隨整頁捲動 */

@@ -4,27 +4,31 @@
 - 切換時，內容依頁籤的順序左右滑動：前往右側的頁籤時，新內容從右側進入，舊內容往左側離開。方向與換頁動畫一致
 - 動畫由 Vuetify 的 `v-window` 提供，不經過換頁動畫的 View Transitions
 
-**頁籤列不畫在頁面中**：
-- 此元件將頁籤列登記給 `AppShell`，由 App Bar 下方的 extension 顯示。因此捲動內容時，頁籤列固定在最上方，也不隨換頁動畫滑動
-- 頁面只須放置此元件，無須處理位置。離開頁面時（包括被 KeepAlive 收起），頁籤列自動消失
-- 因此此元件須有 `AppShell`，與 `PageFab`、`useAppBarActions` 相同
+**頁籤列畫在此元件的最上方**：
+- 頁籤列置於 `v-window` 之外。切換頁籤時只有內容滑動，頁籤列不動
+- 頁籤列以 `position: sticky` 固定於 `--v-layout-top`，即 App Bar 的下緣。捲動內容時，頁籤列不離開畫面
+- 位於儀表板未展開的面板中時，[DashboardPanel](DashboardPanel.md) 將 `--v-layout-top` 設為 0，頁籤列固定於面板的上緣
+- 換頁時，頁籤列屬於頁面的內容，隨換頁動畫滑動
 - 搜尋模式下，頁籤列仍然保留
+- 頁籤列的分隔線與標示目前頁籤的顏色見 [design/tab.md](../../design/tab.md#外觀與切換)
 
 每個頁籤顯示為獨立的面板。看過的面板留在 DOM 中，以 `v-show` 隱藏，因此各自保有捲動位置與展開狀態。各面板的內容不必同構：頁籤只是容器，各自放置各自的內容。
 
 **面板知道自己是否為目前的頁籤**：
 - 此元件在每個頁籤外包一層 `TabPanel`，`provide` 一份「目前是否輪到此面板」
+- 此元件位於另一個面板之中時（例如儀表板的面板），外層的面板也須作用中，此面板才算作用中
 - `PageFab`、`useAppBarActions`、`useBottomActions` 皆讀取這份資訊。因此面板中可直接放整個列表，包括列表自己的 FAB 與 App Bar 動作。不是目前頁籤的面板，不會掛出這些動作
 - 不在 `TabPage` 中的頁面一律視為目前的頁籤，既有的頁面無須修改
 
-**兩個訊號的選擇**：兩者都來自頁面的頁籤 `v-model`，回答的問題不同：
+**兩個訊號的選擇**：兩者都來自頁籤的 `v-model`，回答的問題不同：
 
 | 程式所在的位置 | 使用 | 回答的問題 |
 | --- | --- | --- |
 | 掛在某個面板中（元件，或面板內元件呼叫的 composable） | `usePanelActive()` | 「**此面板**是否為目前的面板」 |
-| 在面板外（頁面層的 composable、`TabPage` 之外的元件） | `useCurrentTab()` | 「目前選的是哪個頁籤」 |
+| 此元件之中，但不屬於某一個面板的規則 | `useCurrentTab()` | 「目前選的是哪個頁籤」 |
 
-同一條規則只接其中一個，依程式所在的位置選擇。`useMultiSelect` 屬於頁面層，使用 `useCurrentTab()`。
+- 同一條規則只接其中一個，依規則回答的問題選擇。`useMultiSelect` 在切換頁籤時清空選取，使用 `useCurrentTab()`
+- `useCurrentTab()` 由此元件 provide，讀取最近一層 `TabPage` 的頁籤。此元件之外為 `null`。頁面本身須知道目前的頁籤時，直接讀取自己的 `v-model`
 
 常見的用法是依某個 `select` 欄位篩選列表，頁籤直接讀取該欄位的 `options`。讀取 `options` 前，須先以 `column?.type === 'select'` 縮小型別，此判斷不可省略。
 
@@ -49,7 +53,6 @@
 ## 備註
 
 - 只需要頁籤列、不需要內容區時，直接使用 Vuetify 的 `v-tabs`，不使用此元件。頁面自行放置的 `v-tabs` 會隨內容捲動
-- 一個畫面同時掛兩個 `TabPage` 時，兩者的頁籤列互相覆蓋，因為 App Bar 的 extension 只有一份
 - **不可嵌套**：`TabPage` 與 `DashboardPage` 不可互相嵌套，也不可嵌套自身。開發模式下於 console 警告
 - **頁籤中的列表自動共用搜尋**（見 [search.md](../../topics/search.md#同一頁面中的多張表)）：
   - 此元件 provide 一份共用的列表控制。各頁籤中的 `useListPage` 不自行登記，改為加入這份控制

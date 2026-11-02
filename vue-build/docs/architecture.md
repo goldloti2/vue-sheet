@@ -49,7 +49,7 @@ src/
                        useActionSlot（登記機制）、useShellActions（App Bar、底部、多選的出口）、
                        useListControls、useSharedListControls（TabPage 與 DashboardPage 中的列表共用搜尋）、
                        useDashboardSelection（dashboard 的互動）、useCompactLayout、
-                       viewTransition（換頁與面板內轉場共用的函數）、useAppBarTabs、usePanelActive、
+                       viewTransition（換頁與面板內轉場共用的函數）、useCurrentTab、usePanelActive、
                        useOverlay、useActionRunner、useDialogs（confirm、notify）、useAskFields
     navigation/        路由的接力：useRouteId、useListOrder、useFlow
     list/              列表的互動：useMultiSelect、useLongPress、useRowClick、useColumnWidths（表格的欄寬）

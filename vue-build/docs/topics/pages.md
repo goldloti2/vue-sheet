@@ -27,7 +27,7 @@
 | **篩選按鈕** | `useListControls()` | 位於搜尋輸入框內的最右側 |
 | **排序按鈕** | `useListControls()` | 表有提供 `sort` 時才出現。多選時與搜尋一同隱藏 |
 | **同步按鈕** | `AppShell` | 不屬於任何頁面 |
-| **頁籤列** | `TabPage` | 登記為 App Bar 下方的 extension |
+| **頁籤列** | `TabPage` | 畫在 `TabPage` 的最上方，捲動時固定於 App Bar 的下緣 |
 | **內容區** | `pages/*.vue` | 換頁時左右滑動的即為此區 |
 | **側邊欄** | [`NavDrawer`](../components/shell/NavDrawer.md) | 項目為 `config/navigation.ts` 的 `drawerSections`。「登出」在 `config/app.ts` 的 `authMethod` 不是 `'none'` 時出現 |
 | **篩選、排序抽屜** | `AppShell` 與 `FilterPanel`、`SortPanel` | 抽屜本身屬於 `AppShell`，兩個面板只提供內容，一次顯示一種（見 [search.md](search.md)） |
@@ -53,9 +53,9 @@
 - **多選時，搜尋按鈕隱藏**：`AppShell` 依「是否登記了取消」判斷目前是否為多選
 - **離開即取消選取**：
   - 換頁時清空選取。列表由 KeepAlive 快取，依 `onDeactivated` 判斷
-  - 換頁籤時清空選取。頁籤的訊號來自 `TabPage` 登記給 `AppShell` 的那一份（`useCurrentTab()`），因此同一張表的頁籤與各自一張表的面板使用同一條路徑
+  - 換頁籤時清空選取。頁籤的訊號來自所在的 `TabPage`（`useCurrentTab()`），因此同一張表的頁籤與各自一張表的面板使用同一條路徑
   - 頁面無須處理
-- **頁籤列由 `TabPage` 登記為 `AppShell` 的 extension**，因此不隨內容捲動
+- **頁籤列由 `TabPage` 畫在自己的最上方**，以 `position: sticky` 固定，因此捲動內容時不離開畫面（見 [TabPage](../components/panel/TabPage.md)）
 
 ---
 

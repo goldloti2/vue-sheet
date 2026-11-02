@@ -139,7 +139,7 @@
 - 狀態只出現在兩個地方：產生狀態的 composable，與顯示狀態的 `page/` 版型。`DataList`、`DataForm`、`DataDetail` 等內容元件都不處理 loading 與 error
 - 其他元件：`ViewActions`（view 的列上動作：一排按鈕、⋮ 選單或左右各兩格）、`PageFab`、`TabPage`、`RecordNav`、`AppDialog`、`ConfirmDialog`、`FieldsDialog`（只顯示幾欄的 `DataForm`）
 - `TabPage`：
-  - 頁籤列登記給 `AppShell`，顯示於 App Bar 的 extension，因此固定在最上方
+  - 頁籤列畫在 `TabPage` 的最上方，以 `position: sticky` 固定於 App Bar 的下緣
   - 每個頁籤外包一層 `TabPanel`，`provide` 一份「是否為目前的頁籤」（`panelActiveKey`）
   - 看過的面板一直掛著，`v-window` 以 `v-show` 切換
   - `PageFab`、`registerSlot`（App Bar、底部動作）、`useListOrder` 判斷「是否在作用中」的條件皆為「KeepAlive 狀態 && 目前的面板」。因此一個頁籤放一整張表的列表、各自掛上自己的 FAB 與動作是可行的
@@ -229,7 +229,7 @@
   - `useMultiSelect` 把退出的方式登記到 `appBarSelectionKey`，只提供一個函數，按鈕的外觀由 `AppShell` 決定，與放大鏡的分工相同。頁面無須設定
   - 該按鈕固定在同步按鈕左側，**不收進「⋮」**：收進選單即沒有明顯的出口
   - 「是否已登記」即為「目前是否為多選模式」。多選時，搜尋按鈕先讓位，把空間留給對選取的列的動作
-- 離開即取消選取：`onDeactivated`（KeepAlive 的列表換頁時）與 `useCurrentTab()`（換頁籤時）自動清除，頁面無須設定。頁籤的訊號取自 `TabPage` 登記給 `AppShell` 的那一份，頁面層與面板層讀到同一份，因此兩種頁籤形狀無須各寫一套
+- 離開即取消選取：`onDeactivated`（KeepAlive 的列表換頁時）與 `useCurrentTab()`（換頁籤時）自動清除，頁面無須設定。頁籤的訊號取自所在的 `TabPage`，同一張表的頁籤與各自一張表的頁籤讀到同一份，因此兩種頁籤形狀無須各寫一套
 - 刪除選取的列經過動作的 `confirm`
 
 ### 連續動作

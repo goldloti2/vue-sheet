@@ -9,13 +9,13 @@ export interface ListTable {
   schema: TableSchema
   filters: Ref<Filters>
   rows: Ref<readonly object[]>
-  // 使用者選擇的排序，null 表示 schema.defaultSort。有提供時才顯示排序按鈕
+  // 使用者選擇的排序，null 表示 schema.defaultSort。有提供且有可排序的欄位時才顯示排序按鈕
   sort?: Ref<SortSpec | null>
 }
 
 export interface ListControls {
   query: Ref<string>
-  // 有提供時顯示篩選按鈕（搜尋欄內）與排序按鈕（App Bar 上），兩者開啟同一個右側抽屜
+  // 篩選按鈕（搜尋欄內）與排序按鈕（App Bar 上）各自只列入有可用欄位的表，兩者開啟同一個右側抽屜
   drawer?: {
     // 每張表各有一份條件與排序，同時生效。單表的頁面只須一個元素
     tables: ListTable[]

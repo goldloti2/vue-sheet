@@ -18,7 +18,8 @@
   import { appBarActionsKey, appBarHeadingKey, appBarSelectionKey, bottomActionsKey } from '@/composables/shell/useShellActions'
   import { appName } from '@/config/app'
   import { navigationCount } from '@/router'
-  import { hasActiveFilter } from '@/schema/filter'
+  import { filterableColumns, hasActiveFilter } from '@/schema/filter'
+  import { sortableColumns } from '@/schema/sort'
   import { useTablesStore } from '@/stores/tables'
 
   export interface AppNavItem {
@@ -94,13 +95,15 @@
 
   // 一頁可有多張表的條件（每個頁籤各一張），任一張表有條件即為篩選中
   const drawerTables = computed(() => controls.value?.drawer?.tables ?? [])
-  const filterActive = computed(() => drawerTables.value.some(table => hasActiveFilter(table.filters.value)))
+  // 有可篩選欄位的表才列入篩選抽屜，沒有任何一張時不顯示篩選按鈕
+  const filterTables = computed(() => drawerTables.value.filter(table => filterableColumns(table.schema).length > 0))
+  const filterActive = computed(() => filterTables.value.some(table => hasActiveFilter(table.filters.value)))
 
   // 有搜尋字串或篩選條件時，放大鏡為主色
   const searchActive = computed(() => (controls.value?.query.value ?? '') !== '' || filterActive.value)
 
-  // 有 sort 的表才有排序按鈕。任一張表不是預設排序即為排序中
-  const sortTables = computed(() => drawerTables.value.filter(table => table.sort))
+  // 有 sort 且有可排序欄位的表才有排序按鈕。任一張表不是預設排序即為排序中
+  const sortTables = computed(() => drawerTables.value.filter(table => table.sort && sortableColumns(table.schema).length > 0))
   const sortActive = computed(() => sortTables.value.some(table => table.sort?.value))
 
   // 換頁時收起搜尋欄與抽屜。回到仍有 query 或篩選的頁面（KeepAlive）時重新打開搜尋欄
@@ -226,7 +229,7 @@
         variant="solo"
         @update:model-value="(value) => controls && (controls.query.value = value ?? '')"
       >
-        <template v-if="drawerTables.length > 0" #append-inner>
+        <template v-if="filterTables.length > 0" #append-inner>
           <v-btn
             aria-label="篩選"
             :color="filterActive ? 'primary' : undefined"
@@ -332,7 +335,7 @@
 
   <!-- 右側抽屜屬於 AppShell，面板只提供內容，一次顯示一種 -->
   <v-navigation-drawer
-    v-if="drawerTables.length > 0"
+    v-if="filterTables.length > 0 || sortTables.length > 0"
     v-model="drawerOpen"
     location="end"
     order="-1"
@@ -343,7 +346,7 @@
       v-if="shownPanel === 'filter'"
       :current="controls?.drawer?.current?.value"
       :open="drawerMode === 'filter'"
-      :tables="drawerTables"
+      :tables="filterTables"
     />
 
     <SortPanel

@@ -24,8 +24,8 @@
 | **左側圖示** | `AppShell` | 有 App 內的上一頁時為返回箭頭，否則為漢堡選單 |
 | **App Bar 的動作** | `useAppBarActions()` | 右側的圖示按鈕，三個以上收進「⋮」 |
 | **搜尋按鈕、搜尋列** | `useListControls()` | 為獨立的一個按鈕，不收進「⋮」。多選時隱藏 |
-| **篩選按鈕** | `useListControls()` | 位於搜尋輸入框內的最右側 |
-| **排序按鈕** | `useListControls()` | 表有提供 `sort` 時才出現。多選時與搜尋一同隱藏 |
+| **篩選按鈕** | `useListControls()` | 位於搜尋輸入框內的最右側。有表可篩選時才出現 |
+| **排序按鈕** | `useListControls()` | 表有提供 `sort` 且有可排序的欄位時才出現。多選時與搜尋一同隱藏 |
 | **同步按鈕** | `AppShell` | 不屬於任何頁面 |
 | **頁籤列** | `TabPage` | 畫在 `TabPage` 的最上方，捲動時固定於 App Bar 的下緣 |
 | **內容區** | `pages/*.vue` | 換頁時左右滑動的即為此區 |

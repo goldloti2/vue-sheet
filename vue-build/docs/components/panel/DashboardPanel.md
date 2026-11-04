@@ -18,9 +18,9 @@
 | `name` | `string` | **必填**，對應 `DashboardPage` 的 `layout`，也是連動中心中此面板的名稱。同一頁中不可重複 |
 | `title` | `string?` | 小外殼上的標題，展開時也是 App Bar 的標題 |
 | `frame` | `boolean?` | 預設 `true`。`false` 時沒有小外殼，不能成為關注點，也不能展開，適合圖表等純顯示的面板 |
-| `shared` | `boolean?` | 預設 `false`。開啟時，面板中的列表加入 dashboard 共用的搜尋、篩選與排序，點擊圖表寫入條件。關閉時，面板有自己的一份，與一般頁面相同，點擊圖表進入詳細頁。建立後不可切換 |
+| `shared` | `boolean?` | 預設 `false`。開啟時，面板中的列表加入 dashboard 共用的搜尋、篩選與排序，點擊圖表寫入條件，展開時則進入詳細頁。關閉時，面板有自己的一份，與一般頁面相同，點擊圖表進入詳細頁。建立後不可切換 |
 | `table` | `TableKey?` | 面板內容所屬的表。篩選抽屜開啟時，先停在關注面板的這張表。輸入中有未指定 `within` 的 `childrenOf` 時必填，面板以這張表算出列 |
-| `selects` | `boolean?` | 預設 `false`。開啟時點擊一列為選取，不換頁，並輸出 `selected`（見 [DashboardPage](DashboardPage.md) 的「連動」） |
+| `selects` | `boolean?` | 預設 `false`。開啟時點擊一列為選取，不換頁，並輸出 `selected`（見 [DashboardPage](DashboardPage.md) 的「連動」）。展開時點擊照常換頁，選取的那一列仍有標示 |
 | `scope` | `Link \| null?` | 面板內容的輸入，例如 `links.childrenOf(...)`、`links.selectionOf(...)`。面板中所有的列表只保留其中的列，未提供或沒有條件時不限制，沒有列時不列出任何列。面板中的詳細頁在剛好一列時顯示這一列，未提供、沒有條件、沒有列或多於一列時只顯示欄位名稱 |
 | `mark` | `Link \| null?` | 面板中的列表以另一種顏色標示其中的列，不影響列出哪些列。例如以 `links.shownOf(...)` 取得詳細面板顯示的列。點擊標示的列即照常選取。未提供或沒有條件時不標示 |
 
@@ -39,7 +39,7 @@
 | 詳細頁以 `useRecordPage` 從網址取得 id | 改取面板的 `scope` 中剛好一列的那一列，不讀網址 |
 | 列表頁的 `useListPage` 自行登記搜尋、篩選與排序 | 不自行登記。開啟 `shared` 時加入 dashboard 共用的一份，關閉時加入此元件自己的一份。`search: false` 的列表照常不加入任何一份 |
 | 列表頁取得的 `rows` | 依序經過面板的 `scope`、篩選、搜尋 |
-| 列表的每一列以 `to` 換頁 | 面板開啟 `selects` 時改為選取：`ListPage` 交給每一列的 `props` 另含 `current`、`pickable` 與 `pick`，選取的那一列另有標示 |
+| 列表的每一列以 `to` 換頁 | 面板開啟 `selects` 時改為選取：`ListPage` 交給每一列的 `props` 另含 `current`、`pickable` 與 `pick`，選取的那一列另有標示。展開時只含 `current`，點擊照常換頁 |
 | `ListPage` 與 `ChartPage` 顯示的列，`DetailPage` 顯示的那一列 | 輸出為面板的 `shown`。`ListPage` 另輸出選取的列 |
 | `useAppBarActions`、FAB、`DetailPage` 的上一列與下一列、左右滑動 | 見 [DashboardPage](DashboardPage.md) 的「App Bar、FAB 與搜尋」與「展開」 |
 | 刪除目前那一列後自動離開 | 只在網址為 `/表/id` 時觸發，dashboard 中不觸發 |

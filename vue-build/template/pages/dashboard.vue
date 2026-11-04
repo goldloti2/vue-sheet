@@ -28,7 +28,7 @@
 <template>
   <!-- 各面板預設有自己的搜尋、篩選與排序。加上 shared 的面板改為加入全頁共用的一份 -->
   <DashboardPage :layout="layout" :links="links">
-    <!-- selects：點擊一列為選取，不換頁 -->
+    <!-- selects：點擊一列為選取，不換頁。展開時照常換頁 -->
     <DashboardPanel name="parents" selects table="__parent__" title="父表">
       <ParentList />
     </DashboardPanel>

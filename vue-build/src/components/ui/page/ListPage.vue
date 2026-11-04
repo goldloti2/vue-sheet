@@ -10,7 +10,7 @@
   import PageFab from '@/components/ui/shell/PageFab.vue'
   import { provideListOrder } from '@/composables/navigation/useListOrder'
   import { useDashboardPanel } from '@/composables/shell/useDashboardLinks'
-  import { usePanelVisible } from '@/composables/shell/usePanelActive'
+  import { usePanelFullPage, usePanelVisible } from '@/composables/shell/usePanelActive'
   import { flattenGroups } from '@/schema/group'
 
   const props = defineProps<{
@@ -52,11 +52,13 @@
     }, { immediate: true })
   }
 
-  // 每一列的綁定：多選、面板的 mark，加上面板開啟 selects 時的選取（點擊改為選取、標示選取的那一列）
+  // 每一列的綁定：多選、面板的 mark，加上面板開啟 selects 時的選取（標示選取的那一列，未展開時點擊改為選取）
+  const fullPage = usePanelFullPage()
   function rowProps (id: string): object {
     const marked = panel?.marked(id) ? { marked: true } : {}
+    const picks = panel?.selects() && !fullPage.value
     const linked = panel?.selects()
-      ? { current: panel.selected() === id, pickable: true, onPick: () => panel.toggle(id) }
+      ? { current: panel.selected() === id, ...(picks ? { pickable: true, onPick: () => panel.toggle(id) } : {}) }
       : {}
     return { ...props.selection?.itemProps(id), ...marked, ...linked }
   }

@@ -49,9 +49,9 @@
     void router.push(`/${table}/${id}`)
   }
 
-  // 加入共用的 dashboard 面板中寫入這一組與其系列的條件，否則進入詳細頁。沒有列的組（例如沒有資料的區間）不換頁
+  // 加入共用且未展開的 dashboard 面板中寫入這一組與其系列的條件，否則進入詳細頁。沒有列的組（例如沒有資料的區間）不換頁
   function onGroup (group: ChartGroupData<Row>, series: ChartGroupData<Row> | null) {
-    if (panel?.shared()) {
+    if (panel?.shared() && !fullPage.value) {
       if (group.filter) {
         filters.value = pickElement(filters.value, series?.filter ? [group.filter, series.filter] : [group.filter])
       }

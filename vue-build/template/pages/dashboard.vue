@@ -8,10 +8,14 @@
 <script lang="ts" setup>
   import DashboardPage from '@/components/ui/panel/DashboardPage.vue'
   import DashboardPanel from '@/components/ui/panel/DashboardPanel.vue'
+  import { useDashboardLinks } from '@/composables/shell/useDashboardLinks'
   // 既有的頁面以元件 import，其 <route> 不生效
   import ParentDetail from './__parent__/[id]/index.vue'
   import ParentList from './__parent__/_ref/__Parent__List.vue'
   import ChildTableList from './__table__/_ref/__Table__List.vue'
+
+  // 面板之間的連動。不須連動時省略，DashboardPage 也不傳 links
+  const links = useDashboardLinks()
 
   // 以面板的 name 對應，手機與電腦分別指定（格數與規則見 docs/design/dashboard.md）
   const layout = {
@@ -22,17 +26,24 @@
 </script>
 
 <template>
-  <!-- interactive：點擊一列改為選取，父表詳細顯示選取的列，子表只列出其子列。父表的篩選條件也往下連動至子表 -->
-  <DashboardPage interactive :layout="layout">
-    <DashboardPanel name="parents" table="__parent__" title="父表">
+  <DashboardPage :layout="layout" :links="links">
+    <!-- selects：點擊一列為選取，不換頁 -->
+    <DashboardPanel name="parents" selects table="__parent__" title="父表">
       <ParentList />
     </DashboardPanel>
 
-    <DashboardPanel name="parent" table="__parent__" title="父表詳細">
+    <!-- 詳細頁在 scope 剛好一列時顯示這一列：此處為父表列表中選取的列 -->
+    <DashboardPanel name="parent" :scope="links.selectionOf('parents')" table="__parent__" title="父表詳細">
       <ParentDetail />
     </DashboardPanel>
 
-    <DashboardPanel name="children" table="__table__" title="子表">
+    <!-- 只列出所選父列的子列，__parent__ 為子表指向父表的 ref 欄位。尚未選取時不列出任何列，selectionOf 加上 'all' 即列出全部 -->
+    <DashboardPanel
+      name="children"
+      :scope="links.childrenOf(links.selectionOf('parents'), '__parent__')"
+      table="__table__"
+      title="子表"
+    >
       <ChildTableList />
     </DashboardPanel>
   </DashboardPage>

@@ -119,7 +119,7 @@ export const orderSchema: TableSchema<OrderRow> = {
 
 虛擬欄位也可以是 `ref`：`value` 回傳父列的 id，用於經由另一列父列取得的多層關聯。
 - store 同樣掛上 `row.$欄位key`，顯示、排序與搜尋皆以父列的名稱呈現，父表也一起載入
-- 虛擬的 ref 不進入關聯圖：父表沒有對應的 `$子表_欄位key`，不能設定 `onDelete`、`onEmpty`，也不能作為 dashboard 的 `via`
+- 虛擬的 ref 不進入關聯圖：父表沒有對應的 `$子表_欄位key`，不能設定 `onDelete`、`onEmpty`。dashboard 的接線可以使用虛擬的 ref（見 [DashboardPage](../components/panel/DashboardPage.md#小工具)）
 
 型別共有八種：`text`、`number`、`date`、`duration`、`boolean`、`select`、`ref`、`image`。每種型別有專屬的設定，例如 `number` 的 `min`、`max`、`step`，`select` 的 `options`，`ref` 的 `refTable`。完整清單見 [`types.ts`](../../src/schema/types.ts)。
 

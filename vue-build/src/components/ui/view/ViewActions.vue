@@ -3,7 +3,7 @@
   import { mdiDotsVertical } from '@mdi/js'
   import { computed, ref, useTemplateRef } from 'vue'
   import { useRunAction } from '@/composables/shell/useActionRunner'
-  import { useDashboardSelection } from '@/composables/shell/useDashboardSelection'
+  import { useDashboardPanel } from '@/composables/shell/useDashboardLinks'
 
   // view 的列上動作，row 為一排按鈕、menu 為 ⋮ 選單、slots 為左右各兩格（見 docs/components/view/ViewActions.md）
   const { actions, variant = 'row' } = defineProps<{
@@ -18,7 +18,7 @@
   const visible = computed(() => items.value.some(action => action !== null))
 
   // dashboard 中，文字按鈕另繪圖示，窄面板時改為顯示圖示。一般頁面不建立這個 v-icon
-  const inDashboard = useDashboardSelection() !== null
+  const inDashboard = useDashboardPanel() !== null
 
   const runAction = useRunAction()
 

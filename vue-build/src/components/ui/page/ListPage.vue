@@ -3,13 +3,14 @@
   import type { MultiSelect } from '@/composables/list/useMultiSelect'
   import type { TableKey } from '@/schema'
   import type { RowGroup } from '@/schema/group'
-  import { computed } from 'vue'
+  import { computed, watch } from 'vue'
   import GroupedList from '@/components/ui/list/GroupedList.vue'
   import ListLayout from '@/components/ui/list/ListLayout.vue'
   import PageState from '@/components/ui/page/PageState.vue'
   import PageFab from '@/components/ui/shell/PageFab.vue'
   import { provideListOrder } from '@/composables/navigation/useListOrder'
-  import { useDashboardSelection } from '@/composables/shell/useDashboardSelection'
+  import { useDashboardPanel } from '@/composables/shell/useDashboardLinks'
+  import { usePanelVisible } from '@/composables/shell/usePanelActive'
   import { flattenGroups } from '@/schema/group'
 
   const props = defineProps<{
@@ -39,11 +40,22 @@
   const shown = computed<Row[]>(() => props.groups ? flattenGroups(props.groups) : props.rows ?? [])
   provideListOrder(props.table, () => shown.value.map(row => row.id))
 
-  // 每一列的綁定：多選，加上 dashboard 開啟互動時的選取（點擊改為選取、標示選取的那一列）
-  const dashboard = useDashboardSelection()
+  // dashboard 的面板中，輸出列出的列。頁籤中的列表只在目前的頁籤時輸出，載入中不輸出
+  // 刻意用 watch 而非 watchEffect：回呼不追蹤面板的輸出，同一個面板中的兩個列表不會互相觸發
+  const panel = useDashboardPanel()
+  const visible = usePanelVisible()
+  if (panel) {
+    watch([visible, () => props.loading, shown], ([isVisible, loading, rows]) => {
+      if (isVisible && !loading) {
+        panel.show(props.table, rows.map(row => row.id))
+      }
+    }, { immediate: true })
+  }
+
+  // 每一列的綁定：多選，加上面板開啟 selects 時的選取（點擊改為選取、標示選取的那一列）
   function rowProps (id: string): object {
-    const linked = dashboard?.interactive()
-      ? { current: dashboard.selectedId(props.table) === id, pickable: true, onPick: () => dashboard.toggle(props.table, id) }
+    const linked = panel?.selects()
+      ? { current: panel.selected() === id, pickable: true, onPick: () => panel.toggle(id) }
       : {}
     return { ...props.selection?.itemProps(id), ...linked }
   }

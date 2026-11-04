@@ -2,13 +2,14 @@
   import type { TableKey } from '@/schema'
   import type { ChartDefinition, ChartGroupData, GroupFilter } from '@/schema/chart'
   import type { Filters } from '@/schema/filter'
+  import { watch } from 'vue'
   import { useRouter } from 'vue-router'
   import DataChart from '@/components/ui/chart/DataChart.vue'
   import DataStat from '@/components/ui/chart/DataStat.vue'
   import PageState from '@/components/ui/page/PageState.vue'
   import { publishListOrder } from '@/composables/navigation/useListOrder'
-  import { useDashboardSelection } from '@/composables/shell/useDashboardSelection'
-  import { usePanelBordered, usePanelFullPage } from '@/composables/shell/usePanelActive'
+  import { useDashboardPanel } from '@/composables/shell/useDashboardLinks'
+  import { usePanelBordered, usePanelFullPage, usePanelVisible } from '@/composables/shell/usePanelActive'
   import { pickElement, toggleLegend } from '@/schema/chart'
 
   // 圖表的整頁版型：載入狀態、高光，以及點擊後進入詳細頁或寫入條件（見 docs/components/page/ChartPage.md）
@@ -28,9 +29,19 @@
 
   const router = useRouter()
   const fullPage = usePanelFullPage()
-  const dashboard = useDashboardSelection()
   // 位於有外框的面板中時，stat 沒有外圍留白
   const bordered = usePanelBordered()
+
+  // dashboard 的面板中，輸出圖表所用的列，不輸出選取。頁籤中的圖表只在目前的頁籤時輸出，載入中不輸出
+  const panel = useDashboardPanel()
+  const visible = usePanelVisible()
+  if (panel) {
+    watch([visible, () => loading, () => rows], ([isVisible, isLoading, shownRows]) => {
+      if (isVisible && !isLoading) {
+        panel.show(table, shownRows.map(row => row.id))
+      }
+    }, { immediate: true })
+  }
 
   // 進入一列的詳細頁，上一列、下一列在 ids 之間切換
   function open (id: string, ids: readonly string[]) {
@@ -38,9 +49,9 @@
     void router.push(`/${table}/${id}`)
   }
 
-  // 互動儀表板中寫入這一組與其系列的條件，否則進入詳細頁。沒有列的組（例如沒有資料的區間）不換頁
+  // dashboard 中寫入這一組與其系列的條件，否則進入詳細頁。沒有列的組（例如沒有資料的區間）不換頁
   function onGroup (group: ChartGroupData<Row>, series: ChartGroupData<Row> | null) {
-    if (dashboard?.interactive()) {
+    if (panel) {
       if (group.filter) {
         filters.value = pickElement(filters.value, series?.filter ? [group.filter, series.filter] : [group.filter])
       }

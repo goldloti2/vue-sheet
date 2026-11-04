@@ -48,8 +48,8 @@ src/
     shell/             與 AppShell 溝通：
                        useActionSlot（登記機制，以及容器收下內容登記的 relaySlot）、useShellActions（App Bar、底部、多選的出口）、
                        useListControls、useSharedListControls（TabPage 與 DashboardPage 中的列表共用搜尋）、
-                       useDashboardSelection（dashboard 的互動）、useCompactLayout、
-                       viewTransition（換頁與面板內轉場共用的函數）、useCurrentTab、usePanelActive、
+                       useDashboardLinks（dashboard 的連動中心與面板的輸入、輸出）、useCompactLayout、
+                       viewTransition（換頁與面板內轉場共用的函數）、useCurrentTab、usePanelActive（含 usePanelVisible）、
                        useOverlay、useActionRunner、useDialogs（confirm、notify）、useAskFields
     navigation/        路由的接力：useRouteId、useListOrder、useFlow
     list/              列表的互動：useMultiSelect、useLongPress、useRowClick、useColumnWidths（表格的欄寬）
@@ -100,7 +100,7 @@ src/
 | **頁籤**（tab） | `tab-list.vue` + `_ref/list.vue` | `TabPage`，各頁籤中為 `useListPage` + `ListPage` | 依哪個欄位分頁籤、各頁籤的內容 |
 | **詳細**（detail） | `detail.vue`。子表的完整列表為 `child-list.vue` | `useRecordPage` + `DetailPage` | 選用的標頭、欄位的動作、子表區塊等 slot 中的內容 |
 | **表單**（form） | `new.vue`、`edit.vue` | `useCreateForm` 或 `useEditForm` + `FormPage` | 幾乎無須撰寫，欄位與順序由 schema 決定 |
-| **儀表板**（dashboard） | `dashboard.vue` | `DashboardPage` + `DashboardPanel`，面板中放置各表 `_ref/` 中的列表與詳細頁 | 放入哪些面板、各自的大小、是否開啟互動模式 |
+| **儀表板**（dashboard） | `dashboard.vue` | `DashboardPage` + `DashboardPanel`，面板中放置各表 `_ref/` 中的列表與詳細頁 | 放入哪些面板、各自的大小、面板之間如何接線 |
 | **圖表**（chart） | `chart.vue` | `useListPage` + `defineChart` + `ChartPage` | 圖表的種類、分組的欄位與每組的數值 |
 
 - 版面與上述皆不同時（例如自訂的排列方式），不套用版型元件，資料層仍可共用。此時須自行以 `provideListOrder` 提供畫面上的順序

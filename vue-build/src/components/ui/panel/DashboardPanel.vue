@@ -1,19 +1,19 @@
 <script lang="ts" setup>
   import type { DashboardContext } from '@/components/ui/panel/dashboardContext'
+  import type { Link } from '@/composables/shell/useDashboardLinks'
   import type { TableKey } from '@/schema'
   import { mdiArrowExpand } from '@mdi/js'
   import { computed, inject, onBeforeUnmount, onMounted, provide, shallowRef, useTemplateRef, watch } from 'vue'
   import { AUTO_ROWS_MAX, dashboardKey } from '@/components/ui/panel/dashboardContext'
   import { relaySlot } from '@/composables/shell/useActionSlot'
-  import { dashboardViaKey } from '@/composables/shell/useDashboardSelection'
+  import { dashboardPanelKey } from '@/composables/shell/useDashboardLinks'
   import { listControlsKey } from '@/composables/shell/useListControls'
   import { panelActiveKey, panelBorderedKey, panelFullPageKey, usePanelActive } from '@/composables/shell/usePanelActive'
   import { appBarSelectionKey } from '@/composables/shell/useShellActions'
-  import { relations } from '@/schema/relations'
 
   // dashboard 的一個面板：小外殼、關注點，以及面板內容各項登記生效的時機（見 docs/components/panel/DashboardPanel.md）
-  const { name, title, frame = true, table, via } = defineProps<{
-    // 對應 DashboardPage 的 layout
+  const { name, title, frame = true, table, selects = false, scope = null } = defineProps<{
+    // 對應 DashboardPage 的 layout，也是連動中心中此面板的名稱
     name: string
     // 小外殼上的標題
     title?: string
@@ -21,8 +21,10 @@
     frame?: boolean
     // 面板內容所屬的表。抽屜開啟時，先停在關注面板的這張表
     table?: TableKey
-    // 互動經由的 ref 欄位：子表的列表為自己的欄位，父表的詳細面板為子表的欄位。未提供時使用全部
-    via?: string
+    // 點擊一列為選取，不換頁
+    selects?: boolean
+    // 面板內容的輸入：列表只保留其中的列，沒有條件時不限制。詳細頁在剛好一列時顯示這一列
+    scope?: Link | null
   }>()
 
   const injected = inject(dashboardKey)
@@ -32,10 +34,51 @@
   // 另存一份已確定存在的值，供函數宣告（會被提升）使用
   const dashboard: DashboardContext = injected
 
-  provide(dashboardViaKey, via)
-  if (import.meta.env.DEV && via && !relations.some(relation => relation.column === via)) {
-    console.warn(`[DashboardPanel] 面板 ${name} 的 via "${via}" 不是任何一張表的 ref 欄位`)
+  // 等待面板補上表的值，以面板的 table 算出列。須與面板的表相同
+  function settle (link: Link | null, input: string): Link | null {
+    if (link?.resolve && !table && import.meta.env.DEV) {
+      console.warn(`[DashboardPanel] ${name}：${input} 中有未指定 within 的 childrenOf，面板須指定 table`)
+    }
+    const settled = link?.resolve ? (table ? link.resolve(table) : null) : link
+    if (import.meta.env.DEV && settled?.table && table && settled.table !== table) {
+      console.warn(`[DashboardPanel] ${name}：${input} 為 ${settled.table} 的列，面板的表為 ${table}`)
+    }
+    return settled
   }
+
+  const scopeLink = computed(() => settle(scope, 'scope'))
+  const scopeTest = computed(() => {
+    const ids = scopeLink.value?.ids
+    if (!ids) {
+      return null
+    }
+    const kept = new Set(ids)
+    return (row: object) => kept.has((row as { id: string }).id)
+  })
+
+  // 面板的輸入與輸出，由 ListPage、ChartPage、useListPage、useRecordPage 與詳細頁的導覽讀取
+  const links = dashboard.links
+  provide(dashboardPanelKey, {
+    selects: () => selects,
+    selected: () => links.output(name)?.selected ?? null,
+    toggle: id => dashboard.transition('fade', () => links.select(name, links.output(name)?.selected === id ? null : id)),
+    show: (shownTable, ids) => links.show(name, shownTable, ids),
+    scope: () => scopeTest.value,
+    recordId: () => {
+      const ids = scopeLink.value?.ids
+      return ids?.length === 1 ? ids[0]! : ''
+    },
+    recordOrder: () => {
+      const from = scopeLink.value?.from
+      return from ? links.output(from)?.shown ?? null : null
+    },
+    goRecord: (id, direction) => {
+      const from = scopeLink.value?.from
+      if (from && links.output(from)?.selected !== id) {
+        dashboard.transition(direction, () => links.select(from, id))
+      }
+    },
+  })
 
   // 面板內容的多選出口與搜尋先交到此處，由 DashboardPage 只取關注面板的那一份登記
   const selection = relaySlot(appBarSelectionKey, null)

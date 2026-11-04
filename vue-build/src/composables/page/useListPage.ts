@@ -2,12 +2,12 @@ import type { TableKey } from '@/schema'
 import type { Filters } from '@/schema/filter'
 import type { SortSpec, TableSchema } from '@/schema/types'
 import type { Ref } from 'vue'
-import { computed, inject, ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useFilter } from '@/composables/data/useFilter'
 import { useSearch } from '@/composables/data/useSearch'
 import { useSortedTableList } from '@/composables/data/useTable'
 import { useMultiSelect } from '@/composables/list/useMultiSelect'
-import { dashboardViaKey, useDashboardSelection } from '@/composables/shell/useDashboardSelection'
+import { useDashboardPanel } from '@/composables/shell/useDashboardLinks'
 import { useListControls } from '@/composables/shell/useListControls'
 import { useSharedListControls } from '@/composables/shell/useSharedListControls'
 
@@ -22,7 +22,7 @@ export interface ListPageOptions<Row> {
   ignoreFilter?: readonly string[]
 }
 
-// 列表頁的資料層：整表 → scope（含 dashboard 的互動）→ 篩選 → 搜尋，以及多選（見 docs/components/page/ListPage.md）
+// 列表頁的資料層：整表 → scope（含 dashboard 面板的輸入）→ 篩選 → 搜尋，以及多選（見 docs/components/page/ListPage.md）
 export function useListPage<Row extends { id: string }> (
   table: TableKey,
   schema: TableSchema,
@@ -33,12 +33,11 @@ export function useListPage<Row extends { id: string }> (
     ? { ...shared.join<Row>(table, schema), query: shared.query }
     : ownControls<Row>(table, schema, options)
 
-  // dashboard 的互動：子表只留所選父列的子列，且父列須符合上層的條件。與 scope 位於同一步
+  // dashboard 面板的輸入與上層的條件，與 scope 位於同一步
   const { scope } = options
-  const dashboard = useDashboardSelection()
-  const via = inject(dashboardViaKey, undefined)
+  const panel = useDashboardPanel()
   const scopedRows = computed(() => {
-    const tests = [scope, dashboard?.parentScope(table), shared?.upperFilter(table, via)]
+    const tests = [scope, panel?.scope(), shared?.upperFilter(table)]
       .filter(test => !!test)
     if (tests.length === 0) {
       return allRows.value

@@ -2,7 +2,7 @@ import type { TableKey } from '@/schema'
 import type { ComputedRef, InjectionKey, MaybeRefOrGetter } from 'vue'
 import { computed, inject, provide, reactive, toValue } from 'vue'
 import { useRouter } from 'vue-router'
-import { useDashboardSelection } from '@/composables/shell/useDashboardSelection'
+import { useDashboardPanel } from '@/composables/shell/useDashboardLinks'
 
 // 點擊一列時發布的順序，詳細頁以此計算上一列與下一列
 const orders = reactive(new Map<TableKey, string[]>())
@@ -36,13 +36,13 @@ interface SiblingNav {
   swipe: { left: () => void, right: () => void }
 }
 
-// 詳細頁呼叫：上一列與下一列的導覽。於 dashboard 的面板中改為切換選取，不離開 dashboard
+// 詳細頁呼叫：上一列與下一列的導覽。於 dashboard 的面板中改為移動來源列表的選取，不離開 dashboard
 export function useSiblingNav (table: TableKey, id: MaybeRefOrGetter<string>): SiblingNav {
   const router = useRouter()
-  const dashboard = useDashboardSelection()
+  const panel = useDashboardPanel()
 
   const siblings = computed<Siblings>(() => {
-    const order = orders.get(table)
+    const order = panel ? panel.recordOrder() : orders.get(table)
     const index = order?.indexOf(toValue(id)) ?? -1
     if (!order || index === -1) {
       return { prev: null, next: null }
@@ -58,8 +58,8 @@ export function useSiblingNav (table: TableKey, id: MaybeRefOrGetter<string>): S
     if (!target) {
       return
     }
-    if (dashboard) {
-      dashboard.select(table, target, direction)
+    if (panel) {
+      panel.goRecord(target, direction)
     } else {
       void router.replace(`/${table}/${target}`)
     }

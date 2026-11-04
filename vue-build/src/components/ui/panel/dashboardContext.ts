@@ -1,4 +1,5 @@
 import type { PanelPlacement } from './placePanels'
+import type { LinksState } from '@/composables/shell/useDashboardLinks'
 import type { ListControls } from '@/composables/shell/useListControls'
 import type { TableKey } from '@/schema'
 import type { ComputedRef, InjectionKey, Ref } from 'vue'
@@ -35,6 +36,10 @@ export interface DashboardContext {
   gap: number
   // 面板內的轉場進行中：fade 時各面板各自命名，slide 時只有展開的面板命名（見 DashboardPage）
   panelTransition: Readonly<Ref<'fade' | 'slide' | null>>
+  // 選取改變時的轉場：fade 用於點擊，forward 與 back 用於上一列、下一列
+  transition: (kind: 'fade' | 'forward' | 'back', update: () => void) => void
+  // 各面板的輸出
+  links: LinksState
 }
 
 export const dashboardKey: InjectionKey<DashboardContext> = Symbol('dashboard')

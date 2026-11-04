@@ -1,6 +1,6 @@
 <script lang="ts" setup>
   import { provide, toRef } from 'vue'
-  import { panelActiveKey, usePanelActive } from '@/composables/shell/usePanelActive'
+  import { panelActiveKey, panelVisibleKey, usePanelActive, usePanelVisible } from '@/composables/shell/usePanelActive'
 
   const props = defineProps<{
     active: boolean
@@ -9,6 +9,8 @@
   // TabPage 內部使用：每個頁籤各有一份 provide。外層的面板（例如儀表板的面板）也須作用中
   const outer = usePanelActive()
   provide(panelActiveKey, toRef(() => props.active && outer.value))
+  const outerVisible = usePanelVisible()
+  provide(panelVisibleKey, toRef(() => props.active && outerVisible.value))
 </script>
 
 <template>

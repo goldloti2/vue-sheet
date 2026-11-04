@@ -25,6 +25,7 @@
 | 程式所在的位置 | 使用 | 回答的問題 |
 | --- | --- | --- |
 | 掛在某個面板中（元件，或面板內元件呼叫的 composable） | `usePanelActive()` | 「**此面板**是否為目前的面板」 |
+| 掛在某個面板中，且不受 dashboard 的關注點影響 | `usePanelVisible()` | 「**此面板**是否為所在 `TabPage` 的目前頁籤」，例如 `ListPage` 決定是否輸出列出的列 |
 | 此元件之中，但不屬於某一個面板的規則 | `useCurrentTab()` | 「目前選的是哪個頁籤」 |
 
 - 同一條規則只接其中一個，依規則回答的問題選擇。`useMultiSelect` 在切換頁籤時清空選取，使用 `useCurrentTab()`

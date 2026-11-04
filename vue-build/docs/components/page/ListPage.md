@@ -5,7 +5,7 @@
 此元件搭配 `useListPage(table, schema)` 使用：
 - `useListPage` 依序處理：整張表 → `scope` → 篩選 → 搜尋，並提供長按多選
 - 回傳的 `rows`、`loading`、`error`、`selection` 直接對應此元件的 prop
-- 選用的 `scope`（`row => boolean`）在篩選與搜尋之前只保留部分的列，例如頁籤的狀態。儀表板的互動篩選（依所選的父列篩出子列）也位於這一步
+- 選用的 `scope`（`row => boolean`）在篩選與搜尋之前只保留部分的列，例如頁籤的狀態。儀表板面板的 `scope`（例如依所選的父列篩出子列）也位於這一步
 - 選用的 `ignoreFilter`（欄位 key 的陣列）指定不套用至 `rows` 的條件，抽屜中仍顯示這些條件。圖表以此忽略分組欄與系列欄（見 [chart.md](../../topics/chart.md#分組欄與系列欄上的條件)）
 
 **搜尋與排序來自 `useListPage`，不來自此元件**：
@@ -36,7 +36,7 @@
 
 | slot | scope | 說明 |
 | --- | --- | --- |
-| `default` | `{ row, props }` | 每一列。`props` 為多選須綁定的屬性：`selectable`、`selectMode`、`selected` 與長按、點選的事件。以 `v-bind` 綁定至 `DataList`、`DataProfile`、`DataCard` 或 `DataGallery` 即可。位於開啟互動的 dashboard 中時，另含 `current`、`pickable`、`pick`，點擊改為選取。兩者皆無時為空物件 |
+| `default` | `{ row, props }` | 每一列。`props` 為多選須綁定的屬性：`selectable`、`selectMode`、`selected` 與長按、點選的事件。以 `v-bind` 綁定至 `DataList`、`DataProfile`、`DataCard` 或 `DataGallery` 即可。位於開啟 `selects` 的 dashboard 面板中時，另含 `current`、`pickable`、`pick`，點擊改為選取。兩者皆無時為空物件 |
 | `rows` | `{ rows }` | 一次提供全部的列，用於表格式列表。提供此 slot 時不使用 `default`，也沒有多選的綁定，`DataTable` 本身不支援多選 |
 
 ### 表格式
@@ -117,4 +117,5 @@ useListControls(query, {
 
 - **版面確實不同時，才自行組合**：總覽頁那類混合的版面不使用此元件，資料層仍可使用 `useListPage`。此時頁面須自行呼叫 `provideListOrder(table, computed(() => 畫面上的順序))`（見 [RecordNav](../record/RecordNav.md)）
 - 空列表即顯示為空，不顯示「找不到資料」（見 [PageState](PageState.md)）
+- **位於 dashboard 的面板中時，自動輸出列出的列與選取的列**（見 [DashboardPage](../panel/DashboardPage.md#面板的輸出)）。頁籤中的列表只在目前的頁籤時輸出，載入中不輸出。不使用此元件的自訂列表沒有輸出
 - **內容區為不具名的 container**（`container-type: inline-size`）：列表元件以 `cqw` 依寬度估計畫面外各列的高度（見 [DataCard](../list/DataCard.md) 的備註）。此 container 不具名，不影響 dashboard 以 `@container dashboard-panel` 判斷的窄版

@@ -2,13 +2,14 @@
   import type { DashboardContext, DashboardPanelEntry } from '@/components/ui/panel/dashboardContext'
   import type { PanelRequest, PanelSize } from '@/components/ui/panel/placePanels'
   import type { PageAction } from '@/composables/actions/useTableActions'
+  import type { DashboardLinks } from '@/composables/shell/useDashboardLinks'
   import { computed, inject, nextTick, onBeforeUnmount, onMounted, provide, shallowReactive, shallowRef, useTemplateRef } from 'vue'
   import { useRouter } from 'vue-router'
   import { AUTO_ROWS_MAX, COLS, dashboardKey, GAP } from '@/components/ui/panel/dashboardContext'
   import { placePanels } from '@/components/ui/panel/placePanels'
   import { registerSlot, relaySlot } from '@/composables/shell/useActionSlot'
   import { useCompactLayout } from '@/composables/shell/useCompactLayout'
-  import { provideDashboardSelection } from '@/composables/shell/useDashboardSelection'
+  import { linksState, useDashboardLinks } from '@/composables/shell/useDashboardLinks'
   import { listControlsKey } from '@/composables/shell/useListControls'
   import { provideSharedListControls } from '@/composables/shell/useSharedListControls'
   import { appBarActionsKey, useAppBarActions, useAppBarHeading, useAppBarSelection } from '@/composables/shell/useShellActions'
@@ -16,15 +17,29 @@
   import { schemas } from '@/schema'
 
   // 同時顯示多個面板：方格排版、關注點，以及各列表面板共用的搜尋、篩選與排序（見 docs/components/panel/DashboardPage.md）
-  const { layout = {}, interactive = false } = defineProps<{
+  const { layout = {}, links: givenLinks } = defineProps<{
     // 面板的 name → 手機與電腦的排版。未列出的面板或留空的斷點為自動
     layout?: Record<string, { mobile?: PanelSize, desktop?: PanelSize }>
-    // 開啟時，點擊一列改為選取，與該列直接相關的面板跟著改變
-    interactive?: boolean
+    // useDashboardLinks() 建立的連動中心。不須接線時省略
+    links?: DashboardLinks
   }>()
+
+  // 連動中心於建立時取得一次，之後不更換
+  const links = linksState(givenLinks ?? useDashboardLinks())
 
   if (import.meta.env.DEV && inject(dashboardKey, null)) {
     console.warn('DashboardPage 不可嵌套自身')
+  }
+
+  // 接線用到的面板名稱須存在
+  if (import.meta.env.DEV) {
+    onMounted(() => {
+      for (const name of links.referenced()) {
+        if (!panels.some(entry => entry.name === name)) {
+          console.warn(`[DashboardPage] 沒有名為 ${name} 的面板`)
+        }
+      }
+    })
   }
 
   // 面板的最小寬度（格數）
@@ -159,6 +174,8 @@
     cellSize: cell,
     gap: GAP,
     panelTransition,
+    transition: (kind, update) => void transition(kind, update),
+    links,
   }
   provide(dashboardKey, context)
 
@@ -167,7 +184,7 @@
     const table = panels.find(entry => entry.name === focused.value)?.table
     return table ? schemas[table].tableLabel : ''
   })
-  const sharedControls = provideSharedListControls(focusedTableLabel, () => interactive)
+  const sharedControls = provideSharedListControls(focusedTableLabel)
 
   // App Bar 的搜尋：關注面板有自己的一份時為該份，沒有時為共用的一份
   registerSlot(listControlsKey, () => focusedEntry.value?.controls.value ?? sharedControls.value, null)
@@ -190,9 +207,6 @@
       panelTransition.value = null
     })
   }
-
-  // 互動的選取。未開啟互動時沒有選取，詳細面板只顯示欄位名稱
-  provideDashboardSelection(() => interactive, transition)
 
   // 展開時不排方格，展開的面板與一般頁面相同
   const gridStyle = computed(() => expanded.value

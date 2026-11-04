@@ -12,7 +12,7 @@
   import RecordNav from '@/components/ui/record/RecordNav.vue'
   import PageFab from '@/components/ui/shell/PageFab.vue'
   import { useSiblingNav } from '@/composables/navigation/useListOrder'
-  import { useDashboardSelection } from '@/composables/shell/useDashboardSelection'
+  import { useDashboardPanel } from '@/composables/shell/useDashboardLinks'
   import { usePanelFullPage } from '@/composables/shell/usePanelActive'
 
   defineSlots<{
@@ -47,9 +47,9 @@
   const { swipe } = useSiblingNav(props.table, () => props.id)
   const fullPage = usePanelFullPage()
 
-  // dashboard 的詳細面板尚未選取時，只顯示欄位名稱，不顯示「找不到這一列」
-  const dashboard = useDashboardSelection()
-  const blank = computed(() => dashboard !== null && !props.id)
+  // dashboard 的詳細面板沒有輸入時，只顯示欄位名稱，不顯示「找不到這一列」
+  const inPanel = useDashboardPanel() !== null
+  const blank = computed(() => inPanel && !props.id)
 </script>
 
 <template>

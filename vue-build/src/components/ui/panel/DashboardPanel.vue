@@ -219,10 +219,10 @@
   border-radius: 12px;
 }
 
-/* 關注點以外框標示。使用 outline，不加粗 border，面板大小不變 */
+/* 關注點以邊線外側的外框標示，邊線改為透明。使用 outline，面板大小不變（見 docs/design/dashboard.md） */
 .dashboard-panel--focused {
+  border-color: transparent;
   outline: 2px solid rgb(var(--v-theme-primary));
-  outline-offset: -1px;
 }
 
 /* 另一個面板多選中：稍微調暗，游標不顯示為可點擊的樣式 */

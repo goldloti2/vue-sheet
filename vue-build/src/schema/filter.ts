@@ -70,9 +70,16 @@ export function isActiveFilter (filter: ColumnFilter | undefined): boolean {
   return (filter.values?.length ?? 0) > 0 || filter.min != null || filter.max != null || filter.segment !== undefined
 }
 
-// 任一欄有條件即為篩選中（用於 App Bar 的圖示標記）
-export function hasActiveFilter (filters: Filters): boolean {
-  return Object.values(filters).some(filter => isActiveFilter(filter))
+// 可篩選的欄位中任一欄有條件即為篩選中（用於 App Bar 的圖示標記）。其他欄位上的條件不影響列，不計入
+export function hasActiveFilter (filters: Filters, schema: TableSchema): boolean {
+  return activeFilters(filters, schema).length > 0
+}
+
+// 可篩選的欄位中有條件的欄位
+function activeFilters (filters: Filters, schema: TableSchema): { key: string, filter: ColumnFilter }[] {
+  return filterableColumns(schema)
+    .map(column => ({ key: column.key, filter: filters[column.key] }))
+    .filter((entry): entry is { key: string, filter: ColumnFilter } => isActiveFilter(entry.filter))
 }
 
 // select 的比對鍵：空值（與 coerceRow 相同，含空字串）為 null，其餘轉為字串
@@ -116,9 +123,7 @@ export function matchesFilter (value: unknown, filter: ColumnFilter): boolean {
 
 // 檢查一列是否符合整張表條件的函數。欄位之間為 AND，只檢查 filterable 的欄位。沒有生效的條件時為 null
 export function rowMatcher (filters: Filters, schema: TableSchema): ((row: object) => boolean) | null {
-  const active = filterableColumns(schema)
-    .map(column => ({ key: column.key, filter: filters[column.key] }))
-    .filter((entry): entry is { key: string, filter: ColumnFilter } => isActiveFilter(entry.filter))
+  const active = activeFilters(filters, schema)
   if (active.length === 0) {
     return null
   }

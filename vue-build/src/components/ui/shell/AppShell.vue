@@ -97,7 +97,7 @@
   const drawerTables = computed(() => controls.value?.drawer?.tables ?? [])
   // 有可篩選欄位的表才列入篩選抽屜，沒有任何一張時不顯示篩選按鈕
   const filterTables = computed(() => drawerTables.value.filter(table => filterableColumns(table.schema).length > 0))
-  const filterActive = computed(() => filterTables.value.some(table => hasActiveFilter(table.filters.value)))
+  const filterActive = computed(() => filterTables.value.some(table => hasActiveFilter(table.filters.value, table.schema)))
 
   // 有搜尋字串或篩選條件時，放大鏡為主色
   const searchActive = computed(() => (controls.value?.query.value ?? '') !== '' || filterActive.value)

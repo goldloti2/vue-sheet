@@ -54,7 +54,7 @@
 
     <!-- 預設收起。電腦版開啟後與內容並排，換頁不收起。手機版浮在內容上，換頁後收起 -->
     <!-- 與底部導覽列相同，換頁不留下上一頁 -->
-    <v-list v-model:opened="opened" nav>
+    <v-list v-model:opened="opened" class="nav-drawer__list" nav>
       <template v-for="(section, index) in sections" :key="section.title ?? index">
         <!-- 有標題的組可以展開與收合，沒有標題的組直接列出 -->
         <v-list-group v-if="section.title" :value="section.title">
@@ -103,5 +103,10 @@
 
 .nav-drawer__title {
   padding: 16px 16px 8px;
+}
+
+/* 組內的頁面不另外縮一個圖示欄的寬度，只縮一層（見 docs/design/README.md） */
+.nav-drawer__list {
+  --v-list-group-prepend: 0px;
 }
 </style>

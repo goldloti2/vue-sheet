@@ -13,6 +13,7 @@
 
 - **項目來自 `config/navigation.ts` 的 `drawerSections`**：`App.vue` 交給 `AppShell`，再由 `AppShell` 交給此元件。清單與底部導覽列的 `navItems` 各自設定，同一頁可以兩處皆有
 - **有 `title` 的組可以展開與收合**：組的標題為 Vuetify 的 `v-list-group`，`icon` 選填，顯示於標題前。沒有 `title` 的組不收合，項目直接列出
+- **組內的頁面只縮排一層**：不另外縮一個圖示欄的寬度，縮排的大小見 [design/README.md](../../design/README.md) 的「導覽」
 - **目前的頁面所在的組自動展開**：網址改變時展開該組，其他組維持使用者的選擇
 - **預設收起**，以 App Bar 左側的選單鍵開啟與收起：
   - 電腦版：側邊欄與內容並排（`permanent`），換頁時不收起

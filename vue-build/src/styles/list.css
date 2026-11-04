@@ -50,7 +50,16 @@
   box-shadow: var(--list-card-shadow);
 }
 
-/* dashboard 的互動中選取的那一列：左側一條主色的細邊，與多選的淡底可同時出現。以 inset 陰影繪製，順著圓角 */
+/* dashboard 面板的 mark 標示的列：細邊為半透明的主色。同時為選取的那一列時，以下方的選取為準 */
+.list-row--marked {
+  box-shadow: inset 3px 0 0 rgba(var(--v-theme-primary), 0.4);
+}
+
+.list-card.list-row--marked {
+  box-shadow: inset 3px 0 0 rgba(var(--v-theme-primary), 0.4), var(--list-card-shadow);
+}
+
+/* dashboard 面板中選取的那一列：左側一條主色的細邊，與多選的淡底可同時出現。以 inset 陰影繪製，順著圓角 */
 .list-row--current {
   box-shadow: inset 3px 0 0 rgb(var(--v-theme-primary));
 }

@@ -13,7 +13,7 @@
   import { appBarSelectionKey } from '@/composables/shell/useShellActions'
 
   // dashboard 的一個面板：小外殼、關注點，以及面板內容各項登記生效的時機（見 docs/components/panel/DashboardPanel.md）
-  const { name, title, frame = true, table, shared = false, selects = false, scope = null } = defineProps<{
+  const { name, title, frame = true, table, shared = false, selects = false, scope = null, mark = null } = defineProps<{
     // 對應 DashboardPage 的 layout，也是連動中心中此面板的名稱
     name: string
     // 小外殼上的標題
@@ -28,6 +28,8 @@
     selects?: boolean
     // 面板內容的輸入：列表只保留其中的列，沒有條件時不限制。詳細頁在剛好一列時顯示這一列
     scope?: Link | null
+    // 列表中以另一種顏色標示的列，例如 links.shownOf(...) 取得詳細面板顯示的列。沒有條件時不標示
+    mark?: Link | null
   }>()
 
   const injected = inject(dashboardKey)
@@ -58,6 +60,8 @@
     const kept = new Set(ids)
     return (row: object) => kept.has((row as { id: string }).id)
   })
+  // 沒有條件時不標示任何列
+  const markedIds = computed(() => new Set(settle(mark, 'mark')?.ids))
 
   // 面板的輸入與輸出，由 ListPage、ChartPage、useListPage、useRecordPage 與詳細頁的導覽讀取
   const links = dashboard.links
@@ -68,6 +72,7 @@
     toggle: id => dashboard.transition('fade', () => links.select(name, links.output(name)?.selected === id ? null : id)),
     show: (shownTable, ids) => links.show(name, shownTable, ids),
     scope: () => scopeTest.value,
+    marked: id => markedIds.value.has(id),
     recordId: () => {
       const ids = scopeLink.value?.ids
       return ids?.length === 1 ? ids[0]! : ''

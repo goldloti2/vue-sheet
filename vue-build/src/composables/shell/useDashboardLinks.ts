@@ -46,7 +46,7 @@ export interface DashboardLinks {
   not: (source: LinkSource) => Link
 }
 
-// 面板的輸出，由 ListPage 與 ChartPage 寫入
+// 面板的輸出：選取由 ListPage 寫入，列出的列由 ListPage、ChartPage 與 DetailPage 寫入
 export interface PanelOutput {
   table: TableKey | null
   selected: string | null
@@ -69,6 +69,9 @@ const states = new WeakMap<DashboardLinks, LinksState>()
 
 // 所有連動中心共用的順序，只用於比較先後
 let clock = 0
+
+// 同一輪中一個面板列出的列改變幾次即警告
+const CYCLE_LIMIT = 10
 
 function sameIds (a: readonly string[] | null, b: readonly string[]): boolean {
   return a !== null && a.length === b.length && a.every((id, index) => id === b[index])
@@ -96,12 +99,28 @@ export function useDashboardLinks (): DashboardLinks {
     }
   }
 
+  // 開發模式：同一輪中列出的列反覆改變時，shownOf 的接線可能形成循環
+  const bursts = new Map<string, number>()
+  function checkCycle (panel: string) {
+    if (bursts.size === 0) {
+      setTimeout(() => bursts.clear())
+    }
+    const count = (bursts.get(panel) ?? 0) + 1
+    bursts.set(panel, count)
+    if (count === CYCLE_LIMIT) {
+      console.warn(`[useDashboardLinks] 面板 ${panel} 列出的列在同一輪中改變了 ${CYCLE_LIMIT} 次，shownOf 的接線可能形成循環`)
+    }
+  }
+
   function show (panel: string, table: TableKey, ids: readonly string[]) {
     const output = ensure(panel)
     if (output.table !== table || !sameIds(output.shown, ids)) {
       output.table = table
       output.shown = [...ids]
       output.shownAt = ++clock
+      if (import.meta.env.DEV) {
+        checkCycle(panel)
+      }
     }
     if (output.selected && !ids.includes(output.selected)) {
       select(panel, null)
@@ -317,10 +336,12 @@ export interface DashboardPanelContext {
   selected: () => string | null
   // 點擊一列：選取，已選取的那一列再點一次即取消
   toggle: (id: string) => void
-  // ListPage 與 ChartPage 寫入列出的列
+  // ListPage、ChartPage 與 DetailPage 寫入列出的列
   show: (table: TableKey, ids: readonly string[]) => void
   // 列表的輸入，與 useListPage 的 scope 同一步
   scope: () => RowTest | null
+  // 列表中以另一種顏色標示的列
+  marked: (id: string) => boolean
   // 詳細頁的輸入：scope 剛好一列時為這一列，否則為空字串
   recordId: () => string
   // 詳細頁的上一列與下一列所依的順序：值為列表的選取時，為該列表列出的列。推導出的值為 null

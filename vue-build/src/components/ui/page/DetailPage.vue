@@ -4,7 +4,7 @@
   import type { TableKey } from '@/schema'
   import type { RowKey, TableSchema } from '@/schema/types'
   import type { RowView } from '@/schema/view'
-  import { computed } from 'vue'
+  import { computed, watch } from 'vue'
   import { Touch as vTouch } from 'vuetify/directives'
   import PageState from '@/components/ui/page/PageState.vue'
   import DataDetail from '@/components/ui/record/DataDetail.vue'
@@ -13,7 +13,7 @@
   import PageFab from '@/components/ui/shell/PageFab.vue'
   import { useSiblingNav } from '@/composables/navigation/useListOrder'
   import { useDashboardPanel } from '@/composables/shell/useDashboardLinks'
-  import { usePanelFullPage } from '@/composables/shell/usePanelActive'
+  import { usePanelFullPage, usePanelVisible } from '@/composables/shell/usePanelActive'
 
   defineSlots<{
     // 欄位下方額外放置的內容。兩個 slot 皆於資料取得後才顯示，row 不會是 null
@@ -48,8 +48,18 @@
   const fullPage = usePanelFullPage()
 
   // dashboard 的詳細面板沒有輸入時，只顯示欄位名稱，不顯示「找不到這一列」
-  const inPanel = useDashboardPanel() !== null
-  const blank = computed(() => inPanel && !props.id)
+  const panel = useDashboardPanel()
+  const blank = computed(() => panel !== null && !props.id)
+
+  // dashboard 的面板中，輸出顯示的那一列，沒有時為零列。頁籤中的詳細頁只在目前的頁籤時輸出，載入中不輸出
+  const visible = usePanelVisible()
+  if (panel) {
+    watch([visible, () => props.loading, () => props.row ? props.id : null], ([isVisible, loading, shownId]) => {
+      if (isVisible && !loading) {
+        panel.show(props.table, shownId ? [shownId] : [])
+      }
+    }, { immediate: true })
+  }
 </script>
 
 <template>

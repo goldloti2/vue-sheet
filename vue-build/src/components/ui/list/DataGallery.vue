@@ -17,6 +17,8 @@
     selected?: boolean
     // dashboard 面板的選取：是否為選取的那一列，以及點擊是否改為選取（由 ListPage 提供）
     current?: boolean
+    // dashboard 面板的 mark：以另一種顏色標示的列
+    marked?: boolean
     pickable?: boolean
   }>()
 
@@ -45,6 +47,7 @@
     :class="{
       'list-row--selected': selectMode && selected,
       'list-row--current': current,
+      'list-row--marked': marked,
       'list-row--no-select': selectable,
     }"
   >

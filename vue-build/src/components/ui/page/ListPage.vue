@@ -52,12 +52,13 @@
     }, { immediate: true })
   }
 
-  // 每一列的綁定：多選，加上面板開啟 selects 時的選取（點擊改為選取、標示選取的那一列）
+  // 每一列的綁定：多選、面板的 mark，加上面板開啟 selects 時的選取（點擊改為選取、標示選取的那一列）
   function rowProps (id: string): object {
+    const marked = panel?.marked(id) ? { marked: true } : {}
     const linked = panel?.selects()
       ? { current: panel.selected() === id, pickable: true, onPick: () => panel.toggle(id) }
       : {}
-    return { ...props.selection?.itemProps(id), ...linked }
+    return { ...props.selection?.itemProps(id), ...marked, ...linked }
   }
 </script>
 

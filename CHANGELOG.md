@@ -1,5 +1,45 @@
 # 版本紀錄
 
+## v1.8
+
+- **頁籤列畫在頁籤頁之中**：`TabPage` 在自己的最上方畫出頁籤列，捲動時固定於 App Bar 的下緣，不再登記於 App Bar 的 extension。切換頁籤時頁籤列不動，換頁時頁籤列隨頁面滑動。位於儀表板未展開的面板中時，頁籤列固定於面板的上緣。說明見 [vue-build/docs/components/panel/TabPage.md](vue-build/docs/components/panel/TabPage.md)
+- **面板的作用中狀態與外層合併**：`TabPanel` 與 `DashboardPanel` 只在自己與外層的面板皆作用中時，才算作用中
+- **頁籤頁與儀表板可以互相嵌套**：儀表板的面板中可以放入頁籤頁，頁籤頁的頁籤中也可以放入儀表板。關注含頁籤頁的面板時，App Bar 的搜尋、篩選與排序操作該頁籤頁自己的一份，關注其他面板時回到儀表板共用的一份。容器以新的 `relaySlot` 收下內容的登記，再決定交給 App Bar 的值。`DashboardPage` 仍不可嵌套自身，`TabPage` 不支援直接嵌套自身
+- **儀表板的連動改由頁面手動接線**：頁面以 `useDashboardLinks()` 建立連動中心，交給 `DashboardPage` 的 `links`，再以小工具把面板的輸出接到其他面板的輸入。說明見 [vue-build/docs/components/panel/DashboardPage.md](vue-build/docs/components/panel/DashboardPage.md) 的「連動」，範本見 `vue-build/template/pages/dashboard.vue`
+  - 每個面板自動輸出選取的列（`selected`）與列出的列（`shown`），由 `ListPage`、`ChartPage` 與 `DetailPage` 寫入，專案的頁面無須修改。詳細頁輸出顯示的那一列
+  - 面板以 `scope` 接收輸入：列表只保留其中的列，詳細頁在剛好一列時顯示這一列。開啟 `selects` 的面板點擊即選取，沒有時照常換頁
+  - 小工具：`selectionOf`、`shownOf`、`parentOf`、`childrenOf`、`and`、`or`、`pickLatest`、`pickFirst`、`not`。每個小工具回傳一張表中的一組列，「沒有條件」表示不限制，與「沒有列」不同。可以接多層，也可以使用虛擬的 ref 欄位，同一張表也可以並排兩個列表
+  - 選取的列不再列出時自動取消，例如被刪除、被搜尋或篩選隱藏，或父列的選取改變
+  - 展開的詳細面板的上一列、下一列，依來源列表目前列出的列移動選取。顯示推導出的值時停用
+  - 面板的 `mark` 以較淡的細邊標示其中的列，例如以 `shownOf` 取得詳細面板顯示的列。列表元件新增 `marked` prop
+  - 以 `shownOf` 接線形成循環時，開發模式下於 console 警告
+- **面板的 `shared` 決定是否加入儀表板共用的搜尋、篩選與排序**：預設不加入，面板有自己的一份，與一般頁面相同。加入時，所有加入共用的面板以一個搜尋字串一起過濾，點擊圖表寫入條件。面板中的 `TabPage` 依同一個開關。App Bar 操作關注面板的一份
+- **篩選與排序按鈕只在有可用的欄位時出現**：篩選按鈕只列入 `searchable` 中有可篩選欄位的表，排序按鈕只列入 `sortable` 中有可排序欄位的表。沒有任何一張表時，按鈕不出現。抽屜上方的 chip 也只列出這些表
+- **展開的面板與一般頁面相同，點擊即進入詳細頁**：開啟 `selects` 的列表點擊一列，以及加入共用的圖表點擊一組，皆照常進入詳細頁。選取不變，選取的那一列仍有細邊。圖例與篩選抽屜照常寫入條件
+- **列表貼齊外緣**：deck 的列與分組的標題不再四周留白，列的左右也不再畫邊線，一般頁面與儀表板的面板中皆同。卡片（profile、card、gallery）與表格仍四周留白，分組的標題貼齊。畫面寬時列表仍置中。說明見 [vue-build/docs/components/list/ListLayout.md](vue-build/docs/components/list/ListLayout.md) 的「留白」
+- **deck 的左欄加寬，文字最多兩行**：左右兩欄不再各佔一半，改為左欄較寬。標題與各欄位過長時以刪節號截斷，長字串也不再撐開欄寬。右側換成兩行時，標題靠上。說明見 [vue-build/docs/design/list.md](vue-build/docs/design/list.md) 的「deck」
+- **長文**：`text` 欄位新增 `multiline`。表單與快速編輯改為多行的輸入框，按 Enter 換行，高度隨內容增加。詳細頁保留值中的換行，列表與標頭中換行顯示為空格。說明見 [vue-build/docs/topics/schema.md](vue-build/docs/topics/schema.md)
+- **假後端的 CSV 可以包含換行**：引號內的換行屬於值
+- **一律預留整頁捲軸的寬度**：電腦上捲軸出現或消失時，內容的寬度不變。儀表板的整頁高度接近視窗時，捲軸不再反覆出現與消失。換頁時內容也不再左右移動
+- **手機上的儀表板左右不留白**：貼齊螢幕的面板，該側沒有邊線與圓角。關注的外框在該側畫在面板的內側
+- **關注的外框改由主色的邊線與外側 1px 組成**：面板中的內容（例如窄面板中的頁籤列）不再蓋住外框
+- **電腦版的側邊欄也浮在內容上**：開啟後不再與內容並排，與手機版相同。點擊側邊欄以外的地方，或換頁後收起
+- **側邊欄中組內的頁面縮排一層**：圖示比組標題的圖示右移一層，不再大幅縮排
+- **修正：只有可篩選欄位上的條件使篩選按鈕與放大鏡標示為生效中**：圖表的分組欄不在 `searchable` 中時，點擊圖表寫入的條件不過濾列，按鈕卻標示為生效中
+
+### 不相容的變更
+
+- `useAppBarTabs` 移除。`useCurrentTab` 改由 `@/composables/shell/useCurrentTab` 匯入，只在 `TabPage` 之中有值，之外為 `null`。頁面本身須知道目前的頁籤時，讀取自己的 `v-model`
+- `provideSharedListControls` 不再自行登記於 App Bar，改為回傳交給 App Bar 的值，由呼叫者登記
+- `DashboardPage` 的 `interactive` 與 `DashboardPanel` 的 `via` 移除，改為手動接線。原本開啟 `interactive` 的頁面，改為參考範本接線
+  - 父表的篩選條件不再自動往下連動至子表，子表的篩選抽屜也不再提示上層的條件
+  - 選取被搜尋或篩選隱藏時，改為自動取消
+- `useDashboardSelection` 移除。面板中的內容改以 `useDashboardPanel()` 讀取面板的輸入
+- 儀表板的面板預設不再共用搜尋、篩選與排序。須共用的面板加上 `shared`。點擊圖表寫入條件也只在 `shared` 的面板中發生，其他面板中進入詳細頁
+- `provideSharedListControls` 的第二個參數 `cascade`、`SharedListControls` 的 `upperFilter` 與 `ListTable` 的 `inheritedFrom` 移除
+- `DashboardPanel` 的 `name` 只能使用英文字母、數字、`_` 與 `-`，其他字元在開發模式下於 console 警告。原本以中文命名的面板，改以英數字命名，畫面上的名稱放在 `title`
+- CSS 變數 `--list-card-shadow-extent` 移除。列表的留白改由 `ListLayout` 決定，`ListPage` 的內容區不再留白。`#rows` 放入的內容仍四周留白
+
 ## v1.7
 
 - **圖表**：頁面以 `defineChart` 宣告一張表的列如何畫成一張圖表，交給整頁版型 `ChartPage`。圖表可單獨成頁，也可置於儀表板的面板或頁籤頁的頁籤。以 Chart.js 繪製，支援 bar、line、pie、doughnut、polarArea、radar、scatter 與 bubble。Chart.js 於圖表掛載時才載入，沒有圖表的頁面不下載。範本見 `vue-build/template/pages/chart.vue`，說明見 [vue-build/docs/topics/chart.md](vue-build/docs/topics/chart.md)，外觀與用途見 [vue-build/docs/design/chart.md](vue-build/docs/design/chart.md)

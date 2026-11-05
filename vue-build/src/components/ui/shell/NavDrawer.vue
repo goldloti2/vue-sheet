@@ -3,7 +3,6 @@
   import { mdiLogout } from '@mdi/js'
   import { ref, watch } from 'vue'
   import { useRoute } from 'vue-router'
-  import { useCompactLayout } from '@/composables/shell/useCompactLayout'
   import { confirm } from '@/composables/shell/useDialogs'
   import { appName, authMethod } from '@/config/app'
   import { clearToken } from '@/services/auth/token'
@@ -18,7 +17,6 @@
 
   const route = useRoute()
   const store = useTablesStore()
-  const compact = useCompactLayout()
 
   // 展開的組。目前頁面所在的組自動展開，其他組維持使用者的選擇
   const opened = ref<string[]>([])
@@ -27,10 +25,8 @@
     if (current?.title && !opened.value.includes(current.title)) {
       opened.value = [...opened.value, current.title]
     }
-    // 手機版換頁後關閉
-    if (compact.value) {
-      open.value = false
-    }
+    // 換頁後收起
+    open.value = false
   }, { immediate: true })
 
   // 清除 token 後 router 導向登入頁。未推送的變更留在佇列中，重新登入後照常推送
@@ -48,11 +44,11 @@
     class="nav-drawer"
     disable-resize-watcher
     order="-1"
-    :permanent="!compact"
+    temporary
   >
     <div class="nav-drawer__title text-title-medium">{{ appName }}</div>
 
-    <!-- 預設收起。電腦版開啟後與內容並排，換頁不收起。手機版浮在內容上，換頁後收起 -->
+    <!-- 預設收起。開啟後浮在內容上，點擊側邊欄以外的地方或換頁後收起 -->
     <!-- 與底部導覽列相同，換頁不留下上一頁 -->
     <v-list v-model:opened="opened" class="nav-drawer__list" nav>
       <template v-for="(section, index) in sections" :key="section.title ?? index">

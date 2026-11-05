@@ -41,7 +41,7 @@
 
 - **左側圖示依目前的路由自動切換**為漢堡選單或返回箭頭：以 router 累計的導覽次數判斷是否確實有 App 內的上一頁，沒有時不顯示返回箭頭
 - **頁面可以不使用外殼**：將 `definePage` 的 `meta.shell` 設為 `false`，App Bar、側邊欄與底部導覽列皆不顯示，整頁由頁面自行排版，例如登入頁 `pages/login.vue`
-- **電腦版的側邊欄開啟後與內容並排**，換頁時不收起（見 [NavDrawer](../components/shell/NavDrawer.md)）
+- **側邊欄開啟後浮在內容上**，點擊側邊欄以外的地方或換頁後收起（見 [NavDrawer](../components/shell/NavDrawer.md)）
 - 🔲 **底部導覽列是否於電腦上隱藏**，待處理電腦版的體驗時再決定
 
 ---

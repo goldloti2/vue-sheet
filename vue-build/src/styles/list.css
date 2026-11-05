@@ -1,12 +1,11 @@
 /* 列表中的一列與卡片（deck、profile、card、gallery）共用的樣式（見 docs/components/list/ListLayout.md），以及動作選單的樣式 */
 :root {
-  /* 卡片之間的距離。分組展開的動畫期間，下方的陰影須落於其中，因此不可小於 --list-card-shadow-extent */
+  /* 卡片之間的距離。分組展開的動畫期間，下方的陰影須落於其中，因此不可小於陰影往右下擴出的距離（見 docs/design/list.md） */
   --list-card-gap: 8px;
   /* profile 與 card 的圓角；gallery 為直角，不套用 */
   --list-card-radius: 12px;
+  /* 調整陰影時，ListLayout 的留白與卡片之間的距離須放得下往右下擴出的範圍 */
   --list-card-shadow: 2px 3px 6px rgba(0, 0, 0, 0.16);
-  /* 陰影往右下擴出的距離（偏移 + 模糊）。GroupedList 的左右外擴與 ListLayout 的下方內距以此為準，調整陰影時須一併調整 */
-  --list-card-shadow-extent: 8px;
 }
 
 /* 一列（DataList、DataProfile、DataCard、DataGallery）的根元素，配合 useRowClick 的點擊與選取 */

@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-  import type { DashboardContext, DashboardPanelEntry } from '@/components/ui/panel/dashboardContext'
+  import type { DashboardContext, DashboardPanelEntry, PanelEdges } from '@/components/ui/panel/dashboardContext'
   import type { PanelRequest, PanelSize } from '@/components/ui/panel/placePanels'
   import type { PageAction } from '@/composables/actions/useTableActions'
   import type { DashboardLinks } from '@/composables/shell/useDashboardLinks'
@@ -100,6 +100,15 @@
 
   const placements = computed(() => placePanels(panels.map(entry => requestFor(entry)), cols.value))
 
+  // 手機上貼齊螢幕的左右兩側：位於方格的第一欄或最後一欄
+  function edgesOf (name: string): PanelEdges {
+    const place = placements.value.get(name)
+    if (!compact.value || !place) {
+      return { start: false, end: false }
+    }
+    return { start: place.x === 1, end: place.x + place.w - 1 === cols.value }
+  }
+
   // 一格的邊長：內容區寬度扣除間距後等分。格子的高等於寬
   const root = useTemplateRef('root')
   const contentWidth = shallowRef(0)
@@ -171,6 +180,7 @@
     expand,
     register,
     placement: name => computed(() => placements.value.get(name)),
+    edges: name => computed(() => edgesOf(name)),
     cellSize: cell,
     gap: GAP,
     panelTransition,
@@ -229,6 +239,11 @@
 <style scoped>
 .dashboard {
   padding: 16px;
+}
+
+/* 手機上左右不留白，貼邊的面板貼齊螢幕（見 docs/design/dashboard.md） */
+.dashboard[data-layout='mobile'] {
+  padding-inline: 0;
 }
 
 .dashboard__grid {

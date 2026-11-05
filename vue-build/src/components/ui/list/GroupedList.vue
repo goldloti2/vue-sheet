@@ -86,9 +86,10 @@
 </template>
 
 <style scoped>
-/* v-list 預設 overflow: auto，會裁切 profile、card、gallery 往右下的陰影。巢狀的各層皆適用 */
+/* v-list 預設 overflow: auto，會裁切 profile、card、gallery 往右下的陰影。不留上下的內距，分組的標題貼齊外緣。巢狀的各層皆適用 */
 .grouped-list {
   overflow: visible;
+  padding-block: 0;
 }
 
 /* 展開箭頭與標題之間的間距較 Vuetify 的預設小，窄面板中也放得下標題（見 docs/design/list.md 的「尺寸與樣式」） */
@@ -96,10 +97,8 @@
   --v-list-prepend-gap: 8px;
 }
 
-/* 左右外擴陰影的範圍再以內距抵銷，裁切範圍即涵蓋陰影。min-width 改回 0，窄面板中不被標題撐寬 */
+/* min-width 改回 0，窄面板中不被標題撐寬。卡片的陰影落在 ListLayout 的留白之內，展開的動畫不會裁切 */
 .grouped-list :deep(.v-list-group__items) {
   min-width: 0;
-  margin-inline: calc(-1 * var(--list-card-shadow-extent));
-  padding-inline: var(--list-card-shadow-extent);
 }
 </style>

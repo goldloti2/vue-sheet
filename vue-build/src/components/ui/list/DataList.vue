@@ -87,8 +87,6 @@
   /* 畫面外的列不排版。替代值為一列的高度（見 docs/design/list.md 的「尺寸與樣式」） */
   content-visibility: auto;
   contain-intrinsic-size: auto 72px;
-  border-left: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
-  border-right: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
   border-bottom: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
 }
 

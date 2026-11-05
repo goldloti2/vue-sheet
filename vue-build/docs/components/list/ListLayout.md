@@ -4,10 +4,19 @@
 
 | `layout` | 排法 | 使用者 |
 | --- | --- | --- |
-| `list`（預設） | 依序往下排列，不另外包裝。DOM 與未使用此元件時相同 | deck、profile、card |
-| `grid` | 格狀排列：每一欄有最小寬度，以 `repeat(auto-fill, minmax(…, 1fr))` 依可用寬度決定欄數，間隔為 `--list-card-gap`。最後一列下方留出陰影的範圍（`--list-card-shadow-extent`） | gallery |
+| `list`（預設） | 依序往下排列 | deck、profile、card |
+| `grid` | 格狀排列：每一欄有最小寬度，以 `repeat(auto-fill, minmax(…, 1fr))` 依可用寬度決定欄數，間隔為 `--list-card-gap` | gallery |
 
 **一般無須直接使用此元件**。[ListPage](../page/ListPage.md) 與 [GroupedList](GroupedList.md) 將自身的 `layout` prop 轉交給此元件。分組時，每一組中的列各自排列，組的標題一律佔一整行。
+
+## 留白
+
+列表的留白由此元件依內容決定，`ListPage` 與 `GroupedList` 本身不留白：
+- **list 式的列（DataList）貼齊外緣**
+- **內容為卡片（`.list-card`）時，四周留白**，放得下卡片的陰影。`grid` 一律留白
+- 數值見 [design/list.md](../../design/list.md#尺寸與樣式) 的「尺寸與樣式」
+
+各列外包的一層為不具名的 container（`container-type: inline-size`）。列表元件以 `cqw` 依這一層的寬度估計畫面外各列的高度（見 [DataCard](DataCard.md) 的備註）。此 container 不具名，不影響 dashboard 以 `@container dashboard-panel` 判斷的窄版。
 
 ## 欄寬
 
@@ -24,11 +33,9 @@
 | `--list-card-gap` | 卡片之間的間距 | DataProfile、DataCard 的下方間距，此元件 `grid` 的格線間隔 |
 | `--list-card-radius` | 卡片的圓角 | DataProfile、DataCard 的圓角。DataGallery 為直角，不套用 |
 | `--list-card-shadow` | 卡片的陰影 | `.list-card` 的 `box-shadow` |
-| `--list-card-shadow-extent` | 陰影往右下擴出的距離（偏移 + 模糊） | GroupedList 分組內容的左右外擴，此元件 `grid` 的下方內距 |
 
 - 各變數的值見 [design/list.md](../../design/list.md#尺寸與樣式) 的「尺寸與樣式」
-- 調整陰影時，須一併調整 `--list-card-shadow-extent`
-- profile 與 card 下方的陰影落於 `--list-card-gap` 之中，因此間距不可小於 `--list-card-shadow-extent`
+- 調整陰影時，此元件的留白與 `--list-card-gap` 皆須放得下陰影往右下擴出的範圍
 
 ### class
 

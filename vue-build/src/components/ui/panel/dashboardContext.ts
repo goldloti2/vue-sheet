@@ -20,6 +20,11 @@ export interface DashboardPanelEntry {
   controls: Readonly<Ref<ListControls | null>>
 }
 
+export interface PanelEdges {
+  start: boolean
+  end: boolean
+}
+
 // DashboardPage 提供給面板的部分
 export interface DashboardContext {
   focused: Readonly<Ref<string | null>>
@@ -31,6 +36,8 @@ export interface DashboardContext {
   expand: (name: string) => void
   register: (entry: DashboardPanelEntry) => () => void
   placement: (name: string) => ComputedRef<PanelPlacement | undefined>
+  // 手機上面板貼齊螢幕的左右兩側，該側沒有邊線。電腦上皆為 false
+  edges: (name: string) => ComputedRef<PanelEdges>
   // 一格的邊長（px），用於換算手機自動排版的格數
   cellSize: Readonly<Ref<number>>
   gap: number

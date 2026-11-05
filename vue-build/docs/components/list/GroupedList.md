@@ -82,9 +82,6 @@ const groupLevels: GroupLevel<Row>[] = [
 
 ## 備註
 
-- **`v-list` 的 `overflow` 改為 `visible`**，巢狀的各層皆套用
-- **分組內容的左右各外擴陰影的範圍**：
-  - `.v-list-group__items` 以負的 `margin-inline` 外擴，再以 `padding-inline` 抵銷，兩者皆為 `--list-card-shadow-extent`（見 [ListLayout](ListLayout.md) 的「共用的樣式」）
-  - 內容的位置與寬度不變
-  - 下方的陰影落在各元件的下方間距內。gallery 的下方間距由 `ListLayout` 的格線提供
+- **`v-list` 的 `overflow` 改為 `visible`，上下的內距改為 0**，巢狀的各層皆套用。組的標題因此貼齊外緣
+- **卡片的陰影落在 `ListLayout` 的留白之內**（見 [ListLayout](ListLayout.md) 的「留白」），展開與收合的動畫期間不被裁切
 - **`.v-list-group__items` 的 `min-width` 改回 0**，Vuetify 的預設為 `min-content`

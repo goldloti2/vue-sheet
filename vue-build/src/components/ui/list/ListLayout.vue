@@ -6,19 +6,26 @@
 </script>
 
 <template>
-  <div v-if="layout === 'grid'" class="list-grid">
+  <div class="list-layout" :class="{ 'list-grid': layout === 'grid' }">
     <slot />
   </div>
-
-  <slot v-else />
 </template>
 
 <style scoped>
+/* 列表元件以 cqw 依此處的寬度估計畫面外各列的高度（見 DataCard）。不具名，不影響 dashboard 的窄版判斷 */
+.list-layout {
+  container-type: inline-size;
+}
+
+/* list 式的列貼齊外緣。卡片（profile、card、gallery）四周留白，放得下陰影（見 docs/design/list.md） */
+.list-layout:has(> .list-card),
+.list-grid {
+  padding: 16px;
+}
+
 .list-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
   gap: var(--list-card-gap);
-  /* 分組展開的動畫期間，最後一列的陰影亦落在裁切範圍內 */
-  padding-bottom: var(--list-card-shadow-extent);
 }
 </style>

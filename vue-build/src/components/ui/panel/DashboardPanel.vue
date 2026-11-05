@@ -137,6 +137,9 @@
     measuredRows.value = Math.min(Math.max(rows, 1), AUTO_ROWS_MAX)
   })
 
+  // 手機上貼齊螢幕的左右兩側，沒有邊線與圓角。展開時不套用
+  const edges = dashboard.edges(name)
+
   // 展開時不受方格限制，與一般頁面一樣隨整頁捲動
   const placementStyle = computed(() => placement.value && !expanded.value
     ? {
@@ -183,6 +186,8 @@
       'dashboard-panel--focused': active && frame && !expanded,
       'dashboard-panel--expanded': expanded,
       'dashboard-panel--locked': locked,
+      'dashboard-panel--edge-start': edges.start && !expanded,
+      'dashboard-panel--edge-end': edges.end && !expanded,
     }"
     :style="[placementStyle, transitionStyle]"
     @click.capture="onClick"
@@ -219,10 +224,44 @@
   border-radius: 12px;
 }
 
-/* 關注點以邊線外側的外框標示，邊線改為透明。使用 outline，面板大小不變（見 docs/design/dashboard.md） */
+/* 關注點：邊線改為主色，外側再加 1px 的 outline，面板大小不變（見 docs/design/dashboard.md） */
 .dashboard-panel--focused {
-  border-color: transparent;
-  outline: 2px solid rgb(var(--v-theme-primary));
+  border-color: rgb(var(--v-theme-primary));
+  outline: 1px solid rgb(var(--v-theme-primary));
+}
+
+/* 手機上貼齊螢幕的那一側：沒有邊線與圓角 */
+.dashboard-panel--edge-start {
+  border-inline-start: none;
+  border-start-start-radius: 0;
+  border-end-start-radius: 0;
+}
+
+.dashboard-panel--edge-end {
+  border-inline-end: none;
+  border-start-end-radius: 0;
+  border-end-end-radius: 0;
+}
+
+/* 貼邊那一側沒有邊線，outline 落在螢幕外，改以 ::after 畫在內側，疊於內容之上 */
+.dashboard-panel--focused:is(.dashboard-panel--edge-start, .dashboard-panel--edge-end) {
+  position: relative;
+}
+
+.dashboard-panel--focused:is(.dashboard-panel--edge-start, .dashboard-panel--edge-end)::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.dashboard-panel--focused.dashboard-panel--edge-start::after {
+  border-inline-start: 2px solid rgb(var(--v-theme-primary));
+}
+
+.dashboard-panel--focused.dashboard-panel--edge-end::after {
+  border-inline-end: 2px solid rgb(var(--v-theme-primary));
 }
 
 /* 另一個面板多選中：稍微調暗，游標不顯示為可點擊的樣式 */

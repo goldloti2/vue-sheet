@@ -16,6 +16,8 @@
     action?: PageAction | null
     // 名稱與值左右並排或上下兩行。省略時依 config/app.ts 的 detailFieldLayout
     layout?: DetailFieldLayout
+    // 長文：保留值中的換行
+    multiline?: boolean
   }
 
   withDefaults(defineProps<DetailFieldProps>(), {
@@ -50,6 +52,7 @@
       v-else-if="action"
       :aria-label="action.label"
       class="detail-field__value detail-field__action text-body-large"
+      :class="{ 'detail-field__value--multiline': multiline }"
       type="button"
       @click="runAction(action)"
     >
@@ -59,7 +62,11 @@
 
     <img v-else-if="image" alt="" class="detail-field__image" :src="image">
 
-    <span v-else class="detail-field__value text-body-large"><FormattedValue :value="value" /></span>
+    <span
+      v-else
+      class="detail-field__value text-body-large"
+      :class="{ 'detail-field__value--multiline': multiline }"
+    ><FormattedValue :value="value" /></span>
   </div>
 </template>
 
@@ -82,6 +89,10 @@
 
 .detail-field__value {
   text-align: left;
+}
+
+.detail-field__value--multiline {
+  white-space: pre-line;
 }
 
 /* 快速編輯：輸入元件佔滿值的那一欄，與名稱垂直置中 */

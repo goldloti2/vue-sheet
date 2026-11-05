@@ -39,7 +39,7 @@ schema 的 `virtualColumns`（見 [schema.md](../../topics/schema.md#欄位)）�
 `editable` 列出的欄位不顯示文字，直接以輸入元件（[InlineField](InlineField.md)）呈現。修改後即以 `store.update` 寫入，不經過編輯頁。
 
 - **只限真實欄位**：主鍵與虛擬欄位即使列出，仍顯示為文字
-- **寫入的時機**：打字類的欄位在焦點離開或按 Enter 時寫入，其餘欄位一修改就寫入。驗證不通過時不寫入，錯誤顯示於欄位下方（細節見 [InlineField](InlineField.md)）
+- **寫入的時機**：打字類的欄位在焦點離開或按 Enter 時寫入，長文只在焦點離開時寫入。其餘欄位一修改就寫入。驗證不通過時不寫入，錯誤顯示於欄位下方（細節見 [InlineField](InlineField.md)）
 - **與欄位動作並存**：同一欄有 `fieldActions` 時，動作的圖示接在輸入元件右側
 - **切換到另一列時重新建立**：未寫入的值先寫回原本那一列
 - `row` 為 `null` 時，不建立輸入元件

@@ -123,6 +123,8 @@ export const orderSchema: TableSchema<OrderRow> = {
 
 型別共有八種：`text`、`number`、`date`、`duration`、`boolean`、`select`、`ref`、`image`。每種型別有專屬的設定，例如 `number` 的 `min`、`max`、`step`，`select` 的 `options`，`ref` 的 `refTable`。完整清單見 [`types.ts`](../../src/schema/types.ts)。
 
+`text` 的 `multiline: true` 為長文：表單與快速編輯改為多行的輸入框，詳細頁保留值中的換行。列表與標頭中，換行顯示為空格。值、搜尋、篩選與排序皆與一般的 `text` 相同。外觀見 [design/form.md](../design/form.md) 與 [design/detail.md](../design/detail.md)。
+
 `number` 的 `step` 為表單上 −／＋ 每次的增減，預設為 1。輸入的值不受 `step` 限制，例如 `step: 0.5` 時仍可輸入 1.3。表單不限制小數位數，輸入的值不會被四捨五入。
 
 ### date 與 duration

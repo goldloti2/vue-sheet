@@ -16,6 +16,9 @@
 
   const store = useTablesStore()
 
+  // 長文的 Enter 為換行，不寫入
+  const multiline = props.column.type === 'text' && Boolean(props.column.multiline)
+
   const deferred = ['text', 'duration', 'image', 'number'].includes(props.column.type)
     || (props.column.type === 'select' && Boolean(props.column.allowCustom))
 
@@ -95,7 +98,7 @@
       :row="row"
       :schema="schema"
       variant="outlined"
-      @keydown.enter="commit"
+      @keydown.enter="multiline || commit()"
       @update:focused="onFocused"
       @update:model-value="onInput"
     />

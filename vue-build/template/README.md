@@ -149,6 +149,7 @@
 - 主鍵在新增時可否填寫，或只能由預設值帶入（`lockId`）
 - 預設值：schema 的 `default`，以及從各處按新增時帶入的值
 - 選項類：只能選擇選項，或可自行填寫（`allowCustom`）。建議清單（`suggestedValues`）
+- 文字是否為長文（`multiline`），可換行並使用多行的輸入框
 - 數字的 `min`、`max`、`step`，自訂的 `validate`
 - 是否顯示唯讀的虛擬欄位，例如小計
 

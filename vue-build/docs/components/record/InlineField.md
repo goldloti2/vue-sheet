@@ -5,6 +5,7 @@
 ## 寫入的時機
 
 - **打字類的欄位**（`text`、`image`、`duration`、`number`，以及 `allowCustom` 的 `select`）：輸入時先暫存，焦點離開或按 Enter 時才寫入
+- **長文**（`multiline` 的 `text`）：按 Enter 換行，只在焦點離開時寫入
 - **其餘欄位**（`select`、`ref`、`boolean`、`date`）：值一修改就寫入
 - **沒有焦點時的變動**（例如數字的 −／＋、清除按鈕）一律立即寫入
 - **值與快取相同時不寫入**

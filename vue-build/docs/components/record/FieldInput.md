@@ -4,7 +4,8 @@
 
 | 型別 | 輸入元件 |
 | --- | --- |
-| `text`、`image` | `v-text-field`。`image` 填入網址或 Drive 連結 |
+| `text` | `v-text-field`。`multiline` 時為 `v-textarea`，高度隨內容增加 |
+| `image` | `v-text-field`，填入網址或 Drive 連結 |
 | `number` | `v-number-input` |
 | `date` | `v-date-input` |
 | `duration` | `v-text-field`，填入「時:分:秒」 |

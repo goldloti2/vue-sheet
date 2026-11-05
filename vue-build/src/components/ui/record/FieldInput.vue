@@ -188,6 +188,17 @@
     @update:model-value="(value) => model = value"
   />
 
+  <!-- 長文：Enter 換行，高度隨內容增加 -->
+  <v-textarea
+    v-else-if="column.type === 'text' && column.multiline"
+    v-bind="{ ...$attrs, ...common }"
+    auto-grow
+    :class="requiredClass"
+    :model-value="textValue"
+    rows="4"
+    @update:model-value="setText"
+  />
+
   <v-text-field
     v-else
     v-bind="{ ...$attrs, ...common }"

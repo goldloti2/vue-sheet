@@ -18,6 +18,7 @@
     value: DisplayValue
     image?: string | null
     action?: PageAction | null
+    multiline?: boolean
     // 只有快速編輯的欄位有
     editColumn?: SchemaColumn
   }
@@ -58,6 +59,7 @@
         value: displayValue(row, props.schema, column),
         image: column.type === 'image' ? imageSrc((row as Record<string, unknown>)[column.key]) : null,
         action: props.fieldActions?.[column.key]?.(row),
+        multiline: column.type === 'text' && Boolean(column.multiline),
         editColumn: editColumnOf(column.key),
       }
       : { key: column.key, label: column.label, value: { text: '' } })
@@ -103,6 +105,7 @@
         :image="field.image"
         :label="field.label"
         :layout="layout"
+        :multiline="field.multiline"
         :value="field.value"
       />
     </template>

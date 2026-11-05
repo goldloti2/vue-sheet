@@ -9,8 +9,8 @@ export interface RowBase {
 
 // 每種欄位型別只於此處定義一次：值的型別與型別專屬的設定。真實與虛擬欄位皆由此推導
 interface ColumnTypes {
-  /** 一般文字 */
-  text: { value: string | null }
+  /** 一般文字。multiline 為長文：表單以多行輸入框輸入，詳細頁保留換行 */
+  text: { value: string | null, extra: { multiline?: boolean } }
   /** 數字。min、max 為輸入範圍與驗證的上下限，step 為 ＋／− 每次的增減（預設 1） */
   number: { value: number | null, extra: { min?: number, max?: number, step?: number } }
   /** 日期，不含時間。讀取時歸零至當天午夜 */

@@ -80,7 +80,7 @@
 
 .list-item__row {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 7fr) minmax(0, 3fr);
   column-gap: 12px;
 }
 
@@ -90,13 +90,30 @@
 
 .list-item__title-wrap {
   display: flex;
-  align-items: center;
+  align-items: start;
   gap: 8px;
   min-width: 0;
 }
 
+/* 勾選圖示對齊標題的第一行 */
+.list-item__title-wrap > .v-icon {
+  flex: none;
+  margin-top: 2px;
+}
+
 .list-item__title {
+  min-width: 0;
   text-align: left;
+}
+
+/* 標題與欄位最多顯示兩行，超出時以刪節號截斷。沒有空白的長字串可於任意處換行 */
+.list-item__title,
+.list-item__field {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  overflow-wrap: anywhere;
 }
 
 /* 左右固定在各自的欄，另一側未指定時也不移位 */
@@ -112,12 +129,12 @@
 
 /* 右側皆未指定：左側佔滿整行 */
 .list-item__rows--left .list-item__row {
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr);
 }
 
 /* 左側皆未指定：右側佔滿整行，靠右。第一欄只在多選時放勾選圖示 */
 .list-item__rows--right .list-item__row {
-  grid-template-columns: auto 1fr;
+  grid-template-columns: auto minmax(0, 1fr);
 }
 
 /* 已指定但沒有值時，以零寬字元撐出一行的高度 */
@@ -129,7 +146,7 @@
 /* dashboard 的窄面板：只留標題與副標，上下排列並靠左（門檻見 docs/design/dashboard.md） */
 @container dashboard-panel (width < 200px) {
   .list-item__rows .list-item__row {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .list-item__row .list-item__field--right {

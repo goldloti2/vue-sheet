@@ -39,6 +39,11 @@
   // 另存一份已確定存在的值，供函數宣告（會被提升）使用
   const dashboard: DashboardContext = injected
 
+  // name 用於轉場的 CSS 名稱，只能使用英文字母、數字、_ 與 -
+  if (import.meta.env.DEV && !/^[\w-]+$/.test(name)) {
+    console.warn(`[DashboardPanel] ${name}：name 只能使用英文字母、數字、_ 與 -`)
+  }
+
   // 等待面板補上表的值，以面板的 table 算出列。須與面板的表相同
   function settle (link: Link | null, input: string): Link | null {
     if (link?.resolve && !table && import.meta.env.DEV) {
@@ -148,11 +153,11 @@
     }
     : {})
 
-  // 只在面板內的轉場進行中命名，換頁時隨整個畫面滑動。name 中不能用於 CSS 名稱的字元換成 _
+  // 只在面板內的轉場進行中命名，換頁時隨整個畫面滑動
   const transitionStyle = computed(() => {
     const mode = dashboard.panelTransition.value
     if (mode === 'fade') {
-      return { viewTransitionName: `panel-${name.replace(/[^\w-]/g, '_')}` }
+      return { viewTransitionName: `panel-${name}` }
     }
     return mode === 'slide' && expanded.value ? { viewTransitionName: 'dashboard-panel-active' } : {}
   })

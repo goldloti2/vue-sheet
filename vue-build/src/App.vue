@@ -20,6 +20,11 @@
 </template>
 
 <style>
+/* 一律預留整頁捲軸的寬度，捲軸出現或消失時內容的寬度不變 */
+:root {
+  scrollbar-gutter: stable;
+}
+
 /* 換頁動畫：整個畫面的截圖依 <html> 的 data-dir 左右滑動 */
 :root[data-transition='page']::view-transition-old(root),
 :root[data-transition='page']::view-transition-new(root),

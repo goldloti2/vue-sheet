@@ -11,6 +11,7 @@
 - 前後端之間的介面：[docs/api.md](docs/api.md)
 - 認證：[docs/auth.md](docs/auth.md)
 - 後端的設定與部署：[apps-script/README.md](apps-script/README.md)
+- AI agent 的工作規則：[AGENTS.md](AGENTS.md)
 
 ---
 

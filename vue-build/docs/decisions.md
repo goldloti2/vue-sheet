@@ -1016,6 +1016,18 @@ Chart.js 排版時，左右兩側的元素合計最多佔一半的寬度，再�
 
 ---
 
+## 工作規則
+
+**為什麼工作規則放在根目錄的 `AGENTS.md`**
+- 規則只存在於個人的記憶或 `.claude/skills/` 中時，換一個 agent 或換一台電腦便讀不到
+- 根目錄的檔案涵蓋 `apps-script/`、`docs/` 與 changelog，不只涵蓋 `vue-build/`
+- `CLAUDE.md` 只匯入 `AGENTS.md`，Claude Code 與其他 agent 讀同一份規則
+
+**為什麼 `AGENTS.md` 自己列出寫作的規則**
+main 上沒有 `.claude/skills/`。`AGENTS.md` 只指向 skill 時，main 上的 agent 讀不到規則。完整的寫作規則仍在 skill 中，`AGENTS.md` 只列出主要的幾條。
+
+---
+
 ## 測試
 
 **為什麼測試不涵蓋元件**

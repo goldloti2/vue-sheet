@@ -43,3 +43,5 @@
   - 選取的按鈕為 `tonal`，其餘按鈕為外框
   - 比例與按鈕的樣式見 [design/detail.md](../../design/detail.md#尺寸與樣式) 的「尺寸與樣式」
 - **ref 欄位**：父表整張表載入共用快取，選項先依欄位的 `refSort`，再依父表的 `defaultSort` 排序
+  - 選項與選取的值以 [FormattedValue](../view/FormattedValue.md) 顯示，套用父表 `labelColumn` 那一欄的條件式格式
+  - 輸入文字搜尋時，選取的值隱藏，選項中符合的文字不另外標示

@@ -1,5 +1,5 @@
 import type { AnyColumn, ColorName, TableSchema } from './types'
-import { formatColumnValue } from './types'
+import { allColumns, formatColumnValue, rowLabel } from './types'
 
 // 條件式格式：純函數，計算一欄顯示的文字與套用的格式。顯示由 components/ui/view/FormattedValue.vue 處理
 
@@ -42,4 +42,11 @@ export function displayValue (row: object, schema: TableSchema, column: AnyColum
       icons: rules.flatMap(rule => rule.icon ? [{ icon: rule.icon, color: rule.iconColor }] : []),
     },
   }
+}
+
+// 一列的名稱（rowLabel）與 labelColumn 的條件式格式，供 ref 欄位的選擇器使用
+export function labelDisplayValue (row: object, schema: TableSchema): DisplayValue {
+  const column = allColumns(schema).find(candidate => candidate.key === schema.labelColumn)
+  const text = rowLabel(row, schema)
+  return column ? { ...displayValue(row, schema, column), text } : { text }
 }

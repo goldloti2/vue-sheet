@@ -1,9 +1,11 @@
 <script lang="ts" setup>
   import type { TableKey } from '@/schema'
   import type { SchemaColumn, TableSchema } from '@/schema/types'
-  import { computed } from 'vue'
+  import { computed, shallowRef } from 'vue'
+  import FormattedValue from '@/components/ui/view/FormattedValue.vue'
   import { useTableList } from '@/composables/data/useTable'
   import { schemas } from '@/schema'
+  import { labelDisplayValue } from '@/schema/format'
   import { sortRows } from '@/schema/sort'
 
   // 單一真實欄位的輸入元件，依 column.type 選擇，DataForm 與 InlineField 共用。其餘屬性原樣交給內層元件
@@ -51,13 +53,23 @@
     ? useTableList<{ id: string, $label: string }>(props.column.refTable as TableKey)
     : null
 
-  const refItems = computed(() => {
+  // row 只在值對應到父列時存在。指向不存在的父列時，選取的值只有 id
+  const refItems = computed((): { id: string, title: string, row?: object }[] => {
     if (props.column.type !== 'ref' || !refList) {
       return []
     }
     return sortRows(refList.data.value, schemas[props.column.refTable as TableKey], props.column.refSort)
-      .map(row => ({ id: row.id, title: row.$label }))
+      .map(row => ({ id: row.id, title: row.$label, row }))
   })
+
+  // 選項與選取的值皆套用父列的條件式格式，於繪製時才計算
+  function refDisplay (title: string, row: object | undefined) {
+    return row && props.column.type === 'ref'
+      ? labelDisplayValue(row, schemas[props.column.refTable as TableKey])
+      : { text: title }
+  }
+
+  const refSearch = shallowRef<string>('')
 
   // suggestedValues 的 rows 為所屬這張表的列，由 schema 從 schemas 反查代稱（schema 物件為單例）
   const ownTable = (Object.keys(schemas) as TableKey[]).find(key => schemas[key] === props.schema)
@@ -178,7 +190,9 @@
   <v-autocomplete
     v-else-if="column.type === 'ref'"
     v-bind="{ ...$attrs, ...common }"
-    :class="requiredClass"
+    v-model:search="refSearch"
+    class="field-input__ref"
+    :class="[requiredClass, { 'field-input__ref--searching': refSearch }]"
     clearable
     item-title="title"
     item-value="id"
@@ -186,7 +200,21 @@
     :loading="refList?.loading.value ?? false"
     :model-value="textValue"
     @update:model-value="(value) => model = value"
-  />
+  >
+    <template #item="{ item, props: itemProps }">
+      <v-list-item v-bind="itemProps" role="option">
+        <template #title>
+          <FormattedValue :value="refDisplay(item.title, item.row)" />
+        </template>
+      </v-list-item>
+    </template>
+
+    <template #selection="{ item, internalItem }">
+      <span class="v-autocomplete__selection-text">
+        <FormattedValue :value="refDisplay(internalItem.title, item.row)" />
+      </span>
+    </template>
+  </v-autocomplete>
 
   <!-- 長文：Enter 換行，高度隨內容增加 -->
   <v-textarea
@@ -209,6 +237,21 @@
 </template>
 
 <style scoped>
+/* 有 selection slot 時 Vuetify 不再以輸入框疊於選取的值之上，此處還原單選的排版。輸入文字搜尋時隱藏選取的值 */
+.field-input__ref.v-text-field :deep(input) {
+  position: absolute;
+  left: 0;
+  right: 0;
+  flex: 1 1;
+  width: 100%;
+  padding-inline: inherit;
+}
+
+.field-input__ref :deep(.v-field--dirty:not(.v-field--focused) input),
+.field-input__ref--searching :deep(.v-autocomplete__selection) {
+  opacity: 0;
+}
+
 /* 必填的欄位：標籤後加上錯誤色的「*」 */
 .field-input--required :deep(.v-label)::after,
 .field-input__boolean-label--required::after {

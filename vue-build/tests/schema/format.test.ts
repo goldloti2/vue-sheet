@@ -1,6 +1,6 @@
 import type { TableSchema } from '@/schema/types'
 import { describe, expect, it } from 'vitest'
-import { displayValue } from '@/schema/format'
+import { displayValue, labelDisplayValue } from '@/schema/format'
 import { sampleSchema } from '../fixtures/schema'
 
 const schema: TableSchema = {
@@ -41,5 +41,25 @@ describe('displayValue', () => {
 
   it('值為空時不套用格式', () => {
     expect(displayValue({ name: null, price: 90 }, schema, column('name'))).toEqual({ text: '' })
+  })
+})
+
+describe('labelDisplayValue', () => {
+  it('文字為名稱，格式為 labelColumn 的規則', () => {
+    const value = labelDisplayValue({ id: 'x', name: '甲', price: 90 }, schema)
+    expect(value.text).toBe('甲')
+    expect(value.format?.color).toBe('blue')
+  })
+
+  it('不套用其他欄位的規則', () => {
+    expect(labelDisplayValue({ id: 'x', name: '甲', price: 60 }, schema)).toEqual({ text: '甲' })
+  })
+
+  it('名稱為空時文字為 id，不套用格式', () => {
+    expect(labelDisplayValue({ id: 'x', name: null, price: 90 }, schema)).toEqual({ text: 'x' })
+  })
+
+  it('沒有 labelColumn 時文字為 id', () => {
+    expect(labelDisplayValue({ id: 'x', price: 90 }, { ...schema, labelColumn: undefined })).toEqual({ text: 'x' })
   })
 })

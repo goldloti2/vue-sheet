@@ -213,7 +213,8 @@ export const orderSchema: TableSchema<OrderRow> = {
 - **顏色在深淺色主題各有一組色值**：這些顏色登記為 Vuetify 主題的共用色名 `vuesheet-*`，條件式格式以外的地方也可使用（使用方式見 [FormattedValue](../components/view/FormattedValue.md)，色值見 [design/README.md](../design/README.md#尺寸與樣式) 的「尺寸與樣式」）
 - **值為空時完全空白**，不顯示圖示
 - **套用於所有顯示值的地方**：詳細頁的欄位與標頭、列表 view 的各位置、表格的儲存格
-- **不套用的地方**：表單與快速編輯的輸入框、圖片欄位，以及 `id`、`$label` 這類不是 schema 欄位的位置
+- **ref 欄位的選擇器**：選項與選取的值套用父表 `labelColumn` 那一欄的規則，無須設定
+- **不套用的地方**：表單與快速編輯中 ref 以外的輸入框、圖片欄位，以及 `id`、`$label` 這類不是 schema 欄位的位置
 - 顯示的文字與格式由 `schema/format.ts` 的 `displayValue` 一起算出，由 [FormattedValue](../components/view/FormattedValue.md) 顯示
 
 ---

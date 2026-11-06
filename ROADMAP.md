@@ -276,8 +276,16 @@
 ### 列表效能
 上千列的列表頁做過一輪渲染成本的處理：每一列的連結元件、`ref` 的父列查詢、畫面外的列是否排版。量測方法、數字與判讀方式，見附錄 [vue-build/docs/perf.md](vue-build/docs/perf.md)。
 
+### 測試
+- Vitest，`npm test` 執行 `vue-build/tests/` 中的測試，結構對應 `src/`
+- 純函數：`schema/` 的型別轉換、篩選、排序、驗證、分組、關聯、條件式格式、圖片與圖表的統計，圖表的文字與顏色，搜尋，儀表板面板的排版，表格的欄寬計算，假後端的 CSV 解析與 token
+- 經由假後端：假後端本身、store（載入、新增、修改、刪除、連帶刪除、流程與同步）、佇列的合併與推送、row 上的 getter、儀表板的連動
+- 測試只用 `tests/fixtures/` 中自己定義的 schema 與假後端的資料，main 上也能執行
+- 測試不讀取 `.env`，並替換 `fetch`，請求不會送到真的後端
+
 ### 文件與範本
 - 根目錄的 `README.md` 為索引。跨兩端的介面在 `docs/api.md`。前端的文件在 `vue-build/docs/`：`architecture`、`perf`，`topics/` 為各項機制，`design/` 為設計指南，`components/` 為每個元件一份
+- 根目錄的 `AGENTS.md`：AI agent 的工作規則（驗證、框架與專案、程式、文件、提交與版本）。`CLAUDE.md` 只匯入 `AGENTS.md`
 - `vue-build/template/`：新增一張表所需的全套檔案，**保留為真正的檔案**
   - 複製整份檔案比從程式區塊中挑選方便，而且在 `main` 分支上，範本是唯一的頁面範例
   - 範本中只保留最小的骨架，以及每個檔案開頭一段「應閱讀的文件」。選項目錄與說明一律寫在 docs，不保留第二份會不一致的副本

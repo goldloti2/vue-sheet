@@ -1,5 +1,13 @@
 # 版本紀錄
 
+## v1.9
+
+- **測試**：加入 Vitest。`npm test` 執行 `vue-build/tests/` 中的測試。說明見 [vue-build/docs/architecture.md](vue-build/docs/architecture.md) 的「資料夾」
+  - 純函數：`schema/` 的型別轉換、篩選、排序、驗證、分組、關聯、條件式格式、圖片與圖表的統計，圖表的文字與顏色，搜尋，儀表板面板的排版，表格的欄寬計算，假後端的 CSV 解析與 token
+  - 經由假後端：store、佇列、row 上的 getter 與儀表板的連動。測試用的表與資料在 `tests/fixtures/backend/`，不使用專案的表
+  - 測試不讀取 `.env`，並替換 `fetch`，請求不會送到真的後端
+- **AI agent 的工作規則**：根目錄新增 [AGENTS.md](AGENTS.md)，取代 `vue-build/AGENTS.md`。內容為驗證的指令、框架與專案的區分、程式與文件的規則、提交與版本。根目錄的 `CLAUDE.md` 只匯入 `AGENTS.md`
+
 ## v1.8
 
 - **頁籤列畫在頁籤頁之中**：`TabPage` 在自己的最上方畫出頁籤列，捲動時固定於 App Bar 的下緣，不再登記於 App Bar 的 extension。切換頁籤時頁籤列不動，換頁時頁籤列隨頁面滑動。位於儀表板未展開的面板中時，頁籤列固定於面板的上緣。說明見 [vue-build/docs/components/panel/TabPage.md](vue-build/docs/components/panel/TabPage.md)

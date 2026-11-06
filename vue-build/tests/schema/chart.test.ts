@@ -1,6 +1,6 @@
 import type { ChartData } from '@/schema/chart'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { defineChart, highlightOf, pickElement, toggleLegend } from '@/schema/chart'
+import { defineChart, highlightOf, pickElement, shownDatasets, toggleLegend, togglePicked } from '@/schema/chart'
 import { sampleSchema } from '../fixtures/schema'
 
 const r1 = { id: '1', status: '高', price: 10, level: 1, done: true, day: new Date(2026, 0, 15), tag: 'A' }
@@ -175,5 +175,34 @@ describe('高光與點擊', () => {
     const picked = pickElement({ status: { values: ['低', '中'] } }, picks)
     expect(picked).toEqual({ status: { values: ['高'] }, done: { values: ['true'] } })
     expect(pickElement(picked, picks)).toEqual({})
+  })
+})
+
+describe('togglePicked', () => {
+  it('點擊時勾選，可複選，再點擊時取消', () => {
+    const one = togglePicked(new Set(), 1)
+    const two = togglePicked(one, 0)
+    expect([...two]).toEqual([1, 0])
+    expect([...togglePicked(two, 1)]).toEqual([0])
+  })
+
+  it('不修改傳入的集合', () => {
+    const picked = new Set([1])
+    togglePicked(picked, 0)
+    expect([...picked]).toEqual([1])
+  })
+})
+
+describe('shownDatasets', () => {
+  it('沒有勾選時為 null，全部顯示', () => {
+    expect(shownDatasets([{}, {}], new Set())).toBeNull()
+  })
+
+  it('有勾選時只顯示勾選的', () => {
+    expect(shownDatasets([{}, {}, {}], new Set([0, 2]))).toEqual([true, false, true])
+  })
+
+  it('有系列的 dataset 不受影響', () => {
+    expect(shownDatasets([{ series: 0 }, {}], new Set([1]))).toEqual([true, true])
   })
 })

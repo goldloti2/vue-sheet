@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { formatParts, formatValue, paletteColors, withAlpha, wrapText } from '@/components/ui/chart/chartConfig'
+import { buildConfig, formatParts, formatValue, paletteColors, withAlpha, wrapText } from '@/components/ui/chart/chartConfig'
+import { defineChart } from '@/schema/chart'
+import { sampleSchema } from '../../../fixtures/schema'
 
 // 每個字寬 1，空白也算
 const measure = (part: string) => part.length
@@ -79,5 +81,45 @@ describe('paletteColors', () => {
   it('超過色盤的數量時從頭輪流', () => {
     const names = Array.from({ length: 8 }, (_, index) => `n${index}`)
     expect(paletteColors(names, {}).at(-1)).toBe('#36a2eb')
+  })
+})
+
+describe('buildConfig 的 marks.shown', () => {
+  const definition = defineChart(sampleSchema, {
+    type: 'bar',
+    group: { key: 'status' },
+    values: [{ stat: 'count', label: '數量' }, { stat: 'sum', key: 'price', label: '總價', axis: 'right' }],
+  })
+  const data = definition.compute([{ id: '1', status: '高', price: 10 }])
+  const theme = { text: '#000000', grid: '#000000', surface: '#ffffff' }
+
+  function build (shown: boolean[] | null) {
+    return buildConfig(definition, data, theme, { groups: null, datasets: null, shown }) as unknown as {
+      data: { datasets: { hidden: boolean }[] }
+      options: {
+        scales: Record<string, { display?: string }>
+        plugins: { legend: { labels: { generateLabels: (chart: object) => { fillStyle: string, hidden?: boolean }[] } } }
+      }
+    }
+  }
+
+  it('沒有勾選時全部畫出', () => {
+    expect(build(null).data.datasets.map(dataset => dataset.hidden)).toEqual([false, false])
+  })
+
+  it('沒勾選的 dataset 不畫出', () => {
+    expect(build([true, false]).data.datasets.map(dataset => dataset.hidden)).toEqual([false, true])
+  })
+
+  it('沒勾選的圖例調淡，不標示為隱藏', () => {
+    const [on, off] = build([true, false]).options.plugins.legend.labels.generateLabels({})
+    expect(off?.fillStyle).not.toBe(on?.fillStyle)
+    expect(off?.hidden).toBeUndefined()
+  })
+
+  it('數值軸於沒有顯示的 dataset 時隱藏', () => {
+    const { scales } = build(null).options
+    expect(scales.y?.display).toBe('auto')
+    expect(scales.right?.display).toBe('auto')
   })
 })

@@ -13,7 +13,7 @@
 | `chart` | `ChartDefinition<Row>` | **必填**，`defineChart` 的回傳值。`type` 為 `stat` 時改用 [DataStat](DataStat.md) |
 | `rows` | `readonly Row[]` | **必填**，要畫成圖表的列，通常為 `useListPage` 的 `rows` |
 | `filters` | `Filters?` | 該表的篩選條件。分組欄與系列欄上的條件以高光標示，省略時不標示 |
-| `clickable` | `boolean?` | 預設 `true`。`false` 時點擊圖表與圖例皆沒有反應，不發出事件，圖例也不隱藏 dataset。滑鼠移上時的提示照常顯示 |
+| `clickable` | `boolean?` | 預設 `true`。`false` 時點擊圖表與圖例皆沒有反應，不發出事件，圖例也不切換勾選。滑鼠移上時的提示照常顯示 |
 
 ## Emits
 
@@ -23,7 +23,7 @@
 | `row` | `row: Row` | 點擊 scatter 或 bubble 的一點，參數為該點的那一列 |
 | `legend` | `pick: GroupFilter` | 點擊圖例中的一組或一個系列，參數為選取該項的篩選條件。該項沒有條件時不發出 |
 
-- 圖例的一項為沒有系列的 dataset 時，此元件照 Chart.js 的預設隱藏或顯示該 dataset，不發出事件
+- 圖例的一項為沒有系列的 dataset 時，此元件切換該項是否勾選，不發出事件。有勾選時只顯示勾選的 dataset（見 [topics/chart.md](../../topics/chart.md) 的「點擊圖例」）
 
 ## 備註
 

@@ -3,9 +3,9 @@
   import type { ChartDefinition, ChartGroupData, GroupFilter } from '@/schema/chart'
   import type { Filters } from '@/schema/filter'
   import type { Chart, LegendItem } from 'chart.js'
-  import { computed, onBeforeUnmount, onMounted, useTemplateRef, watch } from 'vue'
+  import { computed, onBeforeUnmount, onMounted, shallowRef, useTemplateRef, watch } from 'vue'
   import { useTheme } from 'vuetify'
-  import { highlightOf } from '@/schema/chart'
+  import { highlightOf, shownDatasets, togglePicked } from '@/schema/chart'
   import { buildConfig, withAlpha } from './chartConfig'
   import { registerSpacedScale } from './chartScale'
 
@@ -31,7 +31,10 @@
   const canvas = useTemplateRef<HTMLCanvasElement>('canvas')
   const data = computed(() => chart.compute(rows))
 
-  // 符合分組欄條件的組、符合系列欄條件的 dataset。沒有系列的 dataset 照常
+  // 圖例中勾選的 dataset（索引），只屬於這張圖，不寫入篩選
+  const picked = shallowRef<ReadonlySet<number>>(new Set())
+
+  // 符合分組欄條件的組、符合系列欄條件的 dataset。沒有系列的 dataset 依圖例的勾選顯示
   const marks = computed<ChartMarks>(() => {
     const current = data.value
     const series = highlightOf(current.series, chart.seriesKey, filters)
@@ -39,6 +42,7 @@
     return {
       groups: current.kind === 'category' ? highlightOf(current.groups, chart.groupKey, filters) : null,
       datasets: series && datasets.map(dataset => dataset.series === undefined || series[dataset.series] === true),
+      shown: shownDatasets(datasets, picked.value),
     }
   })
 
@@ -80,7 +84,7 @@
     }
   }
 
-  // 圖例的一項為一組或一個系列時發出條件。沒有系列的 dataset 照 Chart.js 預設隱藏或顯示
+  // 圖例的一項為一組或一個系列時發出條件。沒有系列的 dataset 切換勾選
   function onLegend (_event: unknown, item: LegendItem) {
     const current = data.value
     const index = item.datasetIndex
@@ -94,8 +98,7 @@
     const datasets: { series?: number }[] = current.datasets
     const series = datasets[index]?.series
     if (series === undefined) {
-      instance?.setDatasetVisibility(index, !instance.isDatasetVisible(index))
-      instance?.update()
+      picked.value = togglePicked(picked.value, index)
       return
     }
     const filter = current.series[series]?.filter
@@ -124,7 +127,7 @@
   function config () {
     const built = buildConfig(chart, data.value, theme.value, marks.value)
     const plugins = built.options?.plugins
-    // 不可點擊時，圖例也不照 Chart.js 的預設隱藏 dataset
+    // 不可點擊時，圖例也不切換勾選
     built.options = {
       ...built.options,
       onClick: clickable ? onClick : undefined,

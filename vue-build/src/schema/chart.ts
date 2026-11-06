@@ -276,6 +276,22 @@ export function toggleLegend (filters: Filters, pick: GroupFilter): Filters {
   return withCondition(filters, pick.key, { values: next })
 }
 
+// 點擊沒有系列的 dataset 的圖例：切換是否勾選，可複選
+export function togglePicked (picked: ReadonlySet<number>, index: number): ReadonlySet<number> {
+  const next = new Set(picked)
+  if (!next.delete(index)) {
+    next.add(index)
+  }
+  return next
+}
+
+// 各 dataset 是否顯示：有勾選時只顯示勾選的，有系列的 dataset 不受影響。沒有勾選時為 null
+export function shownDatasets (datasets: readonly { series?: number }[], picked: ReadonlySet<number>): boolean[] | null {
+  return picked.size === 0
+    ? null
+    : datasets.map((dataset, index) => dataset.series !== undefined || picked.has(index))
+}
+
 // 加入共用的儀表板面板中點擊圖表：只選這一組與其系列。各欄皆已為這些條件時，改為移除
 export function pickElement (filters: Filters, picks: readonly GroupFilter[]): Filters {
   const same = picks.every(pick => sameCondition(filters[pick.key], pick.condition))

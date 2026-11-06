@@ -26,10 +26,11 @@ const CHART_PALETTE: Record<ColorName, string> = {
 const PALETTE_ORDER = Object.keys(CHART_PALETTE) as ColorName[]
 const FILL_OPACITY = 0.5
 
-// 高光：false 的組或 dataset 調淡。null 表示該欄沒有條件，全部照常
+// 高光：false 的組或 dataset 調淡。null 表示該欄沒有條件，全部照常。shown 為 false 的 dataset 不畫出，圖例調淡
 export interface ChartMarks {
   groups: boolean[] | null
   datasets: boolean[] | null
+  shown: boolean[] | null
 }
 
 const BUBBLE_MIN_RADIUS = 4
@@ -203,6 +204,7 @@ function categoryConfig (definition: ChartShape, data: Extract<ChartData<object>
   const hasRight = data.datasets.some(dataset => dataset.axis === 'right')
   const groupOn = (groupIndex: number) => marks.groups?.[groupIndex] ?? true
   const datasetOn = (index: number) => marks.datasets?.[index] ?? true
+  const datasetShown = (index: number) => marks.shown?.[index] ?? true
 
   const datasets = data.datasets.map((dataset, index) => {
     const color = colorAt(index)
@@ -230,6 +232,7 @@ function categoryConfig (definition: ChartShape, data: Extract<ChartData<object>
     return {
       label: dataset.label,
       data: dataset.data,
+      hidden: !datasetShown(index),
       ...(dataset.type ? { type: dataset.type } : {}),
       ...(dataset.axis === 'right' ? { [definition.horizontal ? 'xAxisID' : 'yAxisID']: 'right' } : {}),
       ...colors,
@@ -257,12 +260,11 @@ function categoryConfig (definition: ChartShape, data: Extract<ChartData<object>
   } else {
     legend = {
       labels: {
-        generateLabels: (chart: Chart) => data.datasets.map((dataset, index) => ({
+        generateLabels: () => data.datasets.map((dataset, index) => ({
           text: dataset.label,
-          fillStyle: shade(colorAt(index), datasetOn(index), FILL_OPACITY),
-          strokeStyle: shade(colorAt(index), datasetOn(index)),
+          fillStyle: shade(colorAt(index), datasetOn(index) && datasetShown(index), FILL_OPACITY),
+          strokeStyle: shade(colorAt(index), datasetOn(index) && datasetShown(index)),
           lineWidth: 1,
-          hidden: !chart.isDatasetVisible(index),
           datasetIndex: index,
           fontColor: theme.text,
         })),
@@ -289,9 +291,10 @@ function categoryConfig (definition: ChartShape, data: Extract<ChartData<object>
         ticks: { color: theme.text },
         ...(definition.horizontal ? { afterTickToLabelConversion: wrapAxisLabels } : {}),
       },
-      [valueAxis]: { ...valueType, stacked: definition.stacked, beginAtZero: true, ...axisStyle(theme, leftUnit, leftValues) },
+      // display 為 auto：軸上沒有顯示的 dataset 時隱藏該軸
+      [valueAxis]: { ...valueType, display: 'auto', stacked: definition.stacked, beginAtZero: true, ...axisStyle(theme, leftUnit, leftValues) },
       ...(hasRight
-        ? { right: { ...valueType, position: definition.horizontal ? 'top' : 'right', beginAtZero: true, ...axisStyle(theme, rightUnit, rightValues), grid: { drawOnChartArea: false } } }
+        ? { right: { ...valueType, display: 'auto', position: definition.horizontal ? 'top' : 'right', beginAtZero: true, ...axisStyle(theme, rightUnit, rightValues), grid: { drawOnChartArea: false } } }
         : {}),
     }
   } else if (type === 'radar' || type === 'polarArea') {

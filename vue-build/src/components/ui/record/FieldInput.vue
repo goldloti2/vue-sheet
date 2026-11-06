@@ -46,7 +46,7 @@
     return props.column.type === 'number' ? props.column[option] : undefined
   }
 
-  // ref 欄位的選項為父表整張表（共用快取）：值為 id，文字為父列的 $label，依父表的 defaultSort 排序
+  // ref 欄位的選項為父表整張表（共用快取）：值為 id，文字為父列的 $label，依 refSort 再依父表的 defaultSort 排序
   const refList = props.column.type === 'ref'
     ? useTableList<{ id: string, $label: string }>(props.column.refTable as TableKey)
     : null
@@ -55,7 +55,7 @@
     if (props.column.type !== 'ref' || !refList) {
       return []
     }
-    return sortRows(refList.data.value, schemas[props.column.refTable as TableKey])
+    return sortRows(refList.data.value, schemas[props.column.refTable as TableKey], props.column.refSort)
       .map(row => ({ id: row.id, title: row.$label }))
   })
 

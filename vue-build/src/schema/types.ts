@@ -21,8 +21,8 @@ interface ColumnTypes {
   duration: { value: string | null }
   /** 圖片，一格一張。值為行內 SVG、圖片網址或 Google Drive 的檔案（見 schema/image.ts） */
   image: { value: string | null }
-  /** 外鍵，值為父列的 id。refTable、onDelete、onEmpty 見 docs/topics/schema.md 的「跨表關聯」 */
-  ref: { value: string | null, extra: { refTable: string, onDelete?: 'cascade', onEmpty?: 'delete' } }
+  /** 外鍵，值為父列的 id。refTable、onDelete、onEmpty、refSort 見 docs/topics/schema.md 的「跨表關聯」 */
+  ref: { value: string | null, extra: { refTable: string, onDelete?: 'cascade', onEmpty?: 'delete', refSort?: SortSpec[] } }
   /** 清單，預設只能選 options 中的值。開啟 allowCustom 時，options 只是建議 */
   select: { value: string | null, extra: { options: string[], allowCustom?: boolean } }
 }
@@ -77,6 +77,7 @@ export type VirtualColumn<Row extends object = AnyRow> = {
     value: (row: Row) => ColumnValue<T>
     onDelete?: never
     onEmpty?: never
+    refSort?: never
   }
 }[ColumnType]
 

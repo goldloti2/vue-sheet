@@ -32,6 +32,8 @@ export function use__Table__Actions (options: __Table__ActionOptions = {}) {
     // 以列為參數的動作：列表於 view 中直接呼叫，詳細頁以 useRowAction 綁定至目前的列
     edit: (row: __Table__Row) => editAction(TABLE, row),
     delete: (row: __Table__Row) => deleteAction(TABLE, row),
+    // 複製一列，另須 import copyAction。表須有 newId
+    // copy: (row: __Table__Row) => copyAction(TABLE, row),
     fieldActions,
     // 連續動作：新增一列，再以其 id 新增一列子列（child），最後前往該列的詳細頁
     // 另須 import mdiPlus、toValue、runFlow 與 runStep（composables/navigation/useFlow）及 router

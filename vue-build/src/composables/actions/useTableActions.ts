@@ -1,11 +1,12 @@
 import type { AskFieldsOptions } from '@/composables/shell/useAskFields'
 import type { TableKey } from '@/schema'
 import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue'
-import { mdiChevronRightCircle, mdiClose, mdiContentSave, mdiDelete, mdiOpenInNew, mdiPencil, mdiPlus } from '@mdi/js'
+import { mdiChevronRightCircle, mdiClose, mdiContentCopy, mdiContentSave, mdiDelete, mdiOpenInNew, mdiPencil, mdiPlus } from '@mdi/js'
 import { computed, toValue } from 'vue'
 import { askFields } from '@/composables/shell/useAskFields'
 import router, { leaveAfterAction, pushWithDefaults } from '@/router'
 import { schemas } from '@/schema'
+import { rowLabel } from '@/schema/types'
 import { useTablesStore } from '@/stores/tables'
 
 // 有 confirm 時先詢問再執行 onClick（見 useActionRunner）。放置動作處皆接收 (PageAction | null)[]，略過 null
@@ -26,6 +27,7 @@ export type FieldActions<Row extends object> = Record<string, (row: Row) => Page
 export const actionIcons = {
   new: mdiPlus,
   edit: mdiPencil,
+  copy: mdiContentCopy,
   delete: mdiDelete,
   goToRef: mdiChevronRightCircle,
   openUrl: mdiOpenInNew,
@@ -79,6 +81,28 @@ export function editAction (table: TableKey, row: { id: string }, look: ActionLo
     label: look.label ?? '編輯',
     icon: look.icon ?? actionIcons.edit,
     onClick: () => void router.push(`/${table}/${row.id}/edit`),
+  }
+}
+
+// 確認後複製一列：主鍵重新發號，其餘真實欄位照抄，完成後前往新的一列。子列不複製。表沒有 newId 時為 null
+export function copyAction (table: TableKey, row: { id: string }, look: ActionLook = {}): PageAction | null {
+  const schema = schemas[table]
+  if (!schema.newId) {
+    return null
+  }
+
+  return {
+    key: 'copy',
+    label: look.label ?? '複製',
+    icon: look.icon ?? actionIcons.copy,
+    confirm: { title: '複製確認', text: `確定要複製「${rowLabel(row, schema)}」嗎？` },
+    onClick: () => {
+      const values = Object.fromEntries(schema.columns
+        .filter(column => column.key !== schema.idColumn)
+        .map(column => [column.key, (row as Record<string, unknown>)[column.key]]))
+      const copied = useTablesStore().create<{ id: string }>(table, values)
+      void router.push(`/${table}/${copied.id}`)
+    },
   }
 }
 

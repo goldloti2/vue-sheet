@@ -82,6 +82,7 @@ interface PageAction {
 | --- | --- | --- |
 | `newAction(table, { defaults? }?, look?)` | `PageAction` | 開啟新增表單。`defaults` 可為值、ref 或 getter，於按下時求值，經由 `history.state` 帶入表單 |
 | `editAction(table, row, look?)` | `PageAction` | 開啟該列的編輯表單 |
+| `copyAction(table, row, look?)` | `PageAction \| null` | 確認後複製該列：主鍵重新發號，其餘真實欄位照抄，完成後前往新的一列。子列不複製。表沒有 `newId` 時為 `null` |
 | `deleteAction(table, row, onDone?, look?)` | `PageAction` | 確認後刪除該列，包括 cascade 的子列，完成後呼叫 `onDone`。刪除的是目前詳細頁顯示的那一列時，自動以 `leaveAfterAction` 離開 |
 | `bulkDeleteAction(table, ids, onDone?, look?)` | `PageAction \| null` | 確認後刪除選取的各列，完成後呼叫 `onDone`，列表頁以此清除選取。未選取任何一列時為 `null` |
 | `quickEditAction(table, keys, ids, { label, icon, key?, defaults?, onDone? })` | `PageAction \| null` | 以對話框詢問 `keys` 中的欄位，將選取的各列改為同一個值。未選取任何一列時為 `null`（見「快速編輯對話框」） |

@@ -6,7 +6,8 @@
 npm install
 npm run dev     # 開發伺服器
 npm run build   # 產出靜態檔案至 dist/
-npx eslint src && npx vue-tsc --build --force   # 提交前執行這兩項
+npm test        # 執行 tests/ 中的測試
+npx eslint src tests && npx vue-tsc --build --force   # 提交前執行這兩項，以及 npm test
 ```
 
 執行 `npm run dev` 後即可操作：

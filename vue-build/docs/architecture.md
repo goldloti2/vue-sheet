@@ -72,7 +72,17 @@ src/
                        動作選單的樣式，見 docs/components/view/ViewActions.md）
   router/index.ts      路由實例、登入檢查、換頁動畫與方向判定、leaveAfterAction、pushWithDefaults
   pages/               檔案即路由。任意層的 _ref/ 只供其他頁面引用，不產生路由
+tests/               Vitest 的測試，結構對應 src/（例如 tests/schema/filter.test.ts 測 src/schema/filter.ts）
+  setup.ts             每個測試檔執行前載入：替換 fetch，測試中的請求一律失敗
+  fixtures/            測試共用的 schema，不使用 src/schema/tables 中的表
+    backend/           假後端的測試資料：三張表（父表、子表、附註）的 schema 與 CSV
 ```
+
+**測試**：`npm test` 執行一次，`npm run test:watch` 於修改時重跑。測試以 `@/` 匯入 `src/` 的模組，不涵蓋元件的外觀與排版。設定見 `vitest.config.mts`，型別檢查見 `tsconfig.vitest.json`。
+- 純函數直接呼叫
+- store、佇列與儀表板的連動經由假後端測試。測試檔以 `vi.mock` 將 `@/schema` 與 `@/services/mock/tables` 換成 `tests/fixtures/backend/` 中的版本，並將 `@/config/app` 的 `authMethod` 改為 `'none'`
+- 每個測試前呼叫 `freshBackend()`：重新載入模組並建立新的 Pinia，假後端的資料與 store 的狀態回到初始值
+- 測試不讀取 `.env`，未設定 `VITE_APPS_SCRIPT_URL`，因此使用假後端
 
 頁面的檔名直接對應網址：
 

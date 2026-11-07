@@ -35,7 +35,7 @@
   - `composables/data/` 只放反應式的包裝（`useTable`、`useSearch`、`useFilter`）
   - 各表的欄位定義在 `schema/tables/`，一張表一個檔案。註冊表 `schema/index.ts` 留在根目錄，作為公開的入口
 - `detailOrder`、`formOrder` 分別控制詳細頁與表單頁的欄位順序，為這張表的預設。個別頁面以 `DetailPage`、`FormPage`（與 `DataDetail`、`DataForm`）的 `order` prop 覆寫。欄位的 `showIf` 依這一列的資料，決定詳細頁是否顯示該欄
-- 條件式格式：表層級的 `formatRules`，含 `when`、`columns`，以及顏色、粗體、斜體、底線、刪除線、圖示
+- 條件式格式：表層級的 `formatRules`，含 `when`、`columns`，以及顏色、粗體、斜體、底線、刪除線、圖示。ref 欄位的選擇器套用父表 `labelColumn` 那一欄的規則
   - `schema/format.ts` 的 `displayValue` 把文字與格式一起算出，view、`DataDetail`、`DataTable` 都改用此函數，由 `FormattedValue` 統一顯示
   - `formatColumnValue` 仍只回傳字串，供寫回 Sheet、搜尋與 `$label` 使用
   - 多條規則符合時，顏色取第一個，圖示依序全取，字形取聯集
@@ -86,6 +86,7 @@
 - 沒有子列時刪除父列：ref 欄位標示 `onEmpty: 'delete'`
   - 子列被刪除，或改指其他父列，使原本的父列沒有子列時，`store` 的 `update`、`removeMany` 在寫入後刪除該父列。刪除經過 `removeMany`，可多層往上遞迴
   - 只在子列減少時檢查，剛建立的空父列不受影響
+- 選擇器的順序：ref 欄位標示 `refSort`。選項先依 `refSort`，再依父表的 `defaultSort` 排序
 
 ### 資料存取
 - `stores/tables/`：每張表一份全 App 共用的快取，同一張表不重複呼叫 API
@@ -400,6 +401,7 @@ view 的規則：
 - ✅ `ChartPage`：載入狀態、錯誤、高度與點擊，以及範本 `template/pages/chart.vue`
 - ✅ 圖表忽略自己分組欄與系列欄上的條件，並為被選的組與系列加上高光
 - ✅ 點擊圖例寫入篩選，儀表板中點擊圖表寫入篩選
+- ✅ 沒有系列的 dataset，點擊圖例只看勾選的 dataset
 - ✅ 文字統計（`type: 'stat'`）：`DataStat` 以文字顯示每一組的每一個數值，數字可加「+」、單位與顏色
 - ✅ 以 `colors` 依名稱指定組或 dataset 的顏色，色名與條件式格式相同
 - ✅ 軸上的值皆為整數時，刻度只取整數

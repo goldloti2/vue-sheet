@@ -1,5 +1,12 @@
 # 版本紀錄
 
+## v1.10
+
+- **關聯選擇器的順序**：ref 欄位新增 `refSort`。選項先依 `refSort`，再依父表的 `defaultSort` 排序，父表的列表不受影響
+- **關聯選擇器的條件式格式**：選項與選取的值套用父表 `labelColumn` 那一欄的規則。輸入文字搜尋時，選項中符合的文字不再另外標示
+- **複製動作**：新增內建 builder `copyAction`。確認後複製一列，主鍵重新發號，其餘真實欄位照抄，完成後前往新的一列
+- **圖例**：同一張圖有多個數值且沒有系列時，點擊圖例改為只看勾選的數值，可複選，全部取消時全部顯示。原本為隱藏點擊的數值
+
 ## v1.9
 
 - **測試**：加入 Vitest。`npm test` 執行 `vue-build/tests/` 中的測試。說明見 [vue-build/docs/architecture.md](vue-build/docs/architecture.md) 的「資料夾」

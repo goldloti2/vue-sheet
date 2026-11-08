@@ -2,7 +2,7 @@
 
 詢問幾個欄位的對話框，以 `AppDialog` 為基礎。內容為只顯示 `keys` 中各欄的 `DataForm`，並自帶取消與確定按鈕。
 
-> **通常不直接使用此元件**。呼叫 `askFields()` 即可（見 [actions.md](../../topics/actions.md#快速編輯對話框)）。`AppShell` 已掛載一個實例，按下確定或取消時 promise 即 resolve。只有須自行管理狀態的特殊情況，才直接放置此元件。
+> **通常不直接使用此元件**。呼叫 `askFields()` 即可（見 [actions.md](../../topics/actions.md#快速編輯對話框)）。表單層負責開啟與關閉，按下確定或取消時 promise 即 resolve。只有須自行管理狀態的特殊情況，才直接放置此元件。
 
 ## Usage
 

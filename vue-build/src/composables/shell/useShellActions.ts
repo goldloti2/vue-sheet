@@ -12,13 +12,6 @@ export function useAppBarActions (source: () => (PageAction | null)[]): void {
   registerActions(appBarActionsKey, source)
 }
 
-export const bottomActionsKey: InjectionKey<ActionSlotSetter> = Symbol('bottomActions')
-
-// 螢幕最底端的動作列。註冊後暫時取代導覽列，離開頁面時自動還原
-export function useBottomActions (source: () => (PageAction | null)[]): void {
-  registerActions(bottomActionsKey, source)
-}
-
 export interface AppBarHeading {
   title: string
   back: () => void

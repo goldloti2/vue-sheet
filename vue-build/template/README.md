@@ -56,15 +56,15 @@
 | `pages/tab-list.vue` | `src/pages/__table__/index.vue` | **選用**：依 select 欄位（範本為 `status`）分頁籤的列表頁，各頁籤放 `_ref/list.vue` |
 | `pages/_ref/list.vue` | `src/pages/__table__/_ref/__Table__List.vue` | **選用**：只供其他頁面引用的列表，不產生路由。以 `status` 或 `scope` 傳入條件，供 `tab-list.vue`、dashboard 或其他頁面使用 |
 | `pages/detail.vue` | `src/pages/__table__/[id]/index.vue` | 詳細頁 → `/__table__/:id` |
-| `pages/new.vue` | `src/pages/__table__/new.vue` | 新增表單 → `/__table__/new` |
-| `pages/edit.vue` | `src/pages/__table__/[id]/edit.vue` | 編輯表單 → `/__table__/:id/edit` |
 | `pages/child-list.vue` | `src/pages/__parent__/[id]/__table__.vue` | **選用**：父表詳細頁中子表區塊的「展開」頁 → `/__parent__/:id/__table__`。一條父子關聯一個檔案 |
 | `pages/dashboard.vue` | `src/pages/dashboard.vue`（檔名可自訂） | **選用**：同時顯示多個面板的總覽頁 → `/dashboard`。<br>・範本為父表列表、父表詳細與子表列表三個面板，並以 `useDashboardLinks()` 接線<br>・列表使用各表的 `_ref/list.vue`<br>・須加入底部導覽列或側邊欄時，另外加至 `src/config/navigation.ts` |
 | `pages/chart.vue` | `src/pages/__table__-chart.vue`（檔名可自訂） | **選用**：一張圖表的頁面 → `/__table__-chart`。<br>・範本為各狀態的列數與金額的總和，長條加折線<br>・也可改為 `_ref/` 中的元件，置於 dashboard 的面板或頁籤頁的頁籤<br>・須加入底部導覽列或側邊欄時，另外加至 `src/config/navigation.ts` |
 
 > 路由為檔案式（unplugin-vue-router），檔案放進 `pages/` 即自動生效，無須維護路由表。
 >
-> 注意：同一個 `:id` 一律使用 `[id]/index.vue` 與 `[id]/edit.vue` 的**資料夾**寫法，不使用 `[id].vue`。
+> 注意：同一個 `:id` 一律使用 `[id]/index.vue` 的**資料夾**寫法，不使用 `[id].vue`。
+>
+> 新增與編輯的表單無須複製檔案：`newAction`、`editAction` 依 schema 開啟（見 [docs/topics/pages.md](../docs/topics/pages.md#表單層)）。
 
 ### 要修改的既有檔案（4 處）
 
@@ -161,7 +161,8 @@
 
 - **路由**：檔案即路由，無須註冊
 - **跨表關聯**：schema 欄位標示 `{ type: 'ref', refTable: '另一張表' }` 即完成。兩邊的列自動掛上 getter，關聯的表自動一起載入
-- **表單**：欄位型別決定輸入元件。取消、送出與「是否放棄變更」皆由 `useCreateForm`、`useEditForm` 處理
+- **表單**：無須頁面檔。欄位型別決定輸入元件。取消、送出與「是否放棄變更」皆由表單層處理
 - **搜尋、篩選與排序**：`useListPage(table, schema)` 一行即接好。放大鏡、篩選抽屜與排序按鈕自動出現，schema 的 `searchable`、`sortable` 清單決定有哪些欄位與順序
-- **載入中、載入失敗、找不到資料**：版型元件（`ListPage`、`DetailPage`、`FormPage`）內建
-- **確認框、詢問欄位的對話框、snackbar**：`AppShell` 各掛一個實例，頁面直接呼叫 `confirm()`、`askFields()`、`notify()`
+- **載入中、載入失敗、找不到資料**：版型元件（`ListPage`、`DetailPage`）與表單層內建
+- **確認框、snackbar**：`AppShell` 各掛一個實例，頁面直接呼叫 `confirm()`、`notify()`
+- **表單與詢問欄位的對話框**：`AppShell` 掛載 `FormLayerHost`，頁面直接呼叫 `openForm()`、`askFields()`

@@ -42,8 +42,8 @@ export function use__Table__Actions (options: __Table__ActionOptions = {}) {
     //   label: '新增',
     //   icon: mdiPlus,
     //   onClick: () => runFlow(async () => {
-    //     const created = await runStep<__Table__Row>('/__table__/new', toValue(newOptions.defaults))
-    //     await runStep<ChildRow>('/child/new', { parent: created.id })
+    //     const created = await runStep<__Table__Row>(TABLE, { defaults: toValue(newOptions.defaults) })
+    //     await runStep<ChildRow>('child', { defaults: { parent: created.id } })
     //     await router.replace(`/__table__/${created.id}`)
     //   }),
     // })),

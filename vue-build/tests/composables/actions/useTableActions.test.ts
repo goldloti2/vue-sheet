@@ -10,9 +10,8 @@ vi.mock('@/schema', () => import('../../fixtures/backend/schema'))
 vi.mock('@/services/mock/tables', () => import('../../fixtures/backend/tables'))
 vi.mock('@/config/app', async importOriginal => ({ ...await importOriginal<object>(), authMethod: 'none' }))
 vi.mock('@/router', () => ({
-  default: { push: vi.fn(), afterEach: vi.fn() },
+  default: { push: vi.fn(), beforeEach: vi.fn(), afterEach: vi.fn() },
   leaveAfterAction: vi.fn(),
-  pushWithDefaults: vi.fn(),
 }))
 
 let store: ReturnType<typeof useTablesStore>

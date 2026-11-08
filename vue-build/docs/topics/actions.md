@@ -2,7 +2,7 @@
 
 畫面上可以按的元素：動作的描述方式、可以放置的位置、執行方式，以及內建的 builder、連續動作與快速編輯對話框。
 
-> **前置**：畫面各部位的名稱（App Bar、FAB、底部動作列）見 [design/README.md](../design/README.md)。完成動作後的離開方式、表單的離開確認，見 [pages.md](pages.md)。
+> **前置**：畫面各部位的名稱（App Bar、FAB）見 [design/README.md](../design/README.md)。表單層、完成動作後的離開方式與離開確認，見 [pages.md](pages.md)。
 
 > **標記**：沒有標記表示已實作。🔶 為部分實作，🔲 為尚未實作。詳細進度見 [ROADMAP.md](../../../ROADMAP.md)。
 
@@ -34,8 +34,8 @@ interface PageAction {
 | --- | --- |
 | `key` | 同一組動作中不可重複 |
 | `label` | 動作的文字。只顯示圖示的位置，以此作為 `aria-label` |
-| `icon` | **一律須提供**，底部動作列也須提供 |
-| `onClick` | 動作本體。須導覽時，在其中呼叫 `router.push` |
+| `icon` | **一律須提供** |
+| `onClick` | 動作本體。須開啟表單時，呼叫 `openForm`。須前往其他頁面時，呼叫 `router.push` |
 | `confirm` | 宣告時，先顯示確認框，確定後才執行 `onClick` |
 | `display` | 用於列上的動作（見「列上的動作」）：顯示為圖示或文字，預設為圖示 |
 
@@ -47,7 +47,6 @@ interface PageAction {
 | --- | --- | --- |
 | 右下角的 FAB | `ListPage`、`DetailPage` 的 `fab` prop。自行組合版面時，使用 `<PageFab :actions="...">` | 主要的動作。2 個以下固定顯示，3 個以上收合為 speed-dial |
 | App Bar 右側 | `useAppBarActions(() => [...])` | 次要的動作。2 個以下直接顯示，3 個以上收進「⋮」選單。多選的「取消」例外：一律在選單外、同步按鈕左側，由 `useMultiSelect` 自行登記 |
-| 螢幕最底端 | `useBottomActions(() => [...])` | 暫時取代底部導覽列，離開頁面時自動還原。表單的取消與送出無須自行登記，由 `useCreateForm`、`useEditForm` 登記 |
 | 詳細頁的單一欄位 | `DataDetail`、`DetailPage` 的 `fieldActions` | 該欄的動作：右側出現圖示，整格可點擊（見「欄位動作」） |
 | 子表區塊 | `ChildList` 的 `actions` prop | 排在「展開」旁，通常為新增 |
 | 列表的每一列 | view 的 `actions` | 該列的動作。deck 置於右下角欄位的下一行，profile 收於右側的 ⋮ 選單，gallery 收於右下角的 ⋮ 選單（見「列上的動作」） |
@@ -55,7 +54,7 @@ interface PageAction {
 
 - **每個位置都接收 `(PageAction | null)[]`**：`null`（不適用的動作）略過，因此頁面組合陣列時無須判斷。略過由最後繪製按鈕的元件負責（`PageFab`、`ChildList`、`AppShell`），中間的版面元件與登記機制一律原樣轉交
 - **陣列的順序即顯示的順序**
-- **`useAppBarActions`、`useBottomActions` 接收 getter**：回傳值改變時，自動重新登記。通常寫成 `() => [xxx.value]`
+- **`useAppBarActions` 接收 getter**：回傳值改變時，自動重新登記。通常寫成 `() => [xxx.value]`
 - **一次只有一個頁面的動作生效**：被 `<KeepAlive>` 收起的頁面，以及 `TabPage` 中不是目前頁籤的面板，其動作與 FAB 自動讓開（見 [TabPage.md](../components/panel/TabPage.md)）。頁面無須自行判斷
 
 ---
@@ -75,12 +74,12 @@ interface PageAction {
 
 外觀與行為分開傳入：
 - 有預設外觀的 builder，最後一個參數一律為 `look`（`ActionLook`，`{ label?, icon? }`）。省略時使用預設的文字與圖示
-- 行為的設定（`newAction` 的 `{ defaults }`、刪除的 `onDone`）放在 `look` 之前。只更換外觀時，該參數傳入 `{}` 或 `undefined`
+- 行為的設定（`newAction` 的 `{ defaults, lockId }`、刪除的 `onDone`）放在 `look` 之前。只更換外觀時，該參數傳入 `{}` 或 `undefined`
 - `quickEditAction` 與 `setFieldAction` 沒有預設外觀：`label` 與 `icon` 為必填，與其他設定放在同一個物件中
 
 | 函數 | 回傳 | 說明 |
 | --- | --- | --- |
-| `newAction(table, { defaults? }?, look?)` | `PageAction` | 開啟新增表單。`defaults` 可為值、ref 或 getter，於按下時求值，經由 `history.state` 帶入表單 |
+| `newAction(table, { defaults?, lockId? }?, look?)` | `PageAction` | 開啟新增表單（見 [pages.md](pages.md#表單層)）。`defaults` 可為值、ref 或 getter，於按下時求值。`lockId` 使主鍵唯讀，主鍵只能由 `defaults` 帶入 |
 | `editAction(table, row, look?)` | `PageAction` | 開啟該列的編輯表單 |
 | `copyAction(table, row, look?)` | `PageAction \| null` | 確認後複製該列：主鍵重新發號，其餘真實欄位照抄，完成後前往新的一列。子列不複製。表沒有 `newId` 時為 `null` |
 | `deleteAction(table, row, onDone?, look?)` | `PageAction` | 確認後刪除該列，包括 cascade 的子列，完成後呼叫 `onDone`。刪除的是目前詳細頁顯示的那一列時，自動以 `leaveAfterAction` 離開 |
@@ -166,16 +165,16 @@ const fieldActions: FieldActions<__Table__Row> = {
 
 範本見 `template/table/use__Table__Actions.ts` 末尾的 `newWithChild`，位於註解中。
 
-- **`runStep(to, defaults?)`**：以 `replace` 開啟一張表單，等待送出成功，取回建立或修改的列。`defaults` 經由 `history.state` 傳遞，與 `newAction` 使用同一條通道，因此只能放一般的值，不能放 reactive 物件或函數
-- **表單無須修改**：送出成功後先呼叫 `resumeStep()`。有步驟在等待時即交棒，頁面不離開。沒有時照常 `leaveAfterAction`。這是 `useCreateForm`、`useEditForm` 中唯一為流程增加的分支
-- **任何導覽都視為放棄**：守衛放行後，`router.afterEach` reject 等待中的步驟。`runFlow` 接到 `FlowCancelled` 時呼叫 `rollbackFlow()`，一次還原整條流程對快取與佇列的修改
-- **流程的程式拋出錯誤時**（不是取消），也執行 rollback，另以 snackbar 回報錯誤，並以 `leaveAfterAction('/')` 離開目前的頁面
+- **`runStep(table, options?)`**：開啟一張表單，等待送出成功，取回建立或修改的列。`options` 與 `openForm` 相同（見 [pages.md](pages.md#表單層)）。第一步佔 history 的一格，之後的步驟取代同一格
+- **表單無須修改**：步驟的表單與一般的表單相同，只有關閉時保留 history 的那一格
+- **離開步驟的表單層即視為放棄**：取消、返回鍵與前往其他頁面皆是。等待中的步驟拋出 `FlowCancelled`，`runFlow` 接到後呼叫 `rollbackFlow()`，一次還原整條流程對快取與佇列的修改
+- **流程的程式拋出錯誤時**（不是取消），也執行 rollback，另以 snackbar 回報錯誤，並離開保留的那一格
 - **流程進行中不能推送**：`flush()` 拒絕執行。表單開啟時，同步按鈕也停用（見 [store.md](store.md)）
 - **流程定義於起點那張表**的 `use表名Actions` 中，跨表的流程也是如此
 - **流程不能套疊**：第二個 `beginFlow` 直接拋出錯誤
 - **中途離開時的確認**（第二步之後一律詢問），見 [pages.md](pages.md#離開表單前的詢問)
 
-流程的程式只有兩條規則：**只以 `runStep` 導覽至表單。結尾須有一個離開的導覽。**
+流程的程式只有一條規則：**只以 `runStep` 開啟表單。** 結尾可以前往其他頁面。沒有時回到發起流程的頁面。
 
 ### 步驟的三種型態
 
@@ -183,7 +182,7 @@ const fieldActions: FieldActions<__Table__Row> = {
 
 | 種類 | 例子 | 須使用 |
 | --- | --- | --- |
-| 導覽型 | 開啟新增或編輯表單 | `runStep`：以 `history.state` 送出預設值，以 module 變數送回結果 |
+| 導覽型 | 開啟新增或編輯表單 | `runStep`：預設值與結果皆經由一般的參數與回傳值傳遞 |
 | 對話框型 | 選擇日期的小視窗 | `askFields`：一個一般的 promise，確定時 resolve，取消時為 `null` |
 | 立即型 | 日期改成今天 | 無須其他機制，即一次 `store.update` |
 
@@ -210,6 +209,7 @@ if (values) {
 - 通用的用法包裝為 `quickEditAction(table, keys, ids, { label, icon, defaults, onDone })`：
   - 未選取任何一列時回傳 `null`，因此只在多選模式下出現
   - 確定後，對每個 id 各執行一次 `store.update`，不另外新增操作的種類
+- 對話框是對話框大小的表單層（見 [pages.md](pages.md#表單層)）：返回鍵與點選外側皆只關閉對話框，並回傳 `null`
 - 只須詢問是或否時，使用 `confirm(title, text): Promise<boolean>`。動作的 `confirm` 宣告與離開守衛都使用此函數
 - 須提供兩個以上的去向時，使用 `choose(title, text, choices): Promise<string | null>`，與 `confirm` 共用同一個對話框實例（見 [ConfirmDialog.md](../components/dialog/ConfirmDialog.md)）
 - 一次要詢問的欄位，放在同一個對話框中

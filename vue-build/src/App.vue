@@ -97,6 +97,11 @@
   }
 }
 
+/* 表單層開啟或關閉時，整個畫面一起滑動 */
+:root[data-layer-nav] * {
+  view-transition-name: none !important;
+}
+
 /* 外殼（App Bar、抽屜、底部列、FAB、上一列與下一列的按鈕）各自命名，不在畫面截圖中，直接換成新的內容 */
 ::view-transition-group(app-bar),
 ::view-transition-group(nav-drawer),

@@ -6,11 +6,12 @@
 
 import type { PendingTransition } from '@/composables/shell/viewTransition'
 // Composables
-import type { HistoryState, RouteLocationNormalized, RouteLocationRaw } from 'vue-router'
+import type { RouteLocationNormalized, RouteLocationRaw } from 'vue-router'
 import { nextTick, shallowRef, watch } from 'vue'
 import { createRouter, createWebHistory, START_LOCATION } from 'vue-router'
 import { routes } from 'vue-router/auto-routes'
 import { siblingDirection } from '@/composables/navigation/useListOrder'
+import { type LayerMarker, layerNavigationKind } from '@/composables/shell/formLayerState'
 import { beginTransition, canAnimate, markTransition } from '@/composables/shell/viewTransition'
 import { authMethod } from '@/config/app'
 import { drawerSections, navItems } from '@/config/navigation'
@@ -43,11 +44,18 @@ function rememberScroll (fullPath: string): void {
   }
 }
 
+// 這一次導覽的種類（見 formLayerState 的 layerNavigationKind）
+let navigationKind: ReturnType<typeof layerNavigationKind> = 'none'
+
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes,
   // 優先使用瀏覽器的 savedPosition，其次為記錄的位置。未瀏覽過的頁面與相同網址的導覽回到頂端
   scrollBehavior (to, from, savedPosition) {
+    // 表單層的導覽不移動下方的頁面
+    if (navigationKind !== 'none') {
+      return false
+    }
     if (savedPosition) {
       return { top: savedPosition.top }
     }
@@ -96,10 +104,19 @@ function settle (skip: boolean): void {
   }
 }
 
-router.beforeResolve(async (_to, from) => {
+router.beforeResolve(async (to, from) => {
   // 上一次導覽因重導而未執行 afterEach 時，略過該次的動畫
   settle(true)
-  if (from !== START_LOCATION && canAnimate()) {
+  navigationKind = layerNavigationKind(router.options.history.state.formLayer as LayerMarker | undefined, to.fullPath === from.fullPath)
+
+  // 表單層的動畫涵蓋整個畫面，外殼不另外命名（見 App.vue）
+  if (navigationKind === 'page') {
+    document.documentElement.dataset.layerNav = 'true'
+  } else {
+    delete document.documentElement.dataset.layerNav
+  }
+
+  if (from !== START_LOCATION && canAnimate() && (navigationKind === 'none' || navigationKind === 'page')) {
     pending = await beginTransition()
   }
 })
@@ -164,19 +181,11 @@ router.afterEach((to, from) => {
   }
   markTransition('page', dir)
 
-  // 登入後以 replace 取代登入頁，沒有 App 內的上一頁，因此重新從 1 計算
-  navigationCount.value = from.path === loginPath ? 1 : navigationCount.value + 1
+  // 登入後以 replace 取代登入頁，沒有 App 內的上一頁，因此重新從 1 計算。表單層的導覽不計入
+  if (navigationKind === 'none') {
+    navigationCount.value = from.path === loginPath ? 1 : navigationCount.value + 1
+  }
 })
-
-// 新增動作可將預設值帶給目的地的表單。預設值置於 history.state，不置於網址
-export function pushWithDefaults (path: string, defaults: Record<string, unknown>): void {
-  void router.push({ path, state: { defaults } as HistoryState })
-}
-
-export function navigationDefaults<Row> (): Partial<Row> {
-  const { defaults } = router.options.history.state
-  return (defaults ?? {}) as Partial<Row>
-}
 
 export function leaveAfterAction (fallback: RouteLocationRaw): void {
   if (navigationCount.value > 1) {

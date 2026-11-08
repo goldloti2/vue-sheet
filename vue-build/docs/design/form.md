@@ -2,7 +2,7 @@
 
 新增或編輯一列資料。新增頁與編輯頁的外觀相同，差別在於編輯頁一開始就填好這一列目前的值。
 
-螢幕最底端為「取消」與「送出」，此時底部導覽列暫時隱藏。
+表單蓋住整個畫面。最上方為返回與標題，最底端為「取消」與「送出」。
 
 ---
 
@@ -94,8 +94,7 @@
 
 ## 技術文件
 
-- 表單頁的組成：[FormPage](../components/page/FormPage.md)、[DataForm](../components/record/DataForm.md)
+- 表單頁的組成：[FormLayerHost](../components/shell/FormLayerHost.md)、[DataForm](../components/record/DataForm.md)
 - 欄位型別、檢查與預設值：[schema.md](../topics/schema.md)
 - 連續的步驟與快速修改：[actions.md](../topics/actions.md#連續動作流程)、[FieldsDialog](../components/dialog/FieldsDialog.md)
 - 離開前的詢問：[pages.md](../topics/pages.md#離開表單前的詢問)
-- 範本：`template/pages/new.vue`、`template/pages/edit.vue`

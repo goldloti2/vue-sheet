@@ -130,7 +130,7 @@ mutateBatch([
 - 平時一律可按
 - `store.hasPending` 為真時，圖示右下角加一個圓點：有未推送的變更時為 `warning` 色，上次推送失敗時為 `error` 色
 - **同步按鈕不經過 `useAppBarActions`**
-- **表單開啟時停用**（`store.canSync`）：`useCreateForm`、`useEditForm` 內部呼叫 `useSyncHold`，頁面存在期間持有一個 `holdSync()`，離開時釋放。持有以計數器實作，同時開啟多張表單也正確
+- **表單層開啟時停用**（`store.canSync`）：`useFormLayers` 於有任何層時持有一個 `holdSync()`，全部關閉時釋放。持有以計數器實作
 - 佇列只存於記憶體中。有未推送的變更時，`beforeunload` 攔下關閉與重新整理
 
 ---

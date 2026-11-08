@@ -94,7 +94,7 @@ export const orderSchema: TableSchema<OrderRow> = {
 - **新增表單是否出現主鍵**，依這一頁實際使用的順序決定，即頁面的 `order`，否則為 `formOrder`。兩者皆省略時，所有欄位皆出現
   - 主鍵未排入時，一律發號
   - 主鍵排入時，可自行輸入。有 `newId` 時，欄位下方提示「留空即自動產生」
-  - 主鍵只能由預設值帶入時（例如延伸表從父列的頁面新增），新增頁以 `FormPage` 的 `lockId` 將主鍵設為唯讀
+  - 主鍵只能由預設值帶入時（例如延伸表從父列的頁面新增），`newAction` 或 `openForm` 以 `lockId` 將主鍵設為唯讀
 - **不能重複**：新增時 id 已存在即拋出錯誤。剛刪除、尚未推送的 id 也不能再使用
 - **建立後不能修改**：編輯表單，以及提供 `rows` 的 `askFields`（包括 `quickEditAction`）中，主鍵欄為唯讀。不經過表單的修改，由 store 的 `update` 拋出錯誤擋下
 - **格式**：`prefixedId('ORD')` 這類前綴式即符合
@@ -184,7 +184,7 @@ export const orderSchema: TableSchema<OrderRow> = {
 
 四份清單皆可省略，省略即表示沒有。`detailOrder`、`formOrder` 例外：省略時沿用 `columns` 的順序。key 打錯時 TS 擋下，型別為 `RowKey<Row>[]`，依 Row 介面檢查。
 
-`detailOrder`、`formOrder` 是這張表的預設。個別頁面須使用不同的欄位或順序時（例如新增頁須填寫主鍵、編輯頁不顯示主鍵），以 `DetailPage`、`FormPage` 的 `order` prop 覆寫，只影響那一頁（見 [DetailPage](../components/page/DetailPage.md)、[FormPage](../components/page/FormPage.md)）。
+`detailOrder`、`formOrder` 是這張表的預設。個別頁面須使用不同的欄位或順序時，以 `DetailPage` 的 `order` prop 或 `openForm` 的 `order` 選項覆寫，只影響那一次（見 [DetailPage](../components/page/DetailPage.md)、[FormLayerHost](../components/shell/FormLayerHost.md#openform-的選項)）。
 
 ### 依條件顯示
 
@@ -347,11 +347,10 @@ select 的 `allowCustom`：改為 `v-combobox`，`options` 只是建議，輸入
 
 ## 新增表單的初始值
 
-初始值由三層疊成，後面的覆蓋前面的：
+初始值由兩層疊成，後面的覆蓋前面的：
 
 1. **schema 的 `default`**：與來源無關的固定值。可以是值或函數，函數在開啟表單時才求值，例如 `() => new Date()`
-2. **導覽帶入的 `history.state.defaults`**：依按下新增的位置決定。`newAction(table, { defaults })` 接收 getter，按下時才求值
-3. **`useCreateForm` 的第三個參數**：頁面自行算出的值
+2. **開啟表單時傳入的 `defaults`**：依按下新增的位置決定。`newAction(table, { defaults })` 接收 getter，按下時才求值
 
 > 初始值只存在於前端：後端沒有欄位層的 schema，不為未提供的欄位填入任何值。`create` 未送出的欄位即留空。
 

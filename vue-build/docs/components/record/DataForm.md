@@ -2,9 +2,9 @@
 
 表單版的 `DataDetail`：每個真實欄位以 [FieldInput](FieldInput.md) 依 `column.type` 自動選擇輸入元件，依 `order` 排序，省略時依 `schema.formOrder`。新增與編輯共用此元件，差別只在初始值。
 
-**此元件不處理載入中與錯誤的狀態**，由 [FormPage](../page/FormPage.md) 處理（範本見 `template/pages/edit.vue`）。
+**此元件不處理載入中與錯誤的狀態**，由 [FormLayerHost](../shell/FormLayerHost.md) 的表單處理。
 
-`v-model` 綁定的列物件通常無須自行組合。新增頁與編輯頁以 `useCreateForm`、`useEditForm` 取得現成的 `form`，初始值、載入、送出與導覽皆已處理。
+`v-model` 綁定的列物件通常無須自行組合。表單層以 `useCreateForm`、`useEditForm` 取得現成的 `form`，初始值、載入與送出皆已處理。
 
 驗證的做法相同：`errors` 直接接同一個 composable 回傳的 `fieldErrors`。此元件只把訊息顯示於對應欄位的下方，不自行判斷值是否合法。驗證規則寫在 schema 上，見 [schema.md](../../topics/schema.md#驗證)。
 
@@ -12,10 +12,12 @@
 
 ```vue
 <script lang="ts" setup>
+  import { ref } from 'vue'
   import DataForm from '@/components/ui/record/DataForm.vue'
-  import { useCreateForm } from '@/composables/form/useTableForm'
+  import { emptyRow } from '@/schema/types'
 
-  const { form, fieldErrors } = useCreateForm('__table__', schema)
+  const form = ref(emptyRow(schema))
+  const fieldErrors = ref({})
 </script>
 
 <template>
@@ -30,9 +32,9 @@
 | `v-model` | `object` | **必填**，整個列物件，雙向綁定 |
 | `schema` | `TableSchema` | **必填** |
 | `errors` | `Record<string, string>` | `{ 欄位 key: 錯誤訊息 }`。省略時不顯示任何錯誤 |
-| `order` | `string[]?` | 這一頁的欄位順序，覆寫 schema 的 `formOrder`。`FormPage` 原樣轉交 |
+| `order` | `string[]?` | 這一次的欄位順序，覆寫 schema 的 `formOrder` |
 | `only` | `string[]` | 只顯示這些欄位，順序仍依 `order` 或 `formOrder`。`FieldsDialog` 使用此 prop，整頁的表單不使用 |
-| `lockId` | `boolean?` | 修改既有的列時為 `true`，主鍵欄唯讀。`FormPage` 與 `FieldsDialog` 自行判斷後傳入，`FormPage` 的值可由頁面以同名 prop 覆寫 |
+| `lockId` | `boolean?` | 修改既有的列時為 `true`，主鍵欄唯讀。表單層與 `FieldsDialog` 自行判斷後傳入 |
 
 ## 備註
 

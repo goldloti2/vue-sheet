@@ -1,10 +1,11 @@
 import type { AskFieldsOptions } from '@/composables/shell/useAskFields'
 import type { TableKey } from '@/schema'
 import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue'
-import { mdiChevronRightCircle, mdiClose, mdiContentCopy, mdiContentSave, mdiDelete, mdiOpenInNew, mdiPencil, mdiPlus } from '@mdi/js'
+import { mdiChevronRightCircle, mdiContentCopy, mdiDelete, mdiOpenInNew, mdiPencil, mdiPlus } from '@mdi/js'
 import { computed, toValue } from 'vue'
 import { askFields } from '@/composables/shell/useAskFields'
-import router, { leaveAfterAction, pushWithDefaults } from '@/router'
+import { openForm } from '@/composables/shell/useFormLayers'
+import router, { leaveAfterAction } from '@/router'
 import { schemas } from '@/schema'
 import { rowLabel } from '@/schema/types'
 import { useTablesStore } from '@/stores/tables'
@@ -23,7 +24,7 @@ export interface PageAction {
 // 詳細頁的欄位動作：欄位 key → 接收一列並回傳動作的函式，每欄一個
 export type FieldActions<Row extends object> = Record<string, (row: Row) => PageAction | null>
 
-// 框架內建動作的預設圖示，包含表單的取消與送出（useTableForm）
+// 框架內建動作的預設圖示
 export const actionIcons = {
   new: mdiPlus,
   edit: mdiPencil,
@@ -31,8 +32,6 @@ export const actionIcons = {
   delete: mdiDelete,
   goToRef: mdiChevronRightCircle,
   openUrl: mdiOpenInNew,
-  cancel: mdiClose,
-  save: mdiContentSave,
 } as const
 
 // 內建 builder 的文字與圖示皆有預設，以 builder 的最後一個參數替換
@@ -55,23 +54,18 @@ export function useRowAction<Row> (row: Ref<Row | null>, build: (row: Row) => Pa
 
 export interface NewActionOptions {
   defaults?: MaybeRefOrGetter<Record<string, unknown>>
+  // 主鍵唯讀，只能由 defaults 帶入
+  lockId?: boolean
 }
 
 export function newAction (table: TableKey, options: NewActionOptions = {}, look: ActionLook = {}): PageAction {
-  const path = `/${table}/new`
-  const { defaults } = options
+  const { defaults, lockId } = options
 
   return {
     key: 'new',
     label: look.label ?? '新增',
     icon: look.icon ?? actionIcons.new,
-    onClick: () => {
-      if (defaults === undefined) {
-        void router.push(path)
-      } else {
-        pushWithDefaults(path, toValue(defaults))
-      }
-    },
+    onClick: () => void openForm(table, { defaults: toValue(defaults), lockId }),
   }
 }
 
@@ -80,7 +74,7 @@ export function editAction (table: TableKey, row: { id: string }, look: ActionLo
     key: 'edit',
     label: look.label ?? '編輯',
     icon: look.icon ?? actionIcons.edit,
-    onClick: () => void router.push(`/${table}/${row.id}/edit`),
+    onClick: () => void openForm(table, { id: row.id }),
   }
 }
 

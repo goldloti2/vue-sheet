@@ -6,16 +6,15 @@
   import { computed, onBeforeUnmount, onMounted, provide, shallowRef, watch } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
   import ConfirmDialog from '@/components/ui/dialog/ConfirmDialog.vue'
-  import FieldsDialog from '@/components/ui/dialog/FieldsDialog.vue'
   import FilterPanel from '@/components/ui/shell/FilterPanel.vue'
+  import FormLayerHost from '@/components/ui/shell/FormLayerHost.vue'
   import NavDrawer from '@/components/ui/shell/NavDrawer.vue'
   import SortPanel from '@/components/ui/shell/SortPanel.vue'
   import { provideActionRunner } from '@/composables/shell/useActionRunner'
-  import { confirmFields, fieldsDialog } from '@/composables/shell/useAskFields'
   import { choose, confirmDialog, notice, notify, pickChoice } from '@/composables/shell/useDialogs'
   import { listControlsKey } from '@/composables/shell/useListControls'
   import { overlayOpenKey } from '@/composables/shell/useOverlay'
-  import { appBarActionsKey, appBarHeadingKey, appBarSelectionKey, bottomActionsKey } from '@/composables/shell/useShellActions'
+  import { appBarActionsKey, appBarHeadingKey, appBarSelectionKey } from '@/composables/shell/useShellActions'
   import { appName } from '@/config/app'
   import { navigationCount } from '@/router'
   import { filterableColumns, hasActiveFilter } from '@/schema/filter'
@@ -72,12 +71,6 @@
   const appBarActions = shallowRef<PageAction[]>([])
   provide(appBarActionsKey, actions => {
     appBarActions.value = actions.filter(action => action !== null)
-  })
-
-  // 頁面註冊底部動作時（例如表單頁），底部動作暫時取代導覽列，離開頁面時自動還原
-  const bottomActions = shallowRef<PageAction[]>([])
-  provide(bottomActionsKey, actions => {
-    bottomActions.value = actions.filter(action => action !== null)
   })
 
   // 多選模式的出口。不為 null 時頁面正在多選，搜尋與排序按鈕隱藏
@@ -321,17 +314,7 @@
     @choose="pickChoice"
   />
 
-  <FieldsDialog
-    v-if="fieldsDialog.schema"
-    v-model="fieldsDialog.open"
-    v-model:form="fieldsDialog.form"
-    :errors="fieldsDialog.errors"
-    :keys="fieldsDialog.keys"
-    :lock-id="fieldsDialog.lockId"
-    :schema="fieldsDialog.schema"
-    :title="fieldsDialog.title"
-    @confirm="confirmFields"
-  />
+  <FormLayerHost />
 
   <!-- 右側抽屜屬於 AppShell，面板只提供內容，一次顯示一種 -->
   <v-navigation-drawer
@@ -365,18 +348,8 @@
     <slot />
   </v-main>
 
-  <v-bottom-navigation v-if="showShell && bottomActions.length > 0" class="shell-bottom-bar" grow>
-    <v-btn
-      v-for="action in bottomActions"
-      :key="action.key"
-      @click="runAction(action)"
-    >
-      {{ action.label }}
-    </v-btn>
-  </v-bottom-navigation>
-
   <!-- 按鈕平分寬度，上限為 Vuetify 預設的最大寬（見 docs/design/README.md 的「導覽」） -->
-  <v-bottom-navigation v-else-if="showShell" class="shell-bottom-bar shell-bottom-bar--nav" grow :model-value="route.path">
+  <v-bottom-navigation v-if="showShell" class="shell-bottom-bar shell-bottom-bar--nav" grow :model-value="route.path">
     <v-btn
       v-for="item in bottomItems"
       :key="item.to"

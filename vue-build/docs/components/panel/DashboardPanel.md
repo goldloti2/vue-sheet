@@ -43,7 +43,8 @@
 | `ListPage` 與 `ChartPage` 顯示的列，`DetailPage` 顯示的那一列 | 輸出為面板的 `shown`。`ListPage` 另輸出選取的列 |
 | `useAppBarActions`、FAB、`DetailPage` 的上一列與下一列、左右滑動 | 見 [DashboardPage](DashboardPage.md) 的「App Bar、FAB 與搜尋」與「展開」 |
 | 刪除目前那一列後自動離開 | 只在網址為 `/表/id` 時觸發，dashboard 中不觸發 |
-| 頁面中的換頁（例如前往編輯頁） | 照常換頁，離開 dashboard。這類動作只在展開時出現 |
+| 頁面中的換頁（例如前往詳細頁） | 照常換頁，離開 dashboard。這類動作只在展開時出現 |
+| 開啟表單 | 表單層蓋在 dashboard 上，關閉後回到原處 |
 
 - **列表順序的發布**：點擊一列時，`ListPage` 照常發布該表目前的列表順序。從 dashboard 進入詳細頁時，上一列、下一列依面板中的順序切換，例如只在所選父列的子列之間切換
 - **面板中直接寫的內容**（不是 import 的頁面）依一般專案頁面的寫法。這類內容通常為純顯示，只放固定的內容，不接線。須要更多功能時，建議寫成獨立的頁面，再放入面板

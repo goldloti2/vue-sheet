@@ -29,11 +29,11 @@
 ```
 src/
   components/ui/     共用元件庫，用法見 docs/components/
-    shell/             AppShell、PageFab、FilterPanel、SortPanel、TableChips
+    shell/             AppShell、PageFab、FilterPanel、SortPanel、TableChips、FormLayerHost、FormLayer、FieldsLayer
     dialog/            AppDialog、ConfirmDialog、FieldsDialog
     list/              DataList、DataProfile、DataCard、DataGallery、ListLayout、ListField、GroupedList、DataTable、CountLabel
     record/            DataDetail、DetailField、DetailHeader、DataForm、FieldInput、InlineField、RecordNav
-    page/              整頁的版型：PageState（載入中、失敗、找不到）、FormPage、DetailPage、ListPage、ChildList、ChartPage
+    page/              整頁的版型：PageState（載入中、失敗、找不到）、DetailPage、ListPage、ChildList、ChartPage
     panel/             含多個面板的頁面：TabPage、TabPanel（頁籤）、DashboardPage、DashboardPanel（dashboard），
                        以及排版的 placePanels、dashboardContext
     view/              ViewActions（view 的列上動作，DataList、DataProfile、DataCard、DataGallery 與 DetailHeader 共用）、
@@ -44,9 +44,10 @@ src/
   composables/
     data/              讀取資料的反應式包裝：useTable（整張表、排序後、單一列）、useSearch、useFilter
                        （比對與排序本身為 schema/ 中的純函數）
-    form/              表單頁：useTableForm、useLeaveGuard、useSyncHold
+    form/              表單的內容：useTableForm
     shell/             與 AppShell 溝通：
-                       useActionSlot（登記機制，以及容器收下內容登記的 relaySlot）、useShellActions（App Bar、底部、多選的出口）、
+                       useActionSlot（登記機制，以及容器收下內容登記的 relaySlot）、useShellActions（App Bar、多選的出口）、
+                       useFormLayers、formLayerState（表單層，見 docs/topics/pages.md）、
                        useListControls、useSharedListControls（TabPage 與 DashboardPage 中的列表共用搜尋）、
                        useDashboardLinks（dashboard 的連動中心與面板的輸入、輸出）、useCompactLayout、
                        viewTransition（換頁與面板內轉場共用的函數）、useCurrentTab、usePanelActive（含 usePanelVisible）、
@@ -70,7 +71,7 @@ src/
   plugins/             vuetify.ts（主題，包括共用色名 vuesheet-*）
   styles/              全域的 CSS：list.css（列表中一列與卡片共用的樣式，見 docs/components/list/ListLayout.md。
                        動作選單的樣式，見 docs/components/view/ViewActions.md）
-  router/index.ts      路由實例、登入檢查、換頁動畫與方向判定、leaveAfterAction、pushWithDefaults
+  router/index.ts      路由實例、登入檢查、換頁動畫與方向判定、leaveAfterAction
   pages/               檔案即路由。任意層的 _ref/ 只供其他頁面引用，不產生路由
 tests/               Vitest 的測試，結構對應 src/（例如 tests/schema/filter.test.ts 測 src/schema/filter.ts）
   setup.ts             每個測試檔執行前載入：替換 fetch，測試中的請求一律失敗
@@ -89,16 +90,14 @@ tests/               Vitest 的測試，結構對應 src/（例如 tests/schema/
 | 檔案 | 網址 |
 | --- | --- |
 | `pages/表名/index.vue` | `/表名`，列表 |
-| `pages/表名/new.vue` | `/表名/new`，新增 |
 | `pages/表名/[id]/index.vue` | `/表名/:id`，詳細 |
-| `pages/表名/[id]/edit.vue` | `/表名/:id/edit`，編輯 |
 | `pages/表名/_ref/*.vue` | 不產生路由，只供其他頁面引用，例如從頁籤頁拆出的列表。<br>・`vite.config.mts` 的路由插件以 `exclude: ['src/pages/**/_ref/**']` 排除，新增表時無須修改設定<br>・`_ref` 表示「供其他頁面引用」，與 `ref` 欄位型別及 Vue 的 `ref()` 無關 |
 
 > **注意**：同一個動態片段不能同時有 `[id].vue` 檔案與 `[id]/` 資料夾。unplugin-vue-router 將前者視為後者的 parent layout，子路由須經由 `<router-view>` 才顯示。一律使用資料夾的寫法。
 
 ---
 
-## 頁面範本的六種型態
+## 頁面範本的五種型態
 
 不論套用於哪張表，皆為同一套範本，差別只在開啟了哪些功能。實際的檔案見 [template/](../template/)，各頁面的外觀與用途見 [design/](design/README.md)。
 
@@ -109,10 +108,10 @@ tests/               Vitest 的測試，結構對應 src/（例如 tests/schema/
 | **列表**（list） | `list.vue`（deck），另有 `profile-list.vue`、`card-list.vue`、`gallery-list.vue` | `useListPage` + `ListPage` | 版面與 view、是否多選、分組、FAB |
 | **頁籤**（tab） | `tab-list.vue` + `_ref/list.vue` | `TabPage`，各頁籤中為 `useListPage` + `ListPage` | 依哪個欄位分頁籤、各頁籤的內容 |
 | **詳細**（detail） | `detail.vue`。子表的完整列表為 `child-list.vue` | `useRecordPage` + `DetailPage` | 選用的標頭、欄位的動作、子表區塊等 slot 中的內容 |
-| **表單**（form） | `new.vue`、`edit.vue` | `useCreateForm` 或 `useEditForm` + `FormPage` | 幾乎無須撰寫，欄位與順序由 schema 決定 |
 | **儀表板**（dashboard） | `dashboard.vue` | `DashboardPage` + `DashboardPanel`，面板中放置各表 `_ref/` 中的列表與詳細頁 | 放入哪些面板、各自的大小、面板之間如何接線 |
 | **圖表**（chart） | `chart.vue` | `useListPage` + `defineChart` + `ChartPage` | 圖表的種類、分組的欄位與每組的數值 |
 
+- 表單不是頁面，無須範本，由 `openForm` 開啟（見 [pages.md](topics/pages.md#表單層)）
 - 版面與上述皆不同時（例如自訂的排列方式），不套用版型元件，資料層仍可共用。此時須自行以 `provideListOrder` 提供畫面上的順序
 - 各型態的載入中、載入失敗與找不到資料，皆由同一個 `PageState` 處理
 - `detailOrder` 與 `formOrder` 分開設定，個別頁面可以 `order` prop 覆寫

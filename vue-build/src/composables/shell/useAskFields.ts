@@ -1,6 +1,7 @@
+import type { FieldsView, Layer } from '@/composables/shell/formLayerState'
 import type { ColumnDefault, TableSchema } from '@/schema/types'
-import { shallowReactive, watch } from 'vue'
-import router from '@/router'
+import { ref, watch } from 'vue'
+import { closeLayer, openLayer } from '@/composables/shell/useFormLayers'
 import { isEmpty, validateRow } from '@/schema/validation'
 
 export interface AskFieldsOptions {
@@ -9,38 +10,6 @@ export interface AskFieldsOptions {
   rows?: readonly object[]
   // 沒有現值時的初始值。函式於開啟對話框時求值
   defaults?: Record<string, ColumnDefault<unknown>>
-}
-
-interface FieldsDialogState {
-  open: boolean
-  title: string
-  schema: TableSchema | null
-  keys: string[]
-  form: object
-  errors: Record<string, string>
-  showErrors: boolean
-  lockId: boolean
-}
-
-// 全 App 共用一個詢問欄位的對話框，由 AppShell 渲染（見 docs/topics/actions.md 的「快速編輯對話框」）
-export const fieldsDialog = shallowReactive<FieldsDialogState>({
-  open: false,
-  title: '',
-  schema: null,
-  keys: [],
-  form: {},
-  errors: {},
-  showErrors: false,
-  lockId: false,
-})
-
-let pending: ((result: object | null) => void) | null = null
-
-function settle (result: object | null): void {
-  const resolve = pending
-  pending = null
-  fieldsDialog.open = false
-  resolve?.(result)
 }
 
 function initialForm (keys: string[], options: AskFieldsOptions): Record<string, unknown> {
@@ -69,59 +38,47 @@ function pick (form: object, keys: string[]): Record<string, unknown> {
   return result
 }
 
-function validate (): boolean {
-  const { schema, form, keys } = fieldsDialog
-  fieldsDialog.errors = schema ? validateRow(form, schema, keys) : {}
-  return Object.keys(fieldsDialog.errors).length === 0
-}
-
-// 詢問 schema 中指定的欄位，resolve 為這些欄位的值。取消時為 null
+// 詢問 schema 中指定的欄位，回傳這些欄位的值。取消時為 null（見 docs/topics/actions.md 的「快速編輯對話框」）
 export function askFields<Row extends object> (
   schema: TableSchema,
   keys: (keyof Row & string)[],
   options: AskFieldsOptions = {},
 ): Promise<Partial<Row> | null> {
-  // 上一個對話框仍開啟時，視為取消
-  settle(null)
-
-  fieldsDialog.schema = schema
-  fieldsDialog.keys = keys
-  fieldsDialog.title = options.title ?? keys
-    .map(key => schema.columns.find(column => column.key === key)?.label ?? key)
-    .join('、')
-  fieldsDialog.form = initialForm(keys, options)
-  fieldsDialog.lockId = (options.rows?.length ?? 0) > 0
-  fieldsDialog.errors = {}
-  fieldsDialog.showErrors = false
-  fieldsDialog.open = true
-
-  return new Promise(resolve => {
-    pending = resolve as (result: object | null) => void
+  return openLayer<Partial<Row>>({
+    kind: 'fields',
+    title: options.title ?? keys
+      .map(key => schema.columns.find(column => column.key === key)?.label ?? key)
+      .join('、'),
+    schema,
+    keys,
+    lockId: (options.rows?.length ?? 0) > 0,
+    initial: initialForm(keys, options),
   })
 }
 
-export function confirmFields (): void {
-  fieldsDialog.showErrors = true
-  if (validate()) {
-    settle(pick(fieldsDialog.form, fieldsDialog.keys))
+// 對話框層的表單。按下一次確定後才即時更新錯誤，與表單層相同
+export function useFieldsForm (layer: Layer, view: FieldsView) {
+  const form = ref<object>({ ...view.initial })
+  const errors = ref<Record<string, string>>({})
+  const showErrors = ref(false)
+
+  function validate (): boolean {
+    errors.value = validateRow(form.value, view.schema, view.keys)
+    return Object.keys(errors.value).length === 0
   }
+
+  watch(form, () => {
+    if (showErrors.value) {
+      validate()
+    }
+  })
+
+  function confirmFields (): void {
+    showErrors.value = true
+    if (validate()) {
+      closeLayer(layer, pick(form.value, view.keys))
+    }
+  }
+
+  return { form, errors, confirmFields }
 }
-
-// 按下一次確定後才即時更新錯誤，與表單頁相同
-watch(() => fieldsDialog.form, () => {
-  if (fieldsDialog.showErrors) {
-    validate()
-  }
-})
-
-// 點選對話框外側關閉時也視為取消
-watch(() => fieldsDialog.open, open => {
-  if (!open) {
-    settle(null)
-  }
-})
-
-// 對話框位於 AppShell，換頁後仍存在，因此換頁時關閉
-router.afterEach(() => {
-  settle(null)
-})

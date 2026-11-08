@@ -5,6 +5,7 @@
 - 多選與頁籤的機制
 - KeepAlive 帶來的規則
 - 換頁動畫
+- 表單層
 - 完成動作後的離開方式
 - 離開表單前的確認
 
@@ -33,11 +34,10 @@
 | **篩選、排序抽屜** | `AppShell` 與 `FilterPanel`、`SortPanel` | 抽屜本身屬於 `AppShell`，兩個面板只提供內容，一次顯示一種（見 [search.md](search.md)） |
 | **FAB** | `PageFab` | 頁面或版型元件以 `fab` 交給 `PageFab` |
 | **底部導覽列** | `config/navigation.ts` | 項目為 `navItems`，最多 5 項。超過時只顯示前 5 項，開發模式下以 console 警告 |
-| **底部動作列** | `useBottomActions()` | 表單頁時**暫時取代**底部導覽列 |
 | **snackbar** | `notify()` | 全 App 同時只有一則，例如 `notify('已推送')`、`notify('推送失敗', 'error')`。第二個參數為 Vuetify 的 color |
 | **上一列、下一列的箭頭** | `RecordNav` | 由 `DetailPage` 放置 |
 
-對話框（`ConfirmDialog`、`FieldsDialog`）與上述位置無關，一律覆蓋於畫面中央。
+對話框（`ConfirmDialog`、`FieldsDialog`）與上述位置無關，一律覆蓋於畫面中央。表單層覆蓋整個畫面，見「表單層」。
 
 - **左側圖示依目前的路由自動切換**為漢堡選單或返回箭頭：以 router 累計的導覽次數判斷是否確實有 App 內的上一頁，沒有時不顯示返回箭頭
 - **頁面可以不使用外殼**：將 `definePage` 的 `meta.shell` 設為 `false`，App Bar、側邊欄與底部導覽列皆不顯示，整頁由頁面自行排版，例如登入頁 `pages/login.vue`
@@ -65,13 +65,14 @@
 
 - **`[id]` 頁面一律使用 `useRouteId()`**，不自行 `watch` `route.params.id`。一個實例終其一生只對應一個網址，路由參數對該實例而言是常數。拿掉 `:key` 時，`useRouteId()` 於開發模式下印出警告
 - **快取改變時任其改變**：資料被刪除時，離開中的頁面顯示「找不到這一列」
-- **每次進入都須重算的內容放在 `onActivated`**：同一個網址共用同一份實例，`setup` 不會重新執行。兩種表單皆於 `onActivated` 重建表單並清除錯誤
+- **每次進入都須重算的內容放在 `onActivated`**：同一個網址共用同一份實例，`setup` 不會重新執行
 - **Teleport 出去的浮動元件自行處理進場與出場**：`PageFab`、`RecordNav` 送至 `body`，以 `onActivated`、`onDeactivated` 控制
 - **列表載入中時，不以 `v-if` 整個替換列表**，改用 `PageState` 的 `spinner="linear"`。進度條加在內容上方，不取代內容
 - **捲動位置由 router 另外記錄**：
   - 記錄為一份 `fullPath → scrollY`，於 `beforeEach` 儲存，於 `scrollBehavior` 還原，上限同樣為 50 個網址
   - 返回鍵優先使用瀏覽器記錄的 `savedPosition`
   - 沒看過的頁面，以及推入相同網址的導覽（儀表板的展開），回到頂端
+  - 表單層的導覽不移動下方的頁面
 
 被快取的頁面仍在全速運作：KeepAlive 的 `deactivate` 只搬移 DOM，不暫停元件的 effect。流入被快取頁面的資料只有兩種：路由參數（讀取一次即固定）與共用快取（任其改變）。
 
@@ -86,9 +87,10 @@
 - **導覽失敗（被取消、被擋下）時略過動畫**。因重導而沒有執行 `afterEach` 的那一次，於下一次的 `beforeResolve` 略過
 - **滑動的是整個畫面（`root`）的截圖**
 - **外殼另外命名**：App Bar、左側抽屜、底部列、FAB、`RecordNav` 各有 `view-transition-name`，因此不在 `root` 的截圖中。舊的直接隱藏，新的不加動畫
+- **表單層的動畫**：頁面大小的層開啟或關閉時，`<html>` 帶有 `data-layer-nav`，所有元素不另外命名，整個畫面一起滑動。對話框大小的層與離開失效格子的導覽不播放動畫
 - **方向寫在 `<html>` 的 `data-dir`**：於 `afterEach` 寫入，CSS 於動畫開始時才讀取。同時寫入 `data-transition="page"`，與儀表板面板內的轉場（`data-transition="panel"`）區分，`root` 只在換頁時滑動
 - **方向的判定**依下列順序，採用第一個符合的規則：
-  1. 網址相同（儀表板的展開與縮回）：依瀏覽器歷史為前進或後退
+  1. 網址相同（儀表板的展開與縮回、表單層的開啟與關閉）：依瀏覽器歷史為前進或後退
   2. 兩端皆為導覽項目：依導覽項目的順序，往後為前進。順序為底部導覽列的各項，再接側邊欄各組的各項。兩處皆有的頁面以底部導覽列的位置為準
   3. 只有目的地為導覽項目：一律為後退
   4. 同一個路由切換 id，且兩列皆在列表發布的順序中：依兩列在列表中的先後
@@ -98,19 +100,60 @@
 
 ---
 
+## 表單層
+
+表單不是路由頁面。新增、編輯與快速編輯皆為蓋在目前頁面上的一層，下方的頁面不離開。程式位於 `composables/shell/useFormLayers.ts` 與 `formLayerState.ts`，畫面由 [FormLayerHost](../components/shell/FormLayerHost.md) 繪製。
+
+- **`openForm(table, options?)`**：開啟頁面大小的層。送出時回傳寫入後的列，取消時回傳 `null`。回傳時 history 已回到下方那一格。`options` 見 [FormLayerHost](../components/shell/FormLayerHost.md#openform-的選項)
+- **`askFields`**：開啟對話框大小的層（見 [actions.md](actions.md#快速編輯對話框)）
+- **`runStep`**：開啟流程的一步（見 [actions.md](actions.md#連續動作流程)）
+
+**只存在記憶體中**：
+- 表單沒有網址，只有 `openForm` 能開啟
+- 重新整理與直接輸入網址都不會開啟表單
+- 預設值與 `id` 由呼叫時傳入，不經過 `history.state` 或路由
+
+**history**：
+- 每層佔一格，網址不變，`history.state.formLayer` 記下層的 id 與深度
+- 開啟時保留這一格原有的 state，例如儀表板展開的面板
+- 流程的第二步起取代上一步的格子
+
+**堆疊只在 `router.afterEach` 中改變**：
+- 導覽完成後，依目前這一格的標記比對堆疊，關閉已離開的層，並回傳結果
+- 由最上層開始回傳結果
+- 表單層的導覽不計入 `navigationCount`
+
+**失效的格子**：
+- 有標記、但記憶體中沒有這一層的格子為失效的格子。取消後按下一頁，以及重新整理後，都會走到這種格子
+- 走到時以 `router.go` 跳回最近的有效位置，一律往回跳
+- 失效的格子沒有元件，不會開啟表單，也不會寫入
+
+**同步**：有任何層開啟時，持有 `holdSync()`（見 [store.md](store.md)）。
+
+**一次送出只寫入一次**：層於送出後標記為 `closing`，之後的送出不寫入。覆蓋層擋下返回時，層不恢復送出，再次返回。
+
+---
+
 ## 完成動作後的導覽
 
-新增、編輯、刪除完成後須離開頁面時，使用 `@/router` 的 `leaveAfterAction(fallback)`，**不使用 `router.push`**。`leaveAfterAction` 執行瀏覽器的返回。沒有 App 內的上一頁時，才以 replace 前往 `fallback`，例如 `'/表名'`。
+表單層送出後自動關閉，無須另外離開。
+
+刪除等動作完成後須離開頁面時，使用 `@/router` 的 `leaveAfterAction(fallback)`，**不使用 `router.push`**。`leaveAfterAction` 執行瀏覽器的返回。沒有 App 內的上一頁時，才以 replace 前往 `fallback`，例如 `'/表名'`。
 
 ---
 
 ## 離開表單前的詢問
 
-由 `useLeaveGuard` 的 `router.beforeEach` 統一處理：返回鍵、導覽列、修改網址、表單底部的取消，皆經過同一條路徑。取消按鈕本身不詢問。是否詢問依以下兩點判斷：
+由 `useFormLayers` 的 `router.beforeEach` 統一處理：返回鍵、表單的取消與 ←、點選對話框外側，皆經過同一條路徑。取消按鈕本身不詢問。判斷的對象為這次導覽將關閉的層：
 
-- **[連續動作](actions.md#連續動作流程)的第二步起一律詢問**，文字為「是否放棄未儲存的變更（包含之前的變更）？」
-- **不在流程中時**，依表單是否修改過判斷，即 `useCreateForm`、`useEditForm` 登記的 `dirty` getter
+- **流程的第二步起一律詢問**，文字為「是否放棄未儲存的變更（包含之前的變更）？」
+- **其他的層有改動時詢問**，文字為「有尚未儲存的變更，確定要離開嗎？」。是否有改動由 `useCreateForm`、`useEditForm` 判斷
 
-使用者選擇不離開時，回傳 `false` 擋下導覽，頁面留在原處。瀏覽器的返回鍵被擋下時，vue-router 自行將歷史位置撥回。
-- `runStep` 本身的導覽不會誤觸詢問，`runStep` 在 `replace` 完成後才登記
-- 送出成功後的離開也不詢問，`resumeStep` 已清除等待中的步驟
+以下情況不詢問：
+- 開啟新的層與流程的下一步
+- 送出後的關閉
+- 子表單沒有改動時返回，即使外層有改動
+
+前往其他頁面時，所有的層都會關閉，因此任一層符合上述條件即詢問。
+
+使用者選擇不離開時，回傳 `false` 擋下導覽，層留在原處。瀏覽器的返回鍵被擋下時，vue-router 自行將歷史位置撥回。

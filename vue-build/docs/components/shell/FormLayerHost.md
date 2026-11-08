@@ -23,4 +23,5 @@
 - **標題**依 `tableLabel` 產生，例如「新增訂單」。中文與英文之間加上空格
 - **狀態的優先順序**為 loading → loadError → 找不到資料 → 表單。前三種狀態由 [PageState](../page/PageState.md) 顯示。「找不到這一列」使用 `warning`，不使用 `error`
 - 欄位的錯誤訊息由 `DataForm` 顯示於各欄下方。送出失敗的訊息屬於整張表單，顯示於表單下方，表單留在畫面上
+- **新增父列**只在第一層的表單中提供（見 [schema.md](../../topics/schema.md#選擇器中新增父列)）
 - 返回鍵由表單層的堆疊處理，因此 `v-dialog` 皆設定 `close-on-back="false"`

@@ -210,6 +210,7 @@ if (values) {
   - 未選取任何一列時回傳 `null`，因此只在多選模式下出現
   - 確定後，對每個 id 各執行一次 `store.update`，不另外新增操作的種類
 - 對話框是對話框大小的表單層（見 [pages.md](pages.md#表單層)）：返回鍵與點選外側皆只關閉對話框，並回傳 `null`
+- 選擇器不提供「新增…」（見 [schema.md](schema.md#選擇器中新增父列)）
 - 只須詢問是或否時，使用 `confirm(title, text): Promise<boolean>`。動作的 `confirm` 宣告與離開守衛都使用此函數
 - 須提供兩個以上的去向時，使用 `choose(title, text, choices): Promise<string | null>`，與 `confirm` 共用同一個對話框實例（見 [ConfirmDialog.md](../components/dialog/ConfirmDialog.md)）
 - 一次要詢問的欄位，放在同一個對話框中

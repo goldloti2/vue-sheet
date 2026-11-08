@@ -45,3 +45,4 @@
 - **ref 欄位**：父表整張表載入共用快取，選項先依欄位的 `refSort`，再依父表的 `defaultSort` 排序
   - 選項與選取的值以 [FormattedValue](../view/FormattedValue.md) 顯示，套用父表 `labelColumn` 那一欄的條件式格式
   - 輸入文字搜尋時，選取的值隱藏，選項中符合的文字不另外標示
+  - 有 `creatable` prop 且欄位設定 `allowCreate` 時，清單最上方多一項「新增…」（見 [schema.md](../../topics/schema.md#選擇器中新增父列)）

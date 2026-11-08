@@ -21,6 +21,9 @@
 
   // 編輯時主鍵唯讀
   const lockId = view.lockId ?? editing
+
+  // 新增父列只支援一層
+  const creatable = layer.depth === 1
 </script>
 
 <template>
@@ -36,6 +39,7 @@
         <template v-if="form">
           <DataForm
             v-model="form"
+            :creatable="creatable"
             :errors="fieldErrors"
             :lock-id="lockId"
             :order="view.order"

@@ -17,6 +17,8 @@
     only?: readonly string[]
     // 修改既有的列時為 true：主鍵欄唯讀
     lockId?: boolean
+    // ref 欄位可以新增父列（欄位另須設定 allowCreate）
+    creatable?: boolean
   }>()
 
   // 型別為 object，實際存取時再轉型（見 schema/types.ts 的 formatColumnValue）
@@ -98,6 +100,7 @@
         v-else
         v-bind="fieldProps(column)"
         :column="column"
+        :creatable="creatable"
         :model-value="fieldValue(column)"
         :required="isRequired(column)"
         :row="rowWithGetters"

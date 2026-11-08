@@ -260,6 +260,7 @@ describe('寫入', () => {
     const outer = await openCreate<ChildRow>(CHILDREN, { name: '外層' })
     setField(outer.form, 'note', '填到一半')
 
+    // FieldInput 的「＋ 新增…」：等待結果後填入自己的欄位
     const inner = await openCreate<ParentRow>(PARENTS)
     setField(inner.form, 'status', '進行中')
     await inner.form.submit()

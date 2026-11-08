@@ -113,7 +113,7 @@
 **表（schema）**
 - `labelColumn`：以哪一欄稱呼一列。ref 到這張表的地方都顯示這一欄
 - 主鍵：以 `newId` 發號，或由使用者填寫
-- ref 欄位：`refTable`、刪除父列時是否連帶刪除（`onDelete`）、子列都離開時是否刪除父列（`onEmpty`）、選擇器的順序是否與父表的 `defaultSort` 不同（`refSort`）
+- ref 欄位：`refTable`、刪除父列時是否連帶刪除（`onDelete`）、子列都離開時是否刪除父列（`onEmpty`）、選擇器的順序是否與父表的 `defaultSort` 不同（`refSort`）、選擇器中是否可以新增父列（`allowCreate`）
 - 虛擬欄位：數量、合計、組合的文字等
 - `searchable`、`sortable`、`defaultSort`
 - 條件式格式（`formatRules`）

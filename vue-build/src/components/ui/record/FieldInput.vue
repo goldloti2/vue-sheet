@@ -1,9 +1,11 @@
 <script lang="ts" setup>
   import type { TableKey } from '@/schema'
   import type { SchemaColumn, TableSchema } from '@/schema/types'
-  import { computed, shallowRef } from 'vue'
+  import { computed, onBeforeUnmount, shallowRef } from 'vue'
   import FormattedValue from '@/components/ui/view/FormattedValue.vue'
+  import { actionIcons } from '@/composables/actions/useTableActions'
   import { useTableList } from '@/composables/data/useTable'
+  import { openForm } from '@/composables/shell/useFormLayers'
   import { schemas } from '@/schema'
   import { labelDisplayValue } from '@/schema/format'
   import { sortRows } from '@/schema/sort'
@@ -21,6 +23,8 @@
     // 標籤後加上錯誤色的「*」
     required?: boolean
     errorMessages?: string | readonly string[]
+    // 此處可以新增父列。ref 欄位另須設定 allowCreate
+    creatable?: boolean
   }>()
 
   const model = defineModel<unknown>()
@@ -70,6 +74,28 @@
   }
 
   const refSearch = shallowRef<string>('')
+  const refMenu = shallowRef(false)
+
+  const canCreateParent = computed(() => props.creatable && props.column.type === 'ref' && props.column.allowCreate)
+
+  let unmounted = false
+  onBeforeUnmount(() => {
+    unmounted = true
+  })
+
+  // 開啟父表的新增表單，送出後選取新的列。取消時不改動。這個欄位已不存在時不寫入
+  async function createParent () {
+    if (props.column.type !== 'ref') {
+      return
+    }
+
+    refMenu.value = false
+    const created = await openForm<{ id: string }>(props.column.refTable as TableKey)
+    if (created && !unmounted) {
+      refSearch.value = ''
+      model.value = created.id
+    }
+  }
 
   // suggestedValues 的 rows 為所屬這張表的列，由 schema 從 schemas 反查代稱（schema 物件為單例）
   const ownTable = (Object.keys(schemas) as TableKey[]).find(key => schemas[key] === props.schema)
@@ -190,6 +216,7 @@
   <v-autocomplete
     v-else-if="column.type === 'ref'"
     v-bind="{ ...$attrs, ...common }"
+    v-model:menu="refMenu"
     v-model:search="refSearch"
     class="field-input__ref"
     :class="[requiredClass, { 'field-input__ref--searching': refSearch }]"
@@ -201,6 +228,11 @@
     :model-value="textValue"
     @update:model-value="(value) => model = value"
   >
+    <template v-if="canCreateParent" #prepend-item>
+      <v-list-item :prepend-icon="actionIcons.new" title="新增…" @click="createParent" />
+      <v-divider />
+    </template>
+
     <template #item="{ item, props: itemProps }">
       <v-list-item v-bind="itemProps" role="option">
         <template #title>

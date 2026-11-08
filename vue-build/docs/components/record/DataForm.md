@@ -35,6 +35,7 @@
 | `order` | `string[]?` | 這一次的欄位順序，覆寫 schema 的 `formOrder` |
 | `only` | `string[]` | 只顯示這些欄位，順序仍依 `order` 或 `formOrder`。`FieldsDialog` 使用此 prop，整頁的表單不使用 |
 | `lockId` | `boolean?` | 修改既有的列時為 `true`，主鍵欄唯讀。表單層與 `FieldsDialog` 自行判斷後傳入 |
+| `creatable` | `boolean?` | ref 欄位可以新增父列，欄位另須設定 `allowCreate`（見 [schema.md](../../topics/schema.md#選擇器中新增父列)）。只有表單層的第一層傳入 |
 
 ## 備註
 

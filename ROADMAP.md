@@ -34,7 +34,7 @@
 - **`schema/` 放置處理列的純函數**（`types`、`sort`、`group`、`filter`、`validation`、`relations`、`image`），不使用 reactivity，因此 store、元件、composable 皆可直接呼叫
   - `composables/data/` 只放反應式的包裝（`useTable`、`useSearch`、`useFilter`）
   - 各表的欄位定義在 `schema/tables/`，一張表一個檔案。註冊表 `schema/index.ts` 留在根目錄，作為公開的入口
-- `detailOrder`、`formOrder` 分別控制詳細頁與表單頁的欄位順序，為這張表的預設。個別頁面以 `DetailPage`、`FormPage`（與 `DataDetail`、`DataForm`）的 `order` prop 覆寫。欄位的 `showIf` 依這一列的資料，決定詳細頁是否顯示該欄
+- `detailOrder`、`formOrder` 分別控制詳細頁與表單的欄位順序，為這張表的預設。個別頁面以 `DetailPage`（與 `DataDetail`、`DataForm`）的 `order` prop 覆寫，表單以 `openForm` 的 `order` 選項覆寫。欄位的 `showIf` 依這一列的資料，決定詳細頁是否顯示該欄
 - 條件式格式：表層級的 `formatRules`，含 `when`、`columns`，以及顏色、粗體、斜體、底線、刪除線、圖示。ref 欄位的選擇器套用父表 `labelColumn` 那一欄的規則
   - `schema/format.ts` 的 `displayValue` 把文字與格式一起算出，view、`DataDetail`、`DataTable` 都改用此函數，由 `FormattedValue` 統一顯示
   - `formatColumnValue` 仍只回傳字串，供寫回 Sheet、搜尋與 `$label` 使用
@@ -87,6 +87,9 @@
   - 子列被刪除，或改指其他父列，使原本的父列沒有子列時，`store` 的 `update`、`removeMany` 在寫入後刪除該父列。刪除經過 `removeMany`，可多層往上遞迴
   - 只在子列減少時檢查，剛建立的空父列不受影響
 - 選擇器的順序：ref 欄位標示 `refSort`。選項先依 `refSort`，再依父表的 `defaultSort` 排序
+- 選擇器中新增父列：ref 欄位標示 `allowCreate`。清單最上方一項「新增…」，開啟父表的新增表單，送出後回到原表單並選取新的列
+  - 只在第一層的表單中提供，快速編輯與行內欄位不提供
+  - 外層的表單取消時，新的父列保留。外層為流程的一步時，新的父列隨流程還原
 
 ### 資料存取
 - `stores/tables/`：每張表一份全 App 共用的快取，同一張表不重複呼叫 API
@@ -103,7 +106,7 @@
 - 四個寫入 action 改為同步，只修改快取與佇列
 - 流程存檔點 `beginFlow`、`commitFlow`、`rollbackFlow`，供連續動作使用。流程進行中 `flush` 被擋下
 - App Bar 最右側的同步按鈕：`refresh()` 即推送，再重新抓取所有已載入與載入失敗的表。未推送時有圓點標記（失敗時轉紅），並以 `beforeunload` 攔截關閉
-- 表單開啟時，同步按鈕停用：`useSyncHold` 持有 `holdSync()`，以 `canSync` 判斷
+- 表單層開啟時，同步按鈕停用：表單層的堆疊持有 `holdSync()`，以 `canSync` 判斷
 - flush 失敗時保持「未推送」的狀態，並以 snackbar 回報錯誤，使用者再按一次即可。整批重送，不做逐列補償
 - **重新抓取前一定先 flush**，佇列未清空時不重新抓取。沒有「只重新抓取一張表」的 API
 - 跨表的寫入順序不影響結果：Sheet 沒有外鍵約束，後端也不做合法性驗證，因此父表與子表的寫入先後不影響結果
@@ -129,7 +132,6 @@
 - 表單：`DataForm`。單一欄位的輸入元件為 `FieldInput`，依 `column.type` 自動選擇，表單與快速編輯共用
 - 整頁版型（皆為泛型元件，slot 的 `row` 帶有呼叫端的 Row 型別）：
   - `PageState`：載入中、載入失敗、找不到資料，全 App 唯一一份，資料取得後才顯示 slot
-  - `FormPage`：新增、編輯頁，內部包著 `PageState`，另外處理送出失敗
   - `DetailPage`：詳細頁，含欄位區、左右滑動切換列、上一列與下一列的箭頭、FAB
   - `ListPage`：列表頁，逐列顯示卡片，或以 `#rows` slot 把全部的列交給表格，或以 `groups` 交給 `GroupedList`。另外加上 FAB 並發布列表順序，分組時先執行 `flattenGroups`
   - `ChildList`：詳細頁中的子表區塊，含帶有列數的標題、顯示上限、沒有子列時的文字，右下角一行「展開」與頁面提供的動作
@@ -195,7 +197,7 @@
 
 ### 動作系統
 說明見 [vue-build/docs/topics/actions.md](vue-build/docs/topics/actions.md)。
-- `PageAction` 型別（`{ key, label, icon, onClick, confirm?, display? }`）：FAB、App Bar、底部動作列、詳細頁的欄位動作共用同一種描述。內建 builder 的 label、icon 可以最後一個參數 `ActionLook` 覆寫，與行為的 options 分開
+- `PageAction` 型別（`{ key, label, icon, onClick, confirm?, display? }`）：FAB、App Bar、詳細頁的欄位動作共用同一種描述。內建 builder 的 label、icon 可以最後一個參數 `ActionLook` 覆寫，與行為的 options 分開
 - 通用的 builder：`newAction`、`editAction`、`deleteAction`、`bulkDeleteAction`、`quickEditAction`
   - 皆為一般函數，回傳一個 `PageAction`，不適用時回傳 `null`
   - 不以列為參數的，由 `use表名Actions` 以 `useAction` 包裝為 `ComputedRef<PageAction | null>`
@@ -205,16 +207,21 @@
 - 須確認的動作只要宣告 `confirm`：`useActionRunner` 先 `await confirm()` 再執行，錯誤顯示於 snackbar。頁面無須放置 `ConfirmDialog`
 - `confirm()`、`choose()`、`askFields()`：
   - 分別用於是／否、多個去向（回傳按下的按鈕的 key，取消時為 `null`）、詢問幾個欄位
-  - 皆為 module 層級的狀態，加上 `AppShell` 掛載一個實例與 promise。前兩者共用同一個 `ConfirmDialog`
+  - `confirm()`、`choose()` 為 module 層級的狀態，加上 `AppShell` 掛載一個實例與 promise，兩者共用同一個 `ConfirmDialog`
+  - `askFields()` 開啟對話框大小的表單層
   - `quickEditAction` 以 `askFields()` 把選取的多列改成同一個值。欄位由設計者決定，只選取一列時顯示目前的值
 - 每張表的動作（包括刪除選取的列）一律從 `use表名Actions(options)` 取得，每一項為一個動作，用不到的為 `null`。一個位置放置哪些動作，由頁面組成陣列。各位置接收 `(PageAction | null)[]` 並略過 `null`
-- `useAppBarActions()` 以 provide／inject 把動作註冊到 App Bar，數量多時自動收成下拉選單
-- `useBottomActions()` 把動作註冊到螢幕最底端，暫時取代導覽列，用於表單頁的取消與送出。兩者共用 `useActionSlot` 的 KeepAlive 防護
+- `useAppBarActions()` 以 provide／inject 把動作註冊到 App Bar，數量多時自動收成下拉選單。登記經過 `useActionSlot` 的 KeepAlive 防護
 - `PageFab` 依數量，自動在固定顯示與 speed-dial 之間切換
 
 ### 表單與多選
-- `useCreateForm`、`useEditForm` 收掉新增與編輯的重複邏輯：初始值、載入、送出、導覽、錯誤狀態。取消與送出也由兩者自行掛上底部動作列，頁面只剩「這是哪張表」
-- 新增表單的預設值有三層：schema 的 `default` → `newAction` 經由 `history.state` 帶入的值 → `useCreateForm` 的參數
+- 表單層：表單不是路由頁面，而是蓋在目前頁面上的一層，由 `AppShell` 的 `FormLayerHost` 繪製。說明見 [vue-build/docs/topics/pages.md](vue-build/docs/topics/pages.md) 的「表單層」
+  - `openForm(table, options?)` 開啟頁面大小的層，送出時回傳寫入後的列，取消時回傳 `null`。`askFields()` 開啟對話框大小的層
+  - 表單只存在記憶體中，只能由點擊開啟。重新整理與直接輸入網址都不會開啟表單
+  - 每層佔 history 的一格，網址不變。堆疊只在 `router.afterEach` 中改變。失效的格子以 `router.go` 往回跳
+  - 送出後的層標記為 `closing`，之後的送出不寫入
+- `useCreateForm`、`useEditForm` 收掉新增與編輯的重複邏輯：初始值、載入、送出、錯誤狀態
+- 新增表單的預設值有兩層：schema 的 `default` → 開啟表單時傳入的 `defaults`
 - 前端驗證：`schema/validation.ts` 的 `validateRow` 一份程式
   - 內建 `required`、`min`、`max`、`select` 的選項。其他規則由欄位的 `validate(value, row)` 自訂
   - 表單層與 `askFields` 於送出前逐欄提示，store 的 `create`、`update` 於寫入前再檢查一次（拋出錯誤，不修改快取）
@@ -237,10 +244,10 @@
 ### 連續動作
 設計與實作見 [vue-build/docs/topics/actions.md](vue-build/docs/topics/actions.md)，離開前的確認見 [vue-build/docs/topics/pages.md](vue-build/docs/topics/pages.md)。
 - 流程存檔點 `beginFlow`、`commitFlow`、`rollbackFlow`：一次還原一段流程對快取與佇列的修改。套疊時直接拋出錯誤，流程進行中 `flush` 被擋下
-- `useFlow.ts`：`runFlow`（外殼：存檔點加上 commit 或 rollback）、`runStep`（開啟表單並等待送出）、`resumeStep`（表單交棒）、`FlowCancelled`、`hasEarlierSteps`
-- `router.afterEach` 中止等待中的步驟（reject）並回滾。`useCreateForm`、`useEditForm` 送出成功後，先呼叫 `resumeStep`
-- 第一步使用 `push`，之後使用 `replace`
-- 離開前的詢問：`useLeaveGuard` 的 `router.beforeEach`，返回鍵、導覽列、修改網址、底部的取消皆經過同一條路徑。第二步之後一律詢問，否則依表單是否修改過判斷
+- `useFlow.ts`：`runFlow`（外殼：存檔點加上 commit 或 rollback）、`runStep`（開啟表單層並等待送出）、`FlowCancelled`
+- 離開步驟的表單層即視為放棄，等待中的步驟拋出 `FlowCancelled` 並回滾
+- 第一步佔 history 的一格，之後的步驟取代同一格
+- 離開前的詢問：表單層的 `router.beforeEach`，返回鍵、表單的取消、前往其他頁面皆經過同一條路徑。第二步之後一律詢問，否則依表單是否修改過判斷
 - 範本 `table/use__Table__Actions.ts` 的回傳物件末尾有寫法示範（註解），說明見 [vue-build/docs/topics/actions.md](vue-build/docs/topics/actions.md) 的「連續動作（流程）」。專案端的第一條流程，見 production 分支的 PROJECT-ROADMAP
 
 ### 路由
@@ -250,7 +257,7 @@
   - 重新登入後，重新抓取用過的表，包括載入失敗的表，不推送
   - 尚未完成的部分，見「未完成」的「後端」
 - `useRouteId()`：路由參數讀取一次即固定，依 `route.fullPath` 作為 key 成立，離場動畫期間不會被目的地的 id 汙染。拿掉 key 時，開發模式下警告
-- `leaveAfterAction()`：完成動作後以瀏覽器的返回離開，不把已完成的表單頁留在歷史中
+- `leaveAfterAction()`：完成動作後以瀏覽器的返回離開，不把已刪除的列的頁面留在歷史中
 - `provideListOrder`、`useSiblingNav`：點擊一列時，列表發布畫面上的實際順序，詳細頁據此切換上一列、下一列（箭頭與手勢），切換使用 `replace`
 
 ### 後端的對接層與假後端
@@ -309,12 +316,6 @@
   - 編輯時清空 id 欄即重新發號，也屬於修改 id
 
 ### UI 功能
-- 關聯選擇器的 `allowCreate`：清單最上方一項「＋ 新增…」，開啟父表的新增表單，返回後自動選取。看起來是 `runStep('/父表/new')`，但表單頁作為呼叫端與動作作為呼叫端不同，須先解決四件事：
-  - 返回時，`useCreateForm` 的 `onActivated` 會重置表單，使用者填到一半的內容會遺失。須能分辨「從子步驟返回」與「重新進入」
-  - 離開表單頁去開啟父表的新增時，會被 `useLeaveGuard` 攔下，詢問是否放棄
-  - 這張表單本身可能就是某條流程的一步（例如「新增父表接著新增子表」的第二步）。`runFlow` 不能套疊，而且 `runStep` 在流程中使用 `replace`，會把目前這張表單頁換掉
-  - 完成後須回到原本那張表單（`back`），不是像流程一樣往前走
-  - 等確實常用時再實作。目前的替代路徑：先到父表新增，再回來選取
 - **schema 是否拆成 `fields.ts`、`order.ts`**（評估過，暫不實作）：
   - 能乾淨切分的只有表這一層：`fields.ts` 放 Row 介面、`tableLabel`、`idColumn`、`newId`、`labelColumn`、`columns`、`virtualColumns`，`order.ts` 放 `detailOrder`、`formOrder`、`defaultSort`，`index.ts` 把兩者組合起來
   - 切在欄位內部（型別、必填與標籤、可搜尋分開）已否決，那會使每個 key 須寫兩次

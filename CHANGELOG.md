@@ -1,5 +1,25 @@
 # 版本紀錄
 
+## v1.11
+
+- **表單層**：新增與編輯的表單改為蓋在目前頁面上的一層，不再是路由頁面。下方的頁面不離開，捲動位置與展開的面板皆保留。說明見 [vue-build/docs/topics/pages.md](vue-build/docs/topics/pages.md) 的「表單層」
+  - `openForm(table, options?)` 開啟一張表單。送出時回傳寫入後的列，取消時回傳 `null`
+  - 表單只能由點擊開啟。重新整理與直接輸入網址都不會開啟表單
+  - 每層佔 history 的一格。返回鍵只關閉最上層
+  - 快速編輯對話框（`askFields`）與流程的步驟（`runStep`）使用同一個堆疊
+- **選擇器中新增父列**：ref 欄位新增 `allowCreate`。表單的選擇器清單最上方多一項「新增…」，開啟父表的新增表單，送出後回到原表單並選取新的列。只支援一層，快速編輯不提供。說明見 [vue-build/docs/topics/schema.md](vue-build/docs/topics/schema.md) 的「選擇器中新增父列」
+- **`newAction` 的 `lockId`**：主鍵只能由 `defaults` 帶入時，以 `lockId` 將主鍵設為唯讀
+
+### 不相容的變更
+
+- 新增與編輯的路由（`/表名/new`、`/表名/:id/edit`）移除。各表的 `new.vue` 與 `[id]/edit.vue` 須刪除。範本 `template/pages/new.vue`、`template/pages/edit.vue` 移除。`newAction`、`editAction` 改為依 schema 開啟表單層，呼叫端無須修改
+- `FormPage` 移除。以 `order`、`lockId` prop 覆寫的頁面，改為傳入 `openForm` 的同名選項。在表單下方放置額外內容的頁面，改為傳入 `openForm` 的 `content`
+- `runStep(to, defaults?)` 改為 `runStep(table, options?)`，`options` 與 `openForm` 相同。例如 `runStep('/表名/new', defaults)` 改為 `runStep('表名', { defaults })`。`resumeStep`、`hasEarlierSteps` 移除
+- `useCreateForm`、`useEditForm` 改為只供表單層使用，參數改變
+- `useBottomActions`、`useLeaveGuard`、`useSyncHold` 移除。離開前的詢問與同步的停用由表單層處理
+- `@/router` 的 `pushWithDefaults`、`navigationDefaults` 移除。預設值改由 `openForm` 的 `defaults` 傳入
+- `actionIcons` 的 `cancel`、`save` 移除
+
 ## v1.10
 
 - **關聯選擇器的順序**：ref 欄位新增 `refSort`。選項先依 `refSort`，再依父表的 `defaultSort` 排序，父表的列表不受影響

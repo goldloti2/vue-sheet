@@ -666,9 +666,6 @@ FAB 的 z-index 位於 layout 之上，不讓開時會浮在抽屜上。
 **為什麼佔位字串為 `__table__`**
 使用不像英文單字的標記，不使用 `template` 這類真實的單字：後者會連 Vue 的 `<template>` 標籤一起被取代，整個頁面便損毀。
 
-**為什麼 `index.html` 的 `<title>` 須另寫一次 App 名稱**
-靜態的 HTML 讀不到 TS 中的 `appName`。
-
 ---
 
 ## 儀表板

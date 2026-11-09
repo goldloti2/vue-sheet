@@ -35,8 +35,9 @@
 
 | 檔案 | 修改的內容 |
 | --- | --- |
-| `src/config/app.ts` | `appName`：App 名稱，未指定 `route.meta.title` 的頁面以此作為標題<br>`authMethod`：登入方式，須與後端相符（見 [docs/auth.md](../../docs/auth.md)）。登入頁的外觀見 `src/pages/login.vue`<br>`detailFieldLayout`：詳細頁欄位的排法，`'side'`（標籤與值左右並排）或 `'stacked'`（上下兩行）。單一頁面以 `DetailPage` 的 `layout` 覆寫 |
-| `index.html` | `<title>` 填寫相同的名稱。`lang` 依介面的語言 |
+| `src/config/app.ts` | `appName`：App 名稱，未指定 `route.meta.title` 的頁面以此作為標題。網頁的 `<title>` 與安裝後的名稱也使用此名稱<br>`authMethod`：登入方式，須與後端相符（見 [docs/auth.md](../../docs/auth.md)）。登入頁的外觀見 `src/pages/login.vue`<br>`detailFieldLayout`：詳細頁欄位的排法，`'side'`（標籤與值左右並排）或 `'stacked'`（上下兩行）。單一頁面以 `DetailPage` 的 `layout` 覆寫 |
+| `index.html` | `lang` 依介面的語言 |
+| `public/icons/` | 以專案的圖示取代下列檔案，檔名不變：<br>・`favicon.ico`：瀏覽器分頁的圖示，含 16、32、48 px<br>・`apple-touch-icon.png`：iOS 主畫面的圖示，180 px，背景不透明<br>・`icon-192.png`、`icon-512.png`：安裝後的圖示，背景可為透明<br>・`icon-maskable-512.png`：Android 會依裝置裁成圓形或其他形狀。背景不透明，圖案須位於中心 40% 半徑的範圍內<br>・`NOTICE.txt`：圖示的來源與授權。替換圖示時一併改寫<br>build 時，`NOTICE.txt`、打包的各套件的授權檔，以及 `licenses/` 中對應授權的全文，彙整為網站的 `THIRD-PARTY-NOTICES.txt`。新的圖示的授權不在 `licenses/` 中時，加入該授權的全文 |
 | `src/config/navigation.ts` | 底部導覽列與側邊欄的項目，隨表增減（見下方第 1 節） |
 
 ---

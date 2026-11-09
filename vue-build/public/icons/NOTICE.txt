@@ -1,0 +1,5 @@
+App 圖示
+
+public/icons/ 中的圖示為 Material Design Icons 的 table 圖示，只變更顏色與大小。
+來源：Pictogrammers（https://pictogrammers.com/library/mdi/icon/table/）
+授權：Apache License 2.0。全文見原始碼的 licenses/Apache-2.0.txt，以及網站的 THIRD-PARTY-NOTICES.txt。

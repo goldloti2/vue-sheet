@@ -40,7 +40,7 @@ AI agent 在此 repo 中工作時須遵守的規則。只列出任何工作都�
 ## 框架與專案
 
 - **框架**：`components/ui/`、`composables/`（各表的 `use表名Actions` 除外）、`schema/` 中的共用檔、`plugins/`、`config/app.ts` 的設定項、`template/`、`docs/`、`apps-script/`、`ROADMAP.md`、`CHANGELOG.md`。
-- **專案**：`pages/`、`schema/tables/`、各表的 `use表名Actions`、`config/navigation.ts`、`typed-router.d.ts`，以及專案自己的文件。
+- **專案**：`pages/`、`schema/tables/`、各表的 `use表名Actions`、`config/navigation.ts`、`public/icons/`、`typed-router.d.ts`，以及專案自己的文件。
 - 框架與專案的修改分開提交。
 - 框架的檔案不得出現專案的字眼，例如表名、欄位名與專案的用詞。程式碼的例子與文件的例子也不得出現。
 

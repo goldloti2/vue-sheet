@@ -1,4 +1,4 @@
-// App 名稱，顯示於沒有 route.meta.title 的頁面。修改時須一併修改 index.html 的 <title>
+// App 名稱，顯示於沒有 route.meta.title 的頁面，也作為網頁的標題與安裝後的名稱
 export const appName = '應用程式'
 
 // 登入方式，須與後端 Config.gs 的 AUTH 相同（見 docs/auth.md）。'google' 尚未實作

@@ -1,63 +1,95 @@
 # 附錄：列表效能量測
 
-接上一千多列的真實資料後，以導覽列切換頁面時，從按下到動畫開始有明顯的延遲（2026-10-03 量測）。此文件記錄當時的數字、量測方法、三個改動各自的效果，以及尚未進行的部分。
+接上一千多列的真實資料後，以導覽列切換頁面時，從按下到動畫開始有明顯的延遲（2026-10-03 量測）。2026-11-09 以 build 版重新量測一次。此文件記錄兩次的數字、量測方法、三個改動各自的效果，以及尚未進行的部分。
 
-> **當時的資料量**：兩張互為父子的表。父表約 1300 列，列表當時顯示其中 773 列。子表 1306 列。子表列表的每一列皆顯示所屬父列的名稱。
+> **2026-10-03 的資料量**：兩張互為父子的表。父表約 1300 列，列表當時顯示其中 773 列。子表 1306 列。子表列表的每一列皆顯示所屬父列的名稱。
 >
-> **環境**：`npm run dev` 的開發版 Vue。開發版的渲染開銷比 build 版高好幾倍，因此**絕對值偏高**。此處有意義的是同一台機器上的相對變化。
+> **2026-10-03 的環境**：`npm run dev` 的開發版 Vue。開發版的渲染開銷比 build 版高，因此**絕對值偏高**。此處有意義的是同一台機器上的相對變化。
+>
+> **2026-11-09 的資料量**：同樣的兩張表。父表的列表顯示 564 列。子表 1335 列。
+>
+> **2026-11-09 的環境**：關閉壓縮的 build 版，以 `npm run preview` 開啟。電腦版 Chrome，未降低 CPU 速度。
 
 ---
 
 ## 量測方法
 
-量測使用三段暫時的程式碼，量測後即移除。須重現時，依下述方式加回。
+量測使用一個暫時的模組，量測後即移除。須重現時，依下述方式加回。
 
-`App.vue` 的 `<script setup>`：
+- 模組於 `main.ts` 中，緊接在匯入 `App.vue` 之後匯入。
+- `router.beforeEach` 記下導覽的起點，並印出起點與終點的網址。
+- `router.beforeResolve` 印出「舊畫面已截取」。這個 guard 須登記於 router 本身的 `beforeResolve` 之後，此時換頁動畫已截取舊畫面。
+- `router.afterEach` 之後的 `nextTick` 印出 `dom updated`。之後以兩次 `requestAnimationFrame` 印出 `frame 1` 與 `frame 2`。router 於同一個 `nextTick` 放行換頁動畫，因此 `frame 2` 約為動畫開始的時間。
+- 以 `PerformanceObserver` 觀察 `long-animation-frame`，印出每一個超過 50ms 的幀。每一幀拆成 JS 的時間（其中強制排版的時間）與渲染的時間。
+- 在 `useSearch` 的 `indexed` computed 中包一組 `performance.now()`，印出「哪張表、幾列、幾毫秒」。
 
-```ts
-const router = useRouter()
-let navStart = 0
-router.beforeEach(() => {
-  navStart = performance.now()
-  console.log('--- nav')
-})
+量測的條件：
 
-function mark (tag: string): void {
-  console.log(`  ${tag}`, Math.round(performance.now() - navStart), 'ms')
-}
+- 以 `npx vite build --minify false` 建置，再以 `npm run preview` 開啟。不壓縮時，Long Animation Frames 列出的檔案位置可以對應到原始的函式。
+- 量測前關閉其他分頁。同時開啟其他網頁時，2026-11-09 的數字約為關閉後的三倍。
+- 不播放換頁動畫的比較：於開發者工具的 Rendering 面板，將 `prefers-reduced-motion` 模擬為 `reduce`。
+- 每一輪依序為：重新整理父表的列表、開啟子表的列表、在兩個列表之間來回切換兩次。
 
-// enter hook：guard、重新渲染與 patch 皆已完成。之後兩幀為 Vue 換上 -enter-to、動畫開始
-function onEnter (): void {
-  mark('enter hook')
-  requestAnimationFrame(() => {
-    mark('frame 1')
-    requestAnimationFrame(() => mark('frame 2（動畫開始）'))
-  })
-}
-
-// 只記錄超過 50ms 的任務，即卡住動畫的任務
-new PerformanceObserver(list => {
-  for (const entry of list.getEntries()) {
-    console.log('  longtask', Math.round(entry.duration), 'ms')
-  }
-}).observe({ entryTypes: ['longtask'] })
-```
-
-- 把 `onEnter` 掛上 `<transition name="page" @enter="onEnter">`
-- 在 `useSearch` 的 `indexed` computed 中包一組 `performance.now()`，印出「哪張表、幾列、幾毫秒」
+2026-10-03 的量測以開發版進行，改以 `PerformanceObserver` 觀察 `longtask`。當時的換頁動畫為 `<transition>`，`enter hook` 印於 `dom updated` 相同的時間點。
 
 **判讀方式**：
 
 | 數值 | 代表的意義 |
 | --- | --- |
 | `frame 2` 的毫秒數 | 使用者感覺到的延遲，即從按下到動畫開始 |
-| `enter hook` | guard、Vue 重新渲染與 patch 的總時間，即 JS 的部分 |
-| `enter hook` 到 `frame 1` 的差距 | 瀏覽器的 style、layout、paint，與元件及 DOM 節點數成正比 |
+| 「舊畫面已截取」 | 換頁動畫截取舊畫面的時間。舊畫面的 DOM 越大，時間越長 |
+| `dom updated`（2026-10-03 為 `enter hook`） | guard、Vue 重新渲染與 patch 的總時間，即 JS 的部分 |
+| 幀的「強制排版」 | JS 執行中讀取版面而觸發的同步排版 |
+| 幀的「渲染」 | 瀏覽器的 style、layout、paint，與元件及 DOM 節點數成正比 |
 | 是否印出 `searchIndex` | **未印出即表示資料層完全沒有參與這次導覽**（computed 沒有失效）。這是分辨「資料層或渲染」最快的訊號 |
 
 ---
 
-## 數字
+## 數字（2026-11-09，build 版）
+
+三輪皆為動作列以外相同的頁面。「動作列」一輪在子表列表的每一列加上兩個不執行任何動作的圖示按鈕。
+
+### frame 2（動畫開始）
+
+| | 有換頁動畫 | 無換頁動畫 | 有換頁動畫，加上動作列 |
+| --- | --- | --- | --- |
+| 回到已快取的子表列表（1335 列） | 241–245ms | 198–207ms | 260–308ms |
+| 回到已快取的父表列表（564 列） | 164–212ms | 94–96ms | 177–233ms |
+| 首次掛載子表的列表 | 550ms | 498ms | 865ms |
+
+### 最長的一幀
+
+| | 有換頁動畫 | 無換頁動畫 | 有換頁動畫，加上動作列 |
+| --- | --- | --- | --- |
+| 首次掛載：JS（其中強制排版） | 419ms（15ms） | 392ms（19ms） | 749ms（21ms） |
+| 首次掛載：渲染 | 25ms | 20ms | 25ms |
+| 回到子表列表：JS（其中強制排版） | 130–147ms（36–46ms） | 122–137ms（30–34ms） | 137–182ms（35–36ms） |
+| 回到子表列表：渲染 | 28–29ms | 33–36ms | 27–38ms |
+| 回到父表列表：JS | 78–129ms | 73–80ms | 92–117ms |
+
+### 舊畫面已截取
+
+| | 有換頁動畫 | 無換頁動畫 |
+| --- | --- | --- |
+| 離開子表列表 | 53ms | 3–12ms |
+| 離開父表列表 | 27–54ms | 3–31ms |
+
+### 首次載入
+
+- 第一次導覽的 `frame 2` 為 472–523ms（從導覽的起點算起）。
+- 資料於 3～5 秒後到達。處理回應的兩幀分別為 220–250ms 與 113–129ms，幾乎全為 JS。此時畫面已經顯示。
+- `searchIndex` 為 1～17ms（564 列與 1335 列）。
+
+### 判讀
+
+- **換頁動畫**：每次換頁增加 40–110ms。其中約 30–50ms 為截取舊畫面。
+- **動作列**：首次掛載的 JS 增加約 330ms。回到已快取的列表增加 15–65ms。每一列多一個 `ViewActions` 實例，每個按鈕多一個 `v-icon` 實例。
+- **與 2026-10-03 相比**：列數較多，環境也不同，因此只能粗略比較。回到已快取的列表為 255ms 與 245ms，首次掛載為 568ms 與 550ms。
+- **資料層**：`searchIndex` 只有 1～17ms，換頁時的成本皆在渲染與元件。
+
+---
+
+## 數字（2026-10-03，開發版）
 
 ### 回到已由 KeepAlive 快取的列表（773 列）
 
@@ -144,15 +176,17 @@ contain-intrinsic-size: auto 72px;
 
 ---
 
+
 ## 尚未進行的部分
 
-剩下的成本分佈：
+剩下的成本分佈（2026-11-09，build 版）：
 
-- **掛載頁的 386ms `enter hook`**：Vue 建立 1306 列 × 約 3 個元件實例。只有減少建立的數量才能解決
-- **快取頁的 167ms 排版**：773 個列的盒子，解法同上
-- **快取頁的 70ms JS**：尚未拆解。可能的來源：
+- **首次掛載的約 400ms JS**：Vue 建立 1335 列 × 約 3 個元件實例。只有減少建立的數量才能解決
+- **回到已快取的列表約 130ms 的 JS**：其中約 35ms 為強制排版，推測來自捲動位置的還原，尚未確認。其餘尚未拆解。可能的來源：
   - KeepAlive 啟用時的一連串處理：`useListControls` 重新登記、`TabPage` 的相關處理
   - 列表頁 template 中每次渲染都重新執行的過濾或分組函數（寫成函數而非 computed 時）
+- **動作列**：首次掛載時，兩個按鈕使 JS 增加約 330ms
+- **首次載入時處理回應的 220–250ms**：發生於畫面顯示之後
 
 可能的下一步，依效益排序：
 
@@ -160,15 +194,16 @@ contain-intrinsic-size: auto 72px;
 | --- | --- | --- |
 | 虛擬捲動 | 只渲染可見範圍的列 | 大。Vuetify 的 `v-virtual-scroll` 把捲動軸移入容器中，`scrollBehavior` 的捲動位置還原、App Bar 的行為、分組標題都須重做。自行實作視窗式虛擬捲動，則須固定列高 |
 | 漸進渲染 | 先顯示 100 列，捲到底再增加 | 中。無須固定列高，保留視窗捲動。但捲到很深再回來時，仍回到原本的成本 |
+| 動作列的圖示不使用 `v-icon` | `ViewActions` 直接繪製 `<svg>`，減少每一列的元件實例 | 小，只修改一個元件。效益尚未量測 |
 | 不渲染收合的群組 | `GroupedList` 自行記錄哪幾組展開，收合的內容以 `v-if` 移除（見下方） | 小，只修改一個元件，不改變 UI。但只對有分組的頁面有效，單一組很大時也無效 |
 | `TabPage` 只掛載目前的面板 | 看過的頁籤目前一直留在 DOM 中 | 中。會失去面板的狀態，例如捲動位置、展開狀態 |
 | 頁面中的過濾與分組改為 computed | 由頁面自行處理 | 小 |
 
 **收合的群組目前其實全部建立**：
 - `v-list` 的 `itemsRegistration` 為預設的 `'render'` 時，`v-list-group` 收合的內容照樣渲染，只以 `v-show` 隱藏（`VListGroup.js` 的 `renderWhenClosed`）
-- 因此分組全部收合時，每一列的元件實例仍全部建立。收合只省下排版（`display: none` 本身不排版），省不到上述最大的 `enter hook`
+- 因此分組全部收合時，每一列的元件實例仍全部建立。收合只省下排版（`display: none` 本身不排版），省不到上述最大的 JS
 - 改為不展開即不建立之後，首次掛載只剩群組標題加上展開的那一組
 
 AppSheet 那種「點開一組後，畫面上只剩那一組」的呈現是另一回事：多隱藏的只是其他幾十個群組標題，效能上幾乎沒有差別，是否採用屬於 UI 的選擇。
 
-**動手前先重新量測**：上述每一項的效益都應比照此文件，留下前後的數字。**建議以 `npm run build && npm run preview` 再量一次**：開發版的渲染開銷不成比例，可能白做工。
+**動手前先重新量測**：上述每一項的效益都應比照此文件，留下前後的數字。

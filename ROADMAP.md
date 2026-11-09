@@ -368,7 +368,7 @@ view 的規則：
 - 置於右下角欄位的下一行，由左往右排列，整組靠右
 - 沒有動作時不佔高度。多選模式下隱藏
 - 按鈕為原生 `<button>` 加上圖示，不使用 `v-btn`，考量列數多時的實例成本（見 [vue-build/docs/components/view/ViewActions.md](vue-build/docs/components/view/ViewActions.md)）
-- 🔲 尚未依 [vue-build/docs/perf.md](vue-build/docs/perf.md) 的方法，量測加入動作列前後的差異
+- ✅ 加入動作列前後的差異已量測，數字見 [vue-build/docs/perf.md](vue-build/docs/perf.md)
 
 **profile 與 card** 與 deck 的不同之處：一張張分開的卡片，有間隔，不是連在一起的清單。點擊卡片進入詳細頁，支援長按多選。
 - **profile**（✅ `DataProfile`）：
@@ -436,12 +436,8 @@ view 的規則：
 - 🔲 見 [vue-build/docs/perf.md](vue-build/docs/perf.md) 的「尚未進行的部分」
 
 ### PWA 與離線
-- 尚未建立 manifest.json 與 Service Worker，`vite-plugin-pwa` 未安裝
-- App 圖示尚未決定，名稱在 `src/config/app.ts`
-
-### 桌面版
-- 桌面版的導覽 UI 待定：側邊欄是否預設開啟、底部導覽列是否在桌面上隱藏，等處理桌面的體驗時再決定。側邊欄目前於電腦版開啟後與內容並排，換頁時不收起
-- 手機與電腦排版的切換門檻待定：`useCompactLayout()` 暫時沿用 Vuetify `mobile` 的 1145px。平板直放應使用 dashboard 的 48 格，門檻可能須調低，例如 840px
+- ✅ manifest：`vite.config.mts` 的外掛由 `src/config/app.ts` 的 `appName` 產生，並於 `index.html` 寫入標題、圖示與狀態列的顏色。圖示位於 `public/icons/`
+- 🔲 Service Worker 尚未建立，`vite-plugin-pwa` 未安裝
 
 ### 部署
 - 前端的靜態託管（Vercel、Cloudflare Pages），須注意 SPA fallback

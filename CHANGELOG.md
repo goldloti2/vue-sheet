@@ -1,5 +1,15 @@
 # 版本紀錄
 
+## v1.12
+
+- **安裝至主畫面**：`vite.config.mts` 的外掛由 `appName` 產生 manifest，並於 `index.html` 寫入標題、圖示與狀態列的顏色。從手機的主畫面開啟時，App 以獨立視窗顯示，沒有網址列。圖示位於 `public/icons/`，各檔案的規格見 [vue-build/template/README.md](vue-build/template/README.md) 的「初次設定」
+- **第三方授權聲明**：build 時產生 `THIRD-PARTY-NOTICES.txt`，隨網站一起部署。內容為 `public/icons/NOTICE.txt`、實際打包的各套件的授權檔，以及 `licenses/` 中對應授權的全文。新增或移除套件時無須手動修改
+
+### 不相容的變更
+
+- `index.html` 的 `<title>` 與 favicon 的 `<link>` 移除，改由外掛寫入。App 名稱只須寫在 `config/app.ts`
+- `public/favicon.ico` 移至 `public/icons/favicon.ico`。專案的圖示須依 `public/icons/` 的檔名放入
+
 ## v1.11
 
 - **表單層**：新增與編輯的表單改為蓋在目前頁面上的一層，不再是路由頁面。下方的頁面不離開，捲動位置與展開的面板皆保留。說明見 [vue-build/docs/topics/pages.md](vue-build/docs/topics/pages.md) 的「表單層」

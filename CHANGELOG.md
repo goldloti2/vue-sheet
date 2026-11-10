@@ -1,5 +1,30 @@
 # 版本紀錄
 
+## v1.13
+
+手機上的外觀調整。各項的數值見 [vue-build/docs/design/](vue-build/docs/design/)。
+
+- **文字統計的格**：格的大小改為儀表板中寬 6 格、高 2 格的面板放得下的大小。文字與左側的色塊距離較大。數字以基線為下緣，名稱與數字在格中看起來置中
+- **deck 右側的換行**：右側的欄位只在標點與空格處換行。一段文字放不下一行時，才於任意處換行
+- **列表的標題不加粗**：deck、profile、card、gallery 皆適用
+- **底部導覽列**：手機上較高，圖示較大，圖示與名稱的間距較大。電腦上維持 Vuetify 預設的高度。目前的頁面以主色標示
+- **FAB**：
+  - 與畫面邊緣的距離較大，按鈕較大，圓角較大
+  - 底色改為主色淡一階（`primary-lighten-1`），由 `plugins/vuetify.ts` 的 `variations` 產生
+  - 收合時，整排動作向下滑出。⋮ 與 ✕ 改為同時切換
+- **可展開的分組標題較矮**
+- **頁籤列**：頁籤列較矮。頁籤沒有最小寬度，畫面窄時放得下較多頁籤
+- **詳細頁的欄位**：上下的留白較小。前往父列的圖示（`actionIcons.goToRef`）改為外框的樣式
+- **表格**：列表頁與子表區塊中，表格貼齊畫面的左右，四周有外框。列高改為 Vuetify 的 compact
+- **子表區塊的子列置於 `ListLayout` 中**：與列表頁相同，deck 的列與表格貼齊畫面的左右，卡片四周留白。標題、沒有子列時的文字與按鈕仍與畫面的左右留白
+- **修正：返回儀表板時，捲動位置回到頂端**。KeepAlive 收起頁面時，量測大小的元件不量測。面板內的捲動位置由面板自行記錄與還原。規則見 [vue-build/docs/topics/pages.md](vue-build/docs/topics/pages.md) 的「KeepAlive 的規則」
+
+### 不相容的變更
+
+- 文字統計的格高改為 2 格。儀表板中只放 `DataStat` 的面板，高度須由 3 格改為 2 格
+- `ListPage` 的 `rows` slot 外層不再留白。slot 中的內容須自行決定留白
+- `ChildList` 的 default slot 改置於 `ListLayout` 中，容器沒有左右的留白。slot 中的內容依 `ListLayout` 的規則排列
+
 ## v1.12
 
 - **安裝至主畫面**：`vite.config.mts` 的外掛由 `appName` 產生 manifest，並於 `index.html` 寫入標題、圖示與狀態列的顏色。從手機的主畫面開啟時，App 以獨立視窗顯示，沒有網址列。圖示位於 `public/icons/`，各檔案的規格見 [vue-build/template/README.md](vue-build/template/README.md) 的「初次設定」

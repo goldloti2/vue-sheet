@@ -122,9 +122,11 @@
   text-align: left;
 }
 
+/* 右欄較窄：中文只於標點與空格處換行，一段放不下一行時才於任意處換行 */
 .list-item__field--right {
   grid-column: 2;
   text-align: right;
+  word-break: keep-all;
 }
 
 /* 右側皆未指定：左側佔滿整行 */

@@ -1,7 +1,7 @@
 import type { AskFieldsOptions } from '@/composables/shell/useAskFields'
 import type { TableKey } from '@/schema'
 import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue'
-import { mdiChevronRightCircle, mdiContentCopy, mdiDelete, mdiOpenInNew, mdiPencil, mdiPlus } from '@mdi/js'
+import { mdiChevronRightCircleOutline, mdiContentCopy, mdiDelete, mdiOpenInNew, mdiPencil, mdiPlus } from '@mdi/js'
 import { computed, toValue } from 'vue'
 import { askFields } from '@/composables/shell/useAskFields'
 import { openForm } from '@/composables/shell/useFormLayers'
@@ -30,7 +30,7 @@ export const actionIcons = {
   edit: mdiPencil,
   copy: mdiContentCopy,
   delete: mdiDelete,
-  goToRef: mdiChevronRightCircle,
+  goToRef: mdiChevronRightCircleOutline,
   openUrl: mdiOpenInNew,
 } as const
 

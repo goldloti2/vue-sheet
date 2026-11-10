@@ -71,7 +71,7 @@
 </template>
 
 <style scoped>
-/* 兩欄以 minmax(0, …) 固定比例，不隨內容變寬。沒有空白的長字串可於任意處換行 */
+/* 兩欄以 minmax(0, …) 固定比例，不隨內容變寬。沒有空白的長字串可於任意處換行。上下的留白見 docs/design/detail.md */
 .detail-field {
   display: grid;
   box-sizing: border-box;
@@ -79,7 +79,7 @@
   align-items: baseline;
   column-gap: 12px;
   width: 100%;
-  padding: 12px 16px;
+  padding: 8px 16px;
   overflow-wrap: anywhere;
 }
 

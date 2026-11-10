@@ -131,7 +131,7 @@
 .data-stat {
   display: grid;
   grid-template-columns: repeat(auto-fit, max(1px, calc(6 * var(--data-stat-unit) + 5 * var(--data-stat-space) - 2 * var(--data-stat-inset, 0px) - 3px)));
-  grid-auto-rows: max(1px, calc(3 * var(--data-stat-unit) + 2 * var(--data-stat-space) - 2 * var(--data-stat-inset, 0px) - 3px));
+  grid-auto-rows: max(1px, calc(2 * var(--data-stat-unit) + 1 * var(--data-stat-space) - 2 * var(--data-stat-inset, 0px) - 3px));
   gap: 4px;
   justify-content: center;
 }
@@ -142,7 +142,7 @@
   flex-direction: column;
   align-items: flex-start;
   justify-content: center;
-  padding: 0 8px;
+  padding: 0 8px 0 22px;
   overflow: hidden;
   color: inherit;
   text-align: start;
@@ -187,5 +187,10 @@
 /* 行高縮小，名稱與數字兩行放得進一格 */
 .data-stat__number {
   line-height: 1.2;
+}
+
+/* 數字與單位的下緣止於基線，基線下方的空白不計入垂直置中 */
+.data-stat__value > * {
+  text-box: trim-end text alphabetic;
 }
 </style>

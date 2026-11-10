@@ -11,6 +11,7 @@
   import NavDrawer from '@/components/ui/shell/NavDrawer.vue'
   import SortPanel from '@/components/ui/shell/SortPanel.vue'
   import { provideActionRunner } from '@/composables/shell/useActionRunner'
+  import { useCompactLayout } from '@/composables/shell/useCompactLayout'
   import { choose, confirmDialog, notice, notify, pickChoice } from '@/composables/shell/useDialogs'
   import { listControlsKey } from '@/composables/shell/useListControls'
   import { overlayOpenKey } from '@/composables/shell/useOverlay'
@@ -54,6 +55,11 @@
   const bottomItems = computed(() => props.navItems.slice(0, BOTTOM_NAV_MAX))
 
   const drawer = shallowRef(false)
+
+  // 底部導覽列的高度與圖示，手機與電腦不同（見 docs/design/README.md 的「導覽」）
+  const compact = useCompactLayout()
+  const bottomBar = computed(() => compact.value ? { height: 84, icon: 28 } : { height: 56, icon: 24 })
+
   const route = useRoute()
   const router = useRouter()
 
@@ -348,8 +354,15 @@
     <slot />
   </v-main>
 
-  <!-- 按鈕平分寬度，上限為 Vuetify 預設的最大寬（見 docs/design/README.md 的「導覽」） -->
-  <v-bottom-navigation v-if="showShell" class="shell-bottom-bar shell-bottom-bar--nav" grow :model-value="route.path">
+  <!-- 按鈕平分寬度，上限為 Vuetify 預設的最大寬。高度、圖示與選取的樣式見 docs/design/README.md 的「導覽」 -->
+  <v-bottom-navigation
+    v-if="showShell"
+    class="shell-bottom-bar shell-bottom-bar--nav"
+    color="primary"
+    grow
+    :height="bottomBar.height"
+    :model-value="route.path"
+  >
     <v-btn
       v-for="item in bottomItems"
       :key="item.to"
@@ -357,7 +370,7 @@
       :to="item.to"
       :value="item.to"
     >
-      <v-icon :icon="item.icon" />
+      <v-icon :class="{ 'shell-bottom-bar__icon--spaced': compact }" :icon="item.icon" :size="bottomBar.icon" />
       <span class="shell-bottom-bar__label">{{ item.title }}</span>
     </v-btn>
   </v-bottom-navigation>
@@ -376,6 +389,10 @@
 /* 不設最小寬，畫面窄時按鈕縮小，不超出畫面 */
 .shell-bottom-bar--nav :deep(.v-btn) {
   min-width: 0;
+}
+
+.shell-bottom-bar__icon--spaced {
+  margin-bottom: 6px;
 }
 
 /* 名稱放不下時加「…」 */

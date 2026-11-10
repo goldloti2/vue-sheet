@@ -15,8 +15,11 @@
 
   const { mainRect } = useLayout()
 
-  // 位於底部導覽列上方，高度取自 Vuetify layout（與 v-main 的 padding 相同機制）
-  const offsetStyle = computed(() => ({ bottom: `${mainRect.value.bottom + 16}px` }))
+  // 位於底部導覽列上方，高度取自 Vuetify layout（與 v-main 的 padding 相同機制）。距離見 docs/design/README.md
+  const offsetStyle = computed(() => ({ bottom: `${mainRect.value.bottom + 24}px` }))
+
+  // 主色淡一階，由 plugins/vuetify.ts 的 variations 產生
+  const FAB_COLOR = 'primary-lighten-1'
 
   const open = shallowRef(false)
 
@@ -52,29 +55,31 @@
           v-for="action in shown"
           :key="action.key"
           :aria-label="action.label"
-          color="primary"
+          class="page-fab__fab"
+          :color="FAB_COLOR"
           :icon="action.icon"
-          rounded
-          size="default"
+          size="large"
           @click="handleActionClick(action)"
         />
       </template>
 
       <v-fab
         v-else
-        :color="open ? 'bg-surface-light' : 'primary'"
+        class="page-fab__fab"
+        :color="open ? 'bg-surface-light' : FAB_COLOR"
         icon
-        rounded="lg"
-        size="default"
+        size="large"
         @click="open = !open"
       >
-        <v-fab-transition mode="out-in">
+        <!-- 新舊圖示同時轉換，舊的圖示離場時改為絕對定位，不推擠新的圖示 -->
+        <v-fab-transition leave-absolute mode="default">
           <v-icon :key="open ? 'close' : 'menu'" :icon="open ? mdiClose : mdiDotsVertical" />
         </v-fab-transition>
 
         <v-speed-dial
           v-model="open"
           activator="parent"
+          content-class="page-fab__menu"
           location="top center"
           scrim
           transition="slide-y-reverse-transition"
@@ -84,10 +89,10 @@
 
             <v-btn
               :aria-label="action.label"
-              color="primary"
+              class="page-fab__button"
+              :color="FAB_COLOR"
               :icon="action.icon"
-              rounded
-              size="small"
+              size="default"
               @click="handleActionClick(action)"
             />
           </div>
@@ -100,12 +105,27 @@
 <style scoped>
 .page-fab {
   position: fixed;
-  right: 16px;
+  right: 24px;
   z-index: 2001;
   view-transition-name: page-fab;
   display: flex;
   flex-direction: column-reverse;
   gap: 12px;
+}
+
+/* 圓角見 docs/design/README.md 的「FAB」。v-fab 的 class 位於外層，圓角套用至其中的按鈕 */
+.page-fab__button,
+.page-fab__fab :deep(.v-btn) {
+  border-radius: 16px;
+}
+
+/* 收合時整排動作向下滑出並淡出，與展開時的滑入對稱。speed dial 收合時只套用選單本身的淡出 */
+:global(.page-fab__menu.fade-transition-leave-active) {
+  transition-property: opacity, transform;
+}
+
+:global(.page-fab__menu.fade-transition-leave-to) {
+  transform: translateY(15px);
 }
 
 .fab-action {

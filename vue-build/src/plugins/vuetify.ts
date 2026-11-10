@@ -36,6 +36,8 @@ const darkColors = {
 export default createVuetify({
   theme: {
     defaultTheme: 'system',
+    // 主色的淡一階 primary-lighten-1，用於 FAB
+    variations: { colors: ['primary'], lighten: 1, darken: 0 },
     themes: {
       light: { colors: lightColors },
       dark: { colors: darkColors },

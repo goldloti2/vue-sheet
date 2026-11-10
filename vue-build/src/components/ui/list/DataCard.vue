@@ -100,7 +100,7 @@
         <span v-else-if="fields.header.image === null" class="card-item__avatar" />
 
         <div class="card-item__text">
-          <div v-if="fields.header.title !== undefined" class="card-item__line text-title-medium font-weight-bold"><FormattedValue :value="fields.header.title" /></div>
+          <div v-if="fields.header.title !== undefined" class="card-item__line text-title-medium"><FormattedValue :value="fields.header.title" /></div>
           <div v-if="fields.header.subtitle !== undefined" class="card-item__line text-body-medium text-medium-emphasis"><FormattedValue :value="fields.header.subtitle" /></div>
         </div>
       </div>
@@ -113,7 +113,7 @@
       </div>
 
       <div v-if="hasBody" class="card-item__body">
-        <div v-if="fields.body.title !== undefined" class="card-item__line text-title-medium font-weight-bold"><FormattedValue :value="fields.body.title" /></div>
+        <div v-if="fields.body.title !== undefined" class="card-item__line text-title-medium"><FormattedValue :value="fields.body.title" /></div>
         <div v-if="fields.body.subtitle !== undefined" class="card-item__line text-body-medium text-medium-emphasis"><FormattedValue :value="fields.body.subtitle" /></div>
         <div v-if="fields.body.summary !== undefined" class="card-item__summary text-body-medium"><FormattedValue :value="fields.body.summary" /></div>
       </div>

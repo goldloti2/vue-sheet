@@ -78,7 +78,7 @@
 
       <div class="gallery-item__text">
         <!-- 未指定的位置不顯示，已指定但沒有值的位置保留一行 -->
-        <div v-if="fields.title !== undefined" class="gallery-item__line text-title-small font-weight-bold"><FormattedValue :value="fields.title" /></div>
+        <div v-if="fields.title !== undefined" class="gallery-item__line text-title-small"><FormattedValue :value="fields.title" /></div>
         <div v-if="fields.subtitle !== undefined" class="gallery-item__line gallery-item__subtitle text-body-small text-medium-emphasis"><FormattedValue :value="fields.subtitle" /></div>
       </div>
     </component>

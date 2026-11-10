@@ -73,7 +73,7 @@
       <span v-else-if="fields.image === null" class="profile-item__avatar" />
 
       <div class="profile-item__text">
-        <div v-if="fields.title !== undefined" class="profile-item__title text-title-medium font-weight-bold"><FormattedValue :value="fields.title" /></div>
+        <div v-if="fields.title !== undefined" class="profile-item__title text-title-medium"><FormattedValue :value="fields.title" /></div>
         <div v-if="fields.subtitle !== undefined" class="profile-item__subtitle text-body-medium text-medium-emphasis"><FormattedValue :value="fields.subtitle" /></div>
       </div>
     </component>

@@ -43,7 +43,7 @@
             size="20"
           />
 
-          <span v-if="title !== undefined" class="list-item__title text-title-medium font-weight-bold"><FormattedValue :value="title" /></span>
+          <span v-if="title !== undefined" class="list-item__title text-title-medium"><FormattedValue :value="title" /></span>
         </div>
 
         <span v-if="subtitle !== undefined" class="list-item__field text-body-medium text-medium-emphasis list-item__field--right"><FormattedValue :value="subtitle" /></span>

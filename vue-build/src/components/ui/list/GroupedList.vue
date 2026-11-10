@@ -92,9 +92,10 @@
   padding-block: 0;
 }
 
-/* 展開箭頭與標題之間的間距較 Vuetify 的預設小，窄面板中也放得下標題（見 docs/design/list.md 的「尺寸與樣式」） */
+/* 展開箭頭與標題之間的間距較 Vuetify 的預設小，窄面板中也放得下標題。高度見 docs/design/list.md 的「尺寸與樣式」 */
 .grouped-list :deep(.v-list-group__header) {
   --v-list-prepend-gap: 8px;
+  min-height: 44px;
 }
 
 /* min-width 改回 0，窄面板中不被標題撐寬。卡片的陰影落在 ListLayout 的留白之內，展開的動畫不會裁切 */

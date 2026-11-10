@@ -74,9 +74,7 @@
           </template>
         </GroupedList>
 
-        <div v-else-if="$slots.rows" class="list-page__rows">
-          <slot name="rows" :rows="rows ?? []" />
-        </div>
+        <slot v-else-if="$slots.rows" name="rows" :rows="rows ?? []" />
 
         <ListLayout v-else :layout="layout">
           <template v-for="row in rows" :key="row.id">
@@ -91,12 +89,8 @@
 </template>
 
 <style scoped>
-/* 列表本身不留白，由內容決定：list 式的列與分組的標題貼齊外緣，卡片與表格四周留白（見 docs/design/list.md） */
+/* 列表本身不留白，由內容決定：list 式的列、分組的標題與表格貼齊外緣，卡片四周留白（見 docs/design/list.md） */
 .list-page__container {
   padding: 0;
-}
-
-.list-page__rows {
-  padding: 16px;
 }
 </style>

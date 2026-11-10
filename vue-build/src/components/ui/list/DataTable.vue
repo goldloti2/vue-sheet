@@ -7,6 +7,7 @@
   import FormattedValue from '@/components/ui/view/FormattedValue.vue'
   import { useColumnWidths } from '@/composables/list/useColumnWidths'
   import { usePublishListOrder } from '@/composables/navigation/useListOrder'
+  import { usePanelBordered } from '@/composables/shell/usePanelActive'
   import { displayValue } from '@/schema/format'
   import { allColumns } from '@/schema/types'
 
@@ -38,6 +39,9 @@
 
   const router = useRouter()
   const publishOrder = usePublishListOrder()
+
+  // 位於有外框的面板中時，以面板的外框為框，表格本身沒有外框
+  const bordered = usePanelBordered()
 
   const resolvedColumns = computed<ResolvedColumn<Row>[]>(() => {
     const columnList: ResolvedColumn<Row>[] = allColumns(props.schema).map(column => ({
@@ -96,10 +100,11 @@
 </script>
 
 <template>
-  <!-- 各欄寬度由程式算好後以 colgroup 固定（見 useColumnWidths） -->
-  <div ref="container">
+  <!-- 各欄寬度由程式算好後以 colgroup 固定（見 useColumnWidths）。外框位於量測寬度的元素上，可用寬度不含外框 -->
+  <div ref="container" :class="{ 'data-table--outlined': !bordered }">
     <v-table
       :class="{ 'data-table--sized': columnWidths, 'data-table--wrap': wrap }"
+      density="compact"
       gridlines="all"
       :hover="!!rowTo"
       :style="tableWidth ? { '--data-table-width': tableWidth } : undefined"
@@ -129,6 +134,11 @@
 </template>
 
 <style scoped>
+/* 四周的外框。列高見 docs/design/list.md 的「尺寸與樣式」 */
+.data-table--outlined {
+  border: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
+}
+
 /* 固定欄寬：不換行，放不下時加上省略號 */
 .data-table--sized :deep(table) {
   width: var(--data-table-width, 100%);

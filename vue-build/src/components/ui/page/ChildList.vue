@@ -2,6 +2,7 @@
   import type { PageAction } from '@/composables/actions/useTableActions'
   import { computed } from 'vue'
   import CountLabel from '@/components/ui/list/CountLabel.vue'
+  import ListLayout from '@/components/ui/list/ListLayout.vue'
   import { useRunAction } from '@/composables/shell/useActionRunner'
 
   const props = withDefaults(defineProps<{
@@ -29,16 +30,19 @@
 </script>
 
 <template>
-  <v-container>
-    <div class="text-title-medium font-weight-bold mb-2">
+  <!-- 子列與列表頁相同，貼齊畫面的左右，留白由內容決定（見 ListLayout）。標題、說明與按鈕留白 -->
+  <v-container class="child-list">
+    <div class="child-list__inset text-title-medium font-weight-bold mb-2">
       <CountLabel :count="rows.length" :label="title" />
     </div>
 
-    <slot v-if="rows.length > 0" :rows="shown" />
+    <ListLayout v-if="rows.length > 0">
+      <slot :rows="shown" />
+    </ListLayout>
 
-    <div v-else class="text-medium-emphasis">{{ emptyText }}</div>
+    <div v-else class="child-list__inset text-medium-emphasis">{{ emptyText }}</div>
 
-    <div v-if="to || shownActions.length > 0" class="d-flex flex-wrap ga-2 justify-end mt-2">
+    <div v-if="to || shownActions.length > 0" class="child-list__inset d-flex flex-wrap ga-2 justify-end mt-2">
       <v-btn v-if="to" text="展開" :to="to" variant="text" />
 
       <v-btn
@@ -51,3 +55,13 @@
     </div>
   </v-container>
 </template>
+
+<style scoped>
+.child-list {
+  padding-inline: 0;
+}
+
+.child-list__inset {
+  padding-inline: 16px;
+}
+</style>

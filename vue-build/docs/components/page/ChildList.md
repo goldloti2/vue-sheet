@@ -10,6 +10,8 @@
 
 子列無須另外查詢。store 在父列上掛有 `$子表_欄位key` getter，子列已依子表的 `defaultSort` 排序，直接傳入即可。
 
+子列置於 [ListLayout](../list/ListLayout.md) 中，與列表頁相同：deck 的列與表格貼齊畫面的左右，卡片四周留白。標題、沒有子列時的文字與按鈕與畫面的左右留白。
+
 ## Usage
 
 ```vue

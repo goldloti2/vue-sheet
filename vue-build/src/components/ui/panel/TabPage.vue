@@ -27,11 +27,13 @@
 <template>
   <div>
     <!-- 頁籤列置於 v-window 之外，切換頁籤時只有內容滑動 -->
+    <!-- 高度與頁籤的寬度見 docs/design/tab.md 的「外觀與切換」 -->
     <v-tabs
       v-model="model"
       align-tabs="center"
       class="tab-page__bar"
       grow
+      height="44"
       slider-color="primary"
     >
       <v-tab v-for="tab in tabs" :key="tab" :value="tab">{{ tab }}</v-tab>
@@ -60,5 +62,11 @@
   z-index: 2;
   background-color: rgb(var(--v-theme-surface));
   border-bottom: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
+}
+
+/* 頁籤不設最小寬 */
+.tab-page__bar :deep(.v-tab) {
+  min-width: 0;
+  padding-inline: 8px;
 }
 </style>

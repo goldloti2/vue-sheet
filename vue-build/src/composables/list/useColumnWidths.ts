@@ -77,6 +77,10 @@ export function useColumnWidths (
   function measure () {
     const modes = toValue(widthsOf)
     const element = wrapper.value
+    // KeepAlive 收起頁面時 DOM 不在文件中，不量測，保留原本的欄寬
+    if (element && !element.isConnected) {
+      return
+    }
     const table = element?.querySelector('table')
     if (!modes || !element || !table) {
       widths.value = null

@@ -3,7 +3,7 @@
   import type { Link } from '@/composables/shell/useDashboardLinks'
   import type { TableKey } from '@/schema'
   import { mdiArrowExpand } from '@mdi/js'
-  import { computed, inject, onBeforeUnmount, onMounted, provide, shallowRef, useTemplateRef, watch } from 'vue'
+  import { computed, inject, onActivated, onBeforeUnmount, onMounted, provide, shallowRef, useTemplateRef, watch } from 'vue'
   import { AUTO_ROWS_MAX, dashboardKey } from '@/components/ui/panel/dashboardContext'
   import { relaySlot } from '@/composables/shell/useActionSlot'
   import { dashboardPanelKey } from '@/composables/shell/useDashboardLinks'
@@ -122,8 +122,11 @@
   const header = useTemplateRef('header')
   const content = useTemplateRef('content')
   const naturalHeight = shallowRef(0)
+  // KeepAlive 收起此頁時 DOM 不在文件中，不量測
   const observer = new ResizeObserver(() => {
-    naturalHeight.value = (header.value?.offsetHeight ?? 0) + (content.value?.offsetHeight ?? 0)
+    if (content.value?.isConnected) {
+      naturalHeight.value = (header.value?.offsetHeight ?? 0) + content.value.offsetHeight
+    }
   })
   onMounted(() => {
     for (const element of [header.value, content.value]) {
@@ -140,6 +143,20 @@
     }
     const rows = Math.ceil((height + dashboard.gap) / (cell + dashboard.gap))
     measuredRows.value = Math.min(Math.max(rows, 1), AUTO_ROWS_MAX)
+  })
+
+  // KeepAlive 收起此頁時面板內的捲動歸零：自行記錄捲動位置，回到畫面時還原
+  const body = useTemplateRef('body')
+  let scrollTop = 0
+  function onScroll () {
+    if (body.value?.isConnected) {
+      scrollTop = body.value.scrollTop
+    }
+  }
+  onActivated(() => {
+    if (body.value) {
+      body.value.scrollTop = scrollTop
+    }
   })
 
   // 手機上貼齊螢幕的左右兩側，沒有邊線與圓角。展開時不套用
@@ -209,7 +226,7 @@
     </header>
 
     <!-- 面板在自己的框內捲動，展開時隨整頁捲動 -->
-    <div class="dashboard-panel__body">
+    <div ref="body" class="dashboard-panel__body" @scroll.passive="onScroll">
       <div ref="content">
         <slot />
       </div>

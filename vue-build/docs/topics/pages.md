@@ -68,6 +68,8 @@
 - **每次進入都須重算的內容放在 `onActivated`**：同一個網址共用同一份實例，`setup` 不會重新執行
 - **Teleport 出去的浮動元件自行處理進場與出場**：`PageFab`、`RecordNav` 送至 `body`，以 `onActivated`、`onDeactivated` 控制
 - **列表載入中時，不以 `v-if` 整個替換列表**，改用 `PageState` 的 `spinner="linear"`。進度條加在內容上方，不取代內容
+- **量測大小的元件，於 DOM 不在文件中時不量測**：KeepAlive 收起頁面時，`ResizeObserver` 回報的寬與高為 0。量測的元件以 `isConnected` 判斷，保留原本的值，例如 `DashboardPage` 的格子、`DashboardPanel` 的自動高度、`DataStat`、`DataTable` 的欄寬
+- **在自己的框內捲動的元件，自行記錄捲動位置**：DOM 移出文件時，框內的捲動歸零。`DashboardPanel` 於捲動時記下位置，於 `onActivated` 還原
 - **捲動位置由 router 另外記錄**：
   - 記錄為一份 `fullPath → scrollY`，於 `beforeEach` 儲存，於 `scrollBehavior` 還原，上限同樣為 50 個網址
   - 返回鍵優先使用瀏覽器記錄的 `savedPosition`

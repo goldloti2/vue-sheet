@@ -112,8 +112,11 @@
   // 一格的邊長：內容區寬度扣除間距後等分。格子的高等於寬
   const root = useTemplateRef('root')
   const contentWidth = shallowRef(0)
+  // KeepAlive 收起此頁時 DOM 不在文件中，不量測
   const observer = new ResizeObserver(([entry]) => {
-    contentWidth.value = entry?.contentRect.width ?? 0
+    if (entry?.target.isConnected) {
+      contentWidth.value = entry.contentRect.width
+    }
   })
   onMounted(() => {
     if (root.value) {

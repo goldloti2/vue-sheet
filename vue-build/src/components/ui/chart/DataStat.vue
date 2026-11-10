@@ -29,11 +29,13 @@
   const compact = useCompactLayout()
   const space = dashboard?.gap ?? GAP
 
-  // 量測自身的寬度
+  // 量測自身的寬度。KeepAlive 收起頁面時 DOM 不在文件中，不量測
   const root = useTemplateRef('root')
   const width = shallowRef(0)
   const observer = new ResizeObserver(() => {
-    width.value = root.value?.clientWidth ?? 0
+    if (root.value?.isConnected) {
+      width.value = root.value.clientWidth
+    }
   })
   onMounted(() => {
     if (root.value) {

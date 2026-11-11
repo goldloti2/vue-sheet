@@ -1,5 +1,22 @@
 # 版本紀錄
 
+## v1.14
+
+- **計時推送**：`config/app.ts` 的 `autoPushDelay` 設定秒數。有未推送的變更，且最後一次修改後經過這個秒數時，自動推送並重新抓取。失敗與衝突不通知，只由同步按鈕的圓點標示。預設為 `null`，不啟用。說明見 [vue-build/docs/topics/store.md](vue-build/docs/topics/store.md) 的「計時推送」
+- **推送期間同步按鈕顯示載入中**：自動推送時也相同。重新抓取期間不顯示
+- **重新抓取時不顯示載入中**：已有資料的表在背景重新抓取，畫面保留原本的列，抓取完成後才更新
+- **App Bar 與底部導覽列**：App Bar 較矮，表單頁的 App Bar 也相同。手機上的底部導覽列較矮。目前的頁面以外，按鈕的圖示與名稱改為次要文字的顏色
+- **表單的「取消」與「送出」**：文字改為一般按鈕的字級
+- **文字統計的面板**：在手機的儀表板上，面板不貼齊螢幕，與螢幕的左右保留距離，四邊皆有邊線與圓角。位於有外框的面板中時，格子靠左排列，色塊貼齊面板的邊
+- **修正：表格在部分手機上出現橫向捲軸**。可用寬度改為外框以內的實際寬度，並無條件捨去為整數
+- **以 clasp 推送後端**：`vue-build` 的 devDependencies 加入 `@google/clasp`，以 `npm run clasp -- 指令` 執行。各情境的指令見 [apps-script/README.md](apps-script/README.md) 的「clasp 指令」
+- **試算表 id 改存於指令碼屬性**：`Sheets.gs` 讀取指令碼屬性 `SPREADSHEET_ID`，未設定時使用綁定的試算表
+- 修正：`npm run dev` 時 Vite 不再警告設定檔的 import 缺少副檔名
+
+### 不相容的變更
+
+- `Config.gs` 的 `SPREADSHEET_ID` 常數刪除。使用其他試算表時，須於 Apps Script 的「專案設定 → 指令碼屬性」新增 `SPREADSHEET_ID`，再推送新的 `Sheets.gs`
+
 ## v1.13
 
 手機上的外觀調整。各項的數值見 [vue-build/docs/design/](vue-build/docs/design/)。

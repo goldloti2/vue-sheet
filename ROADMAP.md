@@ -268,7 +268,9 @@
 
 ### 後端（Apps Script）
 
-程式位於 `apps-script/`，須填寫的只有 `Config.gs`：試算表 id、「表代稱 → 分頁名稱 + ID 欄表頭」的對照、表頭的列號。細節、部署步驟與實測結果，見 [apps-script/README.md](apps-script/README.md)。
+程式位於 `apps-script/`，須填寫的只有 `Config.gs`：「表代稱 → 分頁名稱 + ID 欄表頭」的對照、表頭的列號。試算表 id 存於指令碼屬性 `SPREADSHEET_ID`，不進 repo。細節、部署步驟與實測結果，見 [apps-script/README.md](apps-script/README.md)。
+
+- 以 clasp 推送與重新部署：`vue-build` 的 `npm run clasp -- 指令`。各情境的指令見 [apps-script/README.md](apps-script/README.md) 的「clasp 指令」
 
 - 已實作，並於 **2026-10-02 對實際的 Sheet 完成測試**：入口與信封、整張表的讀取、batch（鎖、衝突比對、全有全無）、表頭對應、結構完整性檢查
   - 實作規則、值寫入儲存格的行為與實測結果，見 [apps-script/README.md](apps-script/README.md)

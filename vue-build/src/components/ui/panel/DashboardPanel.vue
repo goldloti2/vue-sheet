@@ -8,7 +8,7 @@
   import { relaySlot } from '@/composables/shell/useActionSlot'
   import { dashboardPanelKey } from '@/composables/shell/useDashboardLinks'
   import { listControlsKey } from '@/composables/shell/useListControls'
-  import { panelActiveKey, panelBorderedKey, panelFullPageKey, usePanelActive } from '@/composables/shell/usePanelActive'
+  import { panelActiveKey, panelBorderedKey, panelFullPageKey, panelInsetKey, usePanelActive } from '@/composables/shell/usePanelActive'
   import { provideSharedListControls } from '@/composables/shell/useSharedListControls'
   import { appBarSelectionKey } from '@/composables/shell/useShellActions'
 
@@ -159,8 +159,33 @@
     }
   })
 
-  // 手機上貼齊螢幕的左右兩側，沒有邊線與圓角。展開時不套用
+  // 內容要求不貼齊螢幕的次數（useInsetPanel），以計數器實作
+  const insetRequests = shallowRef(0)
+  provide(panelInsetKey, () => {
+    insetRequests.value++
+    let released = false
+    return () => {
+      if (!released) {
+        released = true
+        insetRequests.value--
+      }
+    }
+  })
+
+  // 手機上貼齊螢幕的左右兩側，沒有邊線與圓角。內容要求不貼齊時，該側改與螢幕保持距離。展開時皆不套用
   const edges = dashboard.edges(name)
+  const edgeClasses = computed(() => {
+    const inset = insetRequests.value > 0
+    const start = edges.value.start && !expanded.value
+    const end = edges.value.end && !expanded.value
+    return {
+      'dashboard-panel--edge-start': start && !inset,
+      'dashboard-panel--edge-end': end && !inset,
+      'dashboard-panel--inset': (start || end) && inset,
+      'dashboard-panel--inset-start': start && inset,
+      'dashboard-panel--inset-end': end && inset,
+    }
+  })
 
   // 展開時不受方格限制，與一般頁面一樣隨整頁捲動
   const placementStyle = computed(() => placement.value && !expanded.value
@@ -204,13 +229,11 @@
     v-show="!hidden"
     :aria-disabled="locked || undefined"
     class="dashboard-panel"
-    :class="{
+    :class="[{
       'dashboard-panel--focused': active && frame && !expanded,
       'dashboard-panel--expanded': expanded,
       'dashboard-panel--locked': locked,
-      'dashboard-panel--edge-start': edges.start && !expanded,
-      'dashboard-panel--edge-end': edges.end && !expanded,
-    }"
+    }, edgeClasses]"
     :style="[placementStyle, transitionStyle]"
     @click.capture="onClick"
     @pointerdown.capture="onPointerdown"
@@ -263,6 +286,19 @@
   border-inline-end: none;
   border-start-end-radius: 0;
   border-end-end-radius: 0;
+}
+
+/* 內容要求不貼齊螢幕時，貼邊的那一側與螢幕保持距離，邊線與圓角照常（見 docs/design/dashboard.md）。內容以 --dashboard-panel-inset 得知縮減的寬度 */
+.dashboard-panel--inset {
+  --dashboard-panel-inset: 8px;
+}
+
+.dashboard-panel--inset-start {
+  margin-inline-start: var(--dashboard-panel-inset);
+}
+
+.dashboard-panel--inset-end {
+  margin-inline-end: var(--dashboard-panel-inset);
 }
 
 /* 貼邊那一側沒有邊線，outline 落在螢幕外，改以 ::after 畫在內側，疊於內容之上 */

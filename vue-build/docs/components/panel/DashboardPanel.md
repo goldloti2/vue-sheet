@@ -57,12 +57,15 @@
 
 - **點擊面板的任何地方，該面板即成為關注點**，以外框標示（樣式見 [design/dashboard.md](../../design/dashboard.md)）。預設的關注點為第一個有小外殼的面板。長按時，關注點先移到此面板，再進入多選
 - **手機上貼齊螢幕左右的面板，該側沒有邊線與圓角**。`DashboardPage` 依各面板是否位於方格的第一欄或最後一欄判斷。展開時不套用。關注時，該側的外框以 `::after` 畫在面板的內側，疊於內容之上（樣式見 [design/dashboard.md](../../design/dashboard.md)）
+  - 內容呼叫 `useInsetPanel()` 時，面板不貼齊螢幕。貼齊的那一側改與螢幕保持距離，邊線與圓角照常，例如 [DataStat](../chart/DataStat.md)
+  - 縮減的寬度以 CSS 變數 `--dashboard-panel-inset` 告知內容。不貼齊螢幕時沒有這個變數
 - **小外殼除了右側的展開按鈕，不放其他動作**
-- **此元件向內 provide 四件事**：
+- **此元件向內 provide 五件事**：
   - 是否為目前的面板（`usePanelActive`），與 `TabPage` 的頁籤使用同一套機制。外層的面板也須作用中
   - 是否已展開（`usePanelFullPage`）。不在面板中時一律為 `true`
   - 面板的輸入與寫入輸出的方式（`useDashboardPanel`），供 `ListPage`、`ChartPage`、`useListPage`、`useRecordPage` 與詳細頁的上一列、下一列讀取。不在面板中時為 `null`
   - 面板目前是否有外框（`usePanelBordered`），展開時沒有。不在面板中時一律為 `false`。內容可據此省略自己的外框與外圍留白，例如 [DataStat](../chart/DataStat.md) 的格子
+  - 登記「不貼齊螢幕」的方式（`useInsetPanel`）。呼叫的元件卸載時取消。不在面板中時沒有作用
 - **此元件以 `relaySlot` 收下內容登記的兩個值**，交由 `DashboardPage` 決定是否登記於 App Bar：
   - 多選的出口
   - 內容自己的搜尋、篩選與排序，例如面板中的 `TabPage`。內容沒有登記時，關閉 `shared` 的面板改用此元件自己的一份

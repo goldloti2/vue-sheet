@@ -4,7 +4,7 @@
   import { computed, inject, onBeforeUnmount, onMounted, shallowRef, useTemplateRef } from 'vue'
   import { COLS, dashboardKey, GAP } from '@/components/ui/panel/dashboardContext'
   import { useCompactLayout } from '@/composables/shell/useCompactLayout'
-  import { usePanelBordered } from '@/composables/shell/usePanelActive'
+  import { useInsetPanel, usePanelBordered } from '@/composables/shell/usePanelActive'
   import { highlightOf } from '@/schema/chart'
   import { DIM_OPACITY, formatParts, paletteColors } from './chartConfig'
 
@@ -26,6 +26,8 @@
   const dashboard = inject(dashboardKey, null)
   // 位於有外框的面板中時，格子以面板的外框為框
   const bordered = usePanelBordered()
+  // 所在的面板在手機上不貼齊螢幕的左右兩側
+  useInsetPanel()
   const compact = useCompactLayout()
   const space = dashboard?.gap ?? GAP
 
@@ -129,10 +131,10 @@
 
 <style scoped>
 /* 格的大小見 docs/design/chart.md 的「文字統計」與「尺寸與樣式」。--data-stat-unit 與 --data-stat-space 由 script 指定，--data-stat-inset 由外層指定 */
-/* 算式為格數加間隔，扣除兩側的留白與外框 2px。再少 1px，避免小數誤差產生捲軸 */
+/* 算式為格數加間隔，扣除兩側的留白與外框 2px。再少 1px，避免小數誤差產生捲軸。寬度另扣除面板與螢幕的距離（--dashboard-panel-inset，見 DashboardPanel） */
 .data-stat {
   display: grid;
-  grid-template-columns: repeat(auto-fit, max(1px, calc(6 * var(--data-stat-unit) + 5 * var(--data-stat-space) - 2 * var(--data-stat-inset, 0px) - 3px)));
+  grid-template-columns: repeat(auto-fit, max(1px, calc(6 * var(--data-stat-unit) + 5 * var(--data-stat-space) - 2 * var(--data-stat-inset, 0px) - var(--dashboard-panel-inset, 0px) - 3px)));
   grid-auto-rows: max(1px, calc(2 * var(--data-stat-unit) + 1 * var(--data-stat-space) - 2 * var(--data-stat-inset, 0px) - 3px));
   gap: 4px;
   justify-content: center;
@@ -155,7 +157,12 @@
   transition: opacity 0.2s;
 }
 
-/* 位於有外框的面板中：格子只保留左側的色塊，以面板的外框為框，色塊貼齊面板的邊 */
+/* 位於有外框的面板中：格子靠左排列，色塊貼齊面板的邊 */
+.data-stat--bordered {
+  justify-content: start;
+}
+
+/* 位於有外框的面板中：格子只保留左側的色塊，以面板的外框為框 */
 .data-stat--bordered .data-stat__cell {
   border-top: none;
   border-right: none;

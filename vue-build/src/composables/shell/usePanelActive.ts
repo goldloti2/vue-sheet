@@ -1,5 +1,5 @@
 import type { InjectionKey, Ref } from 'vue'
-import { inject, shallowRef } from 'vue'
+import { inject, onScopeDispose, shallowRef } from 'vue'
 
 type PanelActive = Readonly<Ref<boolean>>
 
@@ -36,4 +36,15 @@ const NEVER_BORDERED: PanelActive = shallowRef(false)
 
 export function usePanelBordered (): PanelActive {
   return inject(panelBorderedKey, NEVER_BORDERED)
+}
+
+// 登記一個要求，回傳取消的函數。由 DashboardPanel 提供
+export const panelInsetKey: InjectionKey<() => () => void> = Symbol('panelInset')
+
+// 要求所在的面板在手機上不貼齊螢幕的左右兩側，呼叫的元件卸載時取消。不在面板中時沒有作用
+export function useInsetPanel (): void {
+  const request = inject(panelInsetKey, null)
+  if (request) {
+    onScopeDispose(request())
+  }
 }

@@ -27,6 +27,7 @@ const { row, loading, error } = useTableRow<OrderRow>('order', id)              
 - **型別轉換只發生在 `fetchTable` 這一處**：後端的形狀為 `Record<string, string>`，前端的形狀為已轉換型別的 Row（`Date`、`number`、`null`）
 - **關聯的表一起載入**：ref 欄位指向的父表（虛擬的 ref 也包括在內），以及指向此表的子表
 - **沒有「只重新抓取一張表」的 API**。重新抓取即整個 App 一起重新抓取，經由同步按鈕
+- **已有資料的表重新抓取時，`loading` 維持為否**：畫面保留原本的列，抓取完成後直接換成新的列。尚無資料的表（第一次載入、載入失敗）於抓取時 `loading` 為真
 
 ---
 

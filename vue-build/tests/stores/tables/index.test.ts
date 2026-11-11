@@ -65,6 +65,24 @@ describe('載入', () => {
     expect(store.error[NOTES]).toBeNull()
     expect(store.rows[NOTES]).toHaveLength(3)
   })
+
+  it('第一次載入時 loading 為真', async () => {
+    const loading = store.ensureLoaded(NOTES)
+    expect(store.loading[NOTES]).toBe(true)
+    await loading
+    expect(store.loading[NOTES]).toBe(false)
+  })
+
+  it('已有資料的表重新抓取時 loading 維持為否，原本的列保留至抓取完成', async () => {
+    await store.ensureLoaded(NOTES)
+    const before = store.rows[NOTES]
+    const reloading = store.reload()
+    expect(store.loading[NOTES]).toBe(false)
+    expect(store.rows[NOTES]).toBe(before)
+    await reloading
+    expect(store.loading[NOTES]).toBe(false)
+    expect(store.rows[NOTES]).not.toBe(before)
+  })
 })
 
 describe('create', () => {

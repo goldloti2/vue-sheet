@@ -46,7 +46,8 @@ export const useTablesStore = defineStore('tables', () => {
     }
 
     const promise = (async () => {
-      loading[table] = true
+      // 已有快取的表在背景重新抓取，畫面保留原本的列，不顯示載入中
+      loading[table] = !(table in rows)
       error[table] = null
       try {
         const { rows: fetched, modifiedTime } = await fetchTable<HasId>(table)

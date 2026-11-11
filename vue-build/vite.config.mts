@@ -6,7 +6,7 @@ import Fonts from 'unplugin-fonts/vite'
 import { defineConfig } from 'vite'
 import Vuetify, { transformAssetUrls } from 'vite-plugin-vuetify'
 import VueRouter from 'vue-router/vite'
-import { appName } from './src/config/app'
+import { appName } from './src/config/app.ts'
 
 // 狀態列的顏色為 Vuetify 預設主題的 surface，即 App Bar 的底色
 const themeColors = { light: '#FFFFFF', dark: '#212121' }

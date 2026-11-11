@@ -57,9 +57,16 @@
       </PageState>
     </v-main>
 
-    <v-bottom-navigation grow>
+    <v-bottom-navigation class="form-layer__actions" grow>
       <v-btn @click="requestCloseLayer">取消</v-btn>
       <v-btn @click="submit">{{ submitLabel }}</v-btn>
     </v-bottom-navigation>
   </v-layout>
 </template>
+
+<style scoped>
+/* 文字使用一般按鈕的字級，不使用底部導覽列的字級（見 docs/design/form.md） */
+.form-layer__actions :deep(.v-bottom-navigation__content) {
+  font-size: 0.875rem;
+}
+</style>

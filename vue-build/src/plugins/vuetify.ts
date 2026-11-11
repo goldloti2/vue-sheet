@@ -43,6 +43,10 @@ export default createVuetify({
       dark: { colors: darkColors },
     },
   },
+  // App Bar 的高度，外殼與表單頁共用（見 docs/design/README.md）
+  defaults: {
+    VAppBar: { height: 58 },
+  },
   icons: {
     defaultSet: 'mdi',
     aliases,

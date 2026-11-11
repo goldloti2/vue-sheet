@@ -59,7 +59,7 @@
 
   // 底部導覽列的高度與圖示，手機與電腦不同（見 docs/design/README.md 的「導覽」）
   const compact = useCompactLayout()
-  const bottomBar = computed(() => compact.value ? { height: 84, icon: 28 } : { height: 56, icon: 24 })
+  const bottomBar = computed(() => compact.value ? { height: 78, icon: 28 } : { height: 56, icon: 24 })
 
   const route = useRoute()
   const router = useRouter()
@@ -401,6 +401,11 @@
 /* 不設最小寬，畫面窄時按鈕縮小，不超出畫面 */
 .shell-bottom-bar--nav :deep(.v-btn) {
   min-width: 0;
+}
+
+/* 目前的頁面以外，圖示與名稱使用次要文字的顏色（見 docs/design/README.md 的「導覽」） */
+.shell-bottom-bar--nav :deep(.v-btn:not(.v-btn--active)) {
+  color: rgba(var(--v-theme-on-surface), var(--v-medium-emphasis-opacity));
 }
 
 .shell-bottom-bar__icon--spaced {

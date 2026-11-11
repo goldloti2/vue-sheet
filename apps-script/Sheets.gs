@@ -1,7 +1,9 @@
 // 單張表的讀取與表頭對應。批次的順序、鎖、寫入皆在 Batch.gs
 
+// 指令碼屬性 SPREADSHEET_ID 有值時開啟該試算表，否則使用綁定的試算表
 function spreadsheet () {
-  return SPREADSHEET_ID ? SpreadsheetApp.openById(SPREADSHEET_ID) : SpreadsheetApp.getActiveSpreadsheet()
+  const id = PropertiesService.getScriptProperties().getProperty('SPREADSHEET_ID')
+  return id ? SpreadsheetApp.openById(id) : SpreadsheetApp.getActiveSpreadsheet()
 }
 
 // 整個檔案的修改時間，作為衝突比對的基準

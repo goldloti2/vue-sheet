@@ -354,6 +354,7 @@ export const useTablesStore = defineStore('tables', () => {
     flushing: queue.flushing,
     flushError: queue.flushError,
     conflict: queue.conflict,
+    edits: queue.edits,
     canSync,
     holdSync,
     ensureLoaded,

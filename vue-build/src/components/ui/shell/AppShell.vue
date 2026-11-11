@@ -11,12 +11,13 @@
   import NavDrawer from '@/components/ui/shell/NavDrawer.vue'
   import SortPanel from '@/components/ui/shell/SortPanel.vue'
   import { provideActionRunner } from '@/composables/shell/useActionRunner'
+  import { useAutoPush } from '@/composables/shell/useAutoPush'
   import { useCompactLayout } from '@/composables/shell/useCompactLayout'
   import { choose, confirmDialog, notice, notify, pickChoice } from '@/composables/shell/useDialogs'
   import { listControlsKey } from '@/composables/shell/useListControls'
   import { overlayOpenKey } from '@/composables/shell/useOverlay'
   import { appBarActionsKey, appBarHeadingKey, appBarSelectionKey } from '@/composables/shell/useShellActions'
-  import { appName } from '@/config/app'
+  import { appName, autoPushDelay } from '@/config/app'
   import { navigationCount } from '@/router'
   import { filterableColumns, hasActiveFilter } from '@/schema/filter'
   import { sortableColumns } from '@/schema/sort'
@@ -155,8 +156,12 @@
   const store = useTablesStore()
   const syncing = shallowRef(false)
 
-  // 先推送，再重新抓取。推送失敗時不重新抓取
+  // 先推送，再重新抓取。推送失敗時不重新抓取。同步中再次呼叫時不執行
   async function sync () {
+    if (syncing.value) {
+      return
+    }
+
     syncing.value = true
     try {
       if (await store.refresh()) {
@@ -183,6 +188,13 @@
       syncing.value = false
     }
   }
+
+  // 計時推送不通知、不詢問，失敗與衝突只由同步按鈕的圓點標示
+  useAutoPush(autoPushDelay, async () => {
+    if (!syncing.value) {
+      await store.refresh()
+    }
+  })
 
   // 有未推送的變更時，離開前提示使用者
   function warnUnsaved (event: BeforeUnloadEvent) {
@@ -297,7 +309,7 @@
         aria-label="同步"
         :disabled="!store.canSync"
         icon
-        :loading="syncing"
+        :loading="syncing || store.flushing"
         @click="sync"
       >
         <v-badge

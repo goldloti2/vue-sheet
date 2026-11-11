@@ -8,3 +8,6 @@ export const authMethod: AuthMethod = 'none'
 // 詳細頁欄位的排法：'side' 為左右並排，'stacked' 為名稱在上。單一頁面以 DetailPage 的 layout 覆寫
 export type DetailFieldLayout = 'side' | 'stacked'
 export const detailFieldLayout: DetailFieldLayout = 'side'
+
+// 計時推送：有未推送的變更，且最後一次修改後經過此秒數時，自動推送並重新抓取。null 為不啟用
+export const autoPushDelay: number | null = null

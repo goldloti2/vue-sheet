@@ -20,6 +20,8 @@ export function createQueue () {
   const knownModifiedTime = shallowRef<string | null>(null)
   // 發生衝突（Sheet 已被別處修改）。佇列保留，等待使用者選擇處理方式
   const conflict = shallowRef(false)
+  // 加入操作的次數，供計時推送判斷最後一次修改
+  const edits = shallowRef(0)
   // 進行中的推送，只供 flush 去除重複呼叫（畫面讀取 flushing）
   let flushPromise: Promise<boolean> | null = null
 
@@ -45,6 +47,7 @@ export function createQueue () {
 
   // 同一列的多次操作於寫入時合併，規則見 docs/topics/store.md
   function enqueue (table: TableKey, id: string, kind: PendingOp['kind'], values: Record<string, string>) {
+    edits.value++
     const queue = queueFor(table)
     const existing = queue.get(id)
 
@@ -138,5 +141,5 @@ export function createQueue () {
     flushError.value = null
   }
 
-  return { hasPending, flushing, flushError, conflict, knownModifiedTime, enqueue, kindOf, flush, fail, discard, snapshot, restore }
+  return { hasPending, flushing, flushError, conflict, edits, knownModifiedTime, enqueue, kindOf, flush, fail, discard, snapshot, restore }
 }

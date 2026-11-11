@@ -134,6 +134,14 @@ mutateBatch([
 - **表單層開啟時停用**（`store.canSync`）：`useFormLayers` 於有任何層時持有一個 `holdSync()`，全部關閉時釋放。持有以計數器實作
 - 佇列只存於記憶體中。有未推送的變更時，`beforeunload` 攔下關閉與重新整理
 
+**計時推送**由 `config/app.ts` 的 `autoPushDelay` 開啟，單位為秒，`null` 為不啟用。`AppShell` 以 `useAutoPush()` 計時，到時執行 `store.refresh()`：
+
+- 每次修改（`store.edits` 加一）重新計時。最後一次修改後經過設定的秒數，才推送並重新抓取
+- 不可同步時（`store.canSync` 為否）不計時。恢復可同步時重新計時
+- 推送失敗與衝突時不通知、不詢問，只由同步按鈕的圓點標示。使用者按下同步按鈕時，才顯示失敗的訊息或詢問如何處理衝突
+- 推送失敗時不重試，等到下一次修改才再次計時
+- 推送期間（`store.flushing`），同步按鈕顯示載入中。重新抓取期間不顯示
+
 ---
 
 ## 流程存檔點

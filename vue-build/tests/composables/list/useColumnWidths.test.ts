@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { layoutColumns } from '@/composables/list/useColumnWidths'
+import { layoutColumns, usableWidth } from '@/composables/list/useColumnWidths'
+
+describe('usableWidth', () => {
+  it('扣除左右外框後無條件捨去，不大於實際寬度', () => {
+    expect(usableWidth(412.6, 0.8, 0.8)).toBe(411)
+    expect(usableWidth(300, 1, 1)).toBe(298)
+  })
+})
 
 describe('layoutColumns', () => {
   it('只有最小欄時，各欄均分可用寬度', () => {

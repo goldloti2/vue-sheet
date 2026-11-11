@@ -66,6 +66,11 @@ export function layoutColumns (available: number, columns: readonly ColumnMeasur
   return widths
 }
 
+// 容器扣除左右外框的寬度，無條件捨去為整數。clientWidth 為四捨五入，可能大於實際寬度，刻意不使用。純函數
+export function usableWidth (boxWidth: number, borderLeft: number, borderRight: number): number {
+  return Math.floor(boxWidth - borderLeft - borderRight)
+}
+
 // 量測各欄不換行的內容寬並計算欄寬，資料或可用寬度改變時重算。每格的內容須包在行內的 .data-table__content 中
 export function useColumnWidths (
   wrapper: Ref<HTMLElement | null>,
@@ -73,6 +78,8 @@ export function useColumnWidths (
   deps: MaybeRefOrGetter<unknown>,
 ) {
   const widths = shallowRef<number[] | null>(null)
+  // 分配欄寬時使用的可用寬度，供表格判斷是否超出
+  const available = shallowRef(0)
 
   function measure () {
     const modes = toValue(widthsOf)
@@ -107,7 +114,9 @@ export function useColumnWidths (
       inner.style.whiteSpace = ''
     }
 
-    widths.value = layoutColumns(element.clientWidth, modes.map((width, index) => ({ width, content: content[index] })))
+    const box = getComputedStyle(element)
+    available.value = usableWidth(element.getBoundingClientRect().width, Number.parseFloat(box.borderLeftWidth), Number.parseFloat(box.borderRightWidth))
+    widths.value = layoutColumns(available.value, modes.map((width, index) => ({ width, content: content[index] })))
   }
 
   watch([() => toValue(widthsOf), () => toValue(deps)], () => nextTick(measure), { immediate: true, flush: 'post' })
@@ -123,5 +132,5 @@ export function useColumnWidths (
   }, { immediate: true })
   onBeforeUnmount(() => observer.disconnect())
 
-  return { widths }
+  return { widths, available }
 }

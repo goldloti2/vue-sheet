@@ -61,16 +61,16 @@
 
   const container = useTemplateRef<HTMLElement>('container')
   const columnModes = computed(() => resolvedColumns.value.map(column => props.widths?.[column.key] ?? 'default'))
-  const { widths: columnWidths } = useColumnWidths(container, columnModes, () => [props.rows, resolvedColumns.value])
+  const { widths: columnWidths, available } = useColumnWidths(container, columnModes, () => [props.rows, resolvedColumns.value])
 
   // 各欄寬度的加總超過可用寬度時依加總（可橫向捲動），否則撐滿
   const tableWidth = computed(() => {
     const widths = columnWidths.value
-    if (!widths || !container.value) {
+    if (!widths) {
       return undefined
     }
     const total = widths.reduce((sum, width) => sum + width, 0)
-    return total > container.value.clientWidth ? `${total}px` : '100%'
+    return total > available.value ? `${total}px` : '100%'
   })
 
   // 固定欄的 class 與位置，依欄的順序。左側位置為前面各欄寬度的加總

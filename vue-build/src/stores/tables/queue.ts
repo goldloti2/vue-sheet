@@ -21,8 +21,10 @@ export function createQueue () {
   const sending = reactive(new Map<TableKey, TableQueue>())
   const flushing = shallowRef(false)
   const flushError = shallowRef<string | null>(null)
-  // 上次自後端取得的檔案修改時間，推送時作為 since 比對
+  // 推送時作為 since 比對的檔案修改時間，為快取中各表的時間中最舊的一個
   const knownModifiedTime = shallowRef<string | null>(null)
+  // 快取中每張表的資料所對應的檔案修改時間
+  const tableTimes = new Map<TableKey, string>()
   // 發生衝突（Sheet 已被別處修改）。佇列保留，等待使用者選擇處理方式
   const conflict = shallowRef(false)
   // 加入操作的次數，供計時推送判斷最後一次修改
@@ -86,6 +88,18 @@ export function createQueue () {
     return [...sending.get(table) ?? [], ...pending.get(table) ?? []]
   }
 
+  // 套用一張表的抓取結果時呼叫。since 刻意取各表中最舊的時間：較新的表不得掩蓋較舊的表讀取之後的寫入
+  function recordFetch (table: TableKey, modifiedTime: string): void {
+    tableTimes.set(table, modifiedTime)
+    let oldest = modifiedTime
+    for (const time of tableTimes.values()) {
+      if (time < oldest) {
+        oldest = time
+      }
+    }
+    knownModifiedTime.value = oldest
+  }
+
   // 將 pending 併入 sending，順序依加入的先後（Map 保序）
   function takePending (): void {
     for (const [table, queue] of pending) {
@@ -134,7 +148,12 @@ export function createQueue () {
     try {
       const operations = toOperations()
       if (operations.length > 0) {
-        knownModifiedTime.value = await mutateBatch(operations, force ? undefined : knownModifiedTime.value ?? undefined)
+        const time = await mutateBatch(operations, force ? undefined : knownModifiedTime.value ?? undefined)
+        // 寫入成功後，快取中的每張表皆對應寫入後的 Sheet
+        for (const table of tableTimes.keys()) {
+          tableTimes.set(table, time)
+        }
+        knownModifiedTime.value = time
         sending.clear()
       }
       return true
@@ -169,5 +188,5 @@ export function createQueue () {
     flushError.value = null
   }
 
-  return { hasPending, flushing, flushError, conflict, edits, knownModifiedTime, enqueue, kindOf, opsOf, flush, fail, discard, snapshot, restore }
+  return { hasPending, flushing, flushError, conflict, edits, knownModifiedTime, recordFetch, enqueue, kindOf, opsOf, flush, fail, discard, snapshot, restore }
 }

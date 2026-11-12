@@ -78,10 +78,12 @@ function changedCells (cache, values) {
 
 // 整張表：捨棄沒有 id 的列，例如表尾的空列、手動留下的分隔列
 function readTable (table) {
+  // 修改時間刻意於讀取資料之前取得：讀取期間有其他寫入時，時間較舊，下次推送即判定為衝突
+  const time = modifiedTime()
   const cache = readSheet(table)
   const rows = cache.rows
     .filter(row => row[cache.idIndex] !== '')
     .map(row => rowObject(cache, row))
 
-  return { rows, modifiedTime: modifiedTime() }
+  return { rows, modifiedTime: time }
 }

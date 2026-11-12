@@ -2,7 +2,7 @@ import type { ChildRow, ParentRow } from '../../fixtures/backend/schema'
 import type { TableKey } from '@/schema'
 import type * as Backend from '@/services/mock/backend'
 import type { useTablesStore } from '@/stores/tables'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
 import { freshBackend, sheetRow } from '../../fixtures/backend/fresh'
 import { CHILDREN, NOTES, PARENTS } from '../../fixtures/backend/schema'
@@ -334,5 +334,41 @@ describe('同步', () => {
     await store.refresh()
     expect(await store.forcePush()).toBe(true)
     expect(sheetRow(backend, PARENTS, 'P-0002')).toMatchObject({ 方式: '郵寄', 備註: '別處' })
+  })
+})
+
+describe('衝突比對的時間', () => {
+  beforeEach(async () => {
+    await store.ensureLoaded(NOTES)
+    vi.useFakeTimers({ toFake: ['Date'] })
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  // 其中一張表重新抓取失敗，該表仍為別處寫入之前的資料
+  async function reloadWithOneFailure () {
+    const appScript = await import('@/services/appScript')
+    vi.spyOn(appScript, 'fetchTable').mockRejectedValueOnce(new Error('失敗'))
+    await store.reload()
+  }
+
+  it('各表的時間不同時，以最舊的時間比對，別處的寫入判定為衝突', async () => {
+    vi.setSystemTime(new Date(2099, 0, 1))
+    writeElsewhere()
+    await reloadWithOneFailure()
+    store.update(CHILDREN, 'C-0002', { note: '新' })
+    expect(await store.flush()).toBe(false)
+    expect(store.conflict).toBe(true)
+  })
+
+  it('推送成功後，各表的時間皆為推送後的時間', async () => {
+    store.update(CHILDREN, 'C-0002', { note: '新' })
+    vi.setSystemTime(new Date(2099, 0, 1))
+    expect(await store.flush()).toBe(true)
+    await reloadWithOneFailure()
+    store.update(CHILDREN, 'C-0003', { note: '再改' })
+    expect(await store.flush()).toBe(true)
   })
 })

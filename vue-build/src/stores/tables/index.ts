@@ -54,7 +54,7 @@ export const useTablesStore = defineStore('tables', () => {
     }
   })
 
-  // 抓取的列蓋上尚未推送的操作後存入快取。modifiedTime 為檔案層級的時間，每張表的值相同，推送時作為 since
+  // 抓取的列蓋上尚未推送的操作後存入快取。modifiedTime 為檔案層級的時間，由佇列記下，作為推送時的 since
   function apply (table: TableKey, { rows: fetched, modifiedTime }: Fetched) {
     deferred.delete(table)
     const byId = new Map(fetched.map(row => [row.id, row]))
@@ -66,7 +66,7 @@ export const useTablesStore = defineStore('tables', () => {
       }
     }
     rows[table] = [...byId.values()].map(row => attachGetters(table, row))
-    queue.knownModifiedTime.value = modifiedTime
+    queue.recordFetch(table, modifiedTime)
   }
 
   async function load (table: TableKey) {

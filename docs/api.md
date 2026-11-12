@@ -63,6 +63,7 @@
 **多裝置同時編輯**（已實測）：比對**整個試算表檔案**的 `modifiedTime`，不是逐列的 `updatedAt`。Sheets 沒有逐列的修改時間，若要維護，須由後端加上戳記並設定 `onEdit` 觸發器。
 
 - `fetchTable` 的回應帶有 `modifiedTime`（`DriveApp.getFileById(id).getLastUpdated()`），前端記下這個值
+- 後端於讀取資料之前取得 `modifiedTime`。讀取期間有其他寫入時，回傳的時間較舊，下一次推送即判定為衝突，不會覆蓋那次寫入
 - batch 的 payload 帶有 `since`。後端在 `LockService` 的鎖中與當時的值比對後再寫入，與全有全無使用同一把鎖：
   - 不一致時，回傳 `{ success: false, error: 'modified' }`，全部不寫入
   - 一致時，寫入並回傳新的 `modifiedTime`

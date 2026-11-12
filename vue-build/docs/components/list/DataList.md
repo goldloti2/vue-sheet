@@ -42,7 +42,7 @@
 | `row` | `Row` | **必填**，要顯示的那一列 |
 | `view` | `RowView<Row>` | **必填**，`defineView` 的回傳值 |
 | `to` | `string?` | 提供時整列為連結。未提供時為純顯示的一列 |
-| `selectable` | `boolean?` | 預設 `false`。開啟時才綁定長按的監聽，並禁止選取文字與拖曳 |
+| `selectable` | `boolean?` | 預設 `false`。開啟時才綁定長按的監聽，並禁止選取文字、拖曳與手機長按連結時的選單 |
 | `selectMode` | `boolean?` | 目前是否為多選模式 |
 | `selected` | `boolean?` | 這一列是否已選取 |
 | `current` | `boolean?` | dashboard 的面板開啟 `selects` 時，這一列是否為選取的那一列。選取的那一列左側有一條細邊，可與多選的淡底同時出現 |

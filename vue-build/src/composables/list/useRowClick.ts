@@ -57,9 +57,10 @@ export function useRowClick (options: UseRowClickOptions) {
     }
   }
 
-  // 未開啟多選時不綁長按用的 pointer 監聽，文字選取與拖曳維持原生行為
+  // 未開啟多選時不綁長按用的監聽，文字選取、拖曳與長按選單維持原生行為
   const pointerHandlers = computed(() => options.selectable()
     ? {
+        onContextmenu: longPress.onContextmenu,
         onPointercancel: longPress.onPointercancel,
         onPointerdown: longPress.onPointerdown,
         onPointerleave: longPress.onPointerleave,

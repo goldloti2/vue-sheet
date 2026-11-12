@@ -31,8 +31,9 @@
   z-index: 1;
 }
 
-/* 開啟長按多選時，禁止文字選取與拖曳 */
+/* 開啟長按多選時，禁止文字選取、拖曳與 iOS 長按連結的選單 */
 .list-row--no-select {
+  -webkit-touch-callout: none;
   -webkit-user-drag: none;
   user-select: none;
 }

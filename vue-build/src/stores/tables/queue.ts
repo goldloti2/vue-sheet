@@ -1,11 +1,14 @@
 import type { TableKey } from '@/schema'
 import type { BatchOperation } from '@/services/appScript'
 import { computed, reactive, shallowRef } from 'vue'
+import { schemas } from '@/schema'
+import { serializeRow } from '@/schema/types'
 import { ConflictError, mutateBatch } from '@/services/appScript'
 
+// values 以欄位的 key 為鍵，值為轉型後的值。推送時才以 serializeRow 轉為 Sheet 的字串
 export interface PendingOp {
   kind: 'create' | 'update' | 'delete'
-  values: Record<string, string>
+  values: Record<string, unknown>
 }
 
 // 一張表尚未推送的操作：id → 操作
@@ -14,6 +17,8 @@ export type TableQueue = Map<string, PendingOp>
 // 待推送內容的單一資料來源與推送狀態。流程存檔點由呼叫端以 snapshot、restore 處理
 export function createQueue () {
   const pending = reactive(new Map<TableKey, TableQueue>())
+  // 送出中或上次未寫入的一批。推送期間的修改另存於 pending，下一次推送開始時才併入
+  const sending = reactive(new Map<TableKey, TableQueue>())
   const flushing = shallowRef(false)
   const flushError = shallowRef<string | null>(null)
   // 上次自後端取得的檔案修改時間，推送時作為 since 比對
@@ -26,7 +31,7 @@ export function createQueue () {
   let flushPromise: Promise<boolean> | null = null
 
   const hasPending = computed(() => {
-    for (const queue of pending.values()) {
+    for (const queue of [...pending.values(), ...sending.values()]) {
       if (queue.size > 0) {
         return true
       }
@@ -34,21 +39,19 @@ export function createQueue () {
     return false
   })
 
-  function queueFor (table: TableKey): TableQueue {
-    const existing = pending.get(table)
+  function queueFor (queues: Map<TableKey, TableQueue>, table: TableKey): TableQueue {
+    const existing = queues.get(table)
     if (existing) {
       return existing
     }
 
     const created: TableQueue = new Map()
-    pending.set(table, created)
+    queues.set(table, created)
     return created
   }
 
   // 同一列的多次操作於寫入時合併，規則見 docs/topics/store.md
-  function enqueue (table: TableKey, id: string, kind: PendingOp['kind'], values: Record<string, string>) {
-    edits.value++
-    const queue = queueFor(table)
+  function merge (queue: TableQueue, id: string, kind: PendingOp['kind'], values: Record<string, unknown>) {
     const existing = queue.get(id)
 
     if (kind === 'delete') {
@@ -66,19 +69,42 @@ export function createQueue () {
     })
   }
 
-  // 此列尚未推送的操作種類，沒有時為 undefined
-  function kindOf (table: TableKey, id: string): PendingOp['kind'] | undefined {
-    return pending.get(table)?.get(id)?.kind
+  // 只保留 schema 中真實欄位的值
+  function enqueue (table: TableKey, id: string, kind: PendingOp['kind'], values: Record<string, unknown>) {
+    edits.value++
+    const columns = schemas[table].columns.filter(column => column.key in values)
+    merge(queueFor(pending, table), id, kind, Object.fromEntries(columns.map(column => [column.key, values[column.key]])))
   }
 
-  // 將整個佇列攤平為操作清單，順序依加入的先後（Map 保序）。所有表共用一個請求
+  // 此列尚未推送的操作種類，沒有時為 undefined。推送期間的修改優先
+  function kindOf (table: TableKey, id: string): PendingOp['kind'] | undefined {
+    return pending.get(table)?.get(id)?.kind ?? sending.get(table)?.get(id)?.kind
+  }
+
+  // 一張表尚未推送的操作，sending 在前、pending 在後，各自依加入的先後。供重新抓取後蓋回快取
+  function opsOf (table: TableKey): [string, PendingOp][] {
+    return [...sending.get(table) ?? [], ...pending.get(table) ?? []]
+  }
+
+  // 將 pending 併入 sending，順序依加入的先後（Map 保序）
+  function takePending (): void {
+    for (const [table, queue] of pending) {
+      const target = queueFor(sending, table)
+      for (const [id, op] of queue) {
+        merge(target, id, op.kind, op.values)
+      }
+    }
+    pending.clear()
+  }
+
+  // 將 sending 攤平為操作清單，值於此序列化。所有表共用一個請求
   function toOperations (): BatchOperation[] {
     const operations: BatchOperation[] = []
-    for (const [table, queue] of pending) {
+    for (const [table, queue] of sending) {
       for (const [id, op] of queue) {
         operations.push(op.kind === 'delete'
           ? { table, kind: 'delete', id }
-          : { table, kind: op.kind, id, values: op.values })
+          : { table, kind: op.kind, id, values: serializeRow(op.values, schemas[table]) })
       }
     }
     return operations
@@ -98,17 +124,18 @@ export function createQueue () {
     }
   }
 
-  // 以一個請求送出整批，成功時才清空佇列。失敗時不拋出，錯誤記於 flushError，衝突時另設 conflict
+  // 以一個請求送出整批，成功時才清空 sending。失敗時不拋出，錯誤記於 flushError，衝突時另設 conflict
   async function sendQueue (force: boolean): Promise<boolean> {
     flushing.value = true
     flushError.value = null
     conflict.value = false
+    takePending()
 
     try {
       const operations = toOperations()
       if (operations.length > 0) {
         knownModifiedTime.value = await mutateBatch(operations, force ? undefined : knownModifiedTime.value ?? undefined)
-        pending.clear()
+        sending.clear()
       }
       return true
     } catch (error) {
@@ -125,9 +152,9 @@ export function createQueue () {
     flushError.value = message
   }
 
-  // 供流程存檔點使用：保留目前的佇列，之後原樣還原
+  // 供流程存檔點使用：保留目前的 pending，之後原樣還原。流程進行中不推送，sending 不受流程影響
   function snapshot (table: TableKey): TableQueue {
-    return new Map(queueFor(table))
+    return new Map(queueFor(pending, table))
   }
 
   function restore (table: TableKey, saved: TableQueue): void {
@@ -137,9 +164,10 @@ export function createQueue () {
   // 供「放棄未推送的變更」使用：清空佇列，由呼叫端重新抓取
   function discard (): void {
     pending.clear()
+    sending.clear()
     conflict.value = false
     flushError.value = null
   }
 
-  return { hasPending, flushing, flushError, conflict, edits, knownModifiedTime, enqueue, kindOf, flush, fail, discard, snapshot, restore }
+  return { hasPending, flushing, flushError, conflict, edits, knownModifiedTime, enqueue, kindOf, opsOf, flush, fail, discard, snapshot, restore }
 }

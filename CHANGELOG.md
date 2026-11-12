@@ -17,6 +17,10 @@
 
 - `Config.gs` 的 `SPREADSHEET_ID` 常數刪除。使用其他試算表時，須於 Apps Script 的「專案設定 → 指令碼屬性」新增 `SPREADSHEET_ID`，再推送新的 `Sheets.gs`
 
+### 版本後修正
+
+- 修正：推送期間或重新抓取期間的修改，於重新抓取後從畫面消失，推送期間的修改也不會送出。現在推送期間的修改留在佇列中，等待下一次推送。重新抓取的列蓋上尚未推送的修改。表單開啟中或流程進行中抓取完成時，延後至恢復可同步時才套用。說明見 [vue-build/docs/topics/store.md](vue-build/docs/topics/store.md) 的「讀取」與「推送與同步」
+
 ## v1.13
 
 手機上的外觀調整。各項的數值見 [vue-build/docs/design/](vue-build/docs/design/)。

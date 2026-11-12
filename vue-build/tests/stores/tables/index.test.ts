@@ -3,6 +3,7 @@ import type { TableKey } from '@/schema'
 import type * as Backend from '@/services/mock/backend'
 import type { useTablesStore } from '@/stores/tables'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { nextTick } from 'vue'
 import { freshBackend, sheetRow } from '../../fixtures/backend/fresh'
 import { CHILDREN, NOTES, PARENTS } from '../../fixtures/backend/schema'
 
@@ -266,6 +267,47 @@ describe('同步', () => {
     expect(await store.refresh()).toBe(true)
     expect(child('C-0002')).not.toBe(before)
     expect(child('C-0002')?.note).toBe('新')
+  })
+
+  it('推送期間的修改：重新抓取後蓋回快取，其他欄位為 Sheet 的值', async () => {
+    store.update(CHILDREN, 'C-0002', { note: '新' })
+    const refreshing = store.refresh()
+    backend.mockBatch([{ table: CHILDREN, kind: 'update', id: 'C-0003', values: { 名稱: '別處' } }])
+    store.update(CHILDREN, 'C-0003', { note: '推送中' })
+    expect(await refreshing).toBe(true)
+    expect(child('C-0003')).toMatchObject({ name: '別處', note: '推送中' })
+    expect(child('C-0002')?.note).toBe('新')
+    expect(store.hasPending).toBe(true)
+  })
+
+  it('推送期間的新增與刪除：重新抓取後蓋回快取', async () => {
+    store.update(CHILDREN, 'C-0002', { note: '新' })
+    const refreshing = store.refresh()
+    store.create(CHILDREN, { code: 'C-0100', parent: 'P-0001', name: '新的', day: new Date(2022, 0, 2) })
+    store.remove(CHILDREN, 'C-0003')
+    await refreshing
+    expect(child('C-0100')).toMatchObject({ name: '新的', day: new Date(2022, 0, 2) })
+    expect(child('C-0003')).toBeUndefined()
+  })
+
+  it('重新抓取期間的修改：抓取完成後蓋回快取', async () => {
+    const reloading = store.reload()
+    store.update(CHILDREN, 'C-0003', { note: '抓取中' })
+    await reloading
+    expect(child('C-0003')?.note).toBe('抓取中')
+  })
+
+  it('不可同步時抓取完成的結果，恢復可同步時才套用', async () => {
+    const before = store.rows[CHILDREN]
+    const reloading = store.reload()
+    const release = store.holdSync()
+    await reloading
+    expect(store.rows[CHILDREN]).toBe(before)
+    store.update(CHILDREN, 'C-0003', { note: '表單' })
+    release()
+    await nextTick()
+    expect(store.rows[CHILDREN]).not.toBe(before)
+    expect(child('C-0003')?.note).toBe('表單')
   })
 
   it('同步被持有時 refresh 不推送', async () => {

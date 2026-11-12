@@ -2,10 +2,10 @@ import type { PendingOp, TableQueue } from './queue'
 import type { TableKey } from '@/schema'
 import type { Relation } from '@/schema/relations'
 import { defineStore } from 'pinia'
-import { computed, reactive, shallowReactive, shallowRef } from 'vue'
+import { computed, reactive, shallowReactive, shallowRef, watch } from 'vue'
 import { schemas } from '@/schema'
 import { cascadeRelations, childRelations, emptyParentRelations } from '@/schema/relations'
-import { allColumns, idColumnOf, serializeRow } from '@/schema/types'
+import { allColumns, idColumnOf } from '@/schema/types'
 import { isEmpty, validateRow } from '@/schema/validation'
 import { fetchTable } from '@/services/appScript'
 import { createQueue } from './queue'
@@ -23,6 +23,11 @@ interface FlowSnapshot {
   queue: Map<TableKey, TableQueue>
 }
 
+interface Fetched {
+  rows: HasId[]
+  modifiedTime: string
+}
+
 export const useTablesStore = defineStore('tables', () => {
   // 畫面的單一資料來源，包含已推送與未推送的變更，畫面無須區分
   const rows = shallowReactive<Partial<Record<TableKey, unknown[]>>>({})
@@ -38,6 +43,32 @@ export const useTablesStore = defineStore('tables', () => {
 
   const canSync = computed(() => activeFlow.value === null && syncHolds.value === 0)
 
+  // 不可同步時抓取完成的已載入表，恢復可同步時才套用。同一張表只保留最新的一次
+  const deferred = new Map<TableKey, Fetched>()
+
+  watch(canSync, value => {
+    if (value) {
+      for (const [table, fetched] of deferred) {
+        apply(table, fetched)
+      }
+    }
+  })
+
+  // 抓取的列蓋上尚未推送的操作後存入快取。modifiedTime 為檔案層級的時間，每張表的值相同，推送時作為 since
+  function apply (table: TableKey, { rows: fetched, modifiedTime }: Fetched) {
+    deferred.delete(table)
+    const byId = new Map(fetched.map(row => [row.id, row]))
+    for (const [id, op] of queue.opsOf(table)) {
+      if (op.kind === 'delete') {
+        byId.delete(id)
+      } else {
+        byId.set(id, { ...byId.get(id), ...op.values, id })
+      }
+    }
+    rows[table] = [...byId.values()].map(row => attachGetters(table, row))
+    queue.knownModifiedTime.value = modifiedTime
+  }
+
   async function load (table: TableKey) {
     const existing = pendingLoads.get(table)
     if (existing) {
@@ -50,10 +81,12 @@ export const useTablesStore = defineStore('tables', () => {
       loading[table] = !(table in rows)
       error[table] = null
       try {
-        const { rows: fetched, modifiedTime } = await fetchTable<HasId>(table)
-        rows[table] = fetched.map(row => attachGetters(table, row))
-        // 檔案層級的時間，每張表的值相同。推送時作為 since
-        queue.knownModifiedTime.value = modifiedTime
+        const fetched = await fetchTable<HasId>(table)
+        if (table in rows && !canSync.value) {
+          deferred.set(table, fetched)
+        } else {
+          apply(table, fetched)
+        }
       } catch (loadError) {
         error[table] = loadError instanceof Error ? loadError.message : String(loadError)
       } finally {
@@ -143,7 +176,7 @@ export const useTablesStore = defineStore('tables', () => {
   }
 
   // 佇列不處理流程，加入操作前先建立流程的存檔
-  function enqueue (table: TableKey, id: string, kind: PendingOp['kind'], values: Record<string, string>) {
+  function enqueue (table: TableKey, id: string, kind: PendingOp['kind'], values: Record<string, unknown>) {
     remember(table)
     queue.enqueue(table, id, kind, values)
   }
@@ -235,7 +268,7 @@ export const useTablesStore = defineStore('tables', () => {
     const created = attachGetters(table, { ...filled, id } as Row)
 
     patch(table, list => [...list, created])
-    enqueue(table, id, 'create', serializeRow(filled, schema))
+    enqueue(table, id, 'create', filled)
 
     return created
   }
@@ -267,7 +300,7 @@ export const useTablesStore = defineStore('tables', () => {
       updated = attachGetters(table, { ...(row as Row), ...changes, id } as Row)
       return updated
     }))
-    enqueue(table, id, 'update', serializeRow(changes, schema))
+    enqueue(table, id, 'update', changes)
     removeEmptyParents(leftParents)
 
     return updated

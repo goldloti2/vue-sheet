@@ -15,9 +15,14 @@ export function publishListOrder (table: TableKey, ids: readonly string[]): void
 
 const publishKey: InjectionKey<() => void> = Symbol('publishListOrder')
 
-// 列表提供畫面上的順序，其中的列被點擊時才發布（見 usePublishListOrder）
-export function provideListOrder (table: TableKey, ids: MaybeRefOrGetter<readonly string[]>): void {
-  provide(publishKey, () => publishListOrder(table, toValue(ids)))
+// 列表提供畫面上的順序，其中的列被點擊時才發布（見 usePublishListOrder）。表為 null 時不發布
+export function provideListOrder (table: MaybeRefOrGetter<TableKey | null>, ids: MaybeRefOrGetter<readonly string[]>): void {
+  provide(publishKey, () => {
+    const key = toValue(table)
+    if (key !== null) {
+      publishListOrder(key, toValue(ids))
+    }
+  })
 }
 
 // 列的點擊呼叫：發布所在列表的順序。不在提供順序的列表中時不做任何事

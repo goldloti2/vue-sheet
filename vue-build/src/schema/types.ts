@@ -1,10 +1,13 @@
+import type { TableKey } from './index'
+
 // 新增表單的初始值。函式於開啟表單時求值
 export type ColumnDefault<T> = T | (() => T)
 
-// 每張表的 Row 介面皆 extends 此介面。id 等於主鍵的值，$label 為 store 掛上的 getter（見 labelColumn）
+// 每張表的 Row 介面皆 extends 此介面。id 等於主鍵的值，$label 與 $table 為 store 掛上的 getter（見 labelColumn）
 export interface RowBase {
   id: string
   readonly $label: string
+  readonly $table: TableKey
 }
 
 // 每種欄位型別只於此處定義一次：值的型別與型別專屬的設定。真實與虛擬欄位皆由此推導

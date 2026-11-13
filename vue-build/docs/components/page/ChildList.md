@@ -10,6 +10,8 @@
 
 子列無須另外查詢。store 在父列上掛有 `$子表_欄位key` getter，子列已依子表的 `defaultSort` 排序，直接傳入即可。
 
+點擊一列時，此元件發布全部子列的順序，供詳細頁的上一列、下一列使用（見 [RecordNav](../record/RecordNav.md)）。順序包含超過 `limit` 而沒有顯示的子列。子列的表取自子列的 `$table` getter。
+
 子列置於 [ListLayout](../list/ListLayout.md) 中，與列表頁相同：deck 的列與表格貼齊畫面的左右，卡片四周留白。標題、沒有子列時的文字與按鈕與畫面的左右留白。
 
 ## Usage
@@ -44,7 +46,7 @@ const childView = defineView(__table__Schema, { title: '$label' })
 | prop | 型別 | 說明 |
 | --- | --- | --- |
 | `title` | `string` | **必填**，區塊的標題。列數以 [CountLabel](../list/CountLabel.md) 接在標題後面 |
-| `rows` | `readonly Row[]` | **必填**，全部的子列，即父列上的 `$子表_欄位key` getter，已依子表的 `defaultSort` 排序。超過 `limit` 的子列只是不顯示，仍須傳入。列數依全部的子列計算 |
+| `rows` | `readonly Row[]` | **必填**，全部的子列，即父列上的 `$子表_欄位key` getter，已依子表的 `defaultSort` 排序。超過 `limit` 的子列只是不顯示，仍須傳入。列數依全部的子列計算。須為 store 的列，複製出的物件沒有 `$table`，點擊時不發布順序，開發模式下以 console 警告 |
 | `limit` | `number?` | 最多先顯示幾列，預設 5。`0` 表示全部列出 |
 | `to` | `string?` | 「展開」前往的頁面。提供時一律顯示「展開」，不論子列是否超過 `limit` |
 | `actions` | `(PageAction \| null)[]?` | 排在「展開」旁的右下角，通常為「新增」。`null` 略過 |
@@ -71,7 +73,7 @@ slot 提供的是整批子列，表格可直接交給 `DataTable`：
 - 一條父子關聯一個檔案，同一個檔案服務所有的父列
 - 內容為：以 `useRecordPage` 取得父列，再以 `ListPage` 呈現 getter 中的子列，約 20 行
 
-`ListPage` 會發布這份順序。**從展開頁點進某一列時，上一列、下一列在同一個父列的子列之間切換**，不依子表整張表的順序。
+展開頁的 `ListPage` 同樣發布子列的順序。**從子表區塊或展開頁點進某一列時，上一列、下一列在同一個父列的子列之間切換**，不依子表整張表的順序。
 
 ## 備註
 

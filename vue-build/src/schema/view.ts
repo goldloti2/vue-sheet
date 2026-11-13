@@ -8,7 +8,7 @@ import { findColumn } from './types'
 // 視圖：一列的欄位置於版面的哪個位置，以及此列的動作。於頁面定義，交給版面元件（見 ROADMAP 的「頁面類型（對照 AppSheet）」）
 
 // schema 的欄位，以及每列皆有的系統成員（id、$label）
-type ViewKey<Row extends object> = RowKey<Row> | keyof RowBase
+type ViewKey<Row extends object> = RowKey<Row> | Exclude<keyof RowBase, '$table'>
 
 // 一組位置。未指定的位置為空。組合多個欄位時宣告為 virtualColumns
 interface FieldGroup<Row extends object> {

@@ -82,6 +82,7 @@ export function createRowGetters (rows: Partial<Record<TableKey, unknown[]>>) {
     }
 
     defineGetter(row, '$label', () => rowLabel(row, schema))
+    defineGetter(row, '$table', () => table)
 
     for (const column of allColumns(schema)) {
       if (column.type === 'ref') {

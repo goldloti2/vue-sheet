@@ -21,6 +21,12 @@
 - **修正：流程結尾以 `replace` 前往其他頁面時，畫面回到發起流程的頁面**。表單層的標記另記開啟時的網址，被 `replace` 帶到其他網址的標記視為沒有標記。表單層開啟中以 `replace` 前往其他頁面時（例如登入頁），表單層也會關閉。說明見 [vue-build/docs/topics/pages.md](vue-build/docs/topics/pages.md) 的「表單層」
 - 轉場的方向與種類改用 `viewTransition.ts` 的共用型別：`TransitionDirection`、`PanelTransitionKind`、`PanelTransitionMode`
 
+### 版本後修正
+
+- **修正：從子表區塊直接點進詳細頁時，沒有上一列、下一列**。`ChildList` 於點擊一列時發布全部子列的順序，包含超過 `limit` 而沒有顯示的子列。說明見 [vue-build/docs/components/page/ChildList.md](vue-build/docs/components/page/ChildList.md)
+- **store 於每一列掛上 `$table`**：這一列所屬的表。說明見 [vue-build/docs/topics/schema.md](vue-build/docs/topics/schema.md) 的「row 上的 getter」
+- `provideListOrder` 的表可以是 getter 或 `null`。表為 `null` 時不發布順序
+
 ## v1.14
 
 - **計時推送**：`config/app.ts` 的 `autoPushDelay` 設定秒數。有未推送的變更，且最後一次修改後經過這個秒數時，自動推送並重新抓取。失敗與衝突不通知，只由同步按鈕的圓點標示。預設為 `null`，不啟用。說明見 [vue-build/docs/topics/store.md](vue-build/docs/topics/store.md) 的「計時推送」

@@ -4,7 +4,7 @@
 - 順序來自**點擊一列時列表實際顯示的順序**，包括篩選、頁籤與分組。例如從「已出貨」頁籤進入，就只在已出貨的那幾列之間切換
 - 頭尾不循環：到頭時，該側的按鈕直接消失
 
-列表須先發布順序，此元件才有順序可用。`ListPage` 於點擊一列時發布。以下情況兩個按鈕皆不出現：
+列表須先發布順序，此元件才有順序可用。`ListPage` 與 [ChildList](../page/ChildList.md) 於點擊一列時發布。以下情況兩個按鈕皆不出現：
 - 沒有發布過順序
 - 目前這一列不在清單中，例如重新整理、直接貼上網址、從其他表的關聯連結進入
 
@@ -34,6 +34,8 @@ import { flattenGroups } from '@/schema/group'
 
 provideListOrder('__table__', computed(() => flattenGroups(groupedData.value).map(row => row.id)))
 ```
+
+`provideListOrder` 的表也可以是 getter，於點擊時才取值。表為 `null` 時不發布。
 
 不經由列的點擊時（例如圖表點擊一組），以 `publishListOrder(table, ids)` 直接發布。
 

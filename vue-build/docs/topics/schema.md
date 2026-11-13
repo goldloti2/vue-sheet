@@ -226,6 +226,7 @@ store 在產生每一列時掛上下列 getter，讀取方式與真實欄位相�
 ```ts
 row.withTax        // 虛擬欄位
 row.$label         // 這一列的名稱（labelColumn 指定的欄位，省略時為 id）
+row.$table         // 這一列所屬的表
 row.$parentKey     // ref 欄位指向的那一列（父列）
 row.$child_parent  // 指向這一列的子列陣列
 ```

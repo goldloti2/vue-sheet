@@ -1,8 +1,11 @@
-<script lang="ts" setup generic="Row extends { id: string }">
+<script lang="ts" setup generic="Row extends RowBase">
   import type { PageAction } from '@/composables/actions/useTableActions'
+  import type { TableKey } from '@/schema'
+  import type { RowBase } from '@/schema/types'
   import { computed } from 'vue'
   import CountLabel from '@/components/ui/list/CountLabel.vue'
   import ListLayout from '@/components/ui/list/ListLayout.vue'
+  import { provideListOrder } from '@/composables/navigation/useListOrder'
   import { useRunAction } from '@/composables/shell/useActionRunner'
 
   const props = withDefaults(defineProps<{
@@ -23,6 +26,18 @@
   }>()
 
   const shown = computed(() => props.limit > 0 ? props.rows.slice(0, props.limit) : [...props.rows])
+
+  // 子列的表取自 $table，不是 store 的列時為 null
+  function rowsTable (): TableKey | null {
+    const table = props.rows[0]?.$table ?? null
+    if (import.meta.env.DEV && table === null) {
+      console.warn('[ChildList] 子列沒有 $table，點擊時不發布上一列、下一列的順序。rows 須為 store 的列')
+    }
+    return table
+  }
+
+  // 點擊一列時發布全部子列的順序，不只是截斷後顯示的列
+  provideListOrder(rowsTable, () => props.rows.map(row => row.id))
 
   const shownActions = computed(() => (props.actions ?? []).filter(action => action !== null))
 

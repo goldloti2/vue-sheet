@@ -63,7 +63,7 @@ describe('子列', () => {
   })
 })
 
-describe('虛擬欄位與 $label', () => {
+describe('虛擬欄位、$label 與 $table', () => {
   it('虛擬欄位可讀取父列與子列', () => {
     expect(parent('P-0006').total).toBe(976 + 1090 + 1097)
     expect(child('C-0004').status).toBe('進行中')
@@ -73,6 +73,11 @@ describe('虛擬欄位與 $label', () => {
   it('$label 為 labelColumn 的顯示文字，labelColumn 可為虛擬欄位', () => {
     expect(child('C-0001').$label).toBe('物件一')
     expect(parent('P-0006').$label).toBe('物件六')
+  })
+
+  it('$table 為此列所屬的表', () => {
+    expect(child('C-0001').$table).toBe(CHILDREN)
+    expect(parent('P-0001').$children_parent[0].$table).toBe(CHILDREN)
   })
 
   it('labelColumn 的值為空時為 id', () => {

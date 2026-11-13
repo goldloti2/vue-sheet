@@ -1,5 +1,26 @@
 # 版本紀錄
 
+## v1.15
+
+- **電腦版的導覽**：
+  - 電腦版的導覽改為固定於左側、可收合為圖示列的側邊欄，預設收合。不顯示底部導覽列
+  - 底部導覽列的頁面列於側邊欄的最上方。側邊欄中與其重複的頁面不再列出
+  - App 名稱與「登出」固定，頁面清單超出高度時只有清單捲動。目前的頁面以主色標示
+  - App Bar 左側只在有上一頁時顯示返回鍵
+  - `RecordNav` 的左箭頭位於側邊欄的右側
+  - 說明見 [vue-build/docs/components/shell/NavDrawer.md](vue-build/docs/components/shell/NavDrawer.md)，數值見 [vue-build/docs/design/README.md](vue-build/docs/design/README.md) 的「導覽」
+- **電腦版的 FAB 不收合**：所有動作直接列出，每個動作旁顯示名稱
+- **儀表板的頁籤各自接線**：
+  - `DashboardPanel` 的 `tabs` 以頁籤的名稱對應各頁籤的 `table`、`scope`、`mark`、`selects`
+  - 每個頁籤各有一份輸出，名稱為「面板名稱/頁籤名稱」。切換頁籤時，其他頁籤保留最後的輸出
+  - 不同表的頁籤因此可以放在同一個面板中
+  - 說明見 [vue-build/docs/components/panel/DashboardPanel.md](vue-build/docs/components/panel/DashboardPanel.md) 的「各頁籤各自接線」，範本見 `template/pages/dashboard.vue`
+- **於背景載入所有的表**：首次導覽完成後，第一次位於須登入的頁面時，store 於背景載入所有的表。之後進入其他表的頁面時，無須等待抓取。說明見 [vue-build/docs/topics/store.md](vue-build/docs/topics/store.md) 的「讀取」
+- **同時送出的請求有上限**：超過的請求在前端排隊。說明見 [docs/api.md](docs/api.md) 的「共通」
+- **修正：第一次進入某一頁時，換頁動畫開始前畫面停頓**。首次導覽完成後，router 於背景下載所有頁面的程式
+- **修正：流程結尾以 `replace` 前往其他頁面時，畫面回到發起流程的頁面**。表單層的標記另記開啟時的網址，被 `replace` 帶到其他網址的標記視為沒有標記。表單層開啟中以 `replace` 前往其他頁面時（例如登入頁），表單層也會關閉。說明見 [vue-build/docs/topics/pages.md](vue-build/docs/topics/pages.md) 的「表單層」
+- 轉場的方向與種類改用 `viewTransition.ts` 的共用型別：`TransitionDirection`、`PanelTransitionKind`、`PanelTransitionMode`
+
 ## v1.14
 
 - **計時推送**：`config/app.ts` 的 `autoPushDelay` 設定秒數。有未推送的變更，且最後一次修改後經過這個秒數時，自動推送並重新抓取。失敗與衝突不通知，只由同步按鈕的圓點標示。預設為 `null`，不啟用。說明見 [vue-build/docs/topics/store.md](vue-build/docs/topics/store.md) 的「計時推送」

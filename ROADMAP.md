@@ -12,7 +12,9 @@
 - Vue 3 + TypeScript + Vuetify，unplugin-vue-router 檔案式路由，Pinia
 - `AppShell`：頂部的 App Bar（標題來自 `route.meta.title`）、底部導覽列與側邊欄。`meta.shell: false` 的頁面三者皆不顯示
 - 底部導覽列最多 5 項，其他的頂層頁面置於側邊欄（`NavDrawer`）。側邊欄的頁面可以分組，有標題的組可以展開與收合，最下方為登出
-- App Bar 左側的圖示依路由自動切換漢堡選單或返回箭頭
+- 電腦版的導覽為固定於左側、可收合為圖示列的側邊欄，不顯示底部導覽列
+- App Bar 左側的圖示依路由自動切換漢堡選單或返回箭頭。電腦版沒有漢堡選單，只在有上一頁時顯示返回箭頭
+- 首次導覽完成後，於背景下載所有頁面的程式
 - 頁面前進、後退的轉場動畫：
   - 方向依五層規則判定：網址相同時依瀏覽器歷史的前後 → 導覽列的順序 → 回到頂層 → 同一路由換 id 時依列表順序 → 瀏覽器歷史的前後
   - 以 View Transitions 截下換頁前後的畫面再左右滑動。App Bar 等外殼另外命名，不隨頁面滑動
@@ -93,6 +95,7 @@
 
 ### 資料存取
 - `stores/tables/`：每張表一份全 App 共用的快取，同一張表不重複呼叫 API
+- 第一次位於須登入的頁面時，於背景載入所有的表（`preloadAll`）
 - `useTableList`、`useSortedTableList`、`useTableRow`（同一個 `data/useTable.ts`）都讀取同一份快取
 - 寫入經過 store 的 `create`、`update`、`remove`、`removeMany`：修改快取並進入佇列，呼叫端無須手動 refresh
 - 待寫入佇列 `pending`（含合併規則）與手動推送。四個寫入 action 為同步，只修改快取與佇列
@@ -148,7 +151,29 @@
   - 看過的面板一直掛著，`v-window` 以 `v-show` 切換
   - `PageFab`、`registerSlot`（App Bar、底部動作）、`useListOrder` 判斷「是否在作用中」的條件皆為「KeepAlive 狀態 && 目前的面板」。因此一個頁籤放一整張表的列表、各自掛上自己的 FAB 與動作是可行的
   - 不在 `TabPage` 中的頁面一律視為目前的頁籤，既有的頁面無須修改
+  - 位於儀表板的面板中時，`DashboardPanel` 的 `tabs` 可使各頁籤各自接線，輸出名稱為「面板名稱/頁籤名稱」
   - 動作的兩個 watch 刻意分為 `pre`（清除離場的動作）與 `post`（設定進場的動作），同一輪切換時，順序才不會反過來變成空的
+
+### 頁面類型（對照 AppSheet）
+
+| AppSheet | 此框架的名稱 | 現況 |
+| --- | --- | --- |
+| deck | **deck** | ✅ `DataList`，每一列的動作按鈕為 `ViewActions` |
+| table | **table** | ✅ `DataTable` |
+| detail | **detail** | ✅ `DetailPage`，選用的標頭區塊為 `DetailHeader` |
+| form | **form** | ✅ 表單層，見 [vue-build/docs/topics/pages.md](vue-build/docs/topics/pages.md) 的「表單層」 |
+| card（小） | **profile** | ✅ `DataProfile` |
+| card（大） | **card** | ✅ `DataCard` |
+| gallery | **gallery** | ✅ `DataGallery` |
+| chart | **chart** | ✅ `ChartPage`、`DataChart`、`DataStat`，見 [vue-build/docs/topics/chart.md](vue-build/docs/topics/chart.md) |
+| dashboard（分頁） | **tab** | ✅ `TabPage` |
+| dashboard（全部顯示、連動） | **dashboard** | ✅ `DashboardPage`、`DashboardPanel`，見 [vue-build/docs/design/dashboard.md](vue-build/docs/design/dashboard.md) |
+| calendar | — | 暫不考慮。把資料當成事件放上日曆，通常依日期與時間欄位 |
+| map | — | 暫不考慮。把座標標在 Google 地圖上 |
+| onboarding | — | 暫不考慮。導覽頁 |
+
+- **視圖（view）**：deck、profile、card、gallery 與詳細頁的標頭，共用同一套「欄位與位置的對應」，實作於 `schema/view.ts`。view 定義於頁面，schema 本身不含 view。說明見 [vue-build/docs/components/list/DataList.md](vue-build/docs/components/list/DataList.md) 與 [DataCard.md](vue-build/docs/components/list/DataCard.md)
+- 各元件的用法見 `vue-build/docs/components/`，外觀與用途見 `vue-build/docs/design/`
 
 ### 搜尋、篩選與排序
 - **可搜尋、可排序的欄位是表層級的 key 清單**：`searchable: ['name', 'date', …]`、`sortable: [...]`，真實欄位與虛擬欄位皆可列入
@@ -265,6 +290,7 @@
 - 純記憶體，重新整理頁面後回到 CSV 的原始內容
 - `services/appScript.ts` 為對後端唯一的出入口，**真正的 fetch 已實作**：GET 讀取整張表、POST 送出 batch、拆開 `{ success }` 信封、把 `code: 'modified'` 轉成 `ConflictError`。未設定 `VITE_APPS_SCRIPT_URL` 時使用假後端，因此 clone 後不填任何設定即可執行。真後端穩定後，整個 `mock/` 可以刪除
 - POST 的 `Content-Type` 刻意為 `text/plain`，原因見 [docs/api.md](docs/api.md)
+- 同時送出的請求有上限，超過的請求在前端排隊（`services/limiter.ts`）
 
 ### 後端（Apps Script）
 
@@ -330,109 +356,6 @@
 - **列表的預設排序由頁面覆寫**（等確實需要時再實作）：
   - 欄位的順序已可由頁面的 `order` 覆寫，`defaultSort` 仍只有 schema 一份，同一張表在不同的列表頁無法有不同的預設排序
   - 做法同 `order`：schema 那一份作為預設，頁面經由 `useSortedTableList` 的參數覆寫
-
-### 頁面類型（對照 AppSheet）
-
-| AppSheet | 此框架的名稱 | 現況 |
-| --- | --- | --- |
-| deck | **deck** | ✅ 卡片式列表（`DataList`），含每一列的動作按鈕（`ViewActions`） |
-| table | **table** | ✅ `DataTable` |
-| detail | **detail** | ✅ 詳細頁，含選用的標頭區塊（`DetailHeader`），見下方 |
-| form | **form** | ✅ 新增、編輯頁 |
-| card（小） | **profile** | ✅ `DataProfile`，見下方 |
-| card（大） | **card** | ✅ `DataCard`，見下方 |
-| gallery | **gallery** | ✅ `DataGallery`，圖片加上標題的格狀排列，見下方 |
-| chart | **chart** | ✅ `ChartPage`、`DataChart`、`DataStat`，見下方 |
-| dashboard（分頁） | **tab** | ✅ `TabPage` |
-| dashboard（全部顯示、連動） | **dashboard** | ✅ `DashboardPage`，見下方 |
-| calendar | — | 把資料當成事件放上日曆，通常依日期與時間欄位。暫不考慮 |
-| map | — | 把座標標在 Google 地圖上。暫不考慮 |
-| onboarding | — | 導覽頁。暫不考慮 |
-
-**視圖（view）**：deck、profile、card、gallery 與詳細頁的標頭，共用同一套「欄位與位置的對應」，實作於 `schema/view.ts`。
-- `defineView(schema, {…})` 與 `defineCardView(schema, {…})` 回傳一個函數，傳入一列即回傳各位置的內容與該列的動作。欄位定義在建立時即查找完畢
-- view 定義於頁面並交給版面元件，schema 本身不含 view
-- 目前 deck（`DataList`）、profile（`DataProfile`）、card（`DataCard`）、gallery（`DataGallery`）與詳細頁的標頭（`DetailHeader`）皆已套用，card 以外皆使用 `defineView`
-
-view 的規則：
-- 一組位置（`FieldGroup`）：`title`、`subtitle`、`image`、`summary`，以及只有 deck 使用的 `aside`
-  - 每個位置皆可省略：省略的位置不顯示、不佔位置。已指定但這一列沒有值的位置保留，各列因此對齊
-  - 可填入欄位 key，或每一列皆有的 `id`、`$label`（`keyof RowBase`）
-  - 須合併多個欄位，或顯示父列、子列的資訊時，宣告為 `virtualColumns`
-- deck 的四個角：`title` 左上，`subtitle` 右上，`summary` 左下，`aside` 右下，`image` 為左側的縮圖
-- card 使用兩組（`defineCardView`）：`header` 為第 1 層（`image` 作為頭像），`body` 為第 2、3 層（`image` 作為大圖，`summary` 為摘要）。詳細頁的標頭相當於只有 `body` 一組，因此直接使用 `defineView`
-- 動作 `actions: (row) => (PageAction | null)[]` 與欄位定義於同一個 view，依位置排列：
-  - card 與詳細頁標頭的前兩個置於左側，後兩個置於右側，`null` 表示空位
-  - deck 與 profile 略過空位
-  - `PageAction` 新增 `display: 'icon' | 'text'`
-
-**deck 的動作按鈕**（✅ `ViewActions`）：
-- 置於右下角欄位的下一行，由左往右排列，整組靠右
-- 沒有動作時不佔高度。多選模式下隱藏
-- 按鈕為原生 `<button>` 加上圖示，不使用 `v-btn`，考量列數多時的實例成本（見 [vue-build/docs/components/view/ViewActions.md](vue-build/docs/components/view/ViewActions.md)）
-- ✅ 加入動作列前後的差異已量測，數字見 [vue-build/docs/perf.md](vue-build/docs/perf.md)
-
-**profile 與 card** 與 deck 的不同之處：一張張分開的卡片，有間隔，不是連在一起的清單。點擊卡片進入詳細頁，支援長按多選。
-- **profile**（✅ `DataProfile`）：
-  - 左側為圓形頭像，中間為標題與副標，右側的 ⋮ 選單收納動作
-  - 未指定頭像時不顯示頭像。只有一個動作時也收入選單
-  - 選單於第一次按下 ⋮ 時才建立（ViewActions 的 `variant="menu"`），每一列平時只有一個原生按鈕
-  - 間隔由卡片本身負責
-- **card**（✅ `DataCard`）：上下四層，未指定任何位置的那一層整層隱藏。已指定大圖但沒有圖片時，以灰色方塊佔位
-  1. 圓形頭像，以及標題與副標（沒有選單）
-  2. 圖片：固定 16:9，裁切填滿，載入前即確定高度
-  3. 標題、副標、摘要。欄位與第 1 層分別指定，摘要最多三行
-  4. 最多四個動作：左兩格、右兩格，每一格各自選用圖示或文字（ViewActions 的 `variant="slots"`，`null` 保留為空格）
-  - 多選時，勾選圖示疊於卡片左上角，不受各層有無內容影響
-  - `contain-intrinsic-size` 依出現的層加總出替代高度，以 inline style 指定
-
-**gallery**（✅ `DataGallery`）：格狀排列，`ListPage` 的 `layout="grid"`（`ListLayout`，分組時每一組各自排列）。手機上恰為兩欄，平板與桌面自動增加欄數。
-- 每一格固定 3:4，直角，帶有陰影：上方為正方形圖片，下方為標題與副標各一行，⋮ 選單置於右下角
-- 沒有圖片時，以同樣大小的灰色方塊佔位，格線才會對齊
-- 支援長按多選，勾選圖示疊於圖片左上角
-
-**詳細頁的標頭區塊**（✅ `DetailHeader`，由 `DetailPage` 的 `header` prop 開啟，其中每一項皆為選用）：
-- 置於 `#top` 之上、整頁最上方，顯示這一列的重要資訊
-- 結構為 card 去掉第 1 層：第 3 層的標題、副標、摘要疊在第 2 層的圖片上，第 4 層的動作接在圖片下方，不疊在圖上
-- 有圖片時：寬度貼齊畫面兩側，固定 16:9，裁切填滿，高度以 `40vh` 為上限。文字為白色，底下墊一層由透明至深色的漸層
-- 沒有圖片時：背景透明，寬度與欄位區相同，高度只有文字的高度
-
-**chart**（✅ v1.7。規則見 [vue-build/docs/topics/chart.md](vue-build/docs/topics/chart.md)，外觀與操作見 [vue-build/docs/design/chart.md](vue-build/docs/design/chart.md)）：以一張表的列畫一張圖表。
-- ✅ `defineChart` 的輸入型別，以及開發模式下的檢查（`schema/chart.ts`）
-- ✅ `compute`：分組、統計、排序，以及合併為「其他」
-- ✅ `DataChart`：Chart.js 的建立、更新與銷毀，以及顏色。Chart.js 延遲載入
-- ✅ `ChartPage`：載入狀態、錯誤、高度與點擊，以及範本 `template/pages/chart.vue`
-- ✅ 圖表忽略自己分組欄與系列欄上的條件，並為被選的組與系列加上高光
-- ✅ 點擊圖例寫入篩選，儀表板中點擊圖表寫入篩選
-- ✅ 沒有系列的 dataset，點擊圖例只看勾選的 dataset
-- ✅ 文字統計（`type: 'stat'`）：`DataStat` 以文字顯示每一組的每一個數值，數字可加「+」、單位與顏色
-- ✅ 以 `colors` 依名稱指定組或 dataset 的顏色，色名與條件式格式相同
-- ✅ 軸上的值皆為整數時，刻度只取整數
-- ✅ 直的數值軸，刻度間距的下限加大為約兩行字高
-- ✅ 自訂的統計：`stat` 可為以一組的列為參數、回傳數值的函數。第二個參數提供各組的列與此組的位置
-- ✅ 圖例與橫向長條圖的分組名稱放不下時換行
-- ✅ 文字統計置於儀表板的面板中時，以面板的外框為框（`usePanelBordered`）
-
-**tab**：一次只顯示一個面板，以頁籤切換，即現有的 `TabPage`。
-
-**dashboard**（✅ `DashboardPage`、`DashboardPanel`，外觀與操作見 [vue-build/docs/design/dashboard.md](vue-build/docs/design/dashboard.md)）：所有面板同時出現。
-- 手機與電腦皆以方格座標二維排版，手機寬 12 格，電腦寬 48 格。每個面板可指定寬與高的格數，或交由自動排版
-- 面板可就地展開為整頁
-- 面板之間的連動由頁面以 `useDashboardLinks()` 手動接線：
-  - 每個面板自動輸出選取的列與列出的列，其他面板以 `scope` 接收。列表只保留其中的列，詳細頁在剛好一列時顯示這一列
-  - 開啟 `selects` 的列表點擊即選取，不換頁。例如在列表點擊一個項目，旁邊的詳細面板即顯示該項目
-  - 選取的列不再列出時自動取消
-  - 列表以 `mark` 用較淡的細邊標示其他面板的列。例如詳細面板顯示所選子列的父列時，父表列表標示那一列
-- 每個面板以 `shared` 決定是否加入儀表板共用的搜尋、篩選與排序。預設不加入，面板有自己的一份
-- ✅ v1.8：重新設計面板之間的連動與篩選，並解除與頁籤頁不可互相嵌套的限制
-  - ✅ 頁籤列移出 App Bar，改畫於頁籤頁內容的最上方，捲動時固定於上緣。面板中的頁籤列固定於面板的上緣
-  - ✅ App Bar 的搜尋分層：關注的面板有自己的搜尋時，App Bar 操作這一份。失去關注時，回到儀表板共用的那一份
-  - ✅ 連動改由頁面手動接線：每個面板輸出選取的列與列出的列，其他面板以這些輸出作為輸入。取代 `interactive` 與 `via`
-  - ✅ 每個面板一個開關，決定是否加入儀表板共用的搜尋、篩選與排序。跨表的篩選改由接線傳遞
-  - ✅ 選取的列不再列出時自動取消。列表以 `mark` 標示其他面板的列。接線形成循環時，開發模式下於 console 警告
-  - ✅ App Bar 的篩選與排序按鈕只在表有可用的欄位時出現
-  - ✅ 展開的面板中，點擊列表與圖表照常進入詳細頁
-- 🔲 form 在窄面板中是否須調整版面，尚未確認
 
 ### 列表效能（剩下的部分）
 - 🔲 見 [vue-build/docs/perf.md](vue-build/docs/perf.md) 的「尚未進行的部分」

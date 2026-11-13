@@ -56,6 +56,15 @@ describe('載入', () => {
     expect(spy.mock.calls.filter(([table]) => table === PARENTS)).toHaveLength(1)
   })
 
+  it('preloadAll 載入所有的表，載入中的表不重複抓取', async () => {
+    const appScript = await import('@/services/appScript')
+    const spy = vi.spyOn(appScript, 'fetchTable')
+    await Promise.all([store.ensureLoaded(PARENTS), store.preloadAll()])
+    expect(new Set(Object.keys(store.rows))).toEqual(new Set([PARENTS, CHILDREN, NOTES]))
+    expect(spy.mock.calls.map(([table]) => table)).toHaveLength(3)
+    expect(new Set(spy.mock.calls.map(([table]) => table))).toEqual(new Set([PARENTS, CHILDREN, NOTES]))
+  })
+
   it('載入失敗時記錄錯誤，reload 時重新抓取', async () => {
     const appScript = await import('@/services/appScript')
     vi.spyOn(appScript, 'fetchTable').mockRejectedValueOnce(new Error('失敗'))

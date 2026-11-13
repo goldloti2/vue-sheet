@@ -158,6 +158,18 @@
   const store = useTablesStore()
   const syncing = shallowRef(false)
 
+  // 首次導覽完成後，第一次位於須登入的頁面時，於背景載入所有的表
+  const routerReady = shallowRef(false)
+  void router.isReady().then(() => {
+    routerReady.value = true
+  })
+  const stopPreload = watch(() => routerReady.value && !route.meta.public, signedIn => {
+    if (signedIn) {
+      stopPreload()
+      void store.preloadAll()
+    }
+  })
+
   // 先推送，再重新抓取。推送失敗時不重新抓取。同步中再次呼叫時不執行
   async function sync () {
     if (syncing.value) {

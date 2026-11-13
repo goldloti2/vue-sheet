@@ -122,6 +122,12 @@ export const useTablesStore = defineStore('tables', () => {
     ])
   }
 
+  // 載入所有的表。已載入與載入中的表不重複抓取
+  async function preloadAll (): Promise<void> {
+    const seen = new Set<TableKey>()
+    await Promise.all((Object.keys(schemas) as TableKey[]).map(table => ensureLoaded(table, seen)))
+  }
+
   // 表單頁作用中時持有一個，離開時釋放
   function holdSync (): () => void {
     syncHolds.value++
@@ -391,6 +397,7 @@ export const useTablesStore = defineStore('tables', () => {
     canSync,
     holdSync,
     ensureLoaded,
+    preloadAll,
     reload,
     refresh,
     flush,

@@ -22,6 +22,7 @@
 - 錯誤只回傳一句 `message`，不分類 error code。**例外只有前端須分辨的情況**：
   - `code: 'modified'`：衝突，見「資料一致性」
   - 認證用的兩個 code，見「認證與權限」
+- **前端同時送出的請求有上限**，超過的請求在前端排隊。Web App 以部署者的身分執行，所有使用者的請求共用部署者的同時執行上限。超過上限的請求由 Apps Script 直接回傳錯誤，不排隊。上限為 `vue-build/src/services/appScript.ts` 的 `MAX_CONCURRENT_REQUESTS`，預設為 6。
 - 部署後的網址放在環境變數 `VITE_APPS_SCRIPT_URL`（`.env`，不進版控，範本見 `.env.example`）。**未設定時使用假後端**，因此 clone 後不填任何設定即可執行
 
 ### 讀取

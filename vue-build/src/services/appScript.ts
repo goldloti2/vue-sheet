@@ -7,6 +7,7 @@ import type { TableKey } from '@/schema'
 import { schemas } from '@/schema'
 import { coerceRow } from '@/schema/types'
 import { clearToken, setToken, token } from './auth/token'
+import { createLimiter } from './limiter'
 import { mockAuthorize, mockBatch, mockList, mockLogin } from './mock/backend'
 import { AuthError, ConflictError } from './types'
 
@@ -14,6 +15,10 @@ export { AuthError, ConflictError } from './types'
 export type { ApiResponse, BatchOperation, LoginCredentials, SheetAction, TableData } from './types'
 
 const API_URL = import.meta.env.VITE_APPS_SCRIPT_URL
+
+// 同時送出的請求數上限（見 docs/api.md）
+const MAX_CONCURRENT_REQUESTS = 6
+const limit = createLimiter(MAX_CONCURRENT_REQUESTS)
 
 // 成敗一律依 body 的 success 判斷（見 docs/api.md）。只區分衝突與認證失敗，其他錯誤為一句訊息
 async function unwrap<T> (response: Response): Promise<T> {
@@ -76,10 +81,10 @@ async function trace<T> (label: string, shown: unknown, run: () => Promise<T>, s
   }
 }
 
-// 呼叫 API 的共同外殼：認證失敗時清除 token，router 隨即導向登入頁
+// 呼叫 API 的共同外殼：同時送出的請求數有上限。認證失敗時清除 token，router 隨即導向登入頁
 async function request<T> (label: string, shown: unknown, run: () => Promise<T>, shownResult?: (data: T) => unknown): Promise<T> {
   try {
-    return await trace(label, shown, run, shownResult)
+    return await limit(() => trace(label, shown, run, shownResult))
   } catch (error) {
     if (error instanceof AuthError) {
       clearToken()

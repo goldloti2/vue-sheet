@@ -30,19 +30,19 @@
 | **同步按鈕** | `AppShell` | 不屬於任何頁面 |
 | **頁籤列** | `TabPage` | 畫在 `TabPage` 的最上方，捲動時固定於 App Bar 的下緣 |
 | **內容區** | `pages/*.vue` | 換頁時左右滑動的即為此區 |
-| **側邊欄** | [`NavDrawer`](../components/shell/NavDrawer.md) | 項目為 `config/navigation.ts` 的 `drawerSections`。「登出」在 `config/app.ts` 的 `authMethod` 不是 `'none'` 時出現 |
+| **側邊欄** | [`NavDrawer`](../components/shell/NavDrawer.md) | 項目為 `config/navigation.ts` 的 `drawerSections`，電腦版另於最上方列出 `navItems`。「登出」在 `config/app.ts` 的 `authMethod` 不是 `'none'` 時出現 |
 | **篩選、排序抽屜** | `AppShell` 與 `FilterPanel`、`SortPanel` | 抽屜本身屬於 `AppShell`，兩個面板只提供內容，一次顯示一種（見 [search.md](search.md)） |
 | **FAB** | `PageFab` | 頁面或版型元件以 `fab` 交給 `PageFab` |
-| **底部導覽列** | `config/navigation.ts` | 項目為 `navItems`，最多 5 項。超過時只顯示前 5 項，開發模式下以 console 警告 |
+| **底部導覽列** | `config/navigation.ts` | 只有手機版有。項目為 `navItems`，最多 5 項。超過時只顯示前 5 項，開發模式下以 console 警告。電腦版的側邊欄也只列出前 5 項 |
 | **snackbar** | `notify()` | 全 App 同時只有一則，例如 `notify('已推送')`、`notify('推送失敗', 'error')`。第二個參數為 Vuetify 的 color |
 | **上一列、下一列的箭頭** | `RecordNav` | 由 `DetailPage` 放置 |
 
 對話框（`ConfirmDialog`、`FieldsDialog`）與上述位置無關，一律覆蓋於畫面中央。表單層覆蓋整個畫面，見「表單層」。
 
-- **左側圖示依目前的路由自動切換**為漢堡選單或返回箭頭：以 router 累計的導覽次數判斷是否確實有 App 內的上一頁，沒有時不顯示返回箭頭
+- **左側圖示依目前的路由自動切換**為漢堡選單或返回箭頭：以 router 累計的導覽次數判斷是否確實有 App 內的上一頁，沒有時不顯示返回箭頭。電腦版沒有漢堡選單，頂層頁面不顯示左側圖示
 - **頁面可以不使用外殼**：將 `definePage` 的 `meta.shell` 設為 `false`，App Bar、側邊欄與底部導覽列皆不顯示，整頁由頁面自行排版，例如登入頁 `pages/login.vue`
-- **側邊欄開啟後浮在內容上**，點擊側邊欄以外的地方或換頁後收起（見 [NavDrawer](../components/shell/NavDrawer.md)）
-- 🔲 **底部導覽列是否於電腦上隱藏**，待處理電腦版的體驗時再決定
+- **手機版的側邊欄開啟後浮在內容上**，點擊側邊欄以外的地方或換頁後收起（見 [NavDrawer](../components/shell/NavDrawer.md)）
+- **電腦版沒有底部導覽列**：底部導覽列的頁面列於固定在左側的側邊欄，側邊欄可收合為圖示列（見 [NavDrawer](../components/shell/NavDrawer.md)）
 
 ---
 

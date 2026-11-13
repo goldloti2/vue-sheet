@@ -1,7 +1,8 @@
 <script lang="ts" setup>
   import type { TableKey } from '@/schema'
   import { mdiMenuLeft, mdiMenuRight } from '@mdi/js'
-  import { onActivated, onDeactivated, shallowRef } from 'vue'
+  import { computed, onActivated, onDeactivated, shallowRef } from 'vue'
+  import { useLayout } from 'vuetify'
   import { useSiblingNav } from '@/composables/navigation/useListOrder'
 
   const props = defineProps<{
@@ -19,6 +20,10 @@
   onDeactivated(() => {
     isActive.value = false
   })
+
+  // 左箭頭位於電腦版側邊欄的右側，取自 Vuetify layout
+  const { mainRect } = useLayout()
+  const leftStyle = computed(() => ({ left: `${mainRect.value.left}px` }))
 </script>
 
 <template>
@@ -29,6 +34,7 @@
         aria-label="上一列"
         class="record-nav record-nav--left"
         rounded="0"
+        :style="leftStyle"
         variant="text"
         @click="goPrev"
       >
@@ -62,7 +68,6 @@
 }
 
 .record-nav--left {
-  left: 0;
   view-transition-name: record-prev;
 }
 

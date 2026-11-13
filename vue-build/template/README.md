@@ -91,7 +91,7 @@
    - 第一列為 Sheet 的表頭（對外的名稱），須與 schema 的 `sheetHeader` 或 `label` 相符
    - 須包含主鍵欄（`idColumn` 指向的欄位）的表頭
 
-4. **`src/config/navigation.ts`**：須加入導覽時才修改。`navItems` 為底部導覽列，最多 5 項。`drawerSections` 為側邊欄，依組列出。有 `title` 的組可展開與收合，`icon` 選填。兩處的項目寫法相同：
+4. **`src/config/navigation.ts`**：須加入導覽時才修改。`navItems` 為底部導覽列，最多 5 項，電腦版列於側邊欄的最上方。`drawerSections` 為側邊欄，依組列出。有 `title` 的組可展開與收合，`icon` 選填。兩處的項目寫法相同：
    ```ts
    { title: '範本', icon: mdiLabel, to: '/__table__' }
    ```

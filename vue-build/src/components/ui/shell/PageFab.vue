@@ -4,6 +4,7 @@
   import { computed, onActivated, onDeactivated, shallowRef } from 'vue'
   import { useLayout } from 'vuetify'
   import { useRunAction } from '@/composables/shell/useActionRunner'
+  import { useCompactLayout } from '@/composables/shell/useCompactLayout'
   import { useOverlayOpen } from '@/composables/shell/useOverlay'
   import { usePanelActive, usePanelFullPage } from '@/composables/shell/usePanelActive'
 
@@ -12,6 +13,10 @@
   }>()
 
   const shown = computed(() => actions.filter(action => action !== null))
+
+  // 手機版三個以上時收成一個按鈕。電腦版一律各自一個按鈕，旁邊顯示名稱（見 docs/design/README.md 的「FAB」）
+  const compact = useCompactLayout()
+  const collapsed = computed(() => compact.value && shown.value.length > 2)
 
   const { mainRect } = useLayout()
 
@@ -50,17 +55,19 @@
 <template>
   <Teleport to="body">
     <div v-if="isActive && !overlayOpen && shown.length > 0" class="page-fab" :style="offsetStyle">
-      <template v-if="shown.length <= 2">
-        <v-fab
-          v-for="action in shown"
-          :key="action.key"
-          :aria-label="action.label"
-          class="page-fab__fab"
-          :color="FAB_COLOR"
-          :icon="action.icon"
-          size="large"
-          @click="handleActionClick(action)"
-        />
+      <template v-if="!collapsed">
+        <div v-for="action in shown" :key="action.key" class="fab-action">
+          <span v-if="!compact" class="fab-action__label text-label-large">{{ action.label }}</span>
+
+          <v-fab
+            :aria-label="action.label"
+            class="page-fab__fab"
+            :color="FAB_COLOR"
+            :icon="action.icon"
+            size="large"
+            @click="handleActionClick(action)"
+          />
+        </div>
       </template>
 
       <v-fab

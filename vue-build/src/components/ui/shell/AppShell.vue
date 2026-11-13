@@ -37,7 +37,7 @@
   }
 
   interface AppShellProps {
-    // 底部導覽列，最多 BOTTOM_NAV_MAX 項
+    // 底部導覽列，最多 BOTTOM_NAV_MAX 項。電腦版列於側邊欄的最上方
     navItems?: AppNavItem[]
     // 側邊欄的頁面，依組列出
     drawerSections?: AppNavSection[]
@@ -55,11 +55,13 @@
   }
   const bottomItems = computed(() => props.navItems.slice(0, BOTTOM_NAV_MAX))
 
+  // 手機版的側邊欄是否開啟
   const drawer = shallowRef(false)
+  // 電腦版的側邊欄是否收合為圖示列。只在執行期間記住，預設收合
+  const rail = shallowRef(true)
 
-  // 底部導覽列的高度與圖示，手機與電腦不同（見 docs/design/README.md 的「導覽」）
+  // 底部導覽列只在手機版顯示，電腦版的頁面列於側邊欄
   const compact = useCompactLayout()
-  const bottomBar = computed(() => compact.value ? { height: 78, icon: 28 } : { height: 56, icon: 24 })
 
   const route = useRoute()
   const router = useRouter()
@@ -254,7 +256,8 @@
     </template>
 
     <template v-else>
-      <v-app-bar-nav-icon :icon="showBack ? mdiArrowLeft : undefined" @click="handleLeadingIconClick" />
+      <!-- 電腦版的側邊欄一律顯示，沒有選單鍵，只在需要時顯示返回鍵 -->
+      <v-app-bar-nav-icon v-if="compact || showBack" :icon="showBack ? mdiArrowLeft : undefined" @click="handleLeadingIconClick" />
       <v-app-bar-title>{{ title }}</v-app-bar-title>
     </template>
 
@@ -360,7 +363,13 @@
 
   <v-snackbar v-model="notice.open" :color="notice.color">{{ notice.text }}</v-snackbar>
 
-  <NavDrawer v-if="showShell" v-model:open="drawer" :sections="drawerSections" />
+  <NavDrawer
+    v-if="showShell"
+    v-model:open="drawer"
+    v-model:rail="rail"
+    :nav-items="bottomItems"
+    :sections="drawerSections"
+  />
 
   <v-main>
     <slot />
@@ -368,11 +377,11 @@
 
   <!-- 按鈕平分寬度，上限為 Vuetify 預設的最大寬。高度、圖示與選取的樣式見 docs/design/README.md 的「導覽」 -->
   <v-bottom-navigation
-    v-if="showShell"
+    v-if="showShell && compact"
     class="shell-bottom-bar shell-bottom-bar--nav"
     color="primary"
     grow
-    :height="bottomBar.height"
+    height="78"
     :model-value="route.path"
   >
     <v-btn
@@ -382,7 +391,7 @@
       :to="item.to"
       :value="item.to"
     >
-      <v-icon :class="{ 'shell-bottom-bar__icon--spaced': compact }" :icon="item.icon" :size="bottomBar.icon" />
+      <v-icon class="shell-bottom-bar__icon" :icon="item.icon" size="28" />
       <span class="shell-bottom-bar__label">{{ item.title }}</span>
     </v-btn>
   </v-bottom-navigation>
@@ -408,7 +417,7 @@
   color: rgba(var(--v-theme-on-surface), var(--v-medium-emphasis-opacity));
 }
 
-.shell-bottom-bar__icon--spaced {
+.shell-bottom-bar__icon {
   margin-bottom: 6px;
 }
 

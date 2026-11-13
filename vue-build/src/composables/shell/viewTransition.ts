@@ -4,6 +4,11 @@
 export type TransitionKind = 'page' | 'panel'
 export type TransitionDirection = 'forward' | 'back'
 
+// dashboard 面板內轉場的種類：fade 用於點擊，forward 與 back 用於上一列、下一列
+export type PanelTransitionKind = 'fade' | TransitionDirection
+// 面板內轉場進行中的命名方式：fade 時各面板各自命名，slide 時只有展開的面板命名
+export type PanelTransitionMode = 'fade' | 'slide'
+
 export interface PendingTransition {
   // DOM 已更新時呼叫，截取新畫面並播放
   finish: () => void

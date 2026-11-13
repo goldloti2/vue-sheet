@@ -1,3 +1,4 @@
+import type { TransitionDirection } from '@/composables/shell/viewTransition'
 import type { TableKey } from '@/schema'
 import type { ComputedRef, InjectionKey, MaybeRefOrGetter } from 'vue'
 import { computed, inject, provide, reactive, toValue } from 'vue'
@@ -54,7 +55,7 @@ export function useSiblingNav (table: TableKey, id: MaybeRefOrGetter<string>): S
     }
   })
 
-  function go (target: string | null, direction: 'forward' | 'back') {
+  function go (target: string | null, direction: TransitionDirection) {
     if (!target) {
       return
     }
@@ -72,7 +73,7 @@ export function useSiblingNav (table: TableKey, id: MaybeRefOrGetter<string>): S
 }
 
 // 供 router 判斷同一個路由切換 id 時的動畫方向
-export function siblingDirection (fromId: string, toId: string): 'forward' | 'back' | null {
+export function siblingDirection (fromId: string, toId: string): TransitionDirection | null {
   for (const order of orders.values()) {
     const from = order.indexOf(fromId)
     const to = order.indexOf(toId)

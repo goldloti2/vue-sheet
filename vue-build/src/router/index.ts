@@ -4,7 +4,7 @@
  * Automatic routes for ./src/pages/*.vue
  */
 
-import type { PendingTransition } from '@/composables/shell/viewTransition'
+import type { PendingTransition, TransitionDirection } from '@/composables/shell/viewTransition'
 // Composables
 import type { RouteLocationNormalized, RouteLocationRaw } from 'vue-router'
 import { nextTick, shallowRef, watch } from 'vue'
@@ -169,7 +169,7 @@ router.afterEach((to, from) => {
   const fromNav = navIndexOf(from.path)
   const historyDir = wentBack ? 'back' : 'forward'
 
-  let dir: 'forward' | 'back'
+  let dir: TransitionDirection
   if (to.fullPath === from.fullPath) {
     dir = historyDir
   } else if (toNav === -1) {

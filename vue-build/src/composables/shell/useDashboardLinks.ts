@@ -1,3 +1,4 @@
+import type { TransitionDirection } from '@/composables/shell/viewTransition'
 import type { TableKey } from '@/schema'
 import type { InjectionKey } from 'vue'
 import { inject, reactive, shallowReactive } from 'vue'
@@ -347,7 +348,7 @@ export interface DashboardPanelContext {
   // 詳細頁的上一列與下一列所依的順序：值為列表的選取時，為該列表列出的列。推導出的值為 null
   recordOrder: () => readonly string[] | null
   // 切換詳細頁顯示的列：移動來源列表的選取
-  goRecord: (id: string, direction: 'forward' | 'back') => void
+  goRecord: (id: string, direction: TransitionDirection) => void
   // 頁籤自己的接線，由 TabPanel 取得。面板的 tabs 中沒有該頁籤時為 null
   forTab: (tab: string) => DashboardPanelContext | null
 }

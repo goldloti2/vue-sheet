@@ -3,6 +3,7 @@
   import type { PanelRequest, PanelSize } from '@/components/ui/panel/placePanels'
   import type { PageAction } from '@/composables/actions/useTableActions'
   import type { DashboardLinks } from '@/composables/shell/useDashboardLinks'
+  import type { PanelTransitionKind, PanelTransitionMode } from '@/composables/shell/viewTransition'
   import { computed, inject, nextTick, onBeforeUnmount, onMounted, provide, shallowReactive, shallowRef, useTemplateRef } from 'vue'
   import { useRouter } from 'vue-router'
   import { AUTO_ROWS_MAX, COLS, dashboardKey, GAP } from '@/components/ui/panel/dashboardContext'
@@ -60,7 +61,7 @@
 
   const panels = shallowReactive<DashboardPanelEntry[]>([])
   const focused = shallowRef<string | null>(null)
-  const panelTransition = shallowRef<'fade' | 'slide' | null>(null)
+  const panelTransition = shallowRef<PanelTransitionMode | null>(null)
 
   function firstFramed (): string | null {
     return panels.find(entry => entry.framed)?.name ?? null
@@ -211,7 +212,7 @@
   registerSlot(listControlsKey, () => focusedEntry.value?.controls.value ?? sharedControls.value, null)
 
   // 面板內的轉場：先為面板命名並等待 DOM 更新，舊畫面才截得到名稱。轉場進行中再有選取時直接套用
-  async function transition (kind: 'fade' | 'forward' | 'back', update: () => void) {
+  async function transition (kind: PanelTransitionKind, update: () => void) {
     if (!canAnimate() || panelTransition.value) {
       update()
       return

@@ -1,4 +1,5 @@
 import type { DashboardPanelContext, Link, LinksState } from '@/composables/shell/useDashboardLinks'
+import type { PanelTransitionKind } from '@/composables/shell/viewTransition'
 import type { TableKey } from '@/schema'
 import { computed } from 'vue'
 
@@ -12,7 +13,7 @@ export interface PanelWiring {
 
 export interface PanelContextOptions {
   links: LinksState
-  transition: (kind: 'fade' | 'forward' | 'back', update: () => void) => void
+  transition: (kind: PanelTransitionKind, update: () => void) => void
   // 輸出的名稱：面板為面板的 name，頁籤為「面板/頁籤」。警告中也以此稱呼
   name: string
   wiring: () => PanelWiring

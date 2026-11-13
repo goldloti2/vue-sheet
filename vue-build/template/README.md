@@ -58,7 +58,7 @@
 | `pages/_ref/list.vue` | `src/pages/__table__/_ref/__Table__List.vue` | **選用**：只供其他頁面引用的列表，不產生路由。以 `status` 或 `scope` 傳入條件，供 `tab-list.vue`、dashboard 或其他頁面使用 |
 | `pages/detail.vue` | `src/pages/__table__/[id]/index.vue` | 詳細頁 → `/__table__/:id` |
 | `pages/child-list.vue` | `src/pages/__parent__/[id]/__table__.vue` | **選用**：父表詳細頁中子表區塊的「展開」頁 → `/__parent__/:id/__table__`。一條父子關聯一個檔案 |
-| `pages/dashboard.vue` | `src/pages/dashboard.vue`（檔名可自訂） | **選用**：同時顯示多個面板的總覽頁 → `/dashboard`。<br>・範本為父表列表、父表詳細與子表列表三個面板，並以 `useDashboardLinks()` 接線<br>・列表使用各表的 `_ref/list.vue`<br>・須加入底部導覽列或側邊欄時，另外加至 `src/config/navigation.ts` |
+| `pages/dashboard.vue` | `src/pages/dashboard.vue`（檔名可自訂） | **選用**：同時顯示多個面板的總覽頁 → `/dashboard`。<br>・範本為父表列表、父表詳細、子表列表與頁籤面板四個面板，並以 `useDashboardLinks()` 接線<br>・頁籤面板以 `TabPage` 放兩張表的列表，各頁籤以 `DashboardPanel` 的 `tabs` 各自接線<br>・列表使用各表的 `_ref/list.vue`<br>・須加入底部導覽列或側邊欄時，另外加至 `src/config/navigation.ts` |
 | `pages/chart.vue` | `src/pages/__table__-chart.vue`（檔名可自訂） | **選用**：一張圖表的頁面 → `/__table__-chart`。<br>・範本為各狀態的列數與金額的總和，長條加折線<br>・也可改為 `_ref/` 中的元件，置於 dashboard 的面板或頁籤頁的頁籤<br>・須加入底部導覽列或側邊欄時，另外加至 `src/config/navigation.ts` |
 
 > 路由為檔案式（unplugin-vue-router），檔案放進 `pages/` 即自動生效，無須維護路由表。

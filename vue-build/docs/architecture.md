@@ -49,7 +49,8 @@ src/
                        useActionSlot（登記機制，以及容器收下內容登記的 relaySlot）、useShellActions（App Bar、多選的出口）、
                        useFormLayers、formLayerState（表單層，見 docs/topics/pages.md）、
                        useListControls、useSharedListControls（TabPage 與 DashboardPage 中的列表共用搜尋）、
-                       useDashboardLinks（dashboard 的連動中心與面板的輸入、輸出）、useCompactLayout、
+                       useDashboardLinks（dashboard 的連動中心與面板的輸入、輸出）、
+                       panelContext（面板與頁籤共用的接線）、useCompactLayout、
                        viewTransition（換頁與面板內轉場共用的函數）、useCurrentTab、usePanelActive（含 usePanelVisible）、
                        useOverlay、useActionRunner、useDialogs（confirm、notify）、useAskFields
     navigation/        路由的接力：useRouteId、useListOrder、useFlow

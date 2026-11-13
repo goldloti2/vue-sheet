@@ -1,10 +1,12 @@
 <script lang="ts" setup>
   import type { DashboardContext } from '@/components/ui/panel/dashboardContext'
+  import type { PanelWiring } from '@/composables/shell/panelContext'
   import type { Link } from '@/composables/shell/useDashboardLinks'
   import type { TableKey } from '@/schema'
   import { mdiArrowExpand } from '@mdi/js'
   import { computed, inject, onActivated, onBeforeUnmount, onMounted, provide, shallowRef, useTemplateRef, watch } from 'vue'
   import { AUTO_ROWS_MAX, dashboardKey } from '@/components/ui/panel/dashboardContext'
+  import { createPanelContext } from '@/composables/shell/panelContext'
   import { relaySlot } from '@/composables/shell/useActionSlot'
   import { dashboardPanelKey } from '@/composables/shell/useDashboardLinks'
   import { listControlsKey } from '@/composables/shell/useListControls'
@@ -13,7 +15,7 @@
   import { appBarSelectionKey } from '@/composables/shell/useShellActions'
 
   // dashboard 的一個面板：小外殼、關注點，以及面板內容各項登記生效的時機（見 docs/components/panel/DashboardPanel.md）
-  const { name, title, frame = true, table, shared = false, selects = false, scope = null, mark = null } = defineProps<{
+  const { name, title, frame = true, table, shared = false, selects = false, scope = null, mark = null, tabs } = defineProps<{
     // 對應 DashboardPage 的 layout，也是連動中心中此面板的名稱
     name: string
     // 小外殼上的標題
@@ -30,6 +32,8 @@
     scope?: Link | null
     // 列表中以另一種顏色標示的列，例如 links.shownOf(...) 取得詳細面板顯示的列。沒有條件時不標示
     mark?: Link | null
+    // 面板中 TabPage 的各頁籤各自接線：頁籤的名稱 → 該頁籤的 table、selects、scope 與 mark。各頁籤的輸出名稱為「面板/頁籤」
+    tabs?: Record<string, PanelWiring>
   }>()
 
   const injected = inject(dashboardKey)
@@ -44,55 +48,20 @@
     console.warn(`[DashboardPanel] ${name}：name 只能使用英文字母、數字、_ 與 -`)
   }
 
-  // 等待面板補上表的值，以面板的 table 算出列。須與面板的表相同
-  function settle (link: Link | null, input: string): Link | null {
-    if (link?.resolve && !table && import.meta.env.DEV) {
-      console.warn(`[DashboardPanel] ${name}：${input} 中有未指定 within 的 childrenOf，面板須指定 table`)
-    }
-    const settled = link?.resolve ? (table ? link.resolve(table) : null) : link
-    if (import.meta.env.DEV && settled?.table && table && settled.table !== table) {
-      console.warn(`[DashboardPanel] ${name}：${input} 為 ${settled.table} 的列，面板的表為 ${table}`)
-    }
-    return settled
+  // 設了 tabs 時，面板本身沒有輸入與輸出，各頁籤以自己的接線輸出
+  if (import.meta.env.DEV && tabs && (selects || scope || mark)) {
+    console.warn(`[DashboardPanel] ${name}：設了 tabs 時，selects、scope 與 mark 寫於各頁籤`)
   }
 
-  const scopeLink = computed(() => settle(scope, 'scope'))
-  const scopeTest = computed(() => {
-    const ids = scopeLink.value?.ids
-    if (!ids) {
-      return null
-    }
-    const kept = new Set(ids)
-    return (row: object) => kept.has((row as { id: string }).id)
-  })
-  // 沒有條件時不標示任何列
-  const markedIds = computed(() => new Set(settle(mark, 'mark')?.ids))
-
-  // 面板的輸入與輸出，由 ListPage、ChartPage、useListPage、useRecordPage 與詳細頁的導覽讀取
-  const links = dashboard.links
-  provide(dashboardPanelKey, {
+  // 面板的輸入與輸出，由 ListPage、ChartPage、useListPage、useRecordPage 與詳細頁的導覽讀取。頁籤的接線由 TabPanel 以 forTab 取得
+  provide(dashboardPanelKey, createPanelContext({
+    links: dashboard.links,
+    transition: dashboard.transition,
+    name,
+    wiring: () => ({ table, selects, scope, mark }),
     shared: () => shared,
-    selects: () => selects,
-    selected: () => links.output(name)?.selected ?? null,
-    toggle: id => dashboard.transition('fade', () => links.select(name, links.output(name)?.selected === id ? null : id)),
-    show: (shownTable, ids) => links.show(name, shownTable, ids),
-    scope: () => scopeTest.value,
-    marked: id => markedIds.value.has(id),
-    recordId: () => {
-      const ids = scopeLink.value?.ids
-      return ids?.length === 1 ? ids[0]! : ''
-    },
-    recordOrder: () => {
-      const from = scopeLink.value?.from
-      return from ? links.output(from)?.shown ?? null : null
-    },
-    goRecord: (id, direction) => {
-      const from = scopeLink.value?.from
-      if (from && links.output(from)?.selected !== id) {
-        dashboard.transition(direction, () => links.select(from, id))
-      }
-    },
-  })
+    tabs: () => tabs,
+  }))
 
   // 面板內容的多選出口與搜尋先交到此處，由 DashboardPage 只取關注面板的那一份登記
   const selection = relaySlot(appBarSelectionKey, null)
@@ -103,7 +72,7 @@
   const controls = computed(() => relayedControls.value ?? ownControls?.value ?? null)
 
   const measuredRows = shallowRef<number | null>(null)
-  onBeforeUnmount(dashboard.register({ name, title: title ?? '', framed: frame, table, measuredRows, selection, controls }))
+  onBeforeUnmount(dashboard.register({ name, title: title ?? '', framed: frame, table, tabs: () => tabs ? Object.keys(tabs) : null, measuredRows, selection, controls }))
 
   const active = computed(() => dashboard.focused.value === name)
   const expanded = computed(() => dashboard.expanded.value === name)

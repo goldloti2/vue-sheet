@@ -13,7 +13,7 @@
 
 ## Usage
 
-範本見 `template/pages/dashboard.vue`：父表列表、父表詳細與子表列表三個面板，並以連動中心接線。
+範本見 `template/pages/dashboard.vue`：父表列表、父表詳細、子表列表，以及以頁籤放兩張表的列表的面板，共四個面板，並以連動中心接線。頁籤面板的各頁籤以 `tabs` 各自接線。
 
 ## Props
 
@@ -86,6 +86,7 @@
 | `shown` | 列出的列，依顯示的順序。詳細頁為顯示的那一列，只顯示欄位名稱時為零列 | `ListPage`、`ChartPage` 與 `DetailPage` |
 
 - 頁籤中的列表、圖表與詳細頁只在目前的頁籤時輸出。載入中不輸出
+- 面板設了 `tabs` 時，面板本身沒有輸出。各頁籤以「面板/頁籤」為名各自輸出，例如 `selectionOf('lists/第一頁')`。切到其他頁籤後，原頁籤的輸出保留最後的值（見 [DashboardPanel](DashboardPanel.md) 的「各頁籤各自接線」）
 - 不使用 `ListPage`、`ChartPage` 或 `DetailPage` 的內容沒有輸出
 
 ### 面板的輸入
@@ -93,6 +94,8 @@
 輸入為 `DashboardPanel` 的 prop（見 [DashboardPanel](DashboardPanel.md)），值皆為小工具的回傳值：
 - `scope`：面板中的內容依種類使用。列表只保留其中的列，詳細頁在剛好一列時顯示這一列
 - `mark`：列表以另一種顏色標示其中的列，不影響列出哪些列
+
+面板設了 `tabs` 時，輸入改寫於 `tabs` 中各頁籤的接線，只作用於該頁籤。
 
 ### 小工具
 
@@ -137,6 +140,9 @@
   - 面板收到的值不是面板的表
   - 來源的字串不是表名
   - `selectionOf` 或 `shownOf` 的面板名稱不存在
+  - 「面板/頁籤」的頁籤不在該面板的 `tabs` 中
+  - 以面板的名稱取得設了 `tabs` 的面板的值
+  - 面板設了 `tabs`，又設了 `selects`、`scope` 或 `mark`
   - 以 `shownOf` 接線形成循環：一個面板列出的列在同一輪中改變 10 次即警告。`selectionOf` 可以雙向接線，選取只由點擊改變
 
 ### 選取

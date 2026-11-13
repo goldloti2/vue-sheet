@@ -12,6 +12,8 @@ export interface DashboardPanelEntry {
   // 有小外殼才能成為關注點
   framed: boolean
   table?: TableKey
+  // 各自接線的頁籤名稱。沒有設 tabs 時為 null
+  tabs: () => readonly string[] | null
   // 手機自動排版時依內容量得的格數（最多 AUTO_ROWS_MAX），尚未量得時為 null
   measuredRows: Ref<number | null>
   // 面板內容登記的多選出口，不為 null 時正在多選。多選期間關注點不移動

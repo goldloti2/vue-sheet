@@ -31,12 +31,20 @@
     console.warn('DashboardPage 不可嵌套自身')
   }
 
-  // 接線用到的面板名稱須存在
+  // 接線用到的面板名稱須存在。「面板/頁籤」的頁籤須列於該面板的 tabs，設了 tabs 的面板本身沒有輸出
   if (import.meta.env.DEV) {
     onMounted(() => {
-      for (const name of links.referenced()) {
-        if (!panels.some(entry => entry.name === name)) {
+      for (const reference of links.referenced()) {
+        const slash = reference.indexOf('/')
+        const name = slash === -1 ? reference : reference.slice(0, slash)
+        const tab = slash === -1 ? null : reference.slice(slash + 1)
+        const tabs = panels.find(entry => entry.name === name)?.tabs
+        if (!tabs) {
           console.warn(`[DashboardPage] 沒有名為 ${name} 的面板`)
+        } else if (tab === null && tabs()) {
+          console.warn(`[DashboardPage] 面板 ${name} 設了 tabs，頁籤的輸出以「${name}/頁籤」取得`)
+        } else if (tab !== null && !tabs()?.includes(tab)) {
+          console.warn(`[DashboardPage] 面板 ${name} 的 tabs 中沒有 ${tab}`)
         }
       }
     })

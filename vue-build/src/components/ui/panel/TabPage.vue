@@ -43,7 +43,7 @@
     <v-window v-model="model" :mandatory="false" :show-arrows="false" :touch="false">
       <v-window-item v-for="tab in tabs" :key="tab" :value="tab">
         <!-- TabPanel 告知面板中的頁面是否為目前的頁籤，FAB 與 App Bar 的動作依此避免互相覆蓋 -->
-        <TabPanel :active="tab === model">
+        <TabPanel :active="tab === model" :tab="tab">
           <!-- 先使用與頁籤同名的具名 slot，沒有時改用 default -->
           <slot :name="tab" :tab="tab">
             <slot :tab="tab" />

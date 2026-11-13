@@ -348,6 +348,8 @@ export interface DashboardPanelContext {
   recordOrder: () => readonly string[] | null
   // 切換詳細頁顯示的列：移動來源列表的選取
   goRecord: (id: string, direction: 'forward' | 'back') => void
+  // 頁籤自己的接線，由 TabPanel 取得。面板的 tabs 中沒有該頁籤時為 null
+  forTab: (tab: string) => DashboardPanelContext | null
 }
 
 export const dashboardPanelKey: InjectionKey<DashboardPanelContext> = Symbol('dashboardPanel')

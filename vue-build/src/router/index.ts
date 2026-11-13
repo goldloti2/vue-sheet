@@ -187,6 +187,17 @@ router.afterEach((to, from) => {
   }
 })
 
+// 首次導覽完成後，於背景下載所有延遲載入的頁面。下載失敗時略過，換頁時再下載
+void router.isReady().then(() => {
+  for (const record of router.getRoutes()) {
+    for (const component of Object.values(record.components ?? {})) {
+      if (typeof component === 'function') {
+        void (component as () => Promise<unknown>)().catch(() => {})
+      }
+    }
+  }
+})
+
 export function leaveAfterAction (fallback: RouteLocationRaw): void {
   if (navigationCount.value > 1) {
     router.back()

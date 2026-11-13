@@ -116,7 +116,8 @@
 - 預設值與 `id` 由呼叫時傳入，不經過 `history.state` 或路由
 
 **history**：
-- 每層佔一格，網址不變，`history.state.formLayer` 記下層的 id 與深度
+- 每層佔一格，網址不變，`history.state.formLayer` 記下層的 id、深度與開啟時的網址
+- 標記只屬於記下的網址。`replace` 沿用目前這一格的 state，標記因此可能被帶到其他網址。網址不同時視為沒有標記（`formLayerState.ts` 的 `markerOf`）
 - 開啟時保留這一格原有的 state，例如儀表板展開的面板
 - 流程的第二步起取代上一步的格子
 

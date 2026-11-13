@@ -1,7 +1,7 @@
 // 假的 router，行為與瀏覽器的 history 相同：返回與前進為非同步，且 state 先更新才執行守衛。推入與取代則相反
 // 測試檔以 vi.mock 將 @/router 的 default 換成此物件
 
-type Guard = () => unknown
+type Guard = (to: { fullPath: string }) => unknown
 type AfterGuard = (to: object, from: object, failure?: object) => void
 
 interface Entry {
@@ -12,9 +12,11 @@ interface Entry {
 interface Target {
   path: string
   state?: Record<string, unknown>
+  force?: boolean
 }
 
 const ABORTED = { type: 'aborted' }
+const DUPLICATED = { type: 'duplicated' }
 
 export function createFakeRouter () {
   let entries: Entry[] = [{ fullPath: '/list', state: { position: 0 } }]
@@ -23,9 +25,9 @@ export function createFakeRouter () {
   const before: Guard[] = []
   const after: AfterGuard[] = []
 
-  async function runGuards (): Promise<boolean> {
+  async function runGuards (fullPath: string): Promise<boolean> {
     for (const guard of before) {
-      if (await guard() === false) {
+      if (await guard({ fullPath }) === false) {
         return false
       }
     }
@@ -40,14 +42,21 @@ export function createFakeRouter () {
   }
 
   async function navigate (target: string | Target, replace: boolean) {
-    if (!await runGuards()) {
+    const location: Target = typeof target === 'string' ? { path: target } : target
+    // 與 vue-router 相同：網址與目前相同且沒有 force 時不導覽，只執行 afterEach
+    if (!location.force && location.path === entries[index]!.fullPath) {
+      runAfter(DUPLICATED)
+      return DUPLICATED
+    }
+    if (!await runGuards(location.path)) {
       runAfter(ABORTED)
       return ABORTED
     }
 
-    const location = typeof target === 'string' ? { path: target } : target
     const position = replace ? index : index + 1
-    const entry = { fullPath: location.path, state: { ...location.state, position } }
+    // 與 vue-router 相同：取代沿用目前這一格的 state，推入不沿用
+    const kept = replace ? entries[index]!.state : {}
+    const entry = { fullPath: location.path, state: { ...kept, ...location.state, position } }
     entries = [...entries.slice(0, position), entry]
     index = position
     runAfter()
@@ -63,7 +72,7 @@ export function createFakeRouter () {
       }
       index = next
 
-      if (blockedPops > 0 || !await runGuards()) {
+      if (blockedPops > 0 || !await runGuards(entries[index]!.fullPath)) {
         blockedPops = Math.max(blockedPops - 1, 0)
         index = previous
         runAfter(ABORTED)
@@ -78,7 +87,7 @@ export function createFakeRouter () {
       return entries[index]!.state
     } } },
     currentRoute: { get value () {
-      return { path: entries[index]!.fullPath, query: {}, hash: '' }
+      return { path: entries[index]!.fullPath, fullPath: entries[index]!.fullPath, query: {}, hash: '' }
     } },
     beforeEach: (guard: Guard) => {
       before.push(guard)

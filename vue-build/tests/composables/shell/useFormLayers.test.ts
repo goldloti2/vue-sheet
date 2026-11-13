@@ -139,6 +139,16 @@ describe('堆疊', () => {
     expect(await result).toBeNull()
     expect(state.layers.value).toEqual([])
   })
+
+  it('取代沿用的標記不屬於新的網址', async () => {
+    await openCreate(PARENTS)
+
+    await router.replace('/other')
+
+    expect(router.options.history.state.formLayer).toMatchObject({ path: '/list' })
+    expect(state.markerOf(router.options.history.state, '/other')).toBeUndefined()
+    expect(state.layers.value).toEqual([])
+  })
 })
 
 describe('失效的格子', () => {
@@ -191,8 +201,8 @@ describe('失效的格子', () => {
 
     router.reloadAt([
       { fullPath: '/list', state: { position: 0 } },
-      { fullPath: '/list', state: { position: 1, formLayer: { id: 90, depth: 1 } } },
-      { fullPath: '/list', state: { position: 2, formLayer: { id: 91, depth: 2 } } },
+      { fullPath: '/list', state: { position: 1, formLayer: { id: 90, depth: 1, path: '/list' } } },
+      { fullPath: '/list', state: { position: 2, formLayer: { id: 91, depth: 2, path: '/list' } } },
     ], 2)
     await settle()
 
@@ -351,6 +361,21 @@ describe('流程', () => {
     expect(state.layers.value).toEqual([])
     expect(rowCount(PARENTS)).toBe(before + 1)
     expect(store.canSync).toBe(true)
+  })
+
+  it('最後的導覽前往發起流程的網址時，回到發起流程的格子', async () => {
+    const done = flow.runFlow(async () => {
+      await flow.runStep<ParentRow>(PARENTS)
+      await router.replace('/list')
+    })
+
+    await submitStep(PARENTS, { status: '進行中' })
+    await done
+    await settle()
+
+    expect(router.index).toBe(0)
+    expect(router.currentRoute.value.path).toBe('/list')
+    expect(state.layers.value).toEqual([])
   })
 
   it('沒有最後的導覽時，離開保留的格子', async () => {

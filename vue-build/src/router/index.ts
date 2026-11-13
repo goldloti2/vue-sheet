@@ -11,7 +11,7 @@ import { nextTick, shallowRef, watch } from 'vue'
 import { createRouter, createWebHistory, START_LOCATION } from 'vue-router'
 import { routes } from 'vue-router/auto-routes'
 import { siblingDirection } from '@/composables/navigation/useListOrder'
-import { type LayerMarker, layerNavigationKind } from '@/composables/shell/formLayerState'
+import { layerNavigationKind, markerOf } from '@/composables/shell/formLayerState'
 import { beginTransition, canAnimate, markTransition } from '@/composables/shell/viewTransition'
 import { authMethod } from '@/config/app'
 import { drawerSections, navItems } from '@/config/navigation'
@@ -107,7 +107,7 @@ function settle (skip: boolean): void {
 router.beforeResolve(async (to, from) => {
   // 上一次導覽因重導而未執行 afterEach 時，略過該次的動畫
   settle(true)
-  navigationKind = layerNavigationKind(router.options.history.state.formLayer as LayerMarker | undefined, to.fullPath === from.fullPath)
+  navigationKind = layerNavigationKind(markerOf(router.options.history.state, to.fullPath), to.fullPath === from.fullPath)
 
   // 表單層的動畫涵蓋整個畫面，外殼不另外命名（見 App.vue）
   if (navigationKind === 'page') {

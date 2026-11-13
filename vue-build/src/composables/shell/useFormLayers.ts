@@ -1,6 +1,6 @@
-import type { FormView, Layer, LayerMarker, LayerView } from '@/composables/shell/formLayerState'
+import type { FormView, Layer, LayerMarker, LayerView, StoredMarker } from '@/composables/shell/formLayerState'
 import type { TableKey } from '@/schema'
-import { layerNavigation, layers, layersAfterNavigation, layersLeaving, leaveConfirmText, staleJump } from '@/composables/shell/formLayerState'
+import { layerNavigation, layers, layersAfterNavigation, layersLeaving, leaveConfirmText, markerOf, staleJump } from '@/composables/shell/formLayerState'
 import { confirm } from '@/composables/shell/useDialogs'
 import router from '@/router'
 import { useTablesStore } from '@/stores/tables'
@@ -17,8 +17,9 @@ export interface FlowStepOptions {
 let nextId = 1
 let releaseSync: (() => void) | null = null
 
-function currentMarker (): LayerMarker | undefined {
-  return router.options.history.state.formLayer as LayerMarker | undefined
+// 導覽目的地那一格的標記。守衛執行時，返回與前進的 history.state 已是目的地的那一格，推入與取代則仍為目前這一格
+function currentMarker (fullPath: string): LayerMarker | undefined {
+  return markerOf(router.options.history.state, fullPath)
 }
 
 // 目前這一格中頁面自己的 state，例如 dashboard 展開的面板。vue-router 自己的欄位與表單層的標記除外
@@ -45,8 +46,8 @@ export function openLayer<Result> (view: LayerView, step?: FlowStepOptions): Pro
     }
     layerNavigation.opening = layer
 
-    const { path, query, hash } = router.currentRoute.value
-    const marker: LayerMarker = { id: layer.id, depth: layer.depth }
+    const { path, query, hash, fullPath } = router.currentRoute.value
+    const marker: StoredMarker = { id: layer.id, depth: layer.depth, path: fullPath }
     const target = { path, query, hash, state: { ...pageState(), formLayer: { ...marker } }, force: true }
     void (step?.replace ? router.replace(target) : router.push(target)).then(failure => {
       if (failure && layerNavigation.opening === layer) {
@@ -99,17 +100,17 @@ function holdSyncWhileOpen (): void {
   }
 }
 
-router.beforeEach(async () => {
+router.beforeEach(async to => {
   if (layerNavigation.opening || layerNavigation.jumping) {
     return true
   }
 
-  const text = leaveConfirmText(layersLeaving(layers.value, currentMarker()))
+  const text = leaveConfirmText(layersLeaving(layers.value, currentMarker(to.fullPath)))
   return text === undefined ? true : confirm('放棄變更', text)
 })
 
 // 堆疊只在此處改變。回傳結果時 history 已到位
-router.afterEach((_to, _from, failure) => {
+router.afterEach((to, _from, failure) => {
   const wasJumping = layerNavigation.jumping
   layerNavigation.jumping = false
 
@@ -121,7 +122,7 @@ router.afterEach((_to, _from, failure) => {
     return
   }
 
-  const marker = currentMarker()
+  const marker = currentMarker(to.fullPath)
   const { opening } = layerNavigation
   layerNavigation.opening = null
   const candidates = opening && marker?.id === opening.id ? [...layers.value, opening] : layers.value

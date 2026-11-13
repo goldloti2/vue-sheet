@@ -11,6 +11,17 @@ export interface LayerMarker {
   depth: number
 }
 
+// 寫入 history.state 的標記另記開啟時的網址
+export interface StoredMarker extends LayerMarker {
+  path: string
+}
+
+// 這一格的標記。replace 沿用目前這一格的 state，標記因此可能被帶到其他網址：網址與記下的不同時視為沒有標記
+export function markerOf (state: Record<string, unknown>, fullPath: string): LayerMarker | undefined {
+  const marker = state.formLayer as StoredMarker | undefined
+  return marker?.path === fullPath ? marker : undefined
+}
+
 // 新增或編輯一列的表單，有 id 時為編輯
 export interface FormView {
   kind: 'form'

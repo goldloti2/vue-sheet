@@ -26,6 +26,7 @@
 - **修正：從子表區塊直接點進詳細頁時，沒有上一列、下一列**。`ChildList` 於點擊一列時發布全部子列的順序，包含超過 `limit` 而沒有顯示的子列。說明見 [vue-build/docs/components/page/ChildList.md](vue-build/docs/components/page/ChildList.md)
 - **store 於每一列掛上 `$table`**：這一列所屬的表。說明見 [vue-build/docs/topics/schema.md](vue-build/docs/topics/schema.md) 的「row 上的 getter」
 - `provideListOrder` 的表可以是 getter 或 `null`。表為 `null` 時不發布順序
+- **輸入框不顯示瀏覽器記住的輸入紀錄**：`plugins/vuetify.ts` 將各種輸入框的 `autocomplete` 預設為 `off`，包括搜尋列與篩選抽屜。登入頁的帳號與密碼不受影響
 
 ## v1.14
 

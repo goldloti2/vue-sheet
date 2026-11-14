@@ -69,7 +69,7 @@ src/
                        chart（圖表的宣告，見 topics/chart.md）、index（註冊表：代稱 → schema）
     tables/            每張表的欄位定義，一張表一個檔案
   config/              app.ts（App 名稱、登入方式、詳細頁欄位的排法、計時推送）、navigation.ts（導覽列項目）
-  plugins/             vuetify.ts（主題，包括共用色名 vuesheet-*）
+  plugins/             vuetify.ts（主題，包括共用色名 vuesheet-*，以及元件的預設值）
   styles/              全域的 CSS：list.css（列表中一列與卡片共用的樣式，見 docs/components/list/ListLayout.md。
                        動作選單的樣式，見 docs/components/view/ViewActions.md）
   router/index.ts      路由實例、登入檢查、換頁動畫與方向判定、leaveAfterAction

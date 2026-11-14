@@ -43,9 +43,16 @@ export default createVuetify({
       dark: { colors: darkColors },
     },
   },
-  // App Bar 的高度，外殼與表單頁共用（見 docs/design/README.md）
   defaults: {
+    // App Bar 的高度，外殼與表單頁共用（見 docs/design/README.md）
     VAppBar: { height: 58 },
+    // 輸入框不顯示瀏覽器記住的輸入紀錄。登入頁的帳號與密碼另行指定
+    VAutocomplete: { autocomplete: 'off' },
+    VCombobox: { autocomplete: 'off' },
+    VDateInput: { autocomplete: 'off' },
+    VNumberInput: { autocomplete: 'off' },
+    VTextarea: { autocomplete: 'off' },
+    VTextField: { autocomplete: 'off' },
   },
   icons: {
     defaultSet: 'mdi',

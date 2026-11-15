@@ -117,6 +117,19 @@ describe('buildConfig 的 marks.shown', () => {
     expect(off?.hidden).toBeUndefined()
   })
 
+  it('長條加折線時，折線畫在長條上面', () => {
+    const mixed = defineChart(sampleSchema, {
+      type: 'bar',
+      group: { key: 'status' },
+      values: [{ stat: 'count', label: '數量' }, { stat: 'sum', key: 'price', label: '總價', type: 'line', axis: 'right' }],
+    })
+    const config = buildConfig(mixed, mixed.compute([{ id: '1', status: '高', price: 10 }]), theme, { groups: null, datasets: null, shown: null }) as unknown as {
+      data: { datasets: { order: number }[] }
+    }
+    const [bar, line] = config.data.datasets
+    expect(line?.order).toBeLessThan(bar?.order ?? 0)
+  })
+
   it('數值軸於沒有顯示的 dataset 時隱藏', () => {
     const { scales } = build(null).options
     expect(scales.y?.display).toBe('auto')

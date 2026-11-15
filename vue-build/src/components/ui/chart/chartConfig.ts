@@ -233,6 +233,8 @@ function categoryConfig (definition: ChartShape, data: Extract<ChartData<object>
       label: dataset.label,
       data: dataset.data,
       hidden: !datasetShown(index),
+      // 長條加折線時，折線畫在長條上面。Chart.js 先畫 order 較大的 dataset
+      ...(round ? {} : { order: line ? 0 : 1 }),
       ...(dataset.type ? { type: dataset.type } : {}),
       ...(dataset.axis === 'right' ? { [definition.horizontal ? 'xAxisID' : 'yAxisID']: 'right' } : {}),
       ...colors,
@@ -318,6 +320,8 @@ function categoryConfig (definition: ChartShape, data: Extract<ChartData<object>
       plugins: {
         legend,
         tooltip: {
+          // 提示依 values 的順序列出，不受 order 影響
+          itemSort: (a, b) => a.datasetIndex - b.datasetIndex,
           callbacks: {
             label: context => `${context.dataset.label ?? ''}：${formatValue(context.raw, unitOf(context.datasetIndex))}`,
           },

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { filterableColumns, hasActiveFilter, isActiveFilter, matchesFilter, presentValues, rowMatcher } from '@/schema/filter'
+import { filterableColumns, hasActiveFilter, isActiveFilter, matchesFilter, matchesTerms, presentValues, rowMatcher, searchTerms } from '@/schema/filter'
 import { sampleSchema } from '../fixtures/schema'
 
 function column (key: string) {
@@ -13,6 +13,29 @@ function column (key: string) {
 describe('filterableColumns', () => {
   it('依 searchable 的順序，只列出由篩選抽屜處理的型別', () => {
     expect(filterableColumns(sampleSchema).map(c => c.key)).toEqual(['price', 'day', 'done', 'time', 'status', 'tag'])
+  })
+})
+
+describe('searchTerms', () => {
+  it('依空白切詞並轉為小寫', () => {
+    expect(searchTerms(' Apple  PIE ')).toEqual(['apple', 'pie'])
+    expect(searchTerms('')).toEqual([])
+  })
+
+  it('雙引號內的文字為一個詞，引號未閉合時其後的整段為一個詞', () => {
+    expect(searchTerms('"red apple" pie')).toEqual(['red apple', 'pie'])
+    expect(searchTerms('pie "red apple')).toEqual(['pie', 'red apple'])
+  })
+})
+
+describe('matchesTerms', () => {
+  it('每個詞皆須出現，順序不限', () => {
+    expect(matchesTerms('red apple pie', ['pie', 'red'])).toBe(true)
+    expect(matchesTerms('red apple pie', ['pie', 'green'])).toBe(false)
+  })
+
+  it('沒有詞時視為符合', () => {
+    expect(matchesTerms('apple', [])).toBe(true)
   })
 })
 

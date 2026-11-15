@@ -2,10 +2,10 @@
   import type { ListTable } from '@/composables/shell/useListControls'
   import type { ColumnFilter, Filters } from '@/schema/filter'
   import type { AnyColumn } from '@/schema/types'
-  import { mdiChevronLeft, mdiChevronRight, mdiCircle } from '@mdi/js'
+  import { mdiChevronLeft, mdiChevronRight, mdiCircle, mdiMagnify } from '@mdi/js'
   import { computed, shallowRef, watch } from 'vue'
   import TableChips from '@/components/ui/shell/TableChips.vue'
-  import { filterableColumns, isActiveFilter, presentValues } from '@/schema/filter'
+  import { filterableColumns, isActiveFilter, matchesTerms, presentValues, searchTerms } from '@/schema/filter'
   import { booleanText, formatDate, formatDuration } from '@/schema/types'
 
   const props = defineProps<{
@@ -66,6 +66,28 @@
   function valueTitle (column: AnyColumn, value: string): string {
     return column.type === 'boolean' ? booleanText(value === 'true') : value
   }
+
+  // 第二層的選項超過此數時，清單上方顯示搜尋框（見 docs/design/list.md）
+  const VALUE_SEARCH_MIN = 10
+
+  // 搜尋框的文字。離開第二層時清空
+  const valueQuery = shallowRef<string | null>('')
+  watch(editing, () => {
+    valueQuery.value = ''
+  })
+
+  const editingItems = computed(() => editing.value ? selectItems(editing.value) : [])
+  const showValueSearch = computed(() => editingItems.value.length > VALUE_SEARCH_MIN)
+
+  // 與搜尋列相同的比對規則。已勾選的值不論是否符合皆保留
+  const shownItems = computed(() => {
+    const terms = showValueSearch.value ? searchTerms(valueQuery.value ?? '') : []
+    if (!editing.value || terms.length === 0) {
+      return editingItems.value
+    }
+    const selected = selectedValues(editing.value)
+    return editingItems.value.filter(item => selected.includes(item.value) || matchesTerms(item.title.toLowerCase(), terms))
+  })
 
   function selectedValues (column: AnyColumn): string[] {
     return (filters.value[column.key]?.values ?? []).map(value => value ?? BLANK)
@@ -221,18 +243,33 @@
     <!-- 圖表寫入的區間只顯示文字，輸入範圍後即取代 -->
     <v-container v-if="segmentText(editing)" class="text-medium-emphasis pb-0">圖表選取：{{ segmentText(editing) }}</v-container>
 
-    <v-list v-if="editing.type === 'select' || editing.type === 'boolean'" density="compact">
-      <v-list-item
-        v-for="item in selectItems(editing)"
-        :key="item.value"
-        :title="item.title"
-        @click="toggleValue(editing, item.value)"
-      >
-        <template #prepend>
-          <v-checkbox-btn :model-value="selectedValues(editing).includes(item.value)" />
-        </template>
-      </v-list-item>
-    </v-list>
+    <template v-if="editing.type === 'select' || editing.type === 'boolean'">
+      <v-container v-if="showValueSearch" class="pb-0">
+        <v-text-field
+          v-model="valueQuery"
+          clearable
+          density="compact"
+          hide-details
+          placeholder="搜尋"
+          :prepend-inner-icon="mdiMagnify"
+        />
+      </v-container>
+
+      <v-list density="compact">
+        <v-list-item
+          v-for="item in shownItems"
+          :key="item.value"
+          :title="item.title"
+          @click="toggleValue(editing, item.value)"
+        >
+          <template #prepend>
+            <v-checkbox-btn :model-value="selectedValues(editing).includes(item.value)" />
+          </template>
+        </v-list-item>
+      </v-list>
+
+      <v-container v-if="shownItems.length === 0" class="text-medium-emphasis pt-0">沒有符合的值</v-container>
+    </template>
 
     <v-container v-else-if="editing.type === 'number'" class="d-flex ga-2">
       <v-number-input

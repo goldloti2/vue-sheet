@@ -32,6 +32,26 @@ export function filterableColumns (schema: TableSchema): AnyColumn[] {
   return listedColumns(schema, schema.searchable).filter(column => isFilterable(column))
 }
 
+// 搜尋列與抽屜第二層的搜尋框共用：依空白切詞並轉為小寫，雙引號內的文字為一個詞。引號未閉合時，其後的整段為一個詞
+export function searchTerms (query: string): string[] {
+  const terms: string[] = []
+  const pattern = /"([^"]*)"?|(\S+)/g
+
+  for (const match of query.toLowerCase().matchAll(pattern)) {
+    const term = (match[1] ?? match[2]).trim()
+    if (term) {
+      terms.push(term)
+    }
+  }
+
+  return terms
+}
+
+// 每個詞皆須出現於 text（AND），順序不限。text 須已轉為小寫
+export function matchesTerms (text: string, terms: readonly string[]): boolean {
+  return terms.every(term => text.includes(term))
+}
+
 interface PresentValues {
   // options 中出現於資料的值，依 options 的順序
   known: string[]

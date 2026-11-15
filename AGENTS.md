@@ -7,6 +7,7 @@ AI agent 在此 repo 中工作時須遵守的規則。只列出任何工作都�
 - 以 Google Sheet 為後端、自行撰寫前端的通用框架。介紹見 [README.md](README.md)。
 - 前端位於 `vue-build/`：Vue 3、TypeScript、Vite、Vuetify、Pinia，路由使用 unplugin-vue-router（檔案即路由）。指令一律使用 npm。
 - 後端位於 `apps-script/`（Apps Script）。前後端之間的介面與認證，見 `docs/`。
+- 編輯器位於 `editor/`：於本機以 Node 執行的網頁 App，用於修改專案的檔案。使用 Vue 3、TypeScript、Vite、Vuetify，有自己的 `package.json`。指令一律使用 npm。
 - 以框架建立自己的 App 時，框架與專案的檔案位於同一個 repo（見「框架與專案」）。
 
 ## 目錄
@@ -22,6 +23,9 @@ AI agent 在此 repo 中工作時須遵守的規則。只列出任何工作都�
 | `vue-build/tests/` | Vitest 的測試，結構對應 `src/` |
 | `apps-script/` | 後端的程式與部署方式 |
 | `docs/` | 前後端之間的介面與認證 |
+| `editor/` | 編輯器的程式 |
+| `editor/docs/` | 編輯器的機制與用法 |
+| `editor/tests/` | 編輯器的測試 |
 | `ROADMAP.md`、`CHANGELOG.md` | 框架的進度與各版本的內容 |
 
 ## 驗證
@@ -32,16 +36,20 @@ AI agent 在此 repo 中工作時須遵守的規則。只列出任何工作都�
 3. `npx vite build`
 4. `npm test`
 
+修改 `editor/` 時，另於 `editor/` 執行相同的四項。
+
 - 不啟動 dev server，不以瀏覽器測試。畫面由使用者確認。
 - 測試只使用 `tests/fixtures/` 中的表，不使用 `src/schema/tables/` 中的表。
 - 測試不得連線至真正的後端。
+- 編輯器的測試只讀寫暫存資料夾，不得修改 repo 中的檔案。
 - `vue-build/src/typed-router.d.ts` 由路由的外掛產生。提交前確認其中沒有 `_ref` 的項目。
 
 ## 框架與專案
 
-- **框架**：`components/ui/`、`composables/`（各表的 `use表名Actions` 除外）、`schema/` 中的共用檔、`plugins/`、`config/app.ts` 的設定項、`template/`、`docs/`、`apps-script/`、`ROADMAP.md`、`CHANGELOG.md`。
+- **框架**：`components/ui/`、`composables/`（各表的 `use表名Actions` 除外）、`schema/` 中的共用檔、`plugins/`、`config/app.ts` 的設定項、`template/`、`docs/`、`apps-script/`、`editor/`、`ROADMAP.md`、`CHANGELOG.md`。
 - **專案**：`pages/`、`schema/tables/`、各表的 `use表名Actions`、`config/navigation.ts`、`public/icons/`、`typed-router.d.ts`，以及專案自己的文件。
 - 框架與專案的修改分開提交。
+- 框架修改 schema 或頁面的格式時，同一版本也更新編輯器。
 - 框架的檔案不得出現專案的字眼，例如表名、欄位名與專案的用詞。程式碼的例子與文件的例子也不得出現。
 
 ## 程式
@@ -49,6 +57,8 @@ AI agent 在此 repo 中工作時須遵守的規則。只列出任何工作都�
 - 新增表或頁面時，先從 `vue-build/template/` 複製對應的範本，再修改。對照表與檢查清單見 [vue-build/template/README.md](vue-build/template/README.md)。
 - 少開特例。做類似事情的機制合併為一條路徑。
 - 各表獨立。不同表的 schema 與 `use表名Actions` 之間不共用 helper，各表透過 `ref` 欄位的 getter 取得其他表的資料。只匯入型別時不受此限。
+- schema 與頁面的設定盡量直接寫值，不抽成常數或 helper。同一個值於多處共用時，可以使用常數。
+- 編輯器可以匯入 `vue-build/src/` 中框架的型別與函數，不得匯入專案的檔案。
 - 版面的數值（px、門檻、比例）只寫在 `vue-build/docs/design/` 中。元件的文件與註解只寫概念，並連到 design 文件。
 - 修改元件以外的邏輯（`schema/`、`stores/`、`composables/` 中不依賴畫面的部分）時，同一次修改新增或更新對應的測試。
 - 測試的寫法（純函數直接呼叫，store 與連動經由假後端）見 [vue-build/docs/architecture.md](vue-build/docs/architecture.md) 的「資料夾」。
@@ -73,3 +83,4 @@ AI agent 在此 repo 中工作時須遵守的規則。只列出任何工作都�
 - 提交訊息為一行英文，加上前綴：`feat:`、`fix:`、`docs:`、`refactor:`。四者皆不適用時，使用 `chore:`。
 - `CHANGELOG.md` 的版本草稿與 `ROADMAP.md` 的修改，留到發版時才提交。
 - 每次發版升 minor 版本號，含不相容的變更時也一樣。不相容的變更列於 changelog 該版本的「不相容的變更」。
+- 框架與編輯器共用一個版本號。`CHANGELOG.md` 的每個版本分為「框架」與「編輯器」兩部分，沒有內容的部分省略。各部分的不相容的變更列於該部分之下。

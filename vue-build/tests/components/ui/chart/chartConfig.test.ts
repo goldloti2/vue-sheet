@@ -45,8 +45,10 @@ describe('formatParts 與 formatValue', () => {
     expect(formatParts(Number.NaN, 'number')).toEqual({ text: '', suffix: '' })
   })
 
-  it('數字取到小數第二位並加上千分位', () => {
-    expect(formatValue(1234.567, 'number')).toBe('1,234.57')
+  it('數字取到小數第二位，separator 時加上千分位', () => {
+    expect(formatValue(1234.567, 'number')).toBe('1234.57')
+    expect(formatValue(1234.567, 'number', true)).toBe('1,234.57')
+    expect(formatParts(-12_345, 'number', { sign: true, separator: true })).toEqual({ text: '-12,345', suffix: '' })
   })
 
   it('百分比取到小數第一位，單位預設為 %', () => {

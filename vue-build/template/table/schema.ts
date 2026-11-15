@@ -29,7 +29,8 @@ export const __table__Schema: TableSchema<__Table__Row> = {
     // 主鍵未列入 formOrder 時一律自動產生。列入時可自行輸入，留空才自動產生
     { key: 'code', label: '編號', sheetHeader: 'TPL-ID', type: 'text' },
     { key: 'name', label: '名稱', type: 'text', required: true },
-    { key: 'amount', label: '金額', type: 'number', min: 0 },
+    // separator：顯示時加上千分位
+    { key: 'amount', label: '金額', type: 'number', min: 0, separator: true },
     { key: 'date', label: '日期', type: 'date' },
     // select 的選項也是 pages/tab-list.vue 的頁籤。無須依狀態分頁籤時可刪除此欄
     { key: 'status', label: '狀態', type: 'select', options: ['進行中', '已完成'] },

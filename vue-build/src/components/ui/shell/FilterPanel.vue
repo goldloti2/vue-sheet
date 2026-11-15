@@ -6,7 +6,7 @@
   import { computed, shallowRef, watch } from 'vue'
   import TableChips from '@/components/ui/shell/TableChips.vue'
   import { filterableColumns, isActiveFilter, matchesTerms, presentValues, searchTerms } from '@/schema/filter'
-  import { booleanText, formatDate, formatDuration } from '@/schema/types'
+  import { booleanText, columnSeparator, formatDate, formatDuration, formatNumber } from '@/schema/types'
 
   const props = defineProps<{
     // 每張表各有一份條件，同時生效。上方的表選單只決定目前編輯哪一張
@@ -137,7 +137,7 @@
     if (typeof value !== 'number') {
       return String(value)
     }
-    return column.type === 'duration' ? formatDuration(value) : String(Math.round(value * 100) / 100)
+    return column.type === 'duration' ? formatDuration(value) : formatNumber(Math.round(value * 100) / 100, columnSeparator(column))
   }
 
   // 圖表寫入的區間，例如「≥ 0、< 20」。沒有時為空字串
@@ -188,13 +188,14 @@
 
     const min = numberBound(column, 'min')
     const max = numberBound(column, 'max')
+    const text = (value: number | null) => value === null ? '' : formatNumber(value, columnSeparator(column))
     if (min !== null && max === null) {
-      return `≥ ${min}`
+      return `≥ ${text(min)}`
     }
     if (min === null && max !== null) {
-      return `≤ ${max}`
+      return `≤ ${text(max)}`
     }
-    return rangeText(String(min), String(max))
+    return rangeText(text(min), text(max))
   }
 
   // 只清除目前這張表的條件。關閉搜尋（App Bar 的 ←）時清除全部的表

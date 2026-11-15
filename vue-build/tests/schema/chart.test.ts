@@ -131,6 +131,36 @@ describe('座標類', () => {
   })
 })
 
+describe('千分位', () => {
+  const separated = { ...sampleSchema, columns: sampleSchema.columns.map(column => column.key === 'price' ? { ...column, separator: true } : column) }
+  const big = [{ id: '1', price: 1000 }, { id: '2', price: 3000 }]
+
+  it('數值依 key 欄位的 separator，可由 separator 覆寫。count 與百分比不加', () => {
+    const data = category(defineChart(separated, {
+      type: 'bar',
+      group: { key: 'price', bins: 2 },
+      values: [{ stat: 'sum', key: 'price' }, { stat: 'sum', key: 'price', separator: false, label: '不加' }, { stat: 'count' }, { stat: 'sum', key: 'price', percent: true, label: '比例' }],
+    }).compute(big))
+    expect(data.datasets.map(dataset => dataset.separator ?? false)).toEqual([true, false, false, false])
+  })
+
+  it('沒有欄位的數值可指定 separator', () => {
+    const data = category(defineChart(sampleSchema, { type: 'bar', group: { key: 'status' }, values: [{ stat: 'count', separator: true }] }).compute(rows))
+    expect(data.datasets[0]?.separator).toBe(true)
+  })
+
+  it('number 區間的名稱依分組欄位的 separator，可由 group 的 separator 覆寫', () => {
+    const labels = (group: { key: 'price', bins: number, separator?: boolean }) => category(defineChart(separated, { type: 'bar', group, values: [{ stat: 'count' }] }).compute(big)).labels
+    expect(labels({ key: 'price', bins: 2 })).toEqual(['1,000 ～ 2,000', '2,000 ～ 3,000'])
+    expect(labels({ key: 'price', bins: 2, separator: false })).toEqual(['1000 ～ 2000', '2000 ～ 3000'])
+  })
+
+  it('座標類依 x、y、r 各自欄位的 separator', () => {
+    const data = defineChart(separated, { type: 'scatter', x: 'price', y: 'level' }).compute(rows)
+    expect(data).toMatchObject({ separators: { x: true, y: false, r: false } })
+  })
+})
+
 describe('defineChart', () => {
   afterEach(() => {
     vi.restoreAllMocks()

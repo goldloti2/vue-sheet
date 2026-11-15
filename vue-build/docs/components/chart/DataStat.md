@@ -28,7 +28,7 @@
 - **每一格的內容**：
   - 有 `group` 時，名稱為組的名稱。另有多個數值時，名稱下方以小字顯示數值的 `label`
   - 沒有 `group` 時，名稱為數值的 `label`
-  - 數字與單位依 dataset 的 `unit`、`sign` 與 `suffix` 格式化，與 `DataChart` 的刻度使用同一個函數。沒有值時顯示「—」
+  - 數字與單位依 dataset 的 `unit`、`sign`、`suffix` 與 `separator` 格式化，與 `DataChart` 的刻度使用同一個函數。沒有值時顯示「—」
 - **格的大小**：
   - 位於 dashboard 中時，以 dashboard 的格子換算
   - 不在 dashboard 中時，此元件量測自身的寬度，依 `useCompactLayout()` 選用手機或電腦的格數，換算一格的大小

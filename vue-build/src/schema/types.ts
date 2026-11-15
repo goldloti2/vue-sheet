@@ -14,8 +14,8 @@ export interface RowBase {
 interface ColumnTypes {
   /** 一般文字。multiline 為長文：表單以多行輸入框輸入，詳細頁保留換行 */
   text: { value: string | null, extra: { multiline?: boolean } }
-  /** 數字。min、max 為輸入範圍與驗證的上下限，step 為 ＋／− 每次的增減（預設 1） */
-  number: { value: number | null, extra: { min?: number, max?: number, step?: number } }
+  /** 數字。min、max 為輸入範圍與驗證的上下限，step 為 ＋／− 每次的增減（預設 1），separator 為顯示時加上千分位 */
+  number: { value: number | null, extra: { min?: number, max?: number, step?: number, separator?: boolean } }
   /** 日期，不含時間。讀取時歸零至當天午夜 */
   date: { value: Date | null }
   /** 是／否。Sheet 上為 TRUE、FALSE，空的儲存格為 null，不視為否 */
@@ -181,6 +181,28 @@ export function formatDuration (seconds: number): string {
   return `${Math.floor(total / 3600)}:${pad(Math.floor(total % 3600 / 60))}:${pad(total % 60)}`
 }
 
+// 數字的格式所用的語系，千分位與小數點的符號依此語系
+const NUMBER_LOCALE = 'zh-TW'
+const numberParts = new Intl.NumberFormat(NUMBER_LOCALE).formatToParts(1000.5)
+const GROUP_SYMBOL = numberParts.find(part => part.type === 'group')?.value ?? ','
+const DECIMAL_SYMBOL = numberParts.find(part => part.type === 'decimal')?.value ?? '.'
+
+// 數字的顯示文字，位數與 String 相同。separator 時整數部分每三位加上千分位。指數表示法原樣回傳
+export function formatNumber (value: number, separator = false): string {
+  const text = String(value)
+  if (!Number.isFinite(value) || text.includes('e')) {
+    return text
+  }
+  const [integer = '', fraction] = text.split('.')
+  const grouped = separator ? integer.replaceAll(/\B(?=(\d{3})+$)/g, GROUP_SYMBOL) : integer
+  return fraction === undefined ? grouped : `${grouped}${DECIMAL_SYMBOL}${fraction}`
+}
+
+// 欄位的值顯示時是否加上千分位：只有設定 separator 的 number 欄位
+export function columnSeparator (column: AnyColumn): boolean {
+  return column.type === 'number' && Boolean(column.separator)
+}
+
 function coerceValue (raw: string, type: ColumnType): string | number | boolean | Date | null {
   if (raw === '') {
     return null
@@ -278,6 +300,10 @@ export function formatColumnValue (row: object, column: AnyColumn, target: Forma
 
   if (column.type === 'boolean' && typeof value === 'boolean') {
     return target === 'sheet' ? String(value).toUpperCase() : booleanText(value)
+  }
+
+  if (column.type === 'number' && typeof value === 'number' && target === 'display') {
+    return formatNumber(value, columnSeparator(column))
   }
 
   // ref 顯示父列的名稱。父列尚未載入或已刪除時顯示 id

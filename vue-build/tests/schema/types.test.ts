@@ -1,5 +1,6 @@
+import type { AnyColumn } from '@/schema/types'
 import { describe, expect, it } from 'vitest'
-import { coerceRow, durationSeconds, emptyRow, formatColumnValue, formatDuration, idColumnOf, rowLabel, serializeRow } from '@/schema/types'
+import { coerceRow, columnSeparator, durationSeconds, emptyRow, formatColumnValue, formatDuration, formatNumber, idColumnOf, rowLabel, serializeRow } from '@/schema/types'
 import { sampleSchema } from '../fixtures/schema'
 
 function column (key: string) {
@@ -9,6 +10,8 @@ function column (key: string) {
   }
   return found
 }
+
+const separatedPrice: AnyColumn = { key: 'price', label: '價格', type: 'number', separator: true }
 
 describe('durationSeconds', () => {
   it('將「時:分:秒」換算為秒', () => {
@@ -91,7 +94,35 @@ describe('serializeRow', () => {
   })
 })
 
+describe('formatNumber', () => {
+  it('位數與 String 相同，separator 時整數部分每三位加上千分位', () => {
+    expect(formatNumber(1_234_567.891)).toBe('1234567.891')
+    expect(formatNumber(1_234_567.891, true)).toBe('1,234,567.891')
+    expect(formatNumber(-1234, true)).toBe('-1,234')
+    expect(formatNumber(123, true)).toBe('123')
+  })
+
+  it('指數表示法與非有限值原樣回傳', () => {
+    expect(formatNumber(1e21, true)).toBe('1e+21')
+    expect(formatNumber(Infinity, true)).toBe('Infinity')
+  })
+})
+
+describe('columnSeparator', () => {
+  it('只有設定 separator 的 number 欄位為 true', () => {
+    expect(columnSeparator(column('price'))).toBe(false)
+    expect(columnSeparator(separatedPrice)).toBe(true)
+    expect(columnSeparator(column('name'))).toBe(false)
+  })
+})
+
 describe('formatColumnValue', () => {
+  it('number 依 separator 加上千分位，寫回 Sheet 時不加', () => {
+    expect(formatColumnValue({ price: 12_345 }, column('price'))).toBe('12345')
+    expect(formatColumnValue({ price: 12_345 }, separatedPrice)).toBe('12,345')
+    expect(formatColumnValue({ price: 12_345 }, separatedPrice, 'sheet')).toBe('12345')
+  })
+
   it('boolean 顯示為是、否，寫回 Sheet 為 TRUE、FALSE', () => {
     expect(formatColumnValue({ done: true }, column('done'))).toBe('是')
     expect(formatColumnValue({ done: false }, column('done'), 'sheet')).toBe('FALSE')

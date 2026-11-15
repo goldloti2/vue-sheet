@@ -127,6 +127,12 @@ export const orderSchema: TableSchema<OrderRow> = {
 
 `number` 的 `step` 為表單上 −／＋ 每次的增減，預設為 1。輸入的值不受 `step` 限制，例如 `step: 0.5` 時仍可輸入 1.3。表單不限制小數位數，輸入的值不會被四捨五入。
 
+`number` 的 `separator: true` 為顯示時在整數部分每三位加上千分位，例如 12,345。預設不加。
+- 列表、詳細頁、篩選抽屜的條件摘要與圖表皆依此設定（圖表的規則見 [chart.md](chart.md) 的「千分位」）
+- 表單的輸入框與寫回 Sheet 的值不加千分位
+- 千分位與小數點的符號依 `types.ts` 的 `NUMBER_LOCALE`，目前為 `zh-TW`
+- 自行組成文字的虛擬欄位，可呼叫 `formatNumber` 取得相同的格式
+
 ### date 與 duration
 
 - **`date` 只有日期**：讀入時歸零至當天午夜

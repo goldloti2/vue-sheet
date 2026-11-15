@@ -32,7 +32,7 @@
 - **更新時沿用原本的 dataset 物件**，只換上新的屬性。顏色與數值由原本的狀態過渡，圖表不從零重畫
 - **高光**：沒被選的組與系列調淡，判斷方式見 [chart.md](../../topics/chart.md#分組欄與系列欄上的條件) 的「分組欄與系列欄上的條件」。此元件只標示，不篩選 `rows`
 - **顏色**使用 Chart.js 預設的色盤，填色為半透明。圓餅類與只有一個 dataset 的 bar 依組上色，其他圖表依 dataset 上色。`colors` 指定的項目使用指定的顏色（見 [chart.md](../../topics/chart.md#顏色) 的「顏色」）。文字與格線取自主題的 `on-surface`，不透明度見同一處
-- **刻度與提示依 dataset 的 `unit` 格式化**：`percent` 加上「%」，`duration` 為「時:分:秒」，`date` 為 `yyyy/mm/dd`，其餘最多兩位小數
+- **刻度與提示依 dataset 的 `unit` 格式化**：`percent` 加上「%」，`duration` 為「時:分:秒」，`date` 為 `yyyy/mm/dd`，其餘最多兩位小數。dataset 的 `separator` 為 `true` 時加上千分位，刻度的規則見 [chart.md](../../topics/chart.md#千分位) 的「千分位」
 - **軸上的值皆為整數時，刻度只取整數**：每一軸各自判斷，包括右側的軸與 scatter、bubble 的兩軸。例如數量的軸不出現 0.5
 - **直的數值軸使用自訂的軸 `spacedLinear`**：此軸繼承 Chart.js 的 `linear`，刻度間距的下限較大（見 [design/chart.md](../../design/chart.md#尺寸與樣式) 的「尺寸與樣式」）。此元件於 Chart.js 載入後登記此軸。橫的軸與 radar、polarArea 的軸使用 Chart.js 原本的軸
 - **bubble 的半徑換算為固定範圍的像素**：依資料中半徑欄位的最小值與最大值等比換算，範圍見 [design/chart.md](../../design/chart.md#尺寸與樣式) 的「尺寸與樣式」。提示中顯示原本的值

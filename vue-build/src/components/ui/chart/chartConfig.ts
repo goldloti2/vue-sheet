@@ -1,7 +1,7 @@
 import type { ChartColors, ChartData, ChartDefinition, ChartUnit } from '@/schema/chart'
 import type { ColorName } from '@/schema/types'
 import type { Chart, ChartConfiguration, LegendItem, Scale } from 'chart.js'
-import { formatDate, formatDuration } from '@/schema/types'
+import { formatDate, formatDuration, formatNumber } from '@/schema/types'
 import { SPACED_SCALE } from './chartScale'
 
 // 由 compute 的結果與目前的主題組成 Chart.js 的設定。純函數，不建立圖表
@@ -125,8 +125,8 @@ export function withAlpha (color: string, opacity: number): string {
   return `rgba(${r}, ${g}, ${b}, ${opacity})`
 }
 
-// 數值的文字分為數字與單位兩段，沒有單位時 suffix 為空字串。options 為 stat 的 sign 與 suffix，date 不套用
-export function formatParts (value: unknown, unit: ChartUnit, options: { sign?: boolean, suffix?: string } = {}): { text: string, suffix: string } {
+// 數值的文字分為數字與單位兩段，沒有單位時 suffix 為空字串。options 為 stat 的 sign、suffix 與千分位，date 不套用
+export function formatParts (value: unknown, unit: ChartUnit, options: { sign?: boolean, suffix?: string, separator?: boolean } = {}): { text: string, suffix: string } {
   if (typeof value !== 'number' || Number.isNaN(value)) {
     return { text: '', suffix: '' }
   }
@@ -140,12 +140,12 @@ export function formatParts (value: unknown, unit: ChartUnit, options: { sign?: 
   if (unit === 'percent') {
     return { text: plus + `${Math.round(value * 10) / 10}`, suffix: options.suffix ?? '%' }
   }
-  return { text: plus + (Math.round(value * 100) / 100).toLocaleString(), suffix: options.suffix ?? '' }
+  return { text: plus + formatNumber(Math.round(value * 100) / 100, options.separator), suffix: options.suffix ?? '' }
 }
 
 // 刻度與提示的文字。duration 的值為秒數，date 的值為毫秒
-export function formatValue (value: unknown, unit: ChartUnit): string {
-  const { text, suffix } = formatParts(value, unit)
+export function formatValue (value: unknown, unit: ChartUnit, separator = false): string {
+  const { text, suffix } = formatParts(value, unit, { separator })
   return text + suffix
 }
 
@@ -182,10 +182,10 @@ function tickPrecision (values: readonly (number | null)[]) {
   return values.every(value => value === null || Number.isInteger(value)) ? { precision: 0 } : {}
 }
 
-function axisStyle (theme: ChartTheme, unit: ChartUnit, values: readonly (number | null)[]) {
+function axisStyle (theme: ChartTheme, unit: ChartUnit, separator: boolean, values: readonly (number | null)[]) {
   return {
     grid: { color: theme.grid },
-    ticks: { color: theme.text, callback: (value: number | string) => formatValue(Number(value), unit), ...tickPrecision(values) },
+    ticks: { color: theme.text, callback: (value: number | string) => formatValue(Number(value), unit, separator), ...tickPrecision(values) },
   }
 }
 
@@ -277,6 +277,10 @@ function categoryConfig (definition: ChartShape, data: Extract<ChartData<object>
   const leftUnit = data.datasets.find(dataset => dataset.axis !== 'right')?.unit ?? 'number'
   const rightUnit = data.datasets.find(dataset => dataset.axis === 'right')?.unit ?? 'number'
   const unitOf = (datasetIndex: number) => data.datasets[datasetIndex]?.unit ?? 'number'
+  // 同一條軸上有任一數值加上千分位時，該軸的刻度也加上
+  const leftSeparator = data.datasets.some(dataset => dataset.axis !== 'right' && dataset.separator)
+  const rightSeparator = data.datasets.some(dataset => dataset.axis === 'right' && dataset.separator)
+  const separatorOf = (datasetIndex: number) => Boolean(data.datasets[datasetIndex]?.separator)
   const leftValues = data.datasets.filter(dataset => dataset.axis !== 'right').flatMap(dataset => dataset.data)
   const rightValues = data.datasets.filter(dataset => dataset.axis === 'right').flatMap(dataset => dataset.data)
 
@@ -294,9 +298,9 @@ function categoryConfig (definition: ChartShape, data: Extract<ChartData<object>
         ...(definition.horizontal ? { afterTickToLabelConversion: wrapAxisLabels } : {}),
       },
       // display 為 auto：軸上沒有顯示的 dataset 時隱藏該軸
-      [valueAxis]: { ...valueType, display: 'auto', stacked: definition.stacked, beginAtZero: true, ...axisStyle(theme, leftUnit, leftValues) },
+      [valueAxis]: { ...valueType, display: 'auto', stacked: definition.stacked, beginAtZero: true, ...axisStyle(theme, leftUnit, leftSeparator, leftValues) },
       ...(hasRight
-        ? { right: { ...valueType, display: 'auto', position: definition.horizontal ? 'top' : 'right', beginAtZero: true, ...axisStyle(theme, rightUnit, rightValues), grid: { drawOnChartArea: false } } }
+        ? { right: { ...valueType, display: 'auto', position: definition.horizontal ? 'top' : 'right', beginAtZero: true, ...axisStyle(theme, rightUnit, rightSeparator, rightValues), grid: { drawOnChartArea: false } } }
         : {}),
     }
   } else if (type === 'radar' || type === 'polarArea') {
@@ -306,7 +310,7 @@ function categoryConfig (definition: ChartShape, data: Extract<ChartData<object>
         grid: { color: theme.grid },
         angleLines: { color: theme.grid },
         pointLabels: { color: theme.text },
-        ticks: { color: theme.text, backdropColor: 'transparent', callback: (value: number | string) => formatValue(Number(value), leftUnit), ...tickPrecision(leftValues) },
+        ticks: { color: theme.text, backdropColor: 'transparent', callback: (value: number | string) => formatValue(Number(value), leftUnit, leftSeparator), ...tickPrecision(leftValues) },
       },
     }
   }
@@ -323,7 +327,7 @@ function categoryConfig (definition: ChartShape, data: Extract<ChartData<object>
           // 提示依 values 的順序列出，不受 order 影響
           itemSort: (a, b) => a.datasetIndex - b.datasetIndex,
           callbacks: {
-            label: context => `${context.dataset.label ?? ''}：${formatValue(context.raw, unitOf(context.datasetIndex))}`,
+            label: context => `${context.dataset.label ?? ''}：${formatValue(context.raw, unitOf(context.datasetIndex), separatorOf(context.datasetIndex))}`,
           },
         },
       },
@@ -357,8 +361,8 @@ function pointConfig (definition: ChartShape, data: Extract<ChartData<object>, {
     data: { datasets },
     options: {
       scales: {
-        x: { type: 'linear', ...axisStyle(theme, data.xUnit, data.datasets.flatMap(dataset => dataset.data.map(point => point.x))) },
-        y: { type: SPACED_SCALE, ...axisStyle(theme, data.yUnit, data.datasets.flatMap(dataset => dataset.data.map(point => point.y))) },
+        x: { type: 'linear', ...axisStyle(theme, data.xUnit, data.separators.x, data.datasets.flatMap(dataset => dataset.data.map(point => point.x))) },
+        y: { type: SPACED_SCALE, ...axisStyle(theme, data.yUnit, data.separators.y, data.datasets.flatMap(dataset => dataset.data.map(point => point.y))) },
       },
       plugins: {
         // 與分組類的圖表相同，圖例列出各 dataset，只有一個 dataset 時不顯示
@@ -383,8 +387,8 @@ function pointConfig (definition: ChartShape, data: Extract<ChartData<object>, {
           callbacks: {
             label: context => {
               const raw = context.raw as { x: number, y: number, value?: number }
-              const r = raw.value === undefined ? '' : `、${formatValue(raw.value, 'number')}`
-              return `${context.dataset.label ?? ''}：${formatValue(raw.x, data.xUnit)}、${formatValue(raw.y, data.yUnit)}${r}`
+              const r = raw.value === undefined ? '' : `、${formatValue(raw.value, 'number', data.separators.r)}`
+              return `${context.dataset.label ?? ''}：${formatValue(raw.x, data.xUnit, data.separators.x)}、${formatValue(raw.y, data.yUnit, data.separators.y)}${r}`
             },
           },
         },

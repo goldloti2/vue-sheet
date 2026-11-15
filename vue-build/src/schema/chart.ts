@@ -2,7 +2,7 @@ import type { ColumnFilter, Filters } from './filter'
 import type { AnyColumn, ColorName, ColumnKey, RowKey, TableSchema } from './types'
 import { isActiveFilter, matchesFilter } from './filter'
 import { sortRows } from './sort'
-import { booleanText, durationSeconds, findColumn, formatDate, formatDuration } from './types'
+import { booleanText, columnSeparator, durationSeconds, findColumn, formatDate, formatDuration, formatNumber } from './types'
 import { isEmpty } from './validation'
 
 // 圖表：一張表的列如何畫成一張圖（見 docs/topics/chart.md）。定義於頁面，交給圖表元件
@@ -24,6 +24,8 @@ interface ChartGroup<Row extends object> {
   order?: { by?: 'group' | 'value', direction?: 'asc' | 'desc' }
   // 分組欄為空的列不列入圖表，百分比的分母也不包含。預設保留為「(空白)」一組
   excludeBlank?: boolean
+  // number 區間的名稱加上千分位。省略時依分組欄位的 separator
+  separator?: boolean
 }
 
 // 只顯示數值最大的前 N 組，其餘合併為「其他」。圓餅類預設 5，bar 與 stat 預設全部
@@ -50,6 +52,8 @@ type ChartValue<Row extends object> = (
 ) & {
   // 圖例的文字，預設由統計方式與欄位名稱組成
   label?: string
+  // 數字加上千分位，不用於百分比。省略時依 key 欄位的 separator，沒有 key 時不加
+  separator?: boolean
 }
 
 // bar 與 line 的數值可改畫成另一種，並指定左右軸
@@ -163,6 +167,8 @@ export interface CategoryDataset {
   // 與 labels 一一對應，null 為留空
   data: (number | null)[]
   unit: ChartUnit
+  // 數字加上千分位
+  separator?: boolean
   type?: 'bar' | 'line'
   axis?: 'left' | 'right'
   // 有系列時，為 compute 結果中 series 的索引
@@ -204,10 +210,17 @@ export interface ChartGroupData<Row> {
   colorKey: string
 }
 
+// scatter 與 bubble 的 x、y、r 是否加上千分位，依各自欄位的 separator
+export interface PointSeparators {
+  x: boolean
+  y: boolean
+  r: boolean
+}
+
 // compute 的結果，不含顏色。series 為各系列，沒有時為空陣列
 export type ChartData<Row>
   = | { kind: 'category', labels: string[], datasets: CategoryDataset[], groups: ChartGroupData<Row>[], series: ChartGroupData<Row>[] }
-    | { kind: 'point', datasets: PointDataset<Row>[], series: ChartGroupData<Row>[], xUnit: ChartUnit, yUnit: ChartUnit }
+    | { kind: 'point', datasets: PointDataset<Row>[], series: ChartGroupData<Row>[], xUnit: ChartUnit, yUnit: ChartUnit, separators: PointSeparators }
 
 // defineChart 的結果，交給圖表元件
 export interface ChartDefinition<Row extends object> {
@@ -404,8 +417,8 @@ function pad (value: number): string {
   return String(value).padStart(2, '0')
 }
 
-function numberText (value: number): string {
-  return String(Math.round(value * 100) / 100)
+function numberText (value: number, separator: boolean): string {
+  return formatNumber(Math.round(value * 100) / 100, separator)
 }
 
 // 換算為數字：boolean 為 1 或 0，duration 為秒數，date 為毫秒。空值為 null
@@ -485,7 +498,7 @@ function dateBuckets<Row> (rows: readonly Row[], column: AnyColumn, unit: DateUn
 }
 
 // number、duration 在最小值與最大值之間等分。區間為 ≥ 下限且 < 上限，最後一段不設上限。duration 的區間以秒數表示
-function rangeBuckets<Row> (rows: readonly Row[], column: AnyColumn, bins: number, blank: Row[]): Bucket<Row>[] {
+function rangeBuckets<Row> (rows: readonly Row[], column: AnyColumn, bins: number, separator: boolean, blank: Row[]): Bucket<Row>[] {
   const entries: { row: Row, value: number }[] = []
   for (const row of rows) {
     const value = toNumber((row as Cell)[column.key], column)
@@ -503,7 +516,7 @@ function rangeBuckets<Row> (rows: readonly Row[], column: AnyColumn, bins: numbe
   const max = Math.max(...entries.map(entry => entry.value))
   const count = max === min ? 1 : Math.max(1, Math.floor(bins))
   const width = (max - min) / count
-  const text = column.type === 'duration' ? formatDuration : numberText
+  const text = (value: number) => column.type === 'duration' ? formatDuration(value) : numberText(value, separator)
 
   const buckets: Bucket<Row>[] = Array.from({ length: count }, (_, index) => {
     const low = min + index * width
@@ -564,7 +577,7 @@ function groupBuckets<Row> (schema: TableSchema, rows: readonly Row[], column: A
     // 區間依先後產生，降序時反轉
     buckets = column.type === 'date'
       ? dateBuckets(rows, column, group.unit ?? 'month', blank)
-      : rangeBuckets(rows, column, group.bins ?? DEFAULT_BINS, blank)
+      : rangeBuckets(rows, column, group.bins ?? DEFAULT_BINS, group.separator ?? columnSeparator(column), blank)
     if (direction === 'desc') {
       buckets.reverse()
     }
@@ -683,6 +696,8 @@ function valueDatasets<Row> (value: Value, column: AnyColumn | undefined, bucket
     unit = unitOf(column)
   }
 
+  const separator = !percent && (value.separator ?? (column ? columnSeparator(column) : false))
+
   const cells = (series?.buckets ?? [undefined]).map(seriesBucket => {
     const groups = buckets.map(bucket => seriesBucket ? bucket.rows.filter(row => series?.of.get(row) === seriesBucket) : bucket.rows)
     return groups.map((rows, index) => ({ rows, stat: statOf(rows, value, column, { index, groups }) }))
@@ -708,6 +723,7 @@ function valueDatasets<Row> (value: Value, column: AnyColumn | undefined, bucket
       colorKey: seriesBucket ? name(seriesBucket.colorKey ?? seriesBucket.label) : label,
       data,
       unit,
+      ...(separator ? { separator: true } : {}),
       ...(mixed.type ? { type: mixed.type } : {}),
       ...(mixed.axis ? { axis: mixed.axis } : {}),
       ...(series ? { series: seriesIndex } : {}),
@@ -774,7 +790,7 @@ function computePoints<Row> (schema: TableSchema, input: ScatterChart<AnyRow> | 
   const rColumn = input.type === 'bubble' ? findColumn(schema, input.r) : undefined
   const seriesColumn = input.series ? findColumn(schema, input.series.key) : undefined
   if (!xColumn || !yColumn) {
-    return { kind: 'point', datasets: [], series: [], xUnit: 'number', yUnit: 'number' }
+    return { kind: 'point', datasets: [], series: [], xUnit: 'number', yUnit: 'number', separators: { x: false, y: false, r: false } }
   }
 
   const points = (list: readonly Row[]) => list.flatMap(row => {
@@ -797,6 +813,7 @@ function computePoints<Row> (schema: TableSchema, input: ScatterChart<AnyRow> | 
     series: buckets.map(bucket => groupData(bucket)),
     xUnit: unitOf(xColumn),
     yUnit: unitOf(yColumn),
+    separators: { x: columnSeparator(xColumn), y: columnSeparator(yColumn), r: rColumn ? columnSeparator(rColumn) : false },
   }
 }
 

@@ -8,7 +8,7 @@
     value: DisplayValue
   }>()
 
-  // 顏色為 Vuetify 主題的共用色名（plugins/vuetify.ts）
+  // 顏色為 Vuetify 主題的共用色名（plugins/colors.ts）
   function colorClass (color: ColorName | undefined): string | undefined {
     return color ? `text-vuesheet-${color}` : undefined
   }

@@ -4,6 +4,8 @@ import { vue } from '@codemirror/lang-vue'
 import { Compartment, EditorState } from '@codemirror/state'
 import { oneDark } from '@codemirror/theme-one-dark'
 import { basicSetup } from 'codemirror'
+import { hasTypeScriptService } from '../../../shared/typescript'
+import { typeScriptExtensions } from './typeScript'
 
 // 保留的 EditorState 會換到另一個元件實例使用。state 中不放依賴元件實例的 extension，compartment 於模組層級共用
 export const themeSlot = new Compartment()
@@ -25,6 +27,11 @@ function language (path: string): Extension {
 export function createEditorState (path: string, text: string, dark: boolean): EditorState {
   return EditorState.create({
     doc: text,
-    extensions: [basicSetup, language(path), themeSlot.of(themeExtension(dark))],
+    extensions: [
+      basicSetup,
+      language(path),
+      hasTypeScriptService(path) ? typeScriptExtensions(path) : [],
+      themeSlot.of(themeExtension(dark)),
+    ],
   })
 }

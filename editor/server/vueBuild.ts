@@ -1,6 +1,7 @@
 import type { Formatter } from './files.ts'
 import type { TypeScript } from './tableLabels.ts'
 import type { ESLint } from 'eslint'
+import type TS from 'typescript'
 import { createRequire } from 'node:module'
 import path from 'node:path'
 import { pathToFileURL } from 'node:url'
@@ -14,6 +15,44 @@ export async function importFromVueBuild<T> (vueBuildRoot: string, specifier: st
 export async function loadTypeScript (vueBuildRoot: string): Promise<TypeScript> {
   const module = await importFromVueBuild<{ default: TypeScript }>(vueBuildRoot, 'typescript')
   return module.default
+}
+
+/** Volar 的 Language，只列出此處用到的部分 */
+export interface VolarLanguage {
+  scripts: {
+    set: (id: string, snapshot: TS.IScriptSnapshot) => void
+    delete: (id: string) => void
+  }
+}
+
+/** vue-tsc 所用的 Vue 語言工具，只列出此處用到的部分 */
+export interface VueLanguageTools {
+  createParsedCommandLine: (ts: TypeScript, host: TS.ParseConfigHost, configFileName: string) => TS.ParsedCommandLine & { vueOptions: unknown }
+  createVueLanguagePlugin: (ts: TypeScript, options: TS.CompilerOptions, vueOptions: unknown, asFileName: (id: string) => string) => unknown
+  createLanguage: (plugins: unknown[], registry: Map<string, unknown>, sync: (id: string) => void) => VolarLanguage
+  FileMap: new (useCaseSensitiveFileNames: boolean) => Map<string, unknown>
+  decorateLanguageServiceHost: (ts: TypeScript, language: VolarLanguage, host: TS.LanguageServiceHost) => void
+  createProxyLanguageService: (service: TS.LanguageService) => { initialize: (language: VolarLanguage) => void, proxy: TS.LanguageService }
+  resolveFileLanguageId: (filePath: string) => string | undefined
+}
+
+// CommonJS 的套件以 default 取得 module.exports
+export async function loadVueLanguageTools (vueBuildRoot: string): Promise<VueLanguageTools> {
+  const load = async <T>(specifier: string) => (await importFromVueBuild<{ default: T }>(vueBuildRoot, specifier)).default
+  const [vue, language, typescript] = await Promise.all([
+    load<Pick<VueLanguageTools, 'createParsedCommandLine' | 'createVueLanguagePlugin'>>('@vue/language-core'),
+    load<Pick<VueLanguageTools, 'createLanguage' | 'FileMap'>>('@volar/language-core'),
+    load<Pick<VueLanguageTools, 'decorateLanguageServiceHost' | 'createProxyLanguageService' | 'resolveFileLanguageId'>>('@volar/typescript'),
+  ])
+  return {
+    createParsedCommandLine: vue.createParsedCommandLine,
+    createVueLanguagePlugin: vue.createVueLanguagePlugin,
+    createLanguage: language.createLanguage,
+    FileMap: language.FileMap,
+    decorateLanguageServiceHost: typescript.decorateLanguageServiceHost,
+    createProxyLanguageService: typescript.createProxyLanguageService,
+    resolveFileLanguageId: typescript.resolveFileLanguageId,
+  }
 }
 
 const LINTED_EXTENSIONS = new Set(['.ts', '.vue', '.js', '.mts'])

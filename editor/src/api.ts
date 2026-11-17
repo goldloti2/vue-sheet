@@ -2,6 +2,7 @@
 
 import type { FileContent, ProjectIndex, WriteRequest, WriteResult } from '../shared/api'
 import type { PreviewDraft, PreviewSource, PreviewStatus } from '../shared/preview'
+import type { CodeCompletions, CodeDiagnostic, CodeRequest, CompletionRequest } from '../shared/typescript'
 
 async function request<T> (url: string, init?: RequestInit): Promise<T> {
   const response = await fetch(url, init)
@@ -25,6 +26,24 @@ export function putFile (body: WriteRequest): Promise<WriteResult> {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
+  })
+}
+
+export function fetchDiagnostics (body: CodeRequest, signal?: AbortSignal): Promise<CodeDiagnostic[]> {
+  return request('/api/ts/diagnostics', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+    signal,
+  })
+}
+
+export function fetchCompletions (body: CompletionRequest, signal?: AbortSignal): Promise<CodeCompletions> {
+  return request('/api/ts/completions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+    signal,
   })
 }
 

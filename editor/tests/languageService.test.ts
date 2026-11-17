@@ -1,5 +1,4 @@
-import type { TypeScript } from '../server/tableLabels'
-import type { VueLanguageTools } from '../server/vueBuild'
+import type { TypeScript, VueLanguageTools } from '../server/vueBuild'
 import { mkdir, mkdtemp, rm, symlink, unlink, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'

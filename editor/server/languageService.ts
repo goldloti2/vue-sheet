@@ -2,8 +2,7 @@
 // .vue 檔經由 vue-tsc 所用的 Vue 語言工具轉為 TypeScript，診斷與補全的位置對應回 .vue 的原文
 // 此檔由 worker 以 Node 直接執行：只使用可移除的型別語法，相對路徑的匯入須寫副檔名
 import type { CodeCompletions, CodeDiagnostic } from '../shared/typescript.ts'
-import type { TypeScript } from './tableLabels.ts'
-import type { VueLanguageTools } from './vueBuild.ts'
+import type { TypeScript, VueLanguageTools } from './vueBuild.ts'
 import type TS from 'typescript'
 import { statSync } from 'node:fs'
 import path from 'node:path'

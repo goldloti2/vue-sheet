@@ -4,6 +4,7 @@ import type { Extension } from '@codemirror/state'
 import { autocompletion } from '@codemirror/autocomplete'
 import { type Diagnostic, linter, lintGutter } from '@codemirror/lint'
 import { fetchCompletions, fetchDiagnostics } from '@/api'
+import { useProblemsStore } from '@/stores/problems'
 
 // 停止輸入此毫秒數後才檢查
 const LINT_DELAY = 500
@@ -46,14 +47,33 @@ function completionOption (entry: CodeCompletionEntry) {
 const TRIGGER = /[.'"`/]$/
 
 // 檢查與補全以編輯中的內容為準，可能尚未儲存。extension 只依賴路徑，可隨保留的 EditorState 換到另一個元件實例
+// 檢查的結果同時列於問題分頁
 export function typeScriptExtensions (path: string): Extension {
   const lint = linter(async view => {
-    const text = view.state.doc.toString()
-    const diagnostics = await fetchDiagnostics({ path, text }).catch(() => [])
-    const length = view.state.doc.length
-    return diagnostics.map((diagnostic): Diagnostic => ({
-      from: Math.min(diagnostic.from, length),
-      to: Math.min(diagnostic.to, length),
+    const { doc } = view.state
+    const diagnostics = await fetchDiagnostics({ path, text: doc.toString() }).catch(() => null)
+    if (!diagnostics) {
+      return []
+    }
+    const clamped = diagnostics.map(diagnostic => ({
+      ...diagnostic,
+      from: Math.min(diagnostic.from, doc.length),
+      to: Math.min(diagnostic.to, doc.length),
+    }))
+    useProblemsStore().setLive(path, clamped.map(diagnostic => {
+      const line = doc.lineAt(diagnostic.from)
+      return {
+        source: 'ts',
+        path,
+        position: { line: line.number, column: diagnostic.from - line.from + 1 },
+        severity: diagnostic.severity,
+        message: diagnostic.message,
+        code: `TS${diagnostic.code}`,
+      }
+    }))
+    return clamped.map((diagnostic): Diagnostic => ({
+      from: diagnostic.from,
+      to: diagnostic.to,
       severity: diagnostic.severity,
       message: diagnostic.message,
       source: `TS${diagnostic.code}`,

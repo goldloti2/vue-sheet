@@ -1,15 +1,23 @@
-import type { Formatter } from './files.ts'
-import type { TypeScript } from './tableLabels.ts'
-import type { ESLint } from 'eslint'
 import type TS from 'typescript'
+import { readFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import path from 'node:path'
 import { pathToFileURL } from 'node:url'
+
+export type TypeScript = typeof TS
 
 // 預覽與檢查所用的工具一律取自 vue-build 的 node_modules，版本與正式 build 相同
 export async function importFromVueBuild<T> (vueBuildRoot: string, specifier: string): Promise<T> {
   const require = createRequire(path.join(vueBuildRoot, 'package.json'))
   return await import(pathToFileURL(require.resolve(specifier)).href) as T
+}
+
+// 套件的指令檔，以 node 執行
+export function resolveBin (vueBuildRoot: string, name: string): string {
+  const require = createRequire(path.join(vueBuildRoot, 'package.json'))
+  const manifest = require.resolve(`${name}/package.json`)
+  const { bin } = JSON.parse(readFileSync(manifest, 'utf8')) as { bin: string | Record<string, string> }
+  return path.join(path.dirname(manifest), typeof bin === 'string' ? bin : bin[name]!)
 }
 
 export async function loadTypeScript (vueBuildRoot: string): Promise<TypeScript> {
@@ -52,24 +60,5 @@ export async function loadVueLanguageTools (vueBuildRoot: string): Promise<VueLa
     decorateLanguageServiceHost: typescript.decorateLanguageServiceHost,
     createProxyLanguageService: typescript.createProxyLanguageService,
     resolveFileLanguageId: typescript.resolveFileLanguageId,
-  }
-}
-
-const LINTED_EXTENSIONS = new Set(['.ts', '.vue', '.js', '.mts'])
-
-// 以 vue-build 的 ESLint 設定修正格式。vue-build 以外的檔案與其他副檔名照原樣回傳
-export function createFormatter (vueBuildRoot: string): Formatter {
-  let eslint: Promise<ESLint> | null = null
-
-  return async (absolute, text) => {
-    const relative = path.relative(vueBuildRoot, absolute)
-    if (relative.startsWith('..') || !LINTED_EXTENSIONS.has(path.extname(absolute))) {
-      return text
-    }
-
-    eslint ??= importFromVueBuild<{ ESLint: typeof ESLint }>(vueBuildRoot, 'eslint')
-      .then(module => new module.ESLint({ cwd: vueBuildRoot, fix: true }))
-    const [result] = await (await eslint).lintText(text, { filePath: absolute })
-    return result?.output ?? text
   }
 }

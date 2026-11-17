@@ -1,4 +1,4 @@
-import type { FileChangedEvent, FileContent, ProjectIndex, WriteResult } from '../../shared/api'
+import type { FileChangedEvent, FileContent, ProjectIndex, TableSummary, WriteResult } from '../../shared/api'
 import type { EditorState } from '@codemirror/state'
 import { defineStore } from 'pinia'
 import { computed, reactive, shallowRef } from 'vue'
@@ -15,6 +15,13 @@ export interface OpenFile {
   text: string
 }
 
+/** 開啟檔案後移至的位置。行與欄從 1 起算 */
+export interface RevealTarget {
+  path: string
+  line: number
+  column: number
+}
+
 // 表單的勾選、選單等修改後，經過此毫秒數才更新預覽
 export const PREVIEW_SYNC_DELAY = 500
 
@@ -24,9 +31,11 @@ const CONFLICT_MESSAGE = '檔案已在別處修改。畫面保留你的修改，
 // 開過的檔案只保留資料。畫面只建立目前的檔案
 export const useFilesStore = defineStore('files', () => {
   const paths = shallowRef<string[]>([])
-  const tableLabels = shallowRef<Record<string, string>>({})
+  const tables = shallowRef<Record<string, TableSummary>>({})
   const files = reactive(new Map<string, OpenFile>())
   const currentPath = shallowRef<string | null>(null)
+  // 文字編輯器移至此位置後清除
+  const reveal = shallowRef<RevealTarget | null>(null)
   const message = shallowRef<string | null>(null)
   // CodeMirror 的狀態（游標、捲動、復原紀錄）不經過 Vue 的 reactive
   const editorStates = new Map<string, EditorState>()
@@ -37,6 +46,9 @@ export const useFilesStore = defineStore('files', () => {
   const previewTimers = new Map<string, ReturnType<typeof setTimeout>>()
 
   const current = computed(() => currentPath.value === null ? null : files.get(currentPath.value) ?? null)
+  // 讀得到 tableLabel 的表
+  const tableLabels = computed(() => Object.fromEntries(Object.entries(tables.value)
+    .flatMap(([key, table]) => table.label === null ? [] : [[key, table.label]])))
   const dirtyPaths = computed(() => new Set([...files.values()].filter(file => file.text !== file.savedText).map(file => file.path)))
 
   function remember (content: FileContent): void {
@@ -65,7 +77,7 @@ export const useFilesStore = defineStore('files', () => {
 
   function setIndex (index: ProjectIndex): void {
     paths.value = index.paths
-    tableLabels.value = index.tableLabels
+    tables.value = index.tables
   }
 
   // 編輯器開啟時，清除上次留在預覽中的未儲存內容
@@ -97,7 +109,7 @@ export const useFilesStore = defineStore('files', () => {
     previewTimers.set(path, setTimeout(() => void syncPreview(path), PREVIEW_SYNC_DELAY))
   }
 
-  async function open (path: string): Promise<void> {
+  async function open (path: string, position?: { line: number, column: number }): Promise<void> {
     if (!files.has(path)) {
       const content = await fetchFile(path)
       if (!content) {
@@ -107,6 +119,11 @@ export const useFilesStore = defineStore('files', () => {
       remember(content)
     }
     currentPath.value = path
+    reveal.value = position ? { path, ...position } : null
+  }
+
+  function clearReveal (): void {
+    reveal.value = null
   }
 
   function setText (path: string, text: string): void {
@@ -211,13 +228,16 @@ export const useFilesStore = defineStore('files', () => {
 
   return {
     paths,
+    tables,
     tableLabels,
     currentPath,
+    reveal,
     current,
     dirtyPaths,
     message,
     initialize,
     open,
+    clearReveal,
     setText,
     setEditorState,
     editorState,

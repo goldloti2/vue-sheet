@@ -8,6 +8,7 @@
 
   const file = computed(() => store.current)
   const dirty = computed(() => file.value !== null && store.dirtyPaths.has(file.value.path))
+  const reveal = computed(() => store.reveal !== null && store.reveal.path === file.value?.path ? store.reveal : null)
 
   function onChange (path: string, text: string): void {
     store.setText(path, text)
@@ -50,10 +51,12 @@
         class="file-view__editor"
         :initial-state="store.editorState(file.path)"
         :path="file.path"
+        :reveal="reveal"
         :text="file.text"
         @blur="onBlur"
         @change="onChange"
         @leave="onLeave"
+        @revealed="store.clearReveal"
       />
     </template>
 

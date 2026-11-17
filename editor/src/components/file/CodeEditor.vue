@@ -4,18 +4,22 @@
   import { onBeforeUnmount, onMounted, useTemplateRef, watch } from 'vue'
   import { useTheme } from 'vuetify'
   import { createEditorState, themeExtension, themeSlot } from './codeMirror'
+  import { forgetInsertTarget, rememberInsertTarget } from './insertTarget'
 
   const props = defineProps<{
     path: string
     text: string
     /** 上次離開這個檔案時的狀態。內容與 text 不同時不使用 */
     initialState: EditorState | null
+    /** 移至此位置並聚焦。行與欄從 1 起算 */
+    reveal: { line: number, column: number } | null
   }>()
 
   const emit = defineEmits<{
     change: [path: string, text: string]
     leave: [path: string, state: EditorState]
     blur: [path: string]
+    revealed: []
   }>()
 
   const host = useTemplateRef('host')
@@ -41,8 +45,27 @@
       view.dispatch({ effects: themeSlot.reconfigure(themeExtension(dark())) })
     }
     // 焦點的監聽同樣不放在 state 中
+    const created = view
     view.contentDOM.addEventListener('blur', () => emit('blur', props.path))
+    view.contentDOM.addEventListener('focus', () => rememberInsertTarget(created))
+    rememberInsertTarget(view)
+    revealPosition()
   })
+
+  // 超出範圍的行與欄改為最接近的位置
+  function revealPosition (): void {
+    if (!view || !props.reveal) {
+      return
+    }
+    const { doc } = view.state
+    const line = doc.line(Math.min(Math.max(props.reveal.line, 1), doc.lines))
+    const pos = Math.min(line.from + Math.max(props.reveal.column - 1, 0), line.to)
+    view.dispatch({ selection: { anchor: pos }, effects: EditorView.scrollIntoView(pos, { y: 'center' }) })
+    view.focus()
+    emit('revealed')
+  }
+
+  watch(() => props.reveal, revealPosition)
 
   // 放棄修改或重新讀取時，以新的內容取代
   watch(() => props.text, text => {
@@ -58,6 +81,7 @@
   onBeforeUnmount(() => {
     if (view) {
       emit('leave', props.path, view.state)
+      forgetInsertTarget(view)
       view.destroy()
     }
   })

@@ -7,8 +7,10 @@
   import { MOBILE_HEIGHT, MOBILE_WIDTH, PREVIEW_GUTTER, PREVIEW_TOOLBAR_HEIGHT } from '@/components/preview/types'
   import { useSaveShortcuts } from '@/composables/useSaveShortcuts'
   import { useFilesStore } from '@/stores/files'
+  import { useProblemsStore } from '@/stores/problems'
 
   const store = useFilesStore()
+  const problems = useProblemsStore()
   useSaveShortcuts()
 
   // 預覽欄比手機版縮小後的寬度略寬。視窗不夠高時，手機版縮小，預覽欄隨之變窄
@@ -25,6 +27,7 @@
 
   onMounted(() => {
     void store.initialize()
+    void problems.load()
   })
 </script>
 

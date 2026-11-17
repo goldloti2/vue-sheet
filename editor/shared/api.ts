@@ -18,11 +18,26 @@ export type WriteResult
   /** 檔案已在別處修改。file 為目前的內容，檔案已刪除時為 null */
     | { ok: false, file: FileContent | null }
 
-/** 專案的檔案清單，以及各表的名稱 */
+/** schema 中以字面值寫成的欄位。其他寫法的屬性為 null */
+export interface TableColumn {
+  key: string
+  label: string | null
+  type: string | null
+  /** 列於 virtualColumns 的欄位 */
+  virtual: boolean
+}
+
+export interface TableSummary {
+  /** tableLabel。不是以字串直接寫值時為 null */
+  label: string | null
+  columns: TableColumn[]
+}
+
+/** 專案的檔案清單，以及各表的名稱與欄位 */
 export interface ProjectIndex {
   paths: string[]
-  /** 表的代號（檔名）對應 tableLabel。讀不到 tableLabel 的表不列入 */
-  tableLabels: Record<string, string>
+  /** 表的代號（檔名）對應表名與欄位 */
+  tables: Record<string, TableSummary>
 }
 
 export interface FileChangedEvent {

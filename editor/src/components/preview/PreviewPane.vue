@@ -101,6 +101,7 @@
         :device="device"
         :url="status.url"
         @console="store.addEntry"
+        @vite-error="store.setViteProblem"
       />
 
       <div v-else-if="status.state === 'starting'" class="preview-pane__body preview-pane__message text-medium-emphasis">

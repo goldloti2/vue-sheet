@@ -1,6 +1,7 @@
 // 介面與編輯器服務之間的呼叫。其他程式一律經由此處，不自行 fetch
 
 import type { FileContent, ProjectIndex, WriteRequest, WriteResult } from '../shared/api'
+import type { ChecksSnapshot } from '../shared/checks'
 import type { PreviewDraft, PreviewSource, PreviewStatus } from '../shared/preview'
 import type { CodeCompletions, CodeDiagnostic, CodeRequest, CompletionRequest } from '../shared/typescript'
 
@@ -45,6 +46,14 @@ export function fetchCompletions (body: CompletionRequest, signal?: AbortSignal)
     body: JSON.stringify(body),
     signal,
   })
+}
+
+export function fetchChecks (): Promise<ChecksSnapshot> {
+  return request('/api/checks')
+}
+
+export function startBuild (): Promise<unknown> {
+  return request('/api/build', { method: 'POST' })
 }
 
 export function fetchPreviewStatus (): Promise<PreviewStatus> {

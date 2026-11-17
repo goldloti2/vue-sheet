@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+  import type { Problem } from '../../../shared/checks'
   import type { ConsoleEntry, PreviewCommand, PreviewPageMessage } from '../../../shared/preview'
   import type { PreviewDevice } from './types'
   import { computed, useTemplateRef } from 'vue'
@@ -13,7 +14,8 @@
   }>()
 
   const emit = defineEmits<{
-    console: [entry: ConsoleEntry]
+    'console': [entry: ConsoleEntry]
+    'vite-error': [problem: Problem | null]
   }>()
 
   const container = useTemplateRef<HTMLElement>('container')
@@ -45,7 +47,11 @@
     if (event.source !== frame.value?.contentWindow || event.origin !== origin.value || event.data?.tag !== PREVIEW_MESSAGE_TAG) {
       return
     }
-    emit('console', { origin: 'page', level: event.data.level, text: event.data.text, time: Date.now() })
+    if (event.data.kind === 'vite-error') {
+      emit('vite-error', event.data.problem)
+    } else {
+      emit('console', { origin: 'page', level: event.data.level, text: event.data.text, time: Date.now() })
+    }
   })
 
   // 預覽頁面重新載入目前的網址

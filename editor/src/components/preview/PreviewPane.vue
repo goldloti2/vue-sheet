@@ -1,6 +1,7 @@
 <script lang="ts" setup>
   import type { PreviewSource } from '../../../shared/preview'
   import type { PreviewDevice } from './types'
+  import { mdiChevronLeft } from '@mdi/js'
   import { computed, onMounted, shallowRef, useTemplateRef, watch } from 'vue'
   import { useEventListener } from '@/composables/useEventListener'
   import { usePreviewStore } from '@/stores/preview'
@@ -8,6 +9,8 @@
   import PreviewToolbar from './PreviewToolbar.vue'
 
   const store = usePreviewStore()
+  // 收合時只留展開的按鈕。預覽頁面保留，不重新載入
+  const collapsed = defineModel<boolean>('collapsed', { default: false })
   const device = shallowRef<PreviewDevice>('mobile')
   const fullWindow = shallowRef(false)
 
@@ -63,12 +66,17 @@
 </script>
 
 <template>
-  <section class="preview-pane" :class="{ 'preview-pane--full': fullWindow }">
+  <section class="preview-pane" :class="{ 'preview-pane--full': fullWindow, 'preview-pane--collapsed': collapsed && !fullWindow }">
+    <div v-if="collapsed && !fullWindow" class="preview-pane__expand">
+      <v-btn aria-label="展開預覽" :icon="mdiChevronLeft" variant="text" @click="collapsed = false" />
+    </div>
+
     <template v-if="status">
       <PreviewToolbar
         v-model:device="device"
         v-model:full-window="fullWindow"
         :status="status"
+        @collapse="collapsed = true"
         @reload="reload"
         @start="start"
       />
@@ -130,6 +138,16 @@
   position: fixed;
   inset: 0;
   z-index: 1500;
+}
+
+.preview-pane--collapsed > :not(.preview-pane__expand) {
+  display: none !important;
+}
+
+.preview-pane__expand {
+  display: flex;
+  justify-content: center;
+  padding-top: 4px;
 }
 
 .preview-pane__notice {

@@ -1,14 +1,30 @@
 <script lang="ts" setup>
   import type { EditorState } from '@codemirror/state'
-  import { computed } from 'vue'
+  import { computed, shallowRef, watch } from 'vue'
+  import SchemaForm from '@/components/schema/SchemaForm.vue'
   import { useFilesStore } from '@/stores/files'
+  import { tableKeyOf } from '../../../shared/tableKeys'
   import CodeEditor from './CodeEditor.vue'
+
+  type ViewMode = 'form' | 'text'
 
   const store = useFilesStore()
 
   const file = computed(() => store.current)
   const dirty = computed(() => file.value !== null && store.dirtyPaths.has(file.value.path))
   const reveal = computed(() => store.reveal !== null && store.reveal.path === file.value?.path ? store.reveal : null)
+
+  // 表的 schema 有表單。各檔案共用同一個選擇
+  const mode = shallowRef<ViewMode>('form')
+  const hasForm = computed(() => file.value !== null && tableKeyOf(file.value.path) !== null)
+  const showForm = computed(() => hasForm.value && mode.value === 'form')
+
+  // 移至某一行時改用文字編輯器
+  watch(reveal, target => {
+    if (target) {
+      mode.value = 'text'
+    }
+  })
 
   function onChange (path: string, text: string): void {
     store.setText(path, text)
@@ -34,8 +50,35 @@
           <span v-if="dirty" class="text-medium-emphasis">（未儲存）</span>
         </v-toolbar-title>
 
-        <v-btn :disabled="!dirty" text="放棄修改" variant="text" @click="store.discard(file.path)" />
-        <v-btn :disabled="store.dirtyPaths.size === 0" text="全部儲存" variant="text" @click="store.saveAll()" />
+        <v-btn-toggle
+          v-if="hasForm"
+          v-model="mode"
+          border
+          class="mr-2"
+          color="primary"
+          density="compact"
+          mandatory
+          variant="text"
+        >
+          <v-btn size="small" text="表單" value="form" />
+          <v-btn size="small" text="文字" value="text" />
+        </v-btn-toggle>
+
+        <v-btn
+          class="mr-2"
+          :disabled="!dirty"
+          text="放棄修改"
+          variant="text"
+          @click="store.discard(file.path)"
+        />
+
+        <v-btn
+          class="mr-2"
+          :disabled="store.dirtyPaths.size === 0"
+          text="全部儲存"
+          variant="text"
+          @click="store.saveAll()"
+        />
 
         <v-btn
           color="primary"
@@ -46,7 +89,16 @@
         />
       </v-toolbar>
 
+      <SchemaForm
+        v-if="showForm"
+        :key="`form-${file.path}`"
+        class="file-view__editor"
+        :path="file.path"
+        :text="file.text"
+      />
+
       <CodeEditor
+        v-else
         :key="file.path"
         class="file-view__editor"
         :initial-state="store.editorState(file.path)"

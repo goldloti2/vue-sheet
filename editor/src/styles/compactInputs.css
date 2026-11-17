@@ -1,0 +1,10 @@
+/* 表單中較矮的輸入框：高 32px。加上此 class 的元素中，compact 密度的 outlined 輸入框皆適用 */
+.editor-compact-inputs .v-input--density-compact {
+  --v-input-control-height: 32px;
+  --v-input-padding-top: 4px;
+}
+
+.editor-compact-inputs .v-input--density-compact .v-field--variant-outlined {
+  --v-field-padding-top: 0px;
+  --v-field-padding-bottom: 4px;
+}

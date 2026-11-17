@@ -38,3 +38,21 @@ export interface CompletionRequest extends CodeRequest {
 export function hasTypeScriptService (filePath: string): boolean {
   return filePath.startsWith('vue-build/src/') && /\.(?:ts|vue)$/.test(filePath)
 }
+
+// 位移所在的行與欄，從 1 起算
+export function positionAt (text: string, offset: number): { line: number, column: number } {
+  const before = text.slice(0, offset)
+  const lineStart = before.lastIndexOf('\n') + 1
+  return { line: before.split('\n').length, column: offset - lineStart + 1 }
+}
+
+// 整個檔案的診斷中落在 [offset, offset + length] 之內的部分，位置改為相對於 offset
+export function diagnosticsWithin (diagnostics: readonly CodeDiagnostic[], offset: number, length: number): CodeDiagnostic[] {
+  return diagnostics
+    .filter(diagnostic => diagnostic.from >= offset && diagnostic.from <= offset + length)
+    .map(diagnostic => ({
+      ...diagnostic,
+      from: diagnostic.from - offset,
+      to: Math.min(diagnostic.to, offset + length) - offset,
+    }))
+}

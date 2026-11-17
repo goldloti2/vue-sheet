@@ -3,6 +3,7 @@
 import type { FileContent, ProjectIndex, WriteRequest, WriteResult } from '../shared/api'
 import type { ChecksSnapshot } from '../shared/checks'
 import type { PreviewDraft, PreviewSource, PreviewStatus } from '../shared/preview'
+import type { CodeContext, CodeContextRequest, SchemaEditRequest, SchemaEditResult, SchemaModel, SchemaTypes } from '../shared/schema'
 import type { CodeCompletions, CodeDiagnostic, CodeRequest, CompletionRequest } from '../shared/typescript'
 
 async function request<T> (url: string, init?: RequestInit): Promise<T> {
@@ -46,6 +47,35 @@ export function fetchCompletions (body: CompletionRequest, signal?: AbortSignal)
     body: JSON.stringify(body),
     signal,
   })
+}
+
+function postJson<T> (url: string, body: unknown, signal?: AbortSignal): Promise<T> {
+  return request(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+    signal,
+  })
+}
+
+export function fetchSchemaTypes (): Promise<SchemaTypes> {
+  return request('/api/schema/types')
+}
+
+export function parseSchemaText (text: string): Promise<SchemaModel> {
+  return postJson('/api/schema/parse', { text })
+}
+
+export function editSchema (body: SchemaEditRequest): Promise<SchemaEditResult> {
+  return postJson('/api/schema/edit', body)
+}
+
+export function fetchCodeContext (body: CodeContextRequest): Promise<CodeContext> {
+  return postJson('/api/schema/context', body)
+}
+
+export function fetchIcons (): Promise<Record<string, string>> {
+  return request('/api/icons')
 }
 
 export function fetchChecks (): Promise<ChecksSnapshot> {

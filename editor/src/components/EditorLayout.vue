@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-  import { computed, onMounted } from 'vue'
+  import { computed, onMounted, shallowRef } from 'vue'
   import FileView from '@/components/file/FileView.vue'
   import ProjectNav from '@/components/nav/ProjectNav.vue'
   import BottomPanel from '@/components/panel/BottomPanel.vue'
@@ -14,7 +14,12 @@
   useSaveShortcuts()
 
   // 預覽欄比手機版縮小後的寬度略寬。視窗不夠高時，手機版縮小，預覽欄隨之變窄
-  const previewColumn = `calc(min(${MOBILE_WIDTH}px, (100vh - ${PREVIEW_TOOLBAR_HEIGHT}px) * ${MOBILE_WIDTH / MOBILE_HEIGHT}) + ${PREVIEW_GUTTER * 2}px)`
+  const previewExpanded = `calc(min(${MOBILE_WIDTH}px, (100vh - ${PREVIEW_TOOLBAR_HEIGHT}px) * ${MOBILE_WIDTH / MOBILE_HEIGHT}) + ${PREVIEW_GUTTER * 2}px)`
+
+  // 收合時只留展開的按鈕
+  const PREVIEW_COLLAPSED_WIDTH = '48px'
+  const previewCollapsed = shallowRef(false)
+  const previewColumn = computed(() => previewCollapsed.value ? PREVIEW_COLLAPSED_WIDTH : previewExpanded)
 
   const snackbar = computed({
     get: () => store.message !== null,
@@ -43,7 +48,7 @@
     />
 
     <FileView class="editor-layout__file" />
-    <PreviewPane class="editor-layout__preview" />
+    <PreviewPane v-model:collapsed="previewCollapsed" class="editor-layout__preview" />
     <BottomPanel class="editor-layout__panel" />
 
     <v-snackbar v-model="snackbar" multi-line :timeout="-1">

@@ -1,10 +1,12 @@
-import type { CodeCompletionEntry } from '../../../shared/typescript'
+import type { Problem } from '../../../shared/checks'
+import type { CodeCompletionEntry, CodeDiagnostic } from '../../../shared/typescript'
 import type { CompletionContext, CompletionResult } from '@codemirror/autocomplete'
 import type { Extension } from '@codemirror/state'
 import { autocompletion } from '@codemirror/autocomplete'
 import { type Diagnostic, linter, lintGutter } from '@codemirror/lint'
 import { fetchCompletions, fetchDiagnostics } from '@/api'
 import { useProblemsStore } from '@/stores/problems'
+import { diagnosticsWithin, positionAt } from '../../../shared/typescript'
 
 // 停止輸入此毫秒數後才檢查
 const LINT_DELAY = 500
@@ -46,32 +48,37 @@ function completionOption (entry: CodeCompletionEntry) {
 // 只在輸入識別字、點、引號或斜線之後，或以 Ctrl+Space 要求時才查詢
 const TRIGGER = /[.'"`/]$/
 
-// 檢查與補全以編輯中的內容為準，可能尚未儲存。extension 只依賴路徑，可隨保留的 EditorState 換到另一個元件實例
-// 檢查的結果同時列於問題分頁
-export function typeScriptExtensions (path: string): Extension {
+/** 編輯中的內容在整個檔案中的位置。prefix 與 suffix 之間即為編輯中的內容 */
+export interface CodeSurroundings {
+  prefix: string
+  suffix: string
+}
+
+interface CodeIntelligence {
+  path: string
+  /** 回傳 null 時不檢查也不補全 */
+  surroundings: () => CodeSurroundings | null
+  /** 收到整個檔案的診斷 */
+  onFileDiagnostics?: (text: string, diagnostics: CodeDiagnostic[]) => void
+  /** 行號左側的錯誤標記 */
+  gutter: boolean
+}
+
+// 檢查與補全以編輯中的內容為準，可能尚未儲存。編輯中的內容可為檔案的一段，診斷與補全的位置對應回這一段
+function codeIntelligence ({ path, surroundings, onFileDiagnostics, gutter }: CodeIntelligence): Extension {
   const lint = linter(async view => {
     const { doc } = view.state
-    const diagnostics = await fetchDiagnostics({ path, text: doc.toString() }).catch(() => null)
+    const around = surroundings()
+    if (!around) {
+      return []
+    }
+    const text = `${around.prefix}${doc.toString()}${around.suffix}`
+    const diagnostics = await fetchDiagnostics({ path, text }).catch(() => null)
     if (!diagnostics) {
       return []
     }
-    const clamped = diagnostics.map(diagnostic => ({
-      ...diagnostic,
-      from: Math.min(diagnostic.from, doc.length),
-      to: Math.min(diagnostic.to, doc.length),
-    }))
-    useProblemsStore().setLive(path, clamped.map(diagnostic => {
-      const line = doc.lineAt(diagnostic.from)
-      return {
-        source: 'ts',
-        path,
-        position: { line: line.number, column: diagnostic.from - line.from + 1 },
-        severity: diagnostic.severity,
-        message: diagnostic.message,
-        code: `TS${diagnostic.code}`,
-      }
-    }))
-    return clamped.map((diagnostic): Diagnostic => ({
+    onFileDiagnostics?.(text, diagnostics)
+    return diagnosticsWithin(diagnostics, around.prefix.length, doc.length).map((diagnostic): Diagnostic => ({
       from: diagnostic.from,
       to: diagnostic.to,
       severity: diagnostic.severity,
@@ -83,22 +90,53 @@ export function typeScriptExtensions (path: string): Extension {
   const complete = async (context: CompletionContext): Promise<CompletionResult | null> => {
     const word = context.matchBefore(/[\w$]*/)
     const before = context.state.sliceDoc(Math.max(0, context.pos - 1), context.pos)
-    if (!context.explicit && (!word || word.from === word.to) && !TRIGGER.test(before)) {
+    const around = surroundings()
+    if (!around || (!context.explicit && (!word || word.from === word.to) && !TRIGGER.test(before))) {
       return null
     }
     const controller = new AbortController()
     context.addEventListener('abort', () => controller.abort())
-    const result = await fetchCompletions({ path, text: context.state.doc.toString(), pos: context.pos }, controller.signal)
-      .catch(() => null)
+    const offset = around.prefix.length
+    const text = `${around.prefix}${context.state.doc.toString()}${around.suffix}`
+    const result = await fetchCompletions({ path, text, pos: context.pos + offset }, controller.signal).catch(() => null)
     if (!result || result.entries.length === 0) {
       return null
     }
     return {
-      from: result.from ?? word?.from ?? context.pos,
+      from: result.from === null ? word?.from ?? context.pos : result.from - offset,
       options: result.entries.map(entry => completionOption(entry)),
       validFor: /^[\w$]*$/,
     }
   }
 
-  return [lint, lintGutter(), autocompletion({ override: [complete] })]
+  return [lint, gutter ? lintGutter() : [], autocompletion({ override: [complete] })]
+}
+
+const WHOLE_FILE: CodeSurroundings = { prefix: '', suffix: '' }
+
+// 整個檔案。extension 只依賴路徑，可隨保留的 EditorState 換到另一個元件實例。檢查的結果同時列於問題分頁
+export function typeScriptExtensions (path: string): Extension {
+  return codeIntelligence({
+    path,
+    surroundings: () => WHOLE_FILE,
+    onFileDiagnostics: (text, diagnostics) => useProblemsStore().setLive(path, liveProblems(path, text, diagnostics)),
+    gutter: true,
+  })
+}
+
+// 檔案中的一段，例如表單的程式碼輸入框。沒有行號，因此也沒有錯誤標記
+export function snippetExtensions (path: string, surroundings: () => CodeSurroundings | null): Extension {
+  return codeIntelligence({ path, surroundings, gutter: false })
+}
+
+// 即時檢查的診斷轉為問題分頁的問題
+export function liveProblems (path: string, text: string, diagnostics: readonly CodeDiagnostic[]): Problem[] {
+  return diagnostics.map(diagnostic => ({
+    source: 'ts',
+    path,
+    position: positionAt(text, Math.min(diagnostic.from, text.length)),
+    severity: diagnostic.severity,
+    message: diagnostic.message,
+    code: `TS${diagnostic.code}`,
+  }))
 }

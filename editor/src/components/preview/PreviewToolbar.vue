@@ -1,7 +1,7 @@
 <script lang="ts" setup>
   import type { PreviewSource, PreviewStatus } from '../../../shared/preview'
   import type { PreviewDevice } from './types'
-  import { mdiCellphone, mdiFullscreen, mdiFullscreenExit, mdiMonitor, mdiRefresh } from '@mdi/js'
+  import { mdiCellphone, mdiChevronRight, mdiFullscreen, mdiFullscreenExit, mdiMonitor, mdiRefresh } from '@mdi/js'
   import { computed } from 'vue'
   import { PREVIEW_SOURCES } from '../../../shared/preview'
 
@@ -12,6 +12,7 @@
   const emit = defineEmits<{
     start: [source: PreviewSource]
     reload: []
+    collapse: []
   }>()
 
   const device = defineModel<PreviewDevice>('device', { required: true })
@@ -74,6 +75,13 @@
       :aria-label="fullWindow ? '結束全視窗' : '全視窗'"
       :icon="fullWindow ? mdiFullscreenExit : mdiFullscreen"
       @click="fullWindow = !fullWindow"
+    />
+
+    <v-btn
+      v-if="!fullWindow"
+      aria-label="收合預覽"
+      :icon="mdiChevronRight"
+      @click="emit('collapse')"
     />
   </v-toolbar>
 </template>

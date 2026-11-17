@@ -1,5 +1,5 @@
-import type { Formatter } from './files'
-import type { TypeScript } from './tableLabels'
+import type { Formatter } from './files.ts'
+import type { TypeScript } from './tableLabels.ts'
 import type { ESLint } from 'eslint'
 import { createRequire } from 'node:module'
 import path from 'node:path'

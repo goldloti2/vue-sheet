@@ -6,6 +6,7 @@
     "src/**/*.vue",
     "server/**/*",
     "shared/**/*",
+    "preview/**/*",
     "tests/**/*"
   ],
   "compilerOptions": {

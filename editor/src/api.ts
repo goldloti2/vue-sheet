@@ -1,6 +1,7 @@
 // 介面與編輯器服務之間的呼叫。其他程式一律經由此處，不自行 fetch
 
 import type { FileContent, ProjectIndex, WriteRequest, WriteResult } from '../shared/api'
+import type { PreviewDraft, PreviewSource, PreviewStatus } from '../shared/preview'
 
 async function request<T> (url: string, init?: RequestInit): Promise<T> {
   const response = await fetch(url, init)
@@ -25,6 +26,30 @@ export function putFile (body: WriteRequest): Promise<WriteResult> {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   })
+}
+
+export function fetchPreviewStatus (): Promise<PreviewStatus> {
+  return request('/api/preview')
+}
+
+export function putPreviewSource (source: PreviewSource): Promise<PreviewStatus> {
+  return request('/api/preview', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ source }),
+  })
+}
+
+export function putPreviewDraft (body: PreviewDraft): Promise<unknown> {
+  return request('/api/preview/draft', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+}
+
+export function clearPreviewDrafts (): Promise<unknown> {
+  return request('/api/preview/drafts', { method: 'DELETE' })
 }
 
 // 服務經由 Vite 的 websocket 推送的事件

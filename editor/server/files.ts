@@ -1,8 +1,8 @@
-import type { FileContent, WriteResult } from '../shared/api'
+import type { FileContent, WriteResult } from '../shared/api.ts'
 import { createHash } from 'node:crypto'
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
-import { absolutePath } from './projectFiles'
+import { absolutePath } from './projectFiles.ts'
 
 // 寫入前修正格式。回傳修正後的內容
 export type Formatter = (absolute: string, text: string) => Promise<string>

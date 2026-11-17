@@ -1,6 +1,6 @@
 import type TS from 'typescript'
-import { tableKeyOf } from '../shared/tableKeys'
-import { readProjectFile } from './files'
+import { tableKeyOf } from '../shared/tableKeys.ts'
+import { readProjectFile } from './files.ts'
 
 export type TypeScript = typeof TS
 

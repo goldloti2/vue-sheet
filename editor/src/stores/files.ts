@@ -2,7 +2,7 @@ import type { FileChangedEvent, FileContent, ProjectIndex, WriteResult } from '.
 import type { EditorState } from '@codemirror/state'
 import { defineStore } from 'pinia'
 import { computed, reactive, shallowRef } from 'vue'
-import { fetchFile, fetchProjectIndex, onServerEvent, putFile } from '@/api'
+import { clearPreviewDrafts, fetchFile, fetchProjectIndex, onServerEvent, putFile, putPreviewDraft } from '@/api'
 import { FILE_CHANGED_EVENT, PROJECT_INDEX_EVENT } from '../../shared/api'
 
 export interface OpenFile {
@@ -14,6 +14,9 @@ export interface OpenFile {
   /** 編輯中的內容，與 savedText 不同即為未儲存 */
   text: string
 }
+
+// 表單的勾選、選單等修改後，經過此毫秒數才更新預覽
+export const PREVIEW_SYNC_DELAY = 500
 
 const DELETED_MESSAGE = '檔案已在別處刪除。再儲存一次會重新建立這個檔案。'
 const CONFLICT_MESSAGE = '檔案已在別處修改。畫面保留你的修改，再儲存一次會覆蓋別處的修改。按「放棄修改」改為顯示檔案目前的內容。'
@@ -29,6 +32,9 @@ export const useFilesStore = defineStore('files', () => {
   const editorStates = new Map<string, EditorState>()
   // 儲存中的檔案，對應儲存期間收到的最後一個變動。儲存本身引起的變動可能早於儲存的回應送達
   const saving = new Map<string, FileChangedEvent | null>()
+  // 預覽目前使用的未儲存內容。沒有項目的檔案，預覽使用檔案的內容
+  const previewDrafts = new Map<string, string>()
+  const previewTimers = new Map<string, ReturnType<typeof setTimeout>>()
 
   const current = computed(() => currentPath.value === null ? null : files.get(currentPath.value) ?? null)
   const dirtyPaths = computed(() => new Set([...files.values()].filter(file => file.text !== file.savedText).map(file => file.path)))
@@ -54,6 +60,7 @@ export const useFilesStore = defineStore('files', () => {
     if (currentPath.value === path) {
       currentPath.value = null
     }
+    void syncPreview(path)
   }
 
   function setIndex (index: ProjectIndex): void {
@@ -61,8 +68,33 @@ export const useFilesStore = defineStore('files', () => {
     tableLabels.value = index.tableLabels
   }
 
-  async function loadIndex (): Promise<void> {
-    setIndex(await fetchProjectIndex())
+  // 編輯器開啟時，清除上次留在預覽中的未儲存內容
+  async function initialize (): Promise<void> {
+    const [index] = await Promise.all([fetchProjectIndex(), clearPreviewDrafts()])
+    setIndex(index)
+  }
+
+  // 預覽改用目前未儲存的內容。沒有未儲存的修改時，改回檔案的內容
+  async function syncPreview (path: string): Promise<void> {
+    clearTimeout(previewTimers.get(path))
+    previewTimers.delete(path)
+    const file = files.get(path)
+    const text = file && file.text !== file.savedText ? file.text : null
+    if ((previewDrafts.get(path) ?? null) === text) {
+      return
+    }
+    if (text === null) {
+      previewDrafts.delete(path)
+    } else {
+      previewDrafts.set(path, text)
+    }
+    await putPreviewDraft({ path, text })
+  }
+
+  // 經過 PREVIEW_SYNC_DELAY 沒有再修改時才更新預覽
+  function syncPreviewSoon (path: string): void {
+    clearTimeout(previewTimers.get(path))
+    previewTimers.set(path, setTimeout(() => void syncPreview(path), PREVIEW_SYNC_DELAY))
   }
 
   async function open (path: string): Promise<void> {
@@ -110,6 +142,7 @@ export const useFilesStore = defineStore('files', () => {
         await handleChange(pending)
       }
     }
+    await syncPreview(path)
   }
 
   function applySaveResult (file: OpenFile, sentText: string, result: WriteResult): void {
@@ -142,6 +175,7 @@ export const useFilesStore = defineStore('files', () => {
       file.text = file.savedText
       editorStates.delete(path)
     }
+    void syncPreview(path)
   }
 
   async function handleChange ({ path, hash }: FileChangedEvent): Promise<void> {
@@ -182,7 +216,7 @@ export const useFilesStore = defineStore('files', () => {
     current,
     dirtyPaths,
     message,
-    loadIndex,
+    initialize,
     open,
     setText,
     setEditorState,
@@ -190,5 +224,7 @@ export const useFilesStore = defineStore('files', () => {
     save,
     saveAll,
     discard,
+    syncPreview,
+    syncPreviewSoon,
   }
 })

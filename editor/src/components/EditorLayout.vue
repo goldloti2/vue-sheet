@@ -4,11 +4,15 @@
   import ProjectNav from '@/components/nav/ProjectNav.vue'
   import BottomPanel from '@/components/panel/BottomPanel.vue'
   import PreviewPane from '@/components/preview/PreviewPane.vue'
+  import { MOBILE_HEIGHT, MOBILE_WIDTH, PREVIEW_GUTTER, PREVIEW_TOOLBAR_HEIGHT } from '@/components/preview/types'
   import { useSaveShortcuts } from '@/composables/useSaveShortcuts'
   import { useFilesStore } from '@/stores/files'
 
   const store = useFilesStore()
   useSaveShortcuts()
+
+  // 預覽欄比手機版縮小後的寬度略寬。視窗不夠高時，手機版縮小，預覽欄隨之變窄
+  const previewColumn = `calc(min(${MOBILE_WIDTH}px, (100vh - ${PREVIEW_TOOLBAR_HEIGHT}px) * ${MOBILE_WIDTH / MOBILE_HEIGHT}) + ${PREVIEW_GUTTER * 2}px)`
 
   const snackbar = computed({
     get: () => store.message !== null,
@@ -20,7 +24,7 @@
   })
 
   onMounted(() => {
-    void store.loadIndex()
+    void store.initialize()
   })
 </script>
 
@@ -52,7 +56,7 @@
 .editor-layout {
   display: grid;
   height: 100vh;
-  grid-template-columns: 260px minmax(0, 1fr) 480px;
+  grid-template-columns: 260px minmax(0, 1fr) v-bind(previewColumn);
   grid-template-rows: minmax(0, 1fr) 220px;
   grid-template-areas:
     'nav file preview'

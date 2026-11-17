@@ -13,8 +13,14 @@
     store.setText(path, text)
   }
 
+  // 焦點離開文字編輯器或換到別的檔案時，預覽改用未儲存的內容
   function onLeave (path: string, state: EditorState): void {
     store.setEditorState(path, state)
+    void store.syncPreview(path)
+  }
+
+  function onBlur (path: string): void {
+    void store.syncPreview(path)
   }
 </script>
 
@@ -45,6 +51,7 @@
         :initial-state="store.editorState(file.path)"
         :path="file.path"
         :text="file.text"
+        @blur="onBlur"
         @change="onChange"
         @leave="onLeave"
       />

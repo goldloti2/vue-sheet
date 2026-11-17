@@ -1,4 +1,4 @@
-import { ACTIONS_DIR, actionsTableKeyOf, tableKeyOf, TABLES_DIR } from './tableKeys'
+import { ACTIONS_DIR, actionsTableKeyOf, tableKeyOf, TABLES_DIR } from './tableKeys.ts'
 
 // 左側的導覽：依類型把專案的檔案分組。每一組為最上層的節點
 

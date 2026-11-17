@@ -15,6 +15,7 @@
   const emit = defineEmits<{
     change: [path: string, text: string]
     leave: [path: string, state: EditorState]
+    blur: [path: string]
   }>()
 
   const host = useTemplateRef('host')
@@ -39,6 +40,8 @@
     if (reusable) {
       view.dispatch({ effects: themeSlot.reconfigure(themeExtension(dark())) })
     }
+    // 焦點的監聽同樣不放在 state 中
+    view.contentDOM.addEventListener('blur', () => emit('blur', props.path))
   })
 
   // 放棄修改或重新讀取時，以新的內容取代

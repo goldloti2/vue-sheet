@@ -1,9 +1,12 @@
 <script lang="ts" setup>
   import { shallowRef } from 'vue'
+  import { usePreviewStore } from '@/stores/preview'
+  import ConsoleList from './ConsoleList.vue'
 
   type PanelTab = 'problems' | 'columns' | 'console'
 
   const tab = shallowRef<PanelTab>('problems')
+  const preview = usePreviewStore()
 </script>
 
 <template>
@@ -28,8 +31,8 @@
         沒有表
       </v-tabs-window-item>
 
-      <v-tabs-window-item class="bottom-panel__empty text-medium-emphasis" value="console">
-        沒有訊息
+      <v-tabs-window-item class="bottom-panel__console" value="console">
+        <ConsoleList :entries="preview.entries" @clear="preview.clearEntries" />
       </v-tabs-window-item>
     </v-tabs-window>
   </section>
@@ -48,10 +51,18 @@
 
 .bottom-panel__body {
   flex: 1;
-  overflow-y: auto;
+  min-height: 0;
+}
+
+.bottom-panel__body :deep(.v-window__container) {
+  height: 100%;
 }
 
 .bottom-panel__empty {
   padding: 16px;
+}
+
+.bottom-panel__console {
+  height: 100%;
 }
 </style>

@@ -2,7 +2,7 @@ import { fileURLToPath, URL } from 'node:url'
 import Vue from '@vitejs/plugin-vue'
 import { defineConfig } from 'vite'
 import Vuetify from 'vite-plugin-vuetify'
-import { editorService } from './server/service'
+import { editorService } from './server/service.ts'
 
 export default defineConfig({
   plugins: [

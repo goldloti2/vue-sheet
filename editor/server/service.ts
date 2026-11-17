@@ -1,14 +1,16 @@
-import type { FileChangedEvent, ProjectIndex, WriteRequest } from '../shared/api'
+import type { FileChangedEvent, ProjectIndex, WriteRequest } from '../shared/api.ts'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import type { Plugin, ViteDevServer } from 'vite'
 import path from 'node:path'
 import { watch } from 'chokidar'
-import { FILE_CHANGED_EVENT, PROJECT_INDEX_EVENT } from '../shared/api'
-import { tableKeyOf } from '../shared/tableKeys'
-import { hashText, readProjectFile, writeProjectFile } from './files'
-import { isProjectFile, listProjectFiles, PROJECT_DIRS, ScopeError } from './projectFiles'
-import { readTableLabels } from './tableLabels'
-import { createFormatter, loadTypeScript } from './vueBuild'
+import { FILE_CHANGED_EVENT, PROJECT_INDEX_EVENT } from '../shared/api.ts'
+import { PREVIEW_LOG_EVENT, PREVIEW_STATUS_EVENT, type PreviewDraft, type PreviewSource } from '../shared/preview.ts'
+import { tableKeyOf } from '../shared/tableKeys.ts'
+import { hashText, readProjectFile, writeProjectFile } from './files.ts'
+import { createPreview } from './preview.ts'
+import { absolutePath, isProjectFile, listProjectFiles, PROJECT_DIRS, ScopeError } from './projectFiles.ts'
+import { readTableLabels } from './tableLabels.ts'
+import { createFormatter, loadTypeScript } from './vueBuild.ts'
 
 interface ServiceOptions {
   /** repo 的根目錄 */
@@ -79,6 +81,14 @@ export function editorService ({ root }: ServiceOptions): Plugin {
     configureServer (server) {
       watchProjectFiles(root, server)
 
+      const preview = createPreview({
+        root,
+        onStatus: status => server.ws.send(PREVIEW_STATUS_EVENT, status),
+        onLog: entry => server.ws.send(PREVIEW_LOG_EVENT, entry),
+      })
+      void preview.start('mock')
+      server.httpServer?.once('close', () => void preview.close())
+
       server.middlewares.use('/api/', async (req, res) => {
         const url = new URL(req.url ?? '/', 'http://localhost')
         try {
@@ -90,6 +100,18 @@ export function editorService ({ root }: ServiceOptions): Plugin {
           } else if (url.pathname === '/file' && req.method === 'PUT') {
             const body = JSON.parse(await readBody(req)) as WriteRequest
             sendJson(res, 200, await writeProjectFile(root, body.path, body.text, body.baseHash, format))
+          } else if (url.pathname === '/preview' && req.method === 'GET') {
+            sendJson(res, 200, preview.status())
+          } else if (url.pathname === '/preview' && req.method === 'PUT') {
+            const body = JSON.parse(await readBody(req)) as { source: PreviewSource }
+            sendJson(res, 200, await preview.start(body.source))
+          } else if (url.pathname === '/preview/draft' && req.method === 'PUT') {
+            const body = JSON.parse(await readBody(req)) as PreviewDraft
+            preview.setDraft(absolutePath(root, body.path), body.text)
+            sendJson(res, 200, {})
+          } else if (url.pathname === '/preview/drafts' && req.method === 'DELETE') {
+            preview.clearDrafts()
+            sendJson(res, 200, {})
           } else {
             sendJson(res, 404, { message: '沒有這個 API' })
           }

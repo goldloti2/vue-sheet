@@ -1,6 +1,7 @@
 import type { FileChangedEvent, ProjectIndex, WriteRequest } from '../shared/api.ts'
 import type { RegistryEditRequest, RegistryEditResult } from '../shared/registry.ts'
 import type { CodeContextRequest, KeyRenameRequest, SchemaEditRequest, SchemaEditResult, SchemaTypes } from '../shared/schema.ts'
+import type { NewTableRequest } from '../shared/tableFiles.ts'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import type { Plugin, ViteDevServer } from 'vite'
 import { readFile } from 'node:fs/promises'
@@ -9,13 +10,14 @@ import { pathToFileURL } from 'node:url'
 import { watch } from 'chokidar'
 import { FILE_CHANGED_EVENT, PROJECT_INDEX_EVENT } from '../shared/api.ts'
 import { PREVIEW_LOG_EVENT, PREVIEW_STATUS_EVENT, type PreviewDraft, type PreviewSource } from '../shared/preview.ts'
+import { MOCK_TABLES_FILE } from '../shared/tableFiles.ts'
 import { REGISTRY_FILE, tableKeyOf } from '../shared/tableKeys.ts'
 import { type CodeRequest, type CompletionRequest, hasTypeScriptService } from '../shared/typescript.ts'
 import { type Checks, createChecks } from './checks.ts'
 import { createLinter } from './eslint.ts'
 import { hashText, readProjectFile, writeProjectFile } from './files.ts'
 import { createLanguageClient, type LanguageClient } from './languageClient.ts'
-import { MOCK_TABLES_FILE, readMockCsvPaths } from './mockTables.ts'
+import { readMockCsvPaths } from './mockTables.ts'
 import { createPreview } from './preview.ts'
 import { absolutePath, isProjectFile, listProjectFiles, PROJECT_DIRS, ScopeError } from './projectFiles.ts'
 import { readSchemaTypes } from './schema/columnTypes.ts'
@@ -24,6 +26,7 @@ import { planKeyRename } from './schema/renameKey.ts'
 import { SchemaEditError } from './schema/schemaEdits.ts'
 import { parseSchema } from './schema/schemaModel.ts'
 import { applySchemaEdits, codeContext } from './schema/schemaService.ts'
+import { createTable, deleteTable } from './tables.ts'
 import { readTableSummaries } from './tableSummaries.ts'
 import { loadTypeScript } from './vueBuild.ts'
 
@@ -176,6 +179,14 @@ export function editorService ({ root }: ServiceOptions): Plugin {
           const text = applyRegistryEdits(ts, body.text, body.edits)
           const result: RegistryEditResult = { text, model: parseRegistry(ts, text) }
           return [200, result]
+        },
+        'POST /table/create': async req => {
+          const body = await json<NewTableRequest>(req)
+          return [200, await createTable({ ts: await loadTypeScript(vueBuildRoot), root, format: checks.format }, body)]
+        },
+        'POST /table/delete': async req => {
+          const body = await json<{ key: string }>(req)
+          return [200, await deleteTable({ ts: await loadTypeScript(vueBuildRoot), root, format: checks.format }, body.key)]
         },
         'POST /schema/rename-key': async req => {
           const body = await json<KeyRenameRequest>(req)

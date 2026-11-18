@@ -5,6 +5,7 @@ import type { ChecksSnapshot } from '../shared/checks'
 import type { PreviewDraft, PreviewSource, PreviewStatus } from '../shared/preview'
 import type { RegistryEditRequest, RegistryEditResult, RegistryModel } from '../shared/registry'
 import type { CodeContext, CodeContextRequest, KeyRenameRequest, KeyRenameResult, SchemaEditRequest, SchemaEditResult, SchemaModel, SchemaTypes } from '../shared/schema'
+import type { DeleteTableResult, NewTableRequest, NewTableResult } from '../shared/tableFiles'
 import type { CodeCompletions, CodeDiagnostic, CodeRequest, CompletionRequest } from '../shared/typescript'
 
 async function request<T> (url: string, init?: RequestInit): Promise<T> {
@@ -77,6 +78,14 @@ export function parseRegistryText (text: string): Promise<RegistryModel | null> 
 
 export function editRegistry (body: RegistryEditRequest): Promise<RegistryEditResult> {
   return postJson('/api/registry/edit', body)
+}
+
+export function createTable (body: NewTableRequest): Promise<NewTableResult> {
+  return postJson('/api/table/create', body)
+}
+
+export function deleteTable (key: string): Promise<DeleteTableResult> {
+  return postJson('/api/table/delete', { key })
 }
 
 export function renameColumnKey (body: KeyRenameRequest): Promise<KeyRenameResult> {

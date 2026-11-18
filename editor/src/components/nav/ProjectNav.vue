@@ -1,6 +1,7 @@
 <script lang="ts" setup>
-  import { mdiApplicationOutline, mdiDatabaseOutline, mdiFlaskOutline, mdiGestureTapButton, mdiRouterNetwork, mdiScriptTextOutline } from '@mdi/js'
+  import { mdiApplicationOutline, mdiDatabaseOutline, mdiFlaskOutline, mdiGestureTapButton, mdiPlus, mdiRouterNetwork, mdiScriptTextOutline } from '@mdi/js'
   import { computed, shallowRef, watch } from 'vue'
+  import { useTableDialogs } from '@/composables/useTableDialogs'
   import { navFolderValues, navGroups, nodeFiles, singleFile } from '../../../shared/navGroups'
   import NavTreeNode from './NavTreeNode.vue'
 
@@ -15,6 +16,8 @@
   const emit = defineEmits<{
     select: [path: string]
   }>()
+
+  const { newTableOpen } = useTableDialogs()
 
   // 各組在側欄的圖示
   const GROUP_ICONS: Record<string, string> = {
@@ -104,8 +107,22 @@
 
     <!-- 右邊列出所選的組。組名固定於最上方，只有清單捲動 -->
     <div v-if="shown" class="project-nav__panel">
+      <!-- 表的組可以新增表 -->
       <div class="project-nav__header">
         <span class="text-title-medium">{{ shown.node.label }}</span>
+        <v-spacer />
+
+        <v-btn
+          v-if="shown.node.label === '表'"
+          aria-label="新增表"
+          icon
+          size="small"
+          variant="text"
+          @click="newTableOpen = true"
+        >
+          <v-icon :icon="mdiPlus" />
+          <v-tooltip activator="parent" location="bottom" text="新增表" />
+        </v-btn>
       </div>
 
       <!-- 各組的清單皆保留，切換組時維持展開的資料夾。同一層只展開一項 -->
@@ -173,7 +190,7 @@
   flex: none;
   align-items: center;
   height: 48px;
-  padding-inline: 16px;
+  padding-inline: 16px 8px;
   border-bottom: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
 }
 

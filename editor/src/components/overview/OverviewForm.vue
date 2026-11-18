@@ -1,9 +1,10 @@
 <script lang="ts" setup>
   import type { OverviewRow, TableFiles } from '../../../shared/overview'
-  import { mdiDragVertical } from '@mdi/js'
+  import { mdiDeleteOutline, mdiDragVertical, mdiPlus } from '@mdi/js'
   import { computed } from 'vue'
   import { useDragSort } from '@/composables/useDragSort'
   import { useRegistryForm } from '@/composables/useRegistryForm'
+  import { useTableDialogs } from '@/composables/useTableDialogs'
   import { useFilesStore } from '@/stores/files'
   import { overviewRows } from '../../../shared/overview'
 
@@ -14,6 +15,7 @@
 
   const files = useFilesStore()
   const form = useRegistryForm(() => props.path, () => props.text)
+  const { newTableOpen, deletingTable } = useTableDialogs()
 
   const rows = computed(() => form.model.value
     ? overviewRows(form.model.value, { paths: files.paths, tables: files.tables, mockCsv: files.mockCsv })
@@ -72,6 +74,7 @@
           <th>表名</th>
           <th>代號</th>
           <th>檔案</th>
+          <th />
         </tr>
       </thead>
 
@@ -122,9 +125,19 @@
                 />
               </span>
             </td>
+
+            <td>
+              <v-btn
+                aria-label="刪除表"
+                :icon="mdiDeleteOutline"
+                size="small"
+                variant="text"
+                @click="deletingTable = row.key"
+              />
+            </td>
           </template>
 
-          <td v-else class="text-medium-emphasis" colspan="3">以程式碼寫成，請以文字編輯</td>
+          <td v-else class="text-medium-emphasis" colspan="4">以程式碼寫成，請以文字編輯</td>
         </tr>
       </TransitionGroup>
 
@@ -166,9 +179,28 @@
               />
             </span>
           </td>
+
+          <td>
+            <v-btn
+              aria-label="刪除表"
+              :icon="mdiDeleteOutline"
+              size="small"
+              variant="text"
+              @click="deletingTable = row.key"
+            />
+          </td>
         </tr>
       </tbody>
     </table>
+
+    <v-btn
+      v-if="form.model.value"
+      class="overview-form__add ma-2"
+      :prepend-icon="mdiPlus"
+      text="新增表"
+      variant="outlined"
+      @click="newTableOpen = true"
+    />
   </div>
 </template>
 
@@ -215,6 +247,14 @@
 
 .overview-form__center :deep(.v-selection-control) {
   justify-content: center;
+}
+
+/* 高度與字體同欄位表格的「新增欄位」按鈕 */
+.overview-form__add.v-btn {
+  height: 32px;
+  font-size: 1rem;
+  font-weight: 400;
+  letter-spacing: 0.009375em;
 }
 
 /* 開關縮為一半 */

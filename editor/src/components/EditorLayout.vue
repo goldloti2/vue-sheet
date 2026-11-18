@@ -3,15 +3,19 @@
   import FileView from '@/components/file/FileView.vue'
   import SaveConfirmDialog from '@/components/file/SaveConfirmDialog.vue'
   import ProjectNav from '@/components/nav/ProjectNav.vue'
+  import DeleteTableDialog from '@/components/overview/DeleteTableDialog.vue'
+  import NewTableDialog from '@/components/overview/NewTableDialog.vue'
   import BottomPanel from '@/components/panel/BottomPanel.vue'
   import PreviewPane from '@/components/preview/PreviewPane.vue'
   import { MOBILE_HEIGHT, MOBILE_WIDTH, PREVIEW_GUTTER, PREVIEW_TOOLBAR_HEIGHT } from '@/components/preview/types'
   import { useSaveShortcuts } from '@/composables/useSaveShortcuts'
+  import { useTableDialogs } from '@/composables/useTableDialogs'
   import { useFilesStore } from '@/stores/files'
   import { useProblemsStore } from '@/stores/problems'
 
   const store = useFilesStore()
   const problems = useProblemsStore()
+  const { newTableOpen } = useTableDialogs()
   useSaveShortcuts()
 
   // 預覽欄比手機版縮小後的寬度略寬。視窗不夠高時，手機版縮小，預覽欄隨之變窄
@@ -53,6 +57,8 @@
     <PreviewPane v-model:collapsed="previewCollapsed" class="editor-layout__preview" />
     <BottomPanel class="editor-layout__panel" />
     <SaveConfirmDialog />
+    <NewTableDialog v-model="newTableOpen" />
+    <DeleteTableDialog />
 
     <v-snackbar v-model="snackbar" multi-line :timeout="-1">
       {{ store.message }}

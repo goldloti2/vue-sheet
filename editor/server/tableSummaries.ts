@@ -19,12 +19,13 @@ function columnsOf (value: SchemaValue | undefined, virtual: boolean): TableColu
 
 // 讀取 schema 的表名與欄位，真實欄位在前。找不到 schema 物件時沒有表名與欄位
 export function readTableSummary (ts: TypeScript, text: string): TableSummary {
-  const { schema } = parseSchema(ts, text)
+  const { schema, variable } = parseSchema(ts, text)
   if (!schema) {
-    return { label: null, columns: [] }
+    return { label: null, variable, columns: [] }
   }
   return {
     label: stringValue(propertyValue(schema, 'tableLabel')),
+    variable,
     columns: [...columnsOf(propertyValue(schema, 'columns'), false), ...columnsOf(propertyValue(schema, 'virtualColumns'), true)],
   }
 }

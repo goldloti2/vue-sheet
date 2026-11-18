@@ -1,4 +1,4 @@
-import { ACTIONS_DIR, actionsTableKeyOf, tableKeyOf, TABLES_DIR } from './tableKeys.ts'
+import { ACTIONS_DIR, actionsTableKeyOf, REGISTRY_FILE, tableKeyOf, TABLES_DIR } from './tableKeys.ts'
 
 // 左側的導覽：依類型把專案的檔案分組。每一組為最上層的節點，子項為該組的檔案與資料夾
 
@@ -30,6 +30,15 @@ function tableNode (key: string, tableLabels: Readonly<Record<string, string>>, 
 }
 
 const byPath = (a: string, b: string) => a.localeCompare(b)
+
+// 表依 schemas 中的順序，未登記的表排在最後，依代號排序
+function byTableOrder (tableOrder: readonly string[]) {
+  const rank = (key: string) => {
+    const index = tableOrder.indexOf(key)
+    return index === -1 ? tableOrder.length : index
+  }
+  return (a: string, b: string) => rank(a) - rank(b) || a.localeCompare(b)
+}
 
 // 名稱以 _ 開頭的資料夾（_ref）排在最後
 function folderOrder (a: string, b: string): number {
@@ -113,17 +122,22 @@ const NAMED_PAGES: readonly (readonly [string, string])[] = [
   [`${PAGES}index.vue`, '首頁'],
 ]
 
-function pageNodes (files: string[], tableKeys: ReadonlySet<string>, tableLabels: Readonly<Record<string, string>>): NavNode[] {
+// 依序為固定名稱的頁面、各表的資料夾（依表的順序）、其他檔案與資料夾
+function pageNodes (files: string[], tableKeys: ReadonlySet<string>, tableLabels: Readonly<Record<string, string>>, tableOrder: readonly string[]): NavNode[] {
   const tableName = (key: string) => tableKeys.has(key) ? tableLabels[key] ?? key : null
   const named = NAMED_PAGES.filter(([filePath]) => files.includes(filePath)).map(([filePath, label]) => fileNode(filePath, label))
-  const others = buildTree(files, PAGES).filter(node => !NAMED_PAGES.some(([filePath]) => filePath === node.path)).map(node => {
+  const tree = buildTree(files, PAGES).filter(node => !NAMED_PAGES.some(([filePath]) => filePath === node.path))
+  const isTableFolder = (node: NavNode) => node.children !== undefined && tableKeys.has(node.label)
+  const order = byTableOrder(tableOrder)
+  const tableFolders = tree.filter(node => isTableFolder(node)).toSorted((a, b) => order(a.label, b.label))
+  const others = tree.filter(node => !isTableFolder(node))
+  return [...named, ...tableFolders, ...others].map(node => {
     if (!node.children) {
       return node
     }
     const children = pageFolderChildren(node.children, tableName)
-    return tableKeys.has(node.label) ? tableNode(node.label, tableLabels, { children }) : { label: node.label, children }
+    return isTableFolder(node) ? tableNode(node.label, tableLabels, { children }) : { label: node.label, children }
   })
-  return [...named, ...others]
 }
 
 // 節點之下所有檔案的路徑
@@ -151,20 +165,41 @@ export function navLocation (nodes: readonly NavNode[], filePath: string): strin
   return null
 }
 
-// 沒有檔案的組不列出
-export function navGroups (files: readonly string[], tableLabels: Readonly<Record<string, string>> = {}): NavNode[] {
+/** 通往檔案的各層資料夾的識別值，由外而內。識別值為上一層的識別值加上 / 與名稱，最上層為組名。不在組中時為 null */
+export function navFolderValues (group: NavNode, filePath: string): string[] | null {
+  const search = (node: NavNode, value: string): string[] | null => {
+    for (const child of node.children ?? []) {
+      if (child.path === filePath) {
+        return []
+      }
+      const childValue = `${value}/${child.label}`
+      const inner = child.children ? search(child, childValue) : null
+      if (inner !== null) {
+        return [childValue, ...inner]
+      }
+    }
+    return null
+  }
+  return search(group, group.label)
+}
+
+// 沒有檔案的組不列出。表、動作與頁面中各表的資料夾依 tableOrder（schemas 中的順序）排列
+export function navGroups (files: readonly string[], tableLabels: Readonly<Record<string, string>> = {}, tableOrder: readonly string[] = []): NavNode[] {
   const single = (label: string, filePath: string): NavNode[] => files.includes(filePath) ? [{ label, children: [fileNode(filePath)] }] : []
   const group = (label: string, children: NavNode[]): NavNode[] => children.length > 0 ? [{ label, children }] : []
 
   const pick = (test: (file: string) => boolean) => files.filter(file => test(file)).toSorted(byPath)
   const tableKeys = new Set(files.map(file => tableKeyOf(file)).filter(key => key !== null))
 
+  const order = byTableOrder(tableOrder)
   const tables = pick(file => file.startsWith(TABLES_DIR))
     .map(file => tableNode(tableKeyOf(file) ?? baseName(file), tableLabels, { path: file }))
-  const registry = pick(file => file === `${SRC}schema/index.ts`).map(file => fileNode(file, '總覽'))
+    .toSorted((a, b) => order(a.detail ?? a.label, b.detail ?? b.label))
+  const registry = pick(file => file === REGISTRY_FILE).map(file => fileNode(file, '總覽'))
   const actions = pick(file => file.startsWith(ACTIONS_DIR))
     .map(file => tableNode(actionsTableKeyOf(file) ?? baseName(file), tableLabels, { path: file }))
-  const pages = pageNodes(pick(file => file.startsWith(PAGES)), tableKeys, tableLabels)
+    .toSorted((a, b) => order(a.detail ?? a.label, b.detail ?? b.label))
+  const pages = pageNodes(pick(file => file.startsWith(PAGES)), tableKeys, tableLabels, tableOrder)
 
   return [
     ...group('表', [...registry, ...tables]),

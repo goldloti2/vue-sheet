@@ -45,6 +45,7 @@
       :dirty-paths="store.dirtyPaths"
       :paths="store.paths"
       :table-labels="store.tableLabels"
+      :table-order="store.tableOrder"
       @select="store.open"
     />
 

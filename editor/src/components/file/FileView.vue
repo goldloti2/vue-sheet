@@ -1,9 +1,10 @@
 <script lang="ts" setup>
   import type { EditorState } from '@codemirror/state'
   import { computed, shallowRef, watch } from 'vue'
+  import OverviewForm from '@/components/overview/OverviewForm.vue'
   import SchemaForm from '@/components/schema/SchemaForm.vue'
   import { useFilesStore } from '@/stores/files'
-  import { tableKeyOf } from '../../../shared/tableKeys'
+  import { REGISTRY_FILE, tableKeyOf } from '../../../shared/tableKeys'
   import CodeEditor from './CodeEditor.vue'
 
   type ViewMode = 'form' | 'text'
@@ -14,9 +15,10 @@
   const dirty = computed(() => file.value !== null && store.dirtyPaths.has(file.value.path))
   const reveal = computed(() => store.reveal !== null && store.reveal.path === file.value?.path ? store.reveal : null)
 
-  // 表的 schema 有表單。各檔案共用同一個選擇
+  // 表的 schema 與總覽有表單。各檔案共用同一個選擇
   const mode = shallowRef<ViewMode>('form')
-  const hasForm = computed(() => file.value !== null && tableKeyOf(file.value.path) !== null)
+  const isOverview = computed(() => file.value?.path === REGISTRY_FILE)
+  const hasForm = computed(() => file.value !== null && (tableKeyOf(file.value.path) !== null || isOverview.value))
   const showForm = computed(() => hasForm.value && mode.value === 'form')
 
   // 移至某一行時改用文字編輯器
@@ -89,8 +91,16 @@
         />
       </v-toolbar>
 
+      <OverviewForm
+        v-if="showForm && isOverview"
+        :key="`form-${file.path}`"
+        class="file-view__editor"
+        :path="file.path"
+        :text="file.text"
+      />
+
       <SchemaForm
-        v-if="showForm"
+        v-else-if="showForm"
         :key="`form-${file.path}`"
         class="file-view__editor"
         :path="file.path"

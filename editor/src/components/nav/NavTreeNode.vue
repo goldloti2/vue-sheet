@@ -5,7 +5,7 @@
 
   const props = defineProps<{
     node: NavNode
-    /** 上一層的識別值。資料夾的識別值為上一層的識別值加上名稱，各表的同名資料夾不會一起展開 */
+    /** 上一層的識別值。資料夾的識別值為上一層的識別值加上 / 與名稱，各表的同名資料夾不會一起展開。須與 navFolderValues 相同 */
     parent: string
     currentPath: string | null
     dirtyPaths: ReadonlySet<string>

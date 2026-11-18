@@ -30,6 +30,8 @@ export interface TableColumn {
 export interface TableSummary {
   /** tableLabel。不是以字串直接寫值時為 null */
   label: string | null
+  /** schema 的變數名，例如 orderSchema。找不到時為 null */
+  variable: string | null
   columns: TableColumn[]
 }
 
@@ -38,6 +40,8 @@ export interface ProjectIndex {
   paths: string[]
   /** 表的代號（檔名）對應表名與欄位 */
   tables: Record<string, TableSummary>
+  /** schemas 中依序登記的表的代號 */
+  tableOrder: string[]
   /** 表的代號對應 services/mock/tables.ts 中登記的 CSV 的路徑 */
   mockCsv: Record<string, string>
 }

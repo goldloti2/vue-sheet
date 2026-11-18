@@ -8,7 +8,7 @@ import { FILE_CHANGED_EVENT, PROJECT_INDEX_EVENT } from '../../shared/api'
 import { columnChanges } from '../../shared/columnChanges'
 import { renameCsvHeader } from '../../shared/csv'
 import { navGroups, navLocation } from '../../shared/navGroups'
-import { tableKeyOf } from '../../shared/tableKeys'
+import { tableKeyOf, TABLES_DIR } from '../../shared/tableKeys'
 
 export interface OpenFile {
   path: string
@@ -55,6 +55,7 @@ export const useFilesStore = defineStore('files', () => {
   const paths = shallowRef<string[]>([])
   const tables = shallowRef<Record<string, TableSummary>>({})
   const mockCsv = shallowRef<Record<string, string>>({})
+  const tableOrder = shallowRef<string[]>([])
   const files = reactive(new Map<string, OpenFile>())
   const currentPath = shallowRef<string | null>(null)
   // 文字編輯器移至此位置後清除
@@ -81,7 +82,7 @@ export const useFilesStore = defineStore('files', () => {
   // 讀得到 tableLabel 的表
   const tableLabels = computed(() => Object.fromEntries(Object.entries(tables.value)
     .flatMap(([key, table]) => table.label === null ? [] : [[key, table.label]])))
-  const navTree = computed(() => navGroups(paths.value, tableLabels.value))
+  const navTree = computed(() => navGroups(paths.value, tableLabels.value, tableOrder.value))
   const dirtyPaths = computed(() => new Set([...files.values()].filter(file => file.text !== file.savedText).map(file => file.path)))
 
   function remember (content: FileContent): void {
@@ -112,12 +113,17 @@ export const useFilesStore = defineStore('files', () => {
     paths.value = index.paths
     tables.value = index.tables
     mockCsv.value = index.mockCsv
+    tableOrder.value = index.tableOrder
   }
 
-  // 編輯器開啟時，清除上次留在預覽中的未儲存內容
+  // 編輯器開啟時，清除上次留在預覽中的未儲存內容，並開啟 schemas 中的第一張表
   async function initialize (): Promise<void> {
     const [index] = await Promise.all([fetchProjectIndex(), clearPreviewDrafts()])
     setIndex(index)
+    const first = index.tableOrder.map(key => `${TABLES_DIR}${key}.ts`).find(path => index.paths.includes(path))
+    if (currentPath.value === null && first) {
+      await open(first)
+    }
   }
 
   /** 檔案於導覽中的位置，例如 頁面/訂單/列表頁。不在導覽中時為路徑 */
@@ -478,6 +484,7 @@ export const useFilesStore = defineStore('files', () => {
     paths,
     tables,
     mockCsv,
+    tableOrder,
     tableLabels,
     currentPath,
     reveal,

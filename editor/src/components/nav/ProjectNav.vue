@@ -1,12 +1,13 @@
 <script lang="ts" setup>
   import { mdiApplicationOutline, mdiDatabaseOutline, mdiFlaskOutline, mdiGestureTapButton, mdiRouterNetwork, mdiScriptTextOutline } from '@mdi/js'
   import { computed, shallowRef, watch } from 'vue'
-  import { navGroups, nodeFiles, singleFile } from '../../../shared/navGroups'
+  import { navFolderValues, navGroups, nodeFiles, singleFile } from '../../../shared/navGroups'
   import NavTreeNode from './NavTreeNode.vue'
 
   const props = defineProps<{
     paths: readonly string[]
     tableLabels: Readonly<Record<string, string>>
+    tableOrder: readonly string[]
     currentPath: string | null
     dirtyPaths: ReadonlySet<string>
   }>()
@@ -25,7 +26,7 @@
     資料: mdiFlaskOutline,
   }
 
-  const groups = computed(() => navGroups(props.paths, props.tableLabels).map(group => ({
+  const groups = computed(() => navGroups(props.paths, props.tableLabels, props.tableOrder).map(group => ({
     node: group,
     files: nodeFiles(group),
   })))
@@ -41,13 +42,25 @@
     ?? groups.value[0]
     ?? null)
 
-  // 開啟其他組的檔案時，面板切換至該組
+  // 各組展開的資料夾
+  const opened = shallowRef<Record<string, string[]>>({})
+
+  // 開啟其他組的檔案時，面板切換至該組，並展開檔案所在的資料夾
   watch(() => props.currentPath, path => {
     const owner = ownerOf(path)
-    if (owner) {
-      selected.value = owner.node.label
+    if (!owner || path === null) {
+      return
+    }
+    selected.value = owner.node.label
+    const folders = navFolderValues(owner.node, path)
+    if (folders && folders.length > 0) {
+      opened.value = { ...opened.value, [owner.node.label]: folders }
     }
   })
+
+  function setOpened (label: string, values: unknown): void {
+    opened.value = { ...opened.value, [label]: values as string[] }
+  }
 
   // 組只有一個檔案時，一併開啟該檔案
   function selectGroup (label: string): void {
@@ -104,6 +117,8 @@
         density="compact"
         nav
         open-strategy="single"
+        :opened="opened[group.node.label] ?? []"
+        @update:opened="setOpened(group.node.label, $event)"
       >
         <NavTreeNode
           v-for="child in group.node.children"

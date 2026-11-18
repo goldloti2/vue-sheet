@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { navGroups, navLocation, nodeFiles, singleFile } from '../shared/navGroups'
+import { navFolderValues, navGroups, navLocation, nodeFiles, singleFile } from '../shared/navGroups'
 
 describe('navGroups', () => {
   it('groups the files by kind', () => {
@@ -88,7 +88,6 @@ describe('navGroups', () => {
     expect(groups[1]!.children).toEqual([
       { label: '登入頁', path: 'vue-build/src/pages/login.vue' },
       { label: '首頁', path: 'vue-build/src/pages/index.vue' },
-      { label: 'dashboard', path: 'vue-build/src/pages/dashboard.vue' },
       {
         label: '訂單',
         detail: 'order',
@@ -101,11 +100,42 @@ describe('navGroups', () => {
           { label: '引用畫面', children: [{ label: 'OrderList', path: 'vue-build/src/pages/order/_ref/OrderList.vue' }] },
         ],
       },
+      { label: 'dashboard', path: 'vue-build/src/pages/dashboard.vue' },
       {
         label: 'sales',
         children: [{ label: '列表頁', path: 'vue-build/src/pages/sales/index.vue' }],
       },
     ])
+  })
+
+  it('orders tables, actions and table page folders by the schemas order', () => {
+    const groups = navGroups([
+      'vue-build/src/composables/actions/useCustomerActions.ts',
+      'vue-build/src/composables/actions/useOrderActions.ts',
+      'vue-build/src/pages/customer/index.vue',
+      'vue-build/src/pages/order/index.vue',
+      'vue-build/src/pages/report.vue',
+      'vue-build/src/schema/tables/customer.ts',
+      'vue-build/src/schema/tables/draft.ts',
+      'vue-build/src/schema/tables/order.ts',
+    ], { order: '訂單' }, ['order', 'customer'])
+
+    expect(groups[0]!.children!.map(node => node.label)).toEqual(['訂單', 'customer', 'draft'])
+    expect(groups[1]!.children!.map(node => node.label)).toEqual(['訂單', 'customer'])
+    expect(groups[2]!.children!.map(node => node.label)).toEqual(['訂單', 'customer', 'report'])
+  })
+
+  it('lists the folder values on the way to a file', () => {
+    const pages = navGroups([
+      'vue-build/src/pages/order/index.vue',
+      'vue-build/src/pages/order/_ref/OrderList.vue',
+      'vue-build/src/pages/report.vue',
+      'vue-build/src/schema/tables/order.ts',
+    ], { order: '訂單' }).find(group => group.label === '頁面')
+
+    expect(navFolderValues(pages!, 'vue-build/src/pages/order/_ref/OrderList.vue')).toEqual(['頁面/訂單', '頁面/訂單/引用畫面'])
+    expect(navFolderValues(pages!, 'vue-build/src/pages/report.vue')).toEqual([])
+    expect(navFolderValues(pages!, 'vue-build/src/pages/missing.vue')).toBeNull()
   })
 
   it('omits empty groups', () => {

@@ -75,7 +75,7 @@ describe('table summaries', () => {
   })
 
   it('has no label and no columns without a schema object', () => {
-    expect(readTableSummary(ts, 'export const s = { columns: [{ key: \'a\' }] }')).toEqual({ label: null, columns: [] })
+    expect(readTableSummary(ts, 'export const s = { columns: [{ key: \'a\' }] }')).toEqual({ label: null, variable: null, columns: [] })
   })
 
   it('reads the table files only', async () => {
@@ -90,8 +90,8 @@ describe('table summaries', () => {
       'vue-build/src/schema/tables/draft.ts',
       'vue-build/src/schema/tables/order.ts',
     ])).toEqual({
-      draft: { label: null, columns: [] },
-      order: { label: '訂單', columns: [{ key: 'a', label: null, type: null, virtual: false }] },
+      draft: { label: null, variable: null, columns: [] },
+      order: { label: '訂單', variable: null, columns: [{ key: 'a', label: null, type: null, virtual: false }] },
     })
   })
 })

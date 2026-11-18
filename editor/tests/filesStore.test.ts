@@ -2,7 +2,7 @@ import type { FileContent, WriteResult } from '../shared/api'
 import type { SchemaTestContext } from './schema/setup'
 import { createPinia, setActivePinia } from 'pinia'
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
-import { fetchFile, onServerEvent, parseSchemaText, putFile, putPreviewDraft, renameColumnKey } from '@/api'
+import { fetchFile, fetchProjectIndex, onServerEvent, parseSchemaText, putFile, putPreviewDraft, renameColumnKey } from '@/api'
 import { PREVIEW_SYNC_DELAY, useFilesStore } from '@/stores/files'
 import { parseSchema } from '../server/schema/schemaModel'
 import { FILE_CHANGED_EVENT } from '../shared/api'
@@ -308,5 +308,27 @@ describe('files store column changes', () => {
     await store.discard(PATH)
 
     expect(renameColumnKey).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('files store initialize', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    setActivePinia(createPinia())
+    vi.mocked(fetchFile).mockImplementation(async path => ({ path, text: '', hash: 'h1' }))
+  })
+
+  it('opens the first registered table that has a schema file', async () => {
+    vi.mocked(fetchProjectIndex).mockResolvedValue({
+      paths: ['vue-build/src/schema/tables/customer.ts', 'vue-build/src/schema/tables/order.ts'],
+      tables: {},
+      tableOrder: ['missing', 'order', 'customer'],
+      mockCsv: {},
+    })
+    const store = useFilesStore()
+
+    await store.initialize()
+
+    expect(store.currentPath).toBe('vue-build/src/schema/tables/order.ts')
   })
 })

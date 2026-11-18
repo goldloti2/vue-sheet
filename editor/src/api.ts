@@ -3,6 +3,7 @@
 import type { FileContent, ProjectIndex, WriteRequest, WriteResult } from '../shared/api'
 import type { ChecksSnapshot } from '../shared/checks'
 import type { PreviewDraft, PreviewSource, PreviewStatus } from '../shared/preview'
+import type { RegistryEditRequest, RegistryEditResult, RegistryModel } from '../shared/registry'
 import type { CodeContext, CodeContextRequest, KeyRenameRequest, KeyRenameResult, SchemaEditRequest, SchemaEditResult, SchemaModel, SchemaTypes } from '../shared/schema'
 import type { CodeCompletions, CodeDiagnostic, CodeRequest, CompletionRequest } from '../shared/typescript'
 
@@ -68,6 +69,14 @@ export function parseSchemaText (text: string): Promise<SchemaModel> {
 
 export function editSchema (body: SchemaEditRequest): Promise<SchemaEditResult> {
   return postJson('/api/schema/edit', body)
+}
+
+export function parseRegistryText (text: string): Promise<RegistryModel | null> {
+  return postJson('/api/registry/parse', { text })
+}
+
+export function editRegistry (body: RegistryEditRequest): Promise<RegistryEditResult> {
+  return postJson('/api/registry/edit', body)
 }
 
 export function renameColumnKey (body: KeyRenameRequest): Promise<KeyRenameResult> {

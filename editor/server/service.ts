@@ -1,4 +1,5 @@
 import type { FileChangedEvent, ProjectIndex, WriteRequest } from '../shared/api.ts'
+import type { RegistryEditRequest, RegistryEditResult } from '../shared/registry.ts'
 import type { CodeContextRequest, KeyRenameRequest, SchemaEditRequest, SchemaEditResult, SchemaTypes } from '../shared/schema.ts'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import type { Plugin, ViteDevServer } from 'vite'
@@ -8,7 +9,7 @@ import { pathToFileURL } from 'node:url'
 import { watch } from 'chokidar'
 import { FILE_CHANGED_EVENT, PROJECT_INDEX_EVENT } from '../shared/api.ts'
 import { PREVIEW_LOG_EVENT, PREVIEW_STATUS_EVENT, type PreviewDraft, type PreviewSource } from '../shared/preview.ts'
-import { tableKeyOf } from '../shared/tableKeys.ts'
+import { REGISTRY_FILE, tableKeyOf } from '../shared/tableKeys.ts'
 import { type CodeRequest, type CompletionRequest, hasTypeScriptService } from '../shared/typescript.ts'
 import { type Checks, createChecks } from './checks.ts'
 import { createLinter } from './eslint.ts'
@@ -18,6 +19,7 @@ import { MOCK_TABLES_FILE, readMockCsvPaths } from './mockTables.ts'
 import { createPreview } from './preview.ts'
 import { absolutePath, isProjectFile, listProjectFiles, PROJECT_DIRS, ScopeError } from './projectFiles.ts'
 import { readSchemaTypes } from './schema/columnTypes.ts'
+import { applyRegistryEdits, parseRegistry } from './schema/registry.ts'
 import { planKeyRename } from './schema/renameKey.ts'
 import { SchemaEditError } from './schema/schemaEdits.ts'
 import { parseSchema } from './schema/schemaModel.ts'
@@ -61,10 +63,12 @@ async function readTypes (root: string, ts: Awaited<ReturnType<typeof loadTypeSc
 async function readProjectIndex (root: string): Promise<ProjectIndex> {
   const paths = await listProjectFiles(root)
   const ts = await loadTypeScript(path.join(root, 'vue-build'))
-  const mockTables = await readProjectFile(root, MOCK_TABLES_FILE)
+  const [mockTables, registry] = await Promise.all([readProjectFile(root, MOCK_TABLES_FILE), readProjectFile(root, REGISTRY_FILE)])
+  const entries = registry ? parseRegistry(ts, registry.text)?.entries ?? [] : []
   return {
     paths,
     tables: await readTableSummaries(ts, root, paths),
+    tableOrder: entries.flatMap(entry => entry.key === null ? [] : [entry.key]),
     mockCsv: mockTables ? readMockCsvPaths(ts, mockTables.text) : {},
   }
 }
@@ -93,11 +97,11 @@ function watchProjectFiles (root: string, server: ViteDevServer, language: Langu
     server.ws.send(PROJECT_INDEX_EVENT, await readProjectIndex(root))
   }
 
-  // 新增或刪除檔案、修改表的 schema 或 mock CSV 的登記時，重送檔案清單與各表的摘要
+  // 新增或刪除檔案、修改表的 schema、表的登記或 mock CSV 的登記時，重送檔案清單與各表的摘要
   watcher.on('change', absolute => {
     void notifyChange(absolute, false)
     const filePath = toProjectPath(absolute)
-    if (tableKeyOf(filePath) !== null || filePath === MOCK_TABLES_FILE) {
+    if (tableKeyOf(filePath) !== null || filePath === MOCK_TABLES_FILE || filePath === REGISTRY_FILE) {
       void notifyIndex()
     }
   })
@@ -163,6 +167,14 @@ export function editorService ({ root }: ServiceOptions): Plugin {
           const ts = await loadTypeScript(vueBuildRoot)
           const text = applySchemaEdits(ts, body.text, body.edits, (await readTypes(root, ts)).columnTypes)
           const result: SchemaEditResult = { text, model: parseSchema(ts, text) }
+          return [200, result]
+        },
+        'POST /registry/parse': async req => [200, parseRegistry(await loadTypeScript(vueBuildRoot), (await json<{ text: string }>(req)).text)],
+        'POST /registry/edit': async req => {
+          const body = await json<RegistryEditRequest>(req)
+          const ts = await loadTypeScript(vueBuildRoot)
+          const text = applyRegistryEdits(ts, body.text, body.edits)
+          const result: RegistryEditResult = { text, model: parseRegistry(ts, text) }
           return [200, result]
         },
         'POST /schema/rename-key': async req => {

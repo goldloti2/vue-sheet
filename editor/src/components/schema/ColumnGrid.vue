@@ -1,17 +1,24 @@
 <script lang="ts" setup>
   import type { SchemaPath, SchemaValue } from '../../../shared/schema'
   import type { ColumnList, ColumnRow } from '../../../shared/schemaForm'
-  import { mdiDragVertical, mdiMenuDown, mdiRadioboxBlank, mdiRadioboxMarked } from '@mdi/js'
+  import type { HeaderChange } from '@/composables/useSchemaForm'
+  import { mdiDeleteOutline, mdiDragVertical, mdiMenuDown, mdiPlus, mdiRadioboxBlank, mdiRadioboxMarked } from '@mdi/js'
   import { computed, inject, shallowRef } from 'vue'
   import { useDragSort } from '@/composables/useDragSort'
   import { SCHEMA_FORM_KEY } from '@/composables/useSchemaForm'
+  import { useFilesStore } from '@/stores/files'
   import { literalText, propertyValue, stringValue } from '../../../shared/schema'
   import { columnOptions, columnRows, idCandidates, sourceOf } from '../../../shared/schemaForm'
+  import { tableKeyOf } from '../../../shared/tableKeys'
+  import AddColumnDialog from './AddColumnDialog.vue'
   import CodeField from './CodeField.vue'
   import ColumnTypeDialog from './ColumnTypeDialog.vue'
   import CommitTextField from './CommitTextField.vue'
+  import LabelChangeDialog from './LabelChangeDialog.vue'
+  import RemoveColumnDialog from './RemoveColumnDialog.vue'
 
   const form = inject(SCHEMA_FORM_KEY)!
+  const files = useFilesStore()
 
   const rows = computed(() => columnRows(form.model.value))
   const options = computed(() => columnOptions(rows.value))
@@ -35,6 +42,70 @@
     const valueText = value === '' && removeWhenEmpty ? null : literalText(value)
     void form.applyOrNotify([{ kind: 'setProperty', objectPath: row.path, name, valueText, after: 'label' }], 'now')
   }
+
+  function labelOf (row: ColumnRow): string {
+    return stringValue(propertyValue(row.object, 'label')) ?? ''
+  }
+
+  // 修改 key 與所有引用
+  function commitKey (row: ColumnRow) {
+    return (value: string) => row.key === null || value.trim() === row.key ? Promise.resolve(false) : form.renameKey(row.key, value.trim())
+  }
+
+  // 沒有 Sheet 表頭的真實欄位，標籤即為表頭，先以對話框選擇修改的方式
+  interface LabelChange {
+    row: ColumnRow
+    oldLabel: string
+    label: string
+    csvPath: string | null
+    done: (changed: boolean) => void
+  }
+  const labelChange = shallowRef<LabelChange | null>(null)
+
+  function commitLabel (row: ColumnRow) {
+    return async (value: string): Promise<boolean> => {
+      const label = value.trim()
+      if (label === '') {
+        files.message = '標籤不可空白。'
+        return false
+      }
+      if (row.list === 'virtualColumns' || propertyValue(row.object, 'sheetHeader')) {
+        setText(row, 'label', label, false)
+        return true
+      }
+      const tableKey = tableKeyOf(form.path())
+      const csvPath = tableKey === null ? null : files.mockCsv[tableKey] ?? null
+      return new Promise(resolve => {
+        labelChange.value = { row, oldLabel: labelOf(row), label, csvPath, done: resolve }
+      })
+    }
+  }
+
+  async function chooseLabelChange (change: HeaderChange): Promise<void> {
+    const pending = labelChange.value!
+    const changed = await form.changeLabel(pending.row.path, pending.oldLabel, pending.label, change)
+    labelChange.value = null
+    pending.done(changed)
+  }
+
+  function cancelLabelChange (): void {
+    labelChange.value?.done(false)
+    labelChange.value = null
+  }
+
+  const adding = shallowRef(false)
+
+  // 刪除欄位的確認
+  const removingKey = shallowRef<string | null>(null)
+  const removingRow = computed(() => rows.value.find(row => row.key !== null && row.key === removingKey.value) ?? null)
+  const removeOpen = computed({
+    get: () => removingRow.value !== null,
+    set: open => {
+      if (!open) {
+        removingKey.value = null
+      }
+    },
+  })
 
   function setRequired (row: ColumnRow, required: boolean): void {
     void form.applyOrNotify([{ kind: 'setProperty', objectPath: row.path, name: 'required', valueText: required ? 'true' : null }], 'soon')
@@ -97,6 +168,7 @@
           <th class="column-grid__center">稱呼</th>
           <th class="column-grid__center">必填</th>
           <th v-for="column in CODE_COLUMNS" :key="column.name" class="column-grid__code">{{ column.title }}</th>
+          <th />
         </tr>
       </thead>
 
@@ -119,13 +191,12 @@
           </td>
 
           <template v-if="row.object">
-            <td class="column-grid__text column-grid__text--wide column-grid__key">{{ row.key }}</td>
+            <td class="column-grid__text column-grid__text--wide column-grid__key">
+              <CommitTextField :commit="commitKey(row)" :disabled="row.key === null" :model-value="row.key ?? ''" />
+            </td>
 
             <td class="column-grid__text column-grid__text--wide">
-              <CommitTextField
-                :model-value="stringValue(propertyValue(row.object, 'label')) ?? ''"
-                @commit="value => setText(row, 'label', value, false)"
-              />
+              <CommitTextField :commit="commitLabel(row)" :model-value="labelOf(row)" />
             </td>
 
             <td class="column-grid__text column-grid__text--wide">
@@ -187,16 +258,53 @@
                 :object-path="row.path"
               />
             </td>
+
+            <td>
+              <v-tooltip :disabled="row.key === null || idColumn !== row.key" location="start" text="主鍵的欄位無法刪除">
+                <template #activator="{ props: tooltip }">
+                  <span v-bind="tooltip">
+                    <v-btn
+                      aria-label="刪除欄位"
+                      :disabled="row.key === null || idColumn === row.key"
+                      :icon="mdiDeleteOutline"
+                      size="small"
+                      variant="text"
+                      @click="removingKey = row.key"
+                    />
+                  </span>
+                </template>
+              </v-tooltip>
+            </td>
           </template>
 
-          <td v-else class="column-grid__other text-medium-emphasis" :colspan="7 + CODE_COLUMNS.length">
+          <td v-else class="column-grid__other text-medium-emphasis" :colspan="8 + CODE_COLUMNS.length">
             以程式碼寫成，請以文字編輯：{{ row.code }}
           </td>
         </tr>
       </TransitionGroup>
     </table>
 
+    <v-btn
+      class="column-grid__add ma-2"
+      :prepend-icon="mdiPlus"
+      text="新增欄位"
+      variant="outlined"
+      @click="adding = true"
+    />
+
     <ColumnTypeDialog v-if="typeRow" v-model="typeOpen" :columns="options" :row="typeRow" />
+    <AddColumnDialog v-model="adding" />
+    <RemoveColumnDialog v-if="removingRow" v-model="removeOpen" :column-key="removingRow.key!" :label="labelOf(removingRow) || null" />
+
+    <LabelChangeDialog
+      v-if="labelChange"
+      :csv-path="labelChange.csvPath"
+      :is-id="labelChange.row.key !== null && labelChange.row.key === idColumn"
+      :label="labelChange.label"
+      :old-label="labelChange.oldLabel"
+      @cancel="cancelLabelChange"
+      @choose="chooseLabelChange"
+    />
   </div>
 </template>
 
@@ -235,7 +343,7 @@
 }
 
 /* 虛擬欄位的 key 為主色 */
-.column-grid__row--virtual .column-grid__key {
+.column-grid__row--virtual .column-grid__key :deep(input) {
   color: rgb(var(--v-theme-primary));
 }
 
@@ -264,10 +372,18 @@
   max-width: 180px;
 }
 
-.column-grid__key {
-  overflow: hidden;
+.column-grid__key :deep(input) {
   font-family: monospace;
-  text-overflow: ellipsis;
+}
+
+/* 橫向捲動時仍位於左緣。高度與字體同欄位的輸入框 */
+.column-grid__add.v-btn {
+  position: sticky;
+  left: 0;
+  height: 32px;
+  font-size: 1rem;
+  font-weight: 400;
+  letter-spacing: 0.009375em;
 }
 
 .column-grid__type :deep(input) {

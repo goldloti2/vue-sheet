@@ -1,5 +1,5 @@
 import type { TypeScript, VueLanguageTools } from '../server/vueBuild'
-import { mkdir, mkdtemp, rm, symlink, unlink, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, readFile, rm, symlink, unlink, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -18,6 +18,8 @@ describe('hasTypeScriptService', () => {
     expect(hasTypeScriptService('vue-build/mock/order.csv')).toBe(false)
   })
 })
+
+const ROW_TEXT = 'export interface Row {\n  title: string\n}\nexport const row: Row = { title: \'a\' }\n'
 
 // 於暫存資料夾建立一個小專案。node_modules 連結至 vue-build 的套件，只讀取
 describe('createCodeLanguageService', () => {
@@ -42,6 +44,9 @@ describe('createCodeLanguageService', () => {
     await writeFile(file('b.ts'), 'import { count } from \'./a\'\nexport const label: string = count\n')
     await writeFile(file('Page.vue'), '<script lang="ts">\nexport interface Item { name: string }\n</script>\n\n<template><div /></template>\n')
     await writeFile(file('c.ts'), 'import type { Item } from \'./Page.vue\'\nexport const item: Item = { name: \'a\' }\n')
+    await writeFile(file('row.ts'), ROW_TEXT)
+    await writeFile(file('uses.ts'), 'import type { Row } from \'./row\'\nexport function pick (row: Row) {\n  const { title } = row\n  return title + row.title\n}\n')
+    await writeFile(file('Use.vue'), '<script setup lang="ts">\nimport type { Row } from \'./row\'\ndefineProps<{ row: Row }>()\n</script>\n\n<template><div>{{ row.title }}</div></template>\n')
   }, 30_000)
 
   // 先移除 node_modules 的連結，再刪除暫存資料夾，不碰 vue-build 的套件
@@ -97,5 +102,31 @@ describe('createCodeLanguageService', () => {
     const completions = service.completions(file('b.ts'), text, text.length)
 
     expect(completions.entries.map(entry => entry.name)).toContain('toFixed')
+  })
+
+  it('finds the rename locations in .ts and .vue files', async () => {
+    const service = create()
+    const locations = service.rename(file('row.ts'), ROW_TEXT, ROW_TEXT.indexOf('title'), 'name', [])
+
+    const renamed = await Promise.all([...new Set(locations.map(location => location.file))].toSorted().map(async target => {
+      const text = await readFile(target, 'utf8')
+      const edits = locations.filter(location => location.file === target).toSorted((a, b) => b.from - a.from)
+      return [path.basename(target), edits.reduce((result, edit) => result.slice(0, edit.from) + edit.text + result.slice(edit.to), text)]
+    }))
+
+    expect(Object.fromEntries(renamed)).toEqual({
+      'Use.vue': '<script setup lang="ts">\nimport type { Row } from \'./row\'\ndefineProps<{ row: Row }>()\n</script>\n\n<template><div>{{ row.name }}</div></template>\n',
+      'row.ts': 'export interface Row {\n  name: string\n}\nexport const row: Row = { name: \'a\' }\n',
+      'uses.ts': 'import type { Row } from \'./row\'\nexport function pick (row: Row) {\n  const { name: title } = row\n  return title + row.name\n}\n',
+    })
+  })
+
+  it('renames with the unsaved text of other files', () => {
+    const service = create()
+    const draft = 'import { row } from \'./row\'\nexport const copy = row.title\n'
+
+    const locations = service.rename(file('row.ts'), ROW_TEXT, ROW_TEXT.indexOf('title'), 'name', [{ file: file('draft.ts'), text: draft }])
+
+    expect(locations.filter(location => location.file === file('draft.ts')).map(location => draft.slice(location.from, location.to))).toEqual(['title'])
   })
 })

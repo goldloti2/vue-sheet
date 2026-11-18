@@ -1,5 +1,5 @@
 import type { FileChangedEvent, ProjectIndex, WriteRequest } from '../shared/api.ts'
-import type { CodeContextRequest, SchemaEditRequest, SchemaEditResult, SchemaTypes } from '../shared/schema.ts'
+import type { CodeContextRequest, KeyRenameRequest, SchemaEditRequest, SchemaEditResult, SchemaTypes } from '../shared/schema.ts'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import type { Plugin, ViteDevServer } from 'vite'
 import { readFile } from 'node:fs/promises'
@@ -14,9 +14,11 @@ import { type Checks, createChecks } from './checks.ts'
 import { createLinter } from './eslint.ts'
 import { hashText, readProjectFile, writeProjectFile } from './files.ts'
 import { createLanguageClient, type LanguageClient } from './languageClient.ts'
+import { MOCK_TABLES_FILE, readMockCsvPaths } from './mockTables.ts'
 import { createPreview } from './preview.ts'
 import { absolutePath, isProjectFile, listProjectFiles, PROJECT_DIRS, ScopeError } from './projectFiles.ts'
 import { readSchemaTypes } from './schema/columnTypes.ts'
+import { planKeyRename } from './schema/renameKey.ts'
 import { SchemaEditError } from './schema/schemaEdits.ts'
 import { parseSchema } from './schema/schemaModel.ts'
 import { applySchemaEdits, codeContext } from './schema/schemaService.ts'
@@ -59,7 +61,18 @@ async function readTypes (root: string, ts: Awaited<ReturnType<typeof loadTypeSc
 async function readProjectIndex (root: string): Promise<ProjectIndex> {
   const paths = await listProjectFiles(root)
   const ts = await loadTypeScript(path.join(root, 'vue-build'))
-  return { paths, tables: await readTableSummaries(ts, root, paths) }
+  const mockTables = await readProjectFile(root, MOCK_TABLES_FILE)
+  return {
+    paths,
+    tables: await readTableSummaries(ts, root, paths),
+    mockCsv: mockTables ? readMockCsvPaths(ts, mockTables.text) : {},
+  }
+}
+
+// 絕對路徑轉為專案中的路徑。不屬於專案時為 null
+function projectPathOf (root: string, absolute: string): string | null {
+  const relative = path.relative(root, absolute).split(path.sep).join('/')
+  return isProjectFile(relative) ? relative : null
 }
 
 function watchProjectFiles (root: string, server: ViteDevServer, language: LanguageClient, checks: Checks): void {
@@ -80,10 +93,11 @@ function watchProjectFiles (root: string, server: ViteDevServer, language: Langu
     server.ws.send(PROJECT_INDEX_EVENT, await readProjectIndex(root))
   }
 
-  // 新增或刪除檔案、修改表的 schema 時，重送檔案清單與各表的摘要
+  // 新增或刪除檔案、修改表的 schema 或 mock CSV 的登記時，重送檔案清單與各表的摘要
   watcher.on('change', absolute => {
     void notifyChange(absolute, false)
-    if (tableKeyOf(toProjectPath(absolute)) !== null) {
+    const filePath = toProjectPath(absolute)
+    if (tableKeyOf(filePath) !== null || filePath === MOCK_TABLES_FILE) {
       void notifyIndex()
     }
   })
@@ -150,6 +164,16 @@ export function editorService ({ root }: ServiceOptions): Plugin {
           const text = applySchemaEdits(ts, body.text, body.edits, (await readTypes(root, ts)).columnTypes)
           const result: SchemaEditResult = { text, model: parseSchema(ts, text) }
           return [200, result]
+        },
+        'POST /schema/rename-key': async req => {
+          const body = await json<KeyRenameRequest>(req)
+          return [200, await planKeyRename({
+            ts: await loadTypeScript(vueBuildRoot),
+            absolute: projectPath => absolutePath(root, projectPath),
+            projectPath: absolute => projectPathOf(root, absolute),
+            rename: (file, text, pos, newName, drafts) => language.rename(file, text, pos, newName, drafts),
+            readFile: projectPath => readProjectFile(root, projectPath),
+          }, body)]
         },
         'POST /schema/context': async req => {
           const body = await json<CodeContextRequest>(req)

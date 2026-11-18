@@ -1,6 +1,7 @@
 <script lang="ts" setup>
   import { computed, onMounted, shallowRef } from 'vue'
   import FileView from '@/components/file/FileView.vue'
+  import SaveConfirmDialog from '@/components/file/SaveConfirmDialog.vue'
   import ProjectNav from '@/components/nav/ProjectNav.vue'
   import BottomPanel from '@/components/panel/BottomPanel.vue'
   import PreviewPane from '@/components/preview/PreviewPane.vue'
@@ -50,6 +51,7 @@
     <FileView class="editor-layout__file" />
     <PreviewPane v-model:collapsed="previewCollapsed" class="editor-layout__preview" />
     <BottomPanel class="editor-layout__panel" />
+    <SaveConfirmDialog />
 
     <v-snackbar v-model="snackbar" multi-line :timeout="-1">
       {{ store.message }}

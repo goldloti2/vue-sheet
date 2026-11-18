@@ -137,6 +137,20 @@ export function singleFile (group: NavNode): string | null {
   return rest.length === 0 ? only?.path ?? null : null
 }
 
+/** 檔案於導覽中的位置，例如 頁面/訂單/列表頁。不在導覽中時為 null */
+export function navLocation (nodes: readonly NavNode[], filePath: string): string | null {
+  for (const node of nodes) {
+    if (node.path === filePath) {
+      return node.label
+    }
+    const inner = node.children ? navLocation(node.children, filePath) : null
+    if (inner !== null) {
+      return `${node.label}/${inner}`
+    }
+  }
+  return null
+}
+
 // 沒有檔案的組不列出
 export function navGroups (files: readonly string[], tableLabels: Readonly<Record<string, string>> = {}): NavNode[] {
   const single = (label: string, filePath: string): NavNode[] => files.includes(filePath) ? [{ label, children: [fileNode(filePath)] }] : []

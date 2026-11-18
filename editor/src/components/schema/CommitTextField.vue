@@ -6,6 +6,8 @@
     disabled?: boolean
     type?: 'text' | 'number'
     placeholder?: string
+    /** 送出時呼叫，取代 commit 事件。回傳 false 時，輸入框改回原值 */
+    commit?: (value: string) => Promise<boolean>
   }>()
 
   const emit = defineEmits<{
@@ -18,9 +20,23 @@
     draft.value = value
   })
 
-  function commit (): void {
-    if (draft.value !== props.modelValue) {
-      emit('commit', draft.value)
+  // 處理中的值。Enter 之後的焦點離開不再送出同一個值
+  let pending: string | null = null
+
+  async function submit (): Promise<void> {
+    const value = draft.value
+    if (value === props.modelValue || value === pending) {
+      return
+    }
+    if (!props.commit) {
+      emit('commit', value)
+      return
+    }
+    pending = value
+    const done = await props.commit(value)
+    pending = null
+    if (!done) {
+      draft.value = props.modelValue
     }
   }
 </script>
@@ -36,7 +52,7 @@
     single-line
     :type="type ?? 'text'"
     variant="outlined"
-    @blur="commit"
-    @keydown.enter="commit"
+    @blur="submit"
+    @keydown.enter="submit"
   />
 </template>

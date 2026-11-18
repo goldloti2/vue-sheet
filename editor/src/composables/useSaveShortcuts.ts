@@ -9,7 +9,7 @@ export function useSaveShortcuts (): void {
     if ((event.ctrlKey || event.metaKey) && !event.shiftKey && event.key.toLowerCase() === 's') {
       event.preventDefault()
       if (store.currentPath !== null) {
-        void store.save(store.currentPath)
+        void store.requestSave(store.currentPath)
       }
     }
   })

@@ -22,6 +22,16 @@ describe('applySchemaEdits', () => {
     expect(text).toContain('sortable: [\'amount\', \'date\'],')
   })
 
+  it('adds and removes columns', () => {
+    const text = applySchemaEdits(context.ts, context.template, [
+      { kind: 'addColumn', column: { key: 'note', label: '備註', type: 'text', virtual: false } },
+      { kind: 'removeColumn', key: 'status' },
+    ], context.columnTypes)
+
+    expect(text).toContain('    { key: \'note\', label: \'備註\', type: \'text\' },\n  ],')
+    expect(text).not.toMatch(/'status'/)
+  })
+
   it('checks code before writing it', () => {
     expect(() => applySchemaEdits(context.ts, context.template, [
       { kind: 'setProperty', objectPath: ['columns', 0], name: 'showIf', valueText: 'row =>', code: true },

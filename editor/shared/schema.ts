@@ -1,4 +1,5 @@
 // schema 檔的解析結果與修改，服務與介面共用。位置皆為文字中的 UTF-16 位移
+import type { FileContent } from './api.ts'
 
 export interface TextRange {
   from: number
@@ -120,6 +121,14 @@ export interface SchemaTypes {
   colors: { light: Record<string, string>, dark: Record<string, string> }
 }
 
+export interface NewColumn {
+  key: string
+  label: string
+  /** 欄位型別，例如 text */
+  type: string
+  virtual: boolean
+}
+
 /** 對 schema 檔的一項修改。valueText 與 itemText 為程式碼的原文。code 為 true 時，寫入前檢查 valueText 是否為一個運算式 */
 export type SchemaEdit
   = | { kind: 'replace', path: SchemaPath, valueText: string, code?: boolean }
@@ -129,6 +138,10 @@ export type SchemaEdit
     | { kind: 'remove', arrayPath: SchemaPath, index: number }
     | { kind: 'move', arrayPath: SchemaPath, from: number, to: number }
     | { kind: 'setColumnType', key: string, type: string }
+  /** 新增欄位與 Row 的成員 */
+    | { kind: 'addColumn', column: NewColumn }
+  /** 刪除欄位、Row 的成員，以及同一檔案中以字面值寫成的引用 */
+    | { kind: 'removeColumn', key: string }
   /** 沒有此具名匯入時加上 */
     | { kind: 'ensureImport', name: string, from: string }
 
@@ -153,4 +166,42 @@ export interface CodeContextRequest {
   text: string
   objectPath: SchemaPath
   name: string
+}
+
+/** 修改欄位的 key。drafts 為其他檔案未儲存的內容 */
+export interface KeyRenameRequest {
+  path: string
+  text: string
+  oldKey: string
+  newKey: string
+  drafts: { path: string, text: string }[]
+}
+
+/** 其他檔案修改後的內容。base 為修改前磁碟上的內容，以未儲存的內容修改時為 null */
+export interface FileRewrite {
+  path: string
+  text: string
+  base: FileContent | null
+}
+
+/** text 為 schema 檔修改後的內容 */
+export interface KeyRenameResult {
+  text: string
+  others: FileRewrite[]
+}
+
+const COLUMN_KEY = /^[a-z_]\w*$/i
+
+/** 欄位的 key 不可使用時的原因。可以使用時為 null */
+export function columnKeyError (key: string, existing: Iterable<string>): string | null {
+  if (key === '') {
+    return '請輸入 key。'
+  }
+  if (!COLUMN_KEY.test(key)) {
+    return 'key 只能使用英文字母、數字與底線，且第一個字不可為數字。'
+  }
+  if (key === 'id') {
+    return 'id 為每一列共有的屬性，不可作為欄位的 key。'
+  }
+  return new Set(existing).has(key) ? `已有欄位 ${key}。` : null
 }

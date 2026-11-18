@@ -1,7 +1,8 @@
 import type { SchemaTestContext } from './setup'
 import { beforeAll, describe, expect, it } from 'vitest'
 import { parseSchema } from '../../server/schema/schemaModel'
-import { columnOptions, columnRows, idCandidates, idPrefix, keyListItems, propertyBefore, sortItems, sourceOf } from '../../shared/schemaForm'
+import { columnKeyError } from '../../shared/schema'
+import { columnOptions, columnRows, idCandidates, idPrefix, keyListItems, propertyBefore, sortItems, sourceOf, usedColumnKeys } from '../../shared/schemaForm'
 import { loadSchemaTestContext } from './setup'
 
 let context: SchemaTestContext
@@ -78,5 +79,20 @@ describe('schema form', () => {
 
     expect(sourceOf(OTHER, showIf)).toBe('row => true')
     expect(sourceOf(OTHER, undefined)).toBeNull()
+  })
+
+  it('lists the keys of the columns and the Row members', () => {
+    const keys = usedColumnKeys(parseSchema(context.ts, context.template))
+
+    expect(keys).toEqual(['code', 'name', 'amount', 'date', 'status'])
+    expect(usedColumnKeys(null)).toEqual([])
+  })
+
+  it('checks a new column key', () => {
+    expect(columnKeyError('note', ['name'])).toBeNull()
+    expect(columnKeyError('', [])).toBe('請輸入 key。')
+    expect(columnKeyError('note-1', [])).toMatch(/^key 只能使用/)
+    expect(columnKeyError('id', [])).toMatch(/^id 為/)
+    expect(columnKeyError('name', ['name'])).toBe('已有欄位 name。')
   })
 })

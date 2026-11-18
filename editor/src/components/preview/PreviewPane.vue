@@ -4,11 +4,13 @@
   import { mdiChevronLeft } from '@mdi/js'
   import { computed, onMounted, shallowRef, useTemplateRef, watch } from 'vue'
   import { useEventListener } from '@/composables/useEventListener'
+  import { useFilesStore } from '@/stores/files'
   import { usePreviewStore } from '@/stores/preview'
   import PreviewFrame from './PreviewFrame.vue'
   import PreviewToolbar from './PreviewToolbar.vue'
 
   const store = usePreviewStore()
+  const files = useFilesStore()
   // 收合時只留展開的按鈕。預覽頁面保留，不重新載入
   const collapsed = defineModel<boolean>('collapsed', { default: false })
   const device = shallowRef<PreviewDevice>('mobile')
@@ -87,6 +89,15 @@
         density="compact"
         text="預覽中的修改會寫入正式的 Sheet。"
         type="warning"
+        variant="tonal"
+      />
+
+      <v-alert
+        v-if="files.previewHeld.size > 0"
+        class="preview-pane__notice"
+        density="compact"
+        text="欄位的修改儲存後才更新預覽。"
+        type="info"
         variant="tonal"
       />
 

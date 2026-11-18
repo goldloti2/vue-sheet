@@ -3,7 +3,7 @@
 import type { FileContent, ProjectIndex, WriteRequest, WriteResult } from '../shared/api'
 import type { ChecksSnapshot } from '../shared/checks'
 import type { PreviewDraft, PreviewSource, PreviewStatus } from '../shared/preview'
-import type { CodeContext, CodeContextRequest, SchemaEditRequest, SchemaEditResult, SchemaModel, SchemaTypes } from '../shared/schema'
+import type { CodeContext, CodeContextRequest, KeyRenameRequest, KeyRenameResult, SchemaEditRequest, SchemaEditResult, SchemaModel, SchemaTypes } from '../shared/schema'
 import type { CodeCompletions, CodeDiagnostic, CodeRequest, CompletionRequest } from '../shared/typescript'
 
 async function request<T> (url: string, init?: RequestInit): Promise<T> {
@@ -68,6 +68,10 @@ export function parseSchemaText (text: string): Promise<SchemaModel> {
 
 export function editSchema (body: SchemaEditRequest): Promise<SchemaEditResult> {
   return postJson('/api/schema/edit', body)
+}
+
+export function renameColumnKey (body: KeyRenameRequest): Promise<KeyRenameResult> {
+  return postJson('/api/schema/rename-key', body)
 }
 
 export function fetchCodeContext (body: CodeContextRequest): Promise<CodeContext> {

@@ -1,7 +1,7 @@
 // 表單對 schema 檔的修改：依序套用，回傳修改後的全文。任一項失敗時不套用任何一項
 import type { CodeContext, ColumnTypeInfo, SchemaEdit, SchemaPath } from '../../shared/schema.ts'
 import type { TypeScript } from '../vueBuild.ts'
-import { setColumnType } from './schemaColumns.ts'
+import { addColumn, removeColumn, setColumnType } from './schemaColumns.ts'
 import { ensureNamedImport, insertItem, moveItem, removeItem, replaceValue, SchemaEditError, setProperty } from './schemaEdits.ts'
 import { checkExpression } from './syntaxCheck.ts'
 
@@ -35,6 +35,12 @@ function applyEdit (ts: TypeScript, text: string, edit: SchemaEdit, columnTypes:
     }
     case 'setColumnType': {
       return setColumnType(ts, text, edit.key, edit.type, columnTypes)
+    }
+    case 'addColumn': {
+      return addColumn(ts, text, edit.column, columnTypes)
+    }
+    case 'removeColumn': {
+      return removeColumn(ts, text, edit.key)
     }
     case 'ensureImport': {
       return ensureNamedImport(ts, text, edit.name, edit.from)

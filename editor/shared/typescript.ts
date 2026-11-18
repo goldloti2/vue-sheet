@@ -24,6 +24,20 @@ export interface CodeCompletions {
   entries: CodeCompletionEntry[]
 }
 
+/** 改名時一處的修改。file 為絕對路徑，text 為取代 from 至 to 的文字 */
+export interface RenameLocation {
+  file: string
+  from: number
+  to: number
+  text: string
+}
+
+/** 其他檔案未儲存的內容。file 為絕對路徑 */
+export interface DraftFile {
+  file: string
+  text: string
+}
+
 export interface CodeRequest {
   path: string
   /** 編輯中的內容，可能尚未儲存 */

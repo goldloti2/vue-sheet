@@ -1,8 +1,9 @@
 // 欄位的新增、刪除與型別的修改，同時修改 Row 介面與同一檔案中以字面值寫成的引用
-import type { ColumnTypeInfo, SchemaPath, SettingOption } from '../../shared/schema.ts'
+import type { ColumnTypeInfo, NewColumn, SchemaPath, SchemaValue, SettingOption } from '../../shared/schema.ts'
 import type { TypeScript } from '../vueBuild.ts'
 import type TS from 'typescript'
-import { literalText, propertyValue, stringValue } from '../../shared/schema.ts'
+import { columnKeyError, literalText, propertyValue, stringValue } from '../../shared/schema.ts'
+import { usedColumnKeys } from '../../shared/schemaForm.ts'
 import { applyEdits, insertItem as insertListItem, removeItem as removeListItem } from './listEdits.ts'
 import { insertItem, removeItem, replaceValue, SchemaEditError, setProperty } from './schemaEdits.ts'
 import { findSchemaNodes, listSpanOf, parseSchema, parseSource, propertyName } from './schemaModel.ts'
@@ -12,14 +13,6 @@ export type ColumnList = 'columns' | 'virtualColumns'
 export interface ColumnLocation {
   list: ColumnList
   index: number
-}
-
-export interface NewColumn {
-  key: string
-  label: string
-  /** 欄位型別，例如 text */
-  type: string
-  virtual: boolean
 }
 
 const COLUMN_LISTS: readonly ColumnList[] = ['columns', 'virtualColumns']
@@ -109,6 +102,13 @@ export function addRowMember (ts: TypeScript, text: string, name: string, type: 
   return applyEdits(text, insertListItem(text, listSpanOf(ts, source, row), index, `${virtual ? 'readonly ' : ''}${name}: ${type}`))
 }
 
+/** Row 成員的名稱於文字中的位置。沒有此成員時為 null */
+export function rowMemberNameStart (ts: TypeScript, text: string, name: string): number | null {
+  const { source, row } = rowNode(ts, text)
+  const member = row ? rowMember(ts, row, name) : undefined
+  return member ? member.name.getStart(source) : null
+}
+
 export function removeRowMember (ts: TypeScript, text: string, name: string): string {
   const { source, row } = rowNode(ts, text)
   const member = row ? rowMember(ts, row, name) : undefined
@@ -126,9 +126,9 @@ export function setRowMemberType (ts: TypeScript, text: string, name: string, ty
 /** 新增欄位與 Row 的成員。必填的型別設定填入初始值，虛擬欄位的計算方式為 null。index 省略時加於最後 */
 export function addColumn (ts: TypeScript, text: string, column: NewColumn, columnTypes: readonly ColumnTypeInfo[], index?: number): string {
   const info = typeInfo(columnTypes, column.type)
-  const { row } = parseSchema(ts, text)
-  if (findColumn(ts, text, column.key) || row?.members.some(member => member.name === column.key)) {
-    throw new SchemaEditError(`已有欄位 ${column.key}。`)
+  const error = columnKeyError(column.key, usedColumnKeys(parseSchema(ts, text)))
+  if (error) {
+    throw new SchemaEditError(error)
   }
   const list: ColumnList = column.virtual ? 'virtualColumns' : 'columns'
   const properties: [string, string][] = [
@@ -148,6 +148,33 @@ export function addColumn (ts: TypeScript, text: string, column: NewColumn, colu
   const length = array?.kind === 'array' ? array.items.length : 0
   next = insertItem(ts, next, [list], index ?? length, itemText, 'multiline')
   return addRowMember(ts, next, column.key, info.valueType, column.virtual)
+}
+
+// 陣列中以字串寫成的項目
+function stringItems (value: SchemaValue | undefined): SchemaValue[] {
+  return value?.kind === 'array' ? value.items.filter(item => item.kind === 'string') : []
+}
+
+// 同一檔案中以字串寫成 key 之處：欄位的 key、idColumn、labelColumn、各清單、defaultSort 與 formatRules 的 columns
+function keyLiterals (ts: TypeScript, text: string, key: string): SchemaValue[] {
+  const { schema } = parseSchema(ts, text)
+  const items = (name: string) => {
+    const array = propertyValue(schema, name)
+    return array?.kind === 'array' ? array.items : []
+  }
+  return [
+    ...COLUMN_LISTS.flatMap(list => items(list).map(item => propertyValue(item, 'key'))),
+    propertyValue(schema, 'idColumn'),
+    propertyValue(schema, 'labelColumn'),
+    ...KEY_LISTS.flatMap(name => stringItems(propertyValue(schema, name))),
+    ...items('defaultSort').map(item => propertyValue(item, 'key')),
+    ...items('formatRules').flatMap(rule => stringItems(propertyValue(rule, 'columns'))),
+  ].filter((value): value is SchemaValue => value !== undefined && stringValue(value) === key)
+}
+
+/** 同一檔案中以字串寫成的 key 改為 newKey */
+export function renameKeyLiterals (ts: TypeScript, text: string, key: string, newKey: string): string {
+  return applyEdits(text, keyLiterals(ts, text, key).map(value => ({ from: value.from, to: value.to, insert: literalText(newKey) })))
 }
 
 // 同一檔案中以字面值引用 key 的下一處：labelColumn、各清單、defaultSort 與 formatRules 的 columns

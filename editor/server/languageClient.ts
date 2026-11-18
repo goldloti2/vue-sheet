@@ -1,4 +1,4 @@
-import type { CodeCompletions, CodeDiagnostic } from '../shared/typescript.ts'
+import type { CodeCompletions, CodeDiagnostic, DraftFile, RenameLocation } from '../shared/typescript.ts'
 import type { LanguageWorkerCall, LanguageWorkerData, LanguageWorkerRequest, LanguageWorkerResponse } from './languageWorker.ts'
 import path from 'node:path'
 import { Worker } from 'node:worker_threads'
@@ -7,6 +7,7 @@ export interface LanguageClient {
   /** filePath 為絕對路徑 */
   diagnostics: (filePath: string, text: string) => Promise<CodeDiagnostic[]>
   completions: (filePath: string, text: string, pos: number) => Promise<CodeCompletions>
+  rename: (filePath: string, text: string, pos: number, newName: string, drafts: DraftFile[]) => Promise<RenameLocation[]>
   refreshFiles: () => Promise<void>
   close: () => Promise<void>
 }
@@ -62,6 +63,7 @@ export function createLanguageClient (root: string): LanguageClient {
   return {
     diagnostics: (file, text) => request({ method: 'diagnostics', file, text }),
     completions: (file, text, pos) => request({ method: 'completions', file, text, pos }),
+    rename: (file, text, pos, newName, drafts) => request({ method: 'rename', file, text, pos, newName, drafts }),
     refreshFiles: () => request({ method: 'refreshFiles' }),
     close: async () => {
       const closing = worker

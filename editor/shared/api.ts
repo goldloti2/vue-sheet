@@ -38,6 +38,8 @@ export interface ProjectIndex {
   paths: string[]
   /** 表的代號（檔名）對應表名與欄位 */
   tables: Record<string, TableSummary>
+  /** 表的代號對應 services/mock/tables.ts 中登記的 CSV 的路徑 */
+  mockCsv: Record<string, string>
 }
 
 export interface FileChangedEvent {

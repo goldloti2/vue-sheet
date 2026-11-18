@@ -1,7 +1,7 @@
 // TypeScript 的 language service：以 tsconfig 建立專案，未儲存的內容取代磁碟上的檔案
 // .vue 檔經由 vue-tsc 所用的 Vue 語言工具轉為 TypeScript，診斷與補全的位置對應回 .vue 的原文
 // 此檔由 worker 以 Node 直接執行：只使用可移除的型別語法，相對路徑的匯入須寫副檔名
-import type { CodeCompletions, CodeDiagnostic } from '../shared/typescript.ts'
+import type { CodeCompletions, CodeDiagnostic, DraftFile, RenameLocation } from '../shared/typescript.ts'
 import type { TypeScript, VueLanguageTools } from './vueBuild.ts'
 import type TS from 'typescript'
 import { statSync } from 'node:fs'
@@ -14,6 +14,8 @@ export interface CodeLanguageService {
   /** filePath 為絕對路徑 */
   diagnostics: (filePath: string, text: string) => CodeDiagnostic[]
   completions: (filePath: string, text: string, pos: number) => CodeCompletions
+  /** 位置 pos 的名稱改為 newName 時須修改之處，含 .vue 檔。drafts 以外的檔案以磁碟上的內容為準 */
+  rename: (filePath: string, text: string, pos: number, newName: string, drafts: readonly DraftFile[]) => RenameLocation[]
   /** 重新讀取 tsconfig 涵蓋的檔案，於新增或刪除檔案後呼叫 */
   refreshFiles: () => void
   /** 預先建立專案，第一次檢查無須等待 */
@@ -187,6 +189,23 @@ export function createCodeLanguageService (ts: TypeScript, vue: VueLanguageTools
           ...(entry.insertText && entry.insertText !== entry.name ? { insertText: entry.insertText } : {}),
         }))
       return { from: info.optionalReplacementSpan?.start ?? null, entries }
+    },
+    rename: (file, text, pos, newName, drafts) => {
+      const current = new Set([file, ...drafts.map(draft => draft.file)])
+      for (const stale of [...overlays.keys()].filter(path => !current.has(path))) {
+        overlays.delete(stale)
+      }
+      for (const draft of drafts) {
+        setText(draft.file, draft.text)
+      }
+      setText(file, text)
+      const locations = service.findRenameLocations(file, pos, false, false, { providePrefixAndSuffixTextForRename: true }) ?? []
+      return locations.map(location => ({
+        file: location.fileName,
+        from: location.textSpan.start,
+        to: location.textSpan.start + location.textSpan.length,
+        text: `${location.prefixText ?? ''}${newName}${location.suffixText ?? ''}`,
+      }))
     },
     refreshFiles,
     warmUp: () => {

@@ -1,6 +1,6 @@
 import type { SchemaTestContext } from './setup'
 import { beforeAll, describe, expect, it } from 'vitest'
-import { addColumn, findColumn, removeColumn, removeKeyReferences, setColumnType } from '../../server/schema/schemaColumns'
+import { addColumn, findColumn, removeColumn, removeKeyReferences, renameKeyLiterals, rowMemberNameStart, setColumnType } from '../../server/schema/schemaColumns'
 import { body, loadSchemaTestContext } from './setup'
 
 let context: SchemaTestContext
@@ -62,6 +62,34 @@ describe('schema columns', () => {
     const text = 'const s = { tableLabel: \'a\', formatRules: [{ when: () => true, columns: [\'a\', \'b\'] }] }'
 
     expect(removeKeyReferences(context.ts, text, 'a')).toBe('const s = { tableLabel: \'a\', formatRules: [{ when: () => true, columns: [\'b\'] }] }')
+  })
+
+  it('rejects a key that cannot be used', () => {
+    expect(() => addColumn(context.ts, context.template, { key: 'id', label: 'ID', type: 'text', virtual: false }, context.columnTypes)).toThrow('id 為每一列共有的屬性')
+    expect(() => addColumn(context.ts, context.template, { key: '1st', label: '第一', type: 'text', virtual: false }, context.columnTypes)).toThrow('key 只能使用')
+  })
+
+  it('renames the key literals in the file', () => {
+    const text = renameKeyLiterals(context.ts, context.template, 'date', 'orderedAt')
+
+    expect(text).toContain('{ key: \'orderedAt\', label: \'日期\', type: \'date\' },')
+    expect(text).toContain('searchable: [\'name\', \'orderedAt\', \'amount\', \'status\'],')
+    expect(text).toContain('{ key: \'orderedAt\', direction: \'asc\' },')
+    expect(text.match(/'date'/g)).toEqual(['\'date\''])
+    expect(body(text)).toContain('  date: Date | null\n')
+  })
+
+  it('renames idColumn, labelColumn and the columns of format rules', () => {
+    const text = 'const s = { tableLabel: \'a\', idColumn: \'a\', labelColumn: \'a\', formatRules: [{ when: () => true, columns: [\'b\', \'a\'] }] }'
+
+    expect(renameKeyLiterals(context.ts, text, 'a', 'c')).toBe('const s = { tableLabel: \'a\', idColumn: \'c\', labelColumn: \'c\', formatRules: [{ when: () => true, columns: [\'b\', \'c\'] }] }')
+  })
+
+  it('finds the name of a Row member', () => {
+    const start = rowMemberNameStart(context.ts, context.template, 'amount')!
+
+    expect(context.template.slice(start, start + 'amount: number'.length)).toBe('amount: number')
+    expect(rowMemberNameStart(context.ts, context.template, 'missing')).toBeNull()
   })
 
   it('keeps the primary key column', () => {

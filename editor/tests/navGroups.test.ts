@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { navGroups, nodeFiles, singleFile } from '../shared/navGroups'
+import { navGroups, navLocation, nodeFiles, singleFile } from '../shared/navGroups'
 
 describe('navGroups', () => {
   it('groups the files by kind', () => {
@@ -110,5 +110,17 @@ describe('navGroups', () => {
 
   it('omits empty groups', () => {
     expect(navGroups([])).toEqual([])
+  })
+
+  it('joins the names on the way to a file', () => {
+    const groups = navGroups([
+      'vue-build/src/pages/order/index.vue',
+      'vue-build/src/config/navigation.ts',
+      'vue-build/src/schema/tables/order.ts',
+    ], { order: '訂單' })
+
+    expect(navLocation(groups, 'vue-build/src/pages/order/index.vue')).toBe('頁面/訂單/列表頁')
+    expect(navLocation(groups, 'vue-build/src/config/navigation.ts')).toBe('導覽/navigation')
+    expect(navLocation(groups, 'vue-build/src/pages/missing.vue')).toBeNull()
   })
 })

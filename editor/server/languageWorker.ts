@@ -1,3 +1,4 @@
+import type { DraftFile } from '../shared/typescript.ts'
 import path from 'node:path'
 // language service 的 worker：型別檢查不佔用編輯器服務的執行緒
 // 此檔由 Node 直接執行：只使用可移除的型別語法，相對路徑的匯入須寫副檔名
@@ -8,6 +9,7 @@ import { loadTypeScript, loadVueLanguageTools } from './vueBuild.ts'
 export type LanguageWorkerCall
   = | { method: 'diagnostics', file: string, text: string }
     | { method: 'completions', file: string, text: string, pos: number }
+    | { method: 'rename', file: string, text: string, pos: number, newName: string, drafts: DraftFile[] }
     | { method: 'refreshFiles' }
 
 export type LanguageWorkerRequest = LanguageWorkerCall & { id: number }
@@ -37,6 +39,10 @@ parentPort?.on('message', (request: LanguageWorkerRequest) => {
       }
       case 'completions': {
         response = { id: request.id, result: service.completions(request.file, request.text, request.pos) }
+        break
+      }
+      case 'rename': {
+        response = { id: request.id, result: service.rename(request.file, request.text, request.pos, request.newName, request.drafts) }
         break
       }
       case 'refreshFiles': {

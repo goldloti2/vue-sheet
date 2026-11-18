@@ -43,6 +43,12 @@ export function columnRows (model: SchemaModel | null): ColumnRow[] {
   })
 }
 
+// 欄位與 Row 的成員已使用的名稱
+export function usedColumnKeys (model: SchemaModel | null): string[] {
+  const keys = columnRows(model).flatMap(row => row.key === null ? [] : [row.key])
+  return [...new Set([...keys, ...model?.row?.members.map(member => member.name) ?? []])]
+}
+
 // 可作為主鍵的欄位：值的型別含 string 的真實欄位
 export function idCandidates (rows: readonly ColumnRow[], columnTypes: readonly ColumnTypeInfo[]): string[] {
   const stringTypes = new Set(columnTypes.filter(info => /\bstring\b/.test(info.valueType)).map(info => info.name))

@@ -77,7 +77,7 @@
           :disabled="store.dirtyPaths.size === 0"
           text="全部儲存"
           variant="text"
-          @click="store.saveAll()"
+          @click="store.requestSaveAll()"
         />
 
         <v-btn
@@ -85,7 +85,7 @@
           :disabled="!dirty"
           text="儲存"
           variant="flat"
-          @click="store.save(file.path)"
+          @click="store.requestSave(file.path)"
         />
       </v-toolbar>
 

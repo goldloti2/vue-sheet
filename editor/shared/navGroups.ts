@@ -1,6 +1,6 @@
 import { ACTIONS_DIR, actionsTableKeyOf, tableKeyOf, TABLES_DIR } from './tableKeys.ts'
 
-// 左側的導覽：依類型把專案的檔案分組。每一組為最上層的節點
+// 左側的導覽：依類型把專案的檔案分組。每一組為最上層的節點，子項為該組的檔案與資料夾
 
 export interface NavNode {
   label: string
@@ -126,9 +126,20 @@ function pageNodes (files: string[], tableKeys: ReadonlySet<string>, tableLabels
   return [...named, ...others]
 }
 
-// 沒有檔案的組不列出。只對應一個檔案的組本身即為該檔案
+// 節點之下所有檔案的路徑
+export function nodeFiles (node: NavNode): string[] {
+  return node.path ? [node.path] : (node.children ?? []).flatMap(child => nodeFiles(child))
+}
+
+// 組只有一個子項，且子項為檔案時，回傳該檔案的路徑
+export function singleFile (group: NavNode): string | null {
+  const [only, ...rest] = group.children ?? []
+  return rest.length === 0 ? only?.path ?? null : null
+}
+
+// 沒有檔案的組不列出
 export function navGroups (files: readonly string[], tableLabels: Readonly<Record<string, string>> = {}): NavNode[] {
-  const single = (label: string, filePath: string): NavNode[] => files.includes(filePath) ? [{ label, path: filePath }] : []
+  const single = (label: string, filePath: string): NavNode[] => files.includes(filePath) ? [{ label, children: [fileNode(filePath)] }] : []
   const group = (label: string, children: NavNode[]): NavNode[] => children.length > 0 ? [{ label, children }] : []
 
   const pick = (test: (file: string) => boolean) => files.filter(file => test(file)).toSorted(byPath)

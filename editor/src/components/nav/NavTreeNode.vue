@@ -5,10 +5,8 @@
 
   const props = defineProps<{
     node: NavNode
-    /** 上一層的識別值，最上層的組為空字串。資料夾的識別值為上一層的識別值加上名稱，各表的同名資料夾不會一起展開 */
+    /** 上一層的識別值。資料夾的識別值為上一層的識別值加上名稱，各表的同名資料夾不會一起展開 */
     parent: string
-    /** 最上層的組為 0 */
-    depth: number
     currentPath: string | null
     dirtyPaths: ReadonlySet<string>
   }>()
@@ -18,25 +16,13 @@
   }>()
 
   const value = computed(() => `${props.parent}/${props.node.label}`)
-  const isGroup = computed(() => props.depth === 0)
   const itemClass = computed(() => ({ 'nav-tree-node--detail': props.node.detail !== undefined }))
-  // 最上層的組不顯示展開與收合的箭頭，其他資料夾顯示。undefined 為 Vuetify 預設的箭頭
-  const toggleIcon = computed(() => isGroup.value ? '' : undefined)
 </script>
 
 <template>
-  <v-list-group
-    v-if="node.children"
-    :collapse-icon="toggleIcon"
-    :expand-icon="toggleIcon"
-    :value="value"
-  >
+  <v-list-group v-if="node.children" :value="value">
     <template #activator="{ props: activator }">
       <v-list-item v-bind="activator" :class="itemClass" :title="node.label">
-        <template v-if="isGroup" #title>
-          <span class="text-title-medium">{{ node.label }}</span>
-        </template>
-
         <span v-if="node.detail" class="nav-tree-node__detail">{{ node.detail }}</span>
       </v-list-item>
     </template>
@@ -45,7 +31,6 @@
       v-for="child in node.children"
       :key="child.path ?? child.label"
       :current-path="currentPath"
-      :depth="depth + 1"
       :dirty-paths="dirtyPaths"
       :node="child"
       :parent="value"
@@ -61,10 +46,6 @@
     :title="node.label"
     @click="emit('select', node.path)"
   >
-    <template v-if="isGroup" #title>
-      <span class="text-title-medium">{{ node.label }}</span>
-    </template>
-
     <span v-if="node.detail" class="nav-tree-node__detail">{{ node.detail }}</span>
 
     <template v-if="dirtyPaths.has(node.path)" #append>

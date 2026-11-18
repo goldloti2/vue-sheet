@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { navGroups } from '../shared/navGroups'
+import { navGroups, nodeFiles, singleFile } from '../shared/navGroups'
 
 describe('navGroups', () => {
   it('groups the files by kind', () => {
@@ -25,11 +25,29 @@ describe('navGroups', () => {
     expect(groups[5]!.children!.map(node => node.label)).toEqual(['tables', 'order-test.csv'])
   })
 
-  it('makes a single-file group the file itself', () => {
-    expect(navGroups(['vue-build/src/config/navigation.ts', 'apps-script/Config.gs'])).toEqual([
-      { label: '導覽', path: 'vue-build/src/config/navigation.ts' },
-      { label: '後端', path: 'apps-script/Config.gs' },
+  it('puts the file of a single-file group under the group', () => {
+    const groups = navGroups(['vue-build/src/config/navigation.ts', 'apps-script/Config.gs'])
+
+    expect(groups).toEqual([
+      { label: '導覽', children: [{ label: 'navigation', path: 'vue-build/src/config/navigation.ts' }] },
+      { label: '後端', children: [{ label: 'Config.gs', path: 'apps-script/Config.gs' }] },
     ])
+    expect(groups.map(group => singleFile(group))).toEqual(['vue-build/src/config/navigation.ts', 'apps-script/Config.gs'])
+  })
+
+  it('lists the files under a node', () => {
+    const [pages] = navGroups([
+      'vue-build/src/pages/order/index.vue',
+      'vue-build/src/pages/order/[id]/index.vue',
+      'vue-build/src/pages/dashboard.vue',
+    ])
+
+    expect(nodeFiles(pages!).toSorted()).toEqual([
+      'vue-build/src/pages/dashboard.vue',
+      'vue-build/src/pages/order/[id]/index.vue',
+      'vue-build/src/pages/order/index.vue',
+    ])
+    expect(singleFile(pages!)).toBeNull()
   })
 
   it('names tables and actions by the table label and sorts them by file name', () => {

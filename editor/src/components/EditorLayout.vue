@@ -64,7 +64,7 @@
 .editor-layout {
   display: grid;
   height: 100vh;
-  grid-template-columns: 260px minmax(0, 1fr) v-bind(previewColumn);
+  grid-template-columns: 316px minmax(0, 1fr) v-bind(previewColumn);
   grid-template-rows: minmax(0, 1fr) 220px;
   grid-template-areas:
     'nav file preview'

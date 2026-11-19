@@ -1,0 +1,5 @@
+編輯器圖示
+
+public/ 中的 favicon.ico 由 Material Design Icons 的 table 圖示與 pencil 圖示組成，只變更顏色、大小與位置，並加上外框。
+來源：Pictogrammers（https://pictogrammers.com/library/mdi/icon/table/、https://pictogrammers.com/library/mdi/icon/pencil/）
+授權：Apache License 2.0。全文見 repo 中的 vue-build/licenses/Apache-2.0.txt。

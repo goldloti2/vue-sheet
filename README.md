@@ -89,6 +89,39 @@ npm run build   # 產出靜態檔案至 dist/
 - **先了解運作方式** → [vue-build/README.md](vue-build/README.md)：前端的文件索引，含名詞對照
 - **接上真正的 Sheet** → [apps-script/README.md](apps-script/README.md)
 
+### 前端的部署
+
+`npm run build` 產出的 `vue-build/dist/` 為純靜態檔案，可放到任何靜態託管。託管須把找不到的路徑改回傳 `index.html`，由前端的路由處理（SPA fallback）。以下為 Cloudflare Workers 的做法，只上傳靜態檔案，沒有伺服器端的程式。
+
+1. 於 `vue-build/` 建立 `wrangler.jsonc`，並提交至要部署的分支。須設定的項目：
+   - `name`：Worker 的名稱
+   - `compatibility_date`：建立此檔的日期
+   - `assets.directory`：`./dist`
+   - `assets.not_found_handling`：`single-page-application`，即 SPA fallback
+   - 不設定 `main`
+2. 於 Cloudflare 的 Workers & Pages 匯入 GitHub 的 repo。Cloudflare 的 GitHub App 只授權這一個 repo
+3. 填寫建置的設定：
+   - 根目錄：`vue-build`
+   - 建置指令：`npm run build`。此指令也執行型別檢查，型別錯誤時不部署
+   - 部署指令：`npx wrangler deploy`
+   - 建置的變數（Build variables）：`VITE_APPS_SCRIPT_URL` 為 `.env` 中的網址，`NODE_VERSION` 為 Node 的主版本號
+4. 於 Branch control 指定部署的分支，並關閉其他分支的建置
+5. 部署完成後，於 Deployments 查看建置的紀錄，再開啟 `workers.dev` 的網址
+
+- 沒有 `wrangler.jsonc` 時，`npx wrangler deploy` 會自動改寫專案的 Vite 設定，建置因此失敗。
+- `VITE_APPS_SCRIPT_URL` 須設定為建置的變數。執行時的變數（Variables and Secrets）在建置時讀不到。
+- Apps Script 的網址改變時，`.env` 與 Cloudflare 的建置變數皆須更新。修改既有的部署時網址不變，新增部署時網址改變。
+
+**限制可以開啟網站的人**：使用 Cloudflare Zero Trust 的 Access，免費方案即可。另一種做法為後端的認證，見 [apps-script/README.md](apps-script/README.md) 的「認證」。
+1. 建立一個 Allow 的 policy，只包含允許的使用者
+2. 建立一個 Bypass 的 policy，Include 為 Everyone
+3. 以整個網站建立一個 Self-hosted 的 application，套用 Allow 的 policy
+4. 於同一個網域再建立一個 application，路徑為 `manifest.webmanifest` 與 `icons`，套用 Bypass 的 policy
+5. 以無痕視窗確認：首頁顯示 Cloudflare 的登入畫面，`/manifest.webmanifest` 直接顯示 JSON
+
+- 瀏覽器讀取 manifest 時不帶 cookie。沒有第 4 步時，加入主畫面只會成為一般的書籤。
+- iPhone 主畫面上的 App 不與 Safari 共用 cookie，第一次開啟時須在 App 中再登入一次。
+
 ### 編輯器
 
 編輯器位於 `editor/`，是於本機執行的網頁 App，用來修改專案的檔案，並即時預覽修改的結果：

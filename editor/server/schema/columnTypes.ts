@@ -111,6 +111,35 @@ export function readInterfaceOptions (ts: TypeScript, typesText: string, name: s
   return declaration ? optionsOf(ts, source, declaration.members) : []
 }
 
+// 型別別名或介面中各屬性的說明，含交集與映射型別中的屬性。同名的屬性取第一個
+export function readPropertyDocs (ts: TypeScript, typesText: string, names: readonly string[]): Record<string, string> {
+  const source = parseTypes(ts, typesText)
+  const docs: Record<string, string> = {}
+  const visit = (node: TS.Node): void => {
+    if (ts.isPropertySignature(node) && ts.isIdentifier(node.name)) {
+      const doc = docOf(ts, node)
+      if (doc && !(node.name.text in docs)) {
+        docs[node.name.text] = doc
+      }
+    }
+    ts.forEachChild(node, visit)
+  }
+  for (const name of names) {
+    const declaration = source.statements.find(statement =>
+      (ts.isTypeAliasDeclaration(statement) || ts.isInterfaceDeclaration(statement)) && statement.name.text === name)
+    if (declaration) {
+      visit(declaration)
+    }
+  }
+  return docs
+}
+
 export function readSchemaTypes (ts: TypeScript, typesText: string, colors: SchemaTypes['colors']): SchemaTypes {
-  return { columnTypes: readColumnTypes(ts, typesText), formatRule: readInterfaceOptions(ts, typesText, 'FormatRule'), colors }
+  return {
+    columnTypes: readColumnTypes(ts, typesText),
+    formatRule: readInterfaceOptions(ts, typesText, 'FormatRule'),
+    columnDocs: readPropertyDocs(ts, typesText, ['ColumnBase', 'SchemaColumn', 'VirtualColumn']),
+    schemaDocs: readPropertyDocs(ts, typesText, ['TableSchema']),
+    colors,
+  }
 }

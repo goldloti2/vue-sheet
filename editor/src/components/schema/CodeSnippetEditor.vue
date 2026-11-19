@@ -3,7 +3,7 @@
   import { closeBrackets } from '@codemirror/autocomplete'
   import { javascript } from '@codemirror/lang-javascript'
   import { EditorState } from '@codemirror/state'
-  import { EditorView } from '@codemirror/view'
+  import { EditorView, lineNumbers } from '@codemirror/view'
   import { minimalSetup } from 'codemirror'
   import { onBeforeUnmount, onMounted, useTemplateRef } from 'vue'
   import { useTheme } from 'vuetify'
@@ -29,8 +29,8 @@
       state: EditorState.create({
         doc: model.value,
         extensions: [
-          // 不顯示行號
           minimalSetup,
+          lineNumbers(),
           closeBrackets(),
           javascript({ typescript: true }),
           snippetExtensions(props.path, props.surroundings),
@@ -63,13 +63,24 @@
 </template>
 
 <style scoped>
-.code-snippet-editor :deep(.cm-editor) {
-  min-height: 80px;
-  max-height: 320px;
+/* 行號的寬度為固定的位數（見 docs/layout.md） */
+.code-snippet-editor :deep(.cm-lineNumbers .cm-gutterElement) {
+  min-width: 2ch;
+  padding: 0 4px;
+  box-sizing: content-box;
 }
 
 .code-snippet-editor :deep(.cm-content) {
   padding: 8px 4px;
+}
+
+/* 填滿外層的高度 */
+.code-snippet-editor {
+  height: 100%;
+}
+
+.code-snippet-editor :deep(.cm-editor) {
+  height: 100%;
 }
 
 .code-snippet-editor :deep(.cm-scroller) {

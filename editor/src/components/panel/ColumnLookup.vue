@@ -22,6 +22,11 @@
     }
   }, { immediate: true })
 
+  // ref 欄位指向的表，以表名顯示
+  function refTitle (refTable: string | null): string {
+    return refTable === null ? '' : `→ ${props.tables[refTable]?.label ?? refTable}`
+  }
+
   // 選取的表被刪除或尚未選取時，改選第一張表
   watch(tableKeys, keys => {
     if (selected.value === null || !keys.includes(selected.value)) {
@@ -55,7 +60,7 @@
           <td class="column-lookup__key">{{ column.key }}</td>
           <td>{{ column.label }}</td>
           <td>{{ column.type }}</td>
-          <td class="text-medium-emphasis">{{ column.virtual ? '虛擬欄位' : '' }}</td>
+          <td class="text-medium-emphasis">{{ refTitle(column.refTable) }}</td>
         </tr>
       </tbody>
     </v-table>

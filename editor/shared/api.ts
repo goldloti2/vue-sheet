@@ -27,6 +27,8 @@ export interface TableColumn {
   virtual: boolean
   /** Sheet 的表頭（sheetHeader，省略時為 label）。虛擬欄位與不是以字串直接寫值時為 null */
   header: string | null
+  /** ref 欄位指向的表的代號。其他欄位與不是以字串直接寫值時為 null */
+  refTable: string | null
 }
 
 export interface TableSummary {

@@ -1,6 +1,6 @@
 import type { SchemaTestContext } from './setup'
 import { beforeAll, describe, expect, it } from 'vitest'
-import { readColumnTypes, readSchemaTypes } from '../../server/schema/columnTypes'
+import { readColumnTypes, readPropertyDocs, readSchemaTypes } from '../../server/schema/columnTypes'
 import { loadSchemaTestContext } from './setup'
 
 let context: SchemaTestContext
@@ -56,5 +56,38 @@ interface FormatRule<Row> {
 
   it('returns nothing without ColumnTypes', () => {
     expect(readColumnTypes(context.ts, 'export const a = 1')).toEqual([])
+  })
+})
+
+describe('readPropertyDocs', () => {
+  it('reads the docs of properties in aliases, intersections and mapped types', () => {
+    const text = `type Base = {
+  /** 第一個 */
+  a?: string
+  b?: number
+}
+type Column = {
+  [T in 'x' | 'y']: Base & {
+    /** 第二個 */
+    c?: () => void
+    /** 不取用 */
+    a?: string
+  }
+}[ 'x' | 'y']
+interface Other {
+  /** 不讀取 */
+  d: string
+}`
+
+    expect(readPropertyDocs(context.ts, text, ['Base', 'Column'])).toEqual({ a: '第一個', c: '第二個' })
+  })
+
+  it('reads the column and schema settings of types.ts', () => {
+    const types = readSchemaTypes(context.ts, context.typesText, { light: {}, dark: {} })
+
+    for (const name of ['default', 'validate', 'showIf', 'value']) {
+      expect(types.columnDocs[name]).toBeTruthy()
+    }
+    expect(types.schemaDocs.newId).toBeTruthy()
   })
 })

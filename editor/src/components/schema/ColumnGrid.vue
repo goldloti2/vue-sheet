@@ -47,6 +47,11 @@
     return stringValue(propertyValue(row.object, 'label')) ?? ''
   }
 
+  // 程式碼的對話框的標題，例如 初始值：價格。沒有標籤時為 key
+  function codeTitle (title: string, row: ColumnRow): string {
+    return `${title}：${labelOf(row) || row.key || ''}`
+  }
+
   // 修改 key 與所有引用
   function commitKey (row: ColumnRow) {
     return (value: string) => row.key === null || value.trim() === row.key ? Promise.resolve(false) : form.renameKey(row.key, value.trim())
@@ -254,8 +259,10 @@
                 :code="sourceOf(form.text(), propertyValue(row.object, column.name))"
                 :commit="commitCode(row.path, column.name)"
                 :disabled="column.only !== null && row.list !== column.only"
+                :doc="form.types.value?.columnDocs[column.name]"
                 :name="column.name"
                 :object-path="row.path"
+                :title="codeTitle(column.title, row)"
               />
             </td>
 

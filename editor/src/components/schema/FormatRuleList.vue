@@ -177,6 +177,7 @@
               :columns="columns"
               :object-path="['formatRules', ruleIndex]"
               :option="option"
+              :title="titleOf(option.doc, option.name)"
               :value="propertyValue(rule, option.name)"
               @change="(valueText, timing) => apply([{ kind: 'setProperty', objectPath: ['formatRules', ruleIndex], name: option.name, valueText }], timing)"
             />

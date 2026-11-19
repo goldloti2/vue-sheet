@@ -61,6 +61,7 @@ describe('table summaries', () => {
       virtualColumns: [{ key: 'total', label: '總額', type: 'number', value: row => 1 }],
       columns: [
         { key: 'name', label: '名稱', type: 'text' },
+        { key: 'customer', label: '客戶', type: 'ref', refTable: 'customer' },
         { key: 'code', label: '編號', sheetHeader: 'ORD-ID', type: 'text' },
         { key: 'status', label: LABEL, type: 'select', options: ['a'] },
         COLUMN,
@@ -69,10 +70,11 @@ describe('table summaries', () => {
     }`
 
     expect(readTableSummary(ts, text).columns).toEqual([
-      { key: 'name', label: '名稱', type: 'text', virtual: false, header: '名稱' },
-      { key: 'code', label: '編號', type: 'text', virtual: false, header: 'ORD-ID' },
-      { key: 'status', label: null, type: 'select', virtual: false, header: null },
-      { key: 'total', label: '總額', type: 'number', virtual: true, header: null },
+      { key: 'name', label: '名稱', type: 'text', virtual: false, header: '名稱', refTable: null },
+      { key: 'customer', label: '客戶', type: 'ref', virtual: false, header: '客戶', refTable: 'customer' },
+      { key: 'code', label: '編號', type: 'text', virtual: false, header: 'ORD-ID', refTable: null },
+      { key: 'status', label: null, type: 'select', virtual: false, header: null, refTable: null },
+      { key: 'total', label: '總額', type: 'number', virtual: true, header: null, refTable: null },
     ])
   })
 
@@ -93,7 +95,7 @@ describe('table summaries', () => {
       'vue-build/src/schema/tables/order.ts',
     ])).toEqual({
       draft: { label: null, variable: null, columns: [] },
-      order: { label: '訂單', variable: null, columns: [{ key: 'a', label: null, type: null, virtual: false, header: null }] },
+      order: { label: '訂單', variable: null, columns: [{ key: 'a', label: null, type: null, virtual: false, header: null, refTable: null }] },
     })
   })
 })

@@ -56,8 +56,10 @@
       v-else
       :code="sourceOf(form.text(), propertyValue(form.model.value?.schema, 'newId'))"
       :commit="commitNewId"
+      :doc="form.types.value?.schemaDocs.newId"
       name="newId"
       :object-path="[]"
+      title="主鍵字首"
     />
   </div>
 </template>

@@ -11,6 +11,8 @@ const vueBuildRoot = fileURLToPath(new URL('../../../vue-build', import.meta.url
 export interface SchemaTestContext {
   ts: TypeScript
   columnTypes: ColumnTypeInfo[]
+  /** vue-build/src/schema/types.ts 的內容 */
+  typesText: string
   /** vue-build/template/table/schema.ts 的內容 */
   template: string
 }
@@ -21,7 +23,7 @@ export async function loadSchemaTestContext (): Promise<SchemaTestContext> {
     readFile(`${vueBuildRoot}/src/schema/types.ts`, 'utf8'),
     readFile(`${vueBuildRoot}/template/table/schema.ts`, 'utf8'),
   ])
-  return { ts, columnTypes: readColumnTypes(ts, types), template }
+  return { ts, columnTypes: readColumnTypes(ts, types), typesText: types, template }
 }
 
 // 文字中 schema 物件與 Row 介面的部分，去掉開頭的 import 與註解

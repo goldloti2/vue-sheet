@@ -21,6 +21,8 @@
     disabled?: boolean
     /** 程式碼寫回後更新預覽的時機。其他設定由 change 的接收端決定 */
     codeTiming?: PreviewTiming
+    /** 程式碼的對話框的標題。省略時為設定名 */
+    title?: string
     /** 文字的設定改以選單選擇這些值，例如 refTable 的表 */
     suggestions?: readonly { title: string, value: string }[]
   }>()
@@ -170,8 +172,10 @@
     :code="sourceOf(form.text(), value)"
     :commit="commitCode"
     :disabled="disabled"
+    :doc="option.doc"
     :name="option.name"
     :object-path="objectPath"
+    :title="title ?? option.name"
   />
 </template>
 

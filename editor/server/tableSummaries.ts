@@ -16,7 +16,8 @@ function columnsOf (value: SchemaValue | undefined, virtual: boolean): TableColu
     const label = stringValue(propertyValue(item, 'label'))
     const sheetHeader = propertyValue(item, 'sheetHeader')
     const header = virtual ? null : (sheetHeader ? stringValue(sheetHeader) : label)
-    return key === null ? [] : [{ key, label, type: stringValue(propertyValue(item, 'type')), virtual, header }]
+    const refTable = stringValue(propertyValue(item, 'refTable'))
+    return key === null ? [] : [{ key, label, type: stringValue(propertyValue(item, 'type')), virtual, header, refTable }]
   })
 }
 

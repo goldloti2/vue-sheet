@@ -117,6 +117,10 @@ export interface ColumnTypeInfo {
 export interface SchemaTypes {
   columnTypes: ColumnTypeInfo[]
   formatRule: SettingOption[]
+  /** 欄位的各項設定的說明，例如 default、value */
+  columnDocs: Record<string, string>
+  /** TableSchema 的各項設定的說明，例如 newId */
+  schemaDocs: Record<string, string>
   /** 共用色名（例如 vuesheet-red）於淺色與深色主題的色值，取自 vue-build/src/plugins/colors.ts */
   colors: { light: Record<string, string>, dark: Record<string, string> }
 }

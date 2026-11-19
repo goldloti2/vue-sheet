@@ -11,6 +11,7 @@
 - 前後端之間的介面：[docs/api.md](docs/api.md)
 - 認證：[docs/auth.md](docs/auth.md)
 - 後端的設定與部署：[apps-script/README.md](apps-script/README.md)
+- 修改專案檔案的編輯器：[editor/docs/README.md](editor/docs/README.md)
 - AI agent 的工作規則：[AGENTS.md](AGENTS.md)
 
 ---
@@ -88,6 +89,15 @@ npm run build   # 產出靜態檔案至 dist/
 - **先了解運作方式** → [vue-build/README.md](vue-build/README.md)：前端的文件索引，含名詞對照
 - **接上真正的 Sheet** → [apps-script/README.md](apps-script/README.md)
 
+### 編輯器
+
+編輯器位於 `editor/`，是於本機執行的網頁 App，用來修改專案的檔案，並即時預覽修改的結果：
+1. 於 `vue-build/` 執行 `npm install`。編輯器的預覽與檢查使用 `vue-build/` 中的套件
+2. 於 `editor/` 執行 `npm install`，再執行 `npm run editor`
+3. 以瀏覽器開啟終端機顯示的網址
+
+用法見 [editor/docs/README.md](editor/docs/README.md)。
+
 ---
 
 ## 文件
@@ -101,3 +111,4 @@ npm run build   # 產出靜態檔案至 dist/
 | [apps-script/README.md](apps-script/README.md) | 後端：須填寫的設定、部署方式、實作上的規則、實測結果 |
 | [vue-build/README.md](vue-build/README.md) | 前端：指令、資料夾，以及所有前端文件的索引 |
 | [vue-build/template/README.md](vue-build/template/README.md) | 初次設定，以及新增一張表時須複製與修改的檔案 |
+| [editor/docs/README.md](editor/docs/README.md) | 編輯器：啟動方式、版面、儲存的規則，以及編輯器的文件索引 |

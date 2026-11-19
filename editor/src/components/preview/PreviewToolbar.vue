@@ -60,29 +60,45 @@
       mandatory
       variant="text"
     >
-      <v-btn aria-label="電腦版" :icon="mdiMonitor" value="desktop" />
-      <v-btn aria-label="手機版" :icon="mdiCellphone" value="mobile" />
+      <v-btn aria-label="電腦版" icon value="desktop">
+        <v-icon :icon="mdiMonitor" />
+        <v-tooltip activator="parent" location="bottom" text="電腦版" />
+      </v-btn>
+
+      <v-btn aria-label="手機版" icon value="mobile">
+        <v-icon :icon="mdiCellphone" />
+        <v-tooltip activator="parent" location="bottom" text="手機版" />
+      </v-btn>
     </v-btn-toggle>
 
     <v-btn
       aria-label="重新整理"
       :disabled="status.state !== 'running'"
-      :icon="mdiRefresh"
+      icon
       @click="emit('reload')"
-    />
+    >
+      <v-icon :icon="mdiRefresh" />
+      <v-tooltip activator="parent" location="bottom" text="重新整理" />
+    </v-btn>
 
     <v-btn
       :aria-label="fullWindow ? '結束全視窗' : '全視窗'"
-      :icon="fullWindow ? mdiFullscreenExit : mdiFullscreen"
+      icon
       @click="fullWindow = !fullWindow"
-    />
+    >
+      <v-icon :icon="fullWindow ? mdiFullscreenExit : mdiFullscreen" />
+      <v-tooltip activator="parent" location="bottom" :text="fullWindow ? '結束全視窗' : '全視窗'" />
+    </v-btn>
 
     <v-btn
       v-if="!fullWindow"
       aria-label="收合預覽"
-      :icon="mdiChevronRight"
+      icon
       @click="emit('collapse')"
-    />
+    >
+      <v-icon :icon="mdiChevronRight" />
+      <v-tooltip activator="parent" location="bottom" text="收合預覽" />
+    </v-btn>
   </v-toolbar>
 </template>
 

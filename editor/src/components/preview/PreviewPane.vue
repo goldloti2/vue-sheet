@@ -70,7 +70,10 @@
 <template>
   <section class="preview-pane" :class="{ 'preview-pane--full': fullWindow, 'preview-pane--collapsed': collapsed && !fullWindow }">
     <div v-if="collapsed && !fullWindow" class="preview-pane__expand">
-      <v-btn aria-label="展開預覽" :icon="mdiChevronLeft" variant="text" @click="collapsed = false" />
+      <v-btn aria-label="展開預覽" icon variant="text" @click="collapsed = false">
+        <v-icon :icon="mdiChevronLeft" />
+        <v-tooltip activator="parent" location="start" text="展開預覽" />
+      </v-btn>
     </div>
 
     <template v-if="status">

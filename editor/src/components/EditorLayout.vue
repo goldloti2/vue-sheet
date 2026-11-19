@@ -26,6 +26,14 @@
   const previewCollapsed = shallowRef(false)
   const previewColumn = computed(() => previewCollapsed.value ? PREVIEW_COLLAPSED_WIDTH : previewExpanded)
 
+  // 導覽收合時只留各組的圖示
+  const navCollapsed = shallowRef(false)
+  const navColumn = computed(() => navCollapsed.value ? '56px' : '316px')
+
+  // 下方面板收合時只留分頁列
+  const panelCollapsed = shallowRef(false)
+  const panelRow = computed(() => panelCollapsed.value ? 'auto' : '220px')
+
   const snackbar = computed({
     get: () => store.message !== null,
     set: open => {
@@ -44,6 +52,7 @@
 <template>
   <div class="editor-layout">
     <ProjectNav
+      v-model:collapsed="navCollapsed"
       class="editor-layout__nav"
       :current-path="store.currentPath"
       :dirty-paths="store.dirtyPaths"
@@ -56,7 +65,7 @@
 
     <FileView class="editor-layout__file" />
     <PreviewPane v-model:collapsed="previewCollapsed" class="editor-layout__preview" />
-    <BottomPanel class="editor-layout__panel" />
+    <BottomPanel v-model:collapsed="panelCollapsed" class="editor-layout__panel" />
     <SaveConfirmDialog />
     <NewTableDialog v-model="newTableOpen" />
     <DeleteTableDialog />
@@ -74,8 +83,8 @@
 .editor-layout {
   display: grid;
   height: 100vh;
-  grid-template-columns: 316px minmax(0, 1fr) v-bind(previewColumn);
-  grid-template-rows: minmax(0, 1fr) 220px;
+  grid-template-columns: v-bind(navColumn) minmax(0, 1fr) v-bind(previewColumn);
+  grid-template-rows: minmax(0, 1fr) v-bind(panelRow);
   grid-template-areas:
     'nav file preview'
     'nav panel preview';

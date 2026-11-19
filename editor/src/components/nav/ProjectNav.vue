@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-  import { mdiApplicationOutline, mdiDatabaseOutline, mdiFlaskOutline, mdiGestureTapButton, mdiPlus, mdiRouterNetwork, mdiScriptTextOutline } from '@mdi/js'
+  import { mdiApplicationOutline, mdiChevronLeft, mdiDatabaseOutline, mdiFlaskOutline, mdiGestureTapButton, mdiPlus, mdiRouterNetwork, mdiScriptTextOutline } from '@mdi/js'
   import { computed, shallowRef, watch } from 'vue'
   import { useTableDialogs } from '@/composables/useTableDialogs'
   import { navFolderValues, navGroups, nodeFiles, singleFile } from '../../../shared/navGroups'
@@ -17,6 +17,9 @@
   const emit = defineEmits<{
     select: [path: string]
   }>()
+
+  // 收合時只留各組的圖示。各組的清單保留，展開時維持展開的資料夾
+  const collapsed = defineModel<boolean>('collapsed', { default: false })
 
   const { newTableOpen } = useTableDialogs()
 
@@ -66,9 +69,10 @@
     opened.value = { ...opened.value, [label]: values as string[] }
   }
 
-  // 組只有一個檔案時，一併開啟該檔案
+  // 點選組時展開面板。組只有一個檔案時，一併開啟該檔案
   function selectGroup (label: string): void {
     selected.value = label
+    collapsed.value = false
     const group = groups.value.find(item => item.node.label === label)
     const file = group ? singleFile(group.node) : null
     if (file !== null) {
@@ -85,7 +89,7 @@
   <nav class="project-nav">
     <!-- 左邊只有各組的圖示，名稱以提示顯示 -->
     <!-- 所選的組以主色標示，其他組為淡色 -->
-    <div class="project-nav__rail">
+    <div class="project-nav__rail" :class="{ 'project-nav__rail--alone': collapsed }">
       <v-btn
         v-for="group in groups"
         :key="group.node.label"
@@ -107,7 +111,7 @@
     </div>
 
     <!-- 右邊列出所選的組。組名固定於最上方，只有清單捲動 -->
-    <div v-if="shown" class="project-nav__panel">
+    <div v-if="shown" v-show="!collapsed" class="project-nav__panel">
       <!-- 表的組可以新增表 -->
       <div class="project-nav__header">
         <span class="text-title-medium">{{ shown.node.label }}</span>
@@ -123,6 +127,17 @@
         >
           <v-icon :icon="mdiPlus" />
           <v-tooltip activator="parent" location="bottom" text="新增表" />
+        </v-btn>
+
+        <v-btn
+          aria-label="收合導覽"
+          icon
+          size="small"
+          variant="text"
+          @click="collapsed = true"
+        >
+          <v-icon :icon="mdiChevronLeft" />
+          <v-tooltip activator="parent" location="bottom" text="收合導覽" />
         </v-btn>
       </div>
 
@@ -167,6 +182,11 @@
   align-items: center;
   padding-block: 8px;
   border-right: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
+}
+
+/* 收合時邊線由外層提供 */
+.project-nav__rail--alone {
+  border-right: none;
 }
 
 .project-nav__group.v-btn {

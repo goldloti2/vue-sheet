@@ -411,3 +411,11 @@ select 的 `allowCustom`：改為 `v-combobox`，`options` 只是建議，輸入
 ## 已知缺口
 
 `refTable` 只存放代稱字串，沒有型別檢查它是否確實存在於 `schemas`。
+
+**主鍵建立後不能修改**。實作修改主鍵時，記著舊 id 的地方皆須一併替換：
+- 子列的 ref：沿著關聯圖連帶更新為新 id，類似連帶刪除。子表的主鍵本身為 ref 時，須遞迴處理
+- 待推送佇列：未推送的新增直接替換 id。已在 Sheet 上的列，推送前後端仍為舊 id。佇列須記錄一份「新 id → 舊 id」的對照，否則同一批中之後的操作找不到列
+- 畫面：詳細頁的網址、KeepAlive 的快取、列表發布的順序、多選的 id、儀表板的選取，皆記著舊 id
+- 編輯時清空主鍵即重新產生 id，也屬於修改主鍵
+
+**以列判斷的條件不知道自己用於哪一頁**。`formatRules` 的 `when`、`showIf`、`suggestedValues`、`validate` 皆只接收這一列，不知道自己用於哪一頁、哪種版面。顯示的路徑本身知道位置（`DataDetail`、`DataTable`、`DataForm`），view 則須由各版面元件告知自己的版面。

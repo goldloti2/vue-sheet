@@ -1186,6 +1186,13 @@ main 上的 `schemas` 為空，測試若使用專案的表，搬到 main 後便�
 **連續動作的進度指示**
 即「第 1 步／共 2 步」。流程最多兩三步，每一步皆為完整的一頁，App Bar 上有自己的標題。
 
+**schema 拆成 `fields.ts` 與 `order.ts`**
+- 能乾淨切分的只有表這一層：`fields.ts` 放 Row 介面、`tableLabel`、`idColumn`、`newId`、`labelColumn`、`columns`、`virtualColumns`，`order.ts` 放 `detailOrder`、`formOrder`、`defaultSort`，`index.ts` 把兩者組合起來
+- 切在欄位內部（型別、必填與標籤、可搜尋分開）會使每個 key 須寫兩次
+- 順序那一半只有三個欄位，拆完是一個五行的檔案加一個 import
+
+**回頭重看**：順序那一半增加到 15～20 行時。
+
 ---
 
 ## 已知的權宜作法

@@ -173,7 +173,7 @@ store.commitFlow()    // 丟棄存檔點，變更留在佇列中等待推送
 
 ## 離線可用性
 
-> 🔲 **尚未實作。** 尚未安裝 `vite-plugin-pwa`，manifest 與 Service Worker 都尚未建立，App 圖示也尚未決定。
+> 🔶 **部分實作。** manifest 已建立：`vite.config.mts` 的外掛由 `src/config/app.ts` 的 `appName` 產生 manifest，並於 `index.html` 寫入標題、圖示與狀態列的顏色。圖示位於 `public/icons/`。Service Worker 尚未建立，`vite-plugin-pwa` 尚未安裝。
 
 只做基本的 PWA 安裝殼層快取：
 - Service Worker 只快取靜態資源，使 App 可安裝、開啟時立即有畫面

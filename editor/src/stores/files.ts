@@ -56,6 +56,7 @@ export const useFilesStore = defineStore('files', () => {
   const tables = shallowRef<Record<string, TableSummary>>({})
   const mockCsv = shallowRef<Record<string, string>>({})
   const tableOrder = shallowRef<string[]>([])
+  const csvRows = shallowRef<Record<string, number>>({})
   const files = reactive(new Map<string, OpenFile>())
   const currentPath = shallowRef<string | null>(null)
   // 文字編輯器移至此位置後清除
@@ -82,7 +83,7 @@ export const useFilesStore = defineStore('files', () => {
   // 讀得到 tableLabel 的表
   const tableLabels = computed(() => Object.fromEntries(Object.entries(tables.value)
     .flatMap(([key, table]) => table.label === null ? [] : [[key, table.label]])))
-  const navTree = computed(() => navGroups(paths.value, tableLabels.value, tableOrder.value))
+  const navTree = computed(() => navGroups(paths.value, { tableLabels: tableLabels.value, tableOrder: tableOrder.value, mockCsv: mockCsv.value }))
   const dirtyPaths = computed(() => new Set([...files.values()].filter(file => file.text !== file.savedText).map(file => file.path)))
 
   function remember (content: FileContent): void {
@@ -114,6 +115,7 @@ export const useFilesStore = defineStore('files', () => {
     tables.value = index.tables
     mockCsv.value = index.mockCsv
     tableOrder.value = index.tableOrder
+    csvRows.value = index.csvRows
   }
 
   // 編輯器開啟時，清除上次留在預覽中的未儲存內容，並開啟 schemas 中的第一張表
@@ -485,6 +487,7 @@ export const useFilesStore = defineStore('files', () => {
     tables,
     mockCsv,
     tableOrder,
+    csvRows,
     tableLabels,
     currentPath,
     reveal,

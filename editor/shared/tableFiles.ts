@@ -62,3 +62,33 @@ export function tableDeletionFiles (key: string, paths: readonly string[], mockC
     || path === mockCsv[key])
   return files.toSorted()
 }
+
+/** mock CSV 的登記：表的代號對應 CSV 的路徑 */
+export interface MockTablesModel {
+  csv: Record<string, string>
+}
+
+/** 對 mock CSV 的登記的一項修改。add 加於最後，並加上 CSV 的匯入。remove 一併刪除不再使用的匯入 */
+export type MockTablesEdit
+  = | { kind: 'add', key: string, csvPath: string }
+    | { kind: 'remove', key: string }
+
+export interface MockTablesEditRequest {
+  text: string
+  edits: MockTablesEdit[]
+}
+
+export interface MockTablesEditResult {
+  text: string
+  model: MockTablesModel | null
+}
+
+export function isMockCsvFile (filePath: string): boolean {
+  return /^vue-build\/mock\/[^/]+\.csv$/.test(filePath)
+}
+
+/** CSV 對應的表：登記此 CSV 的表，沒有時為檔名 <代號>-test.csv 的表。都沒有時為 null */
+export function tableOfCsv (filePath: string, mockCsv: Readonly<Record<string, string>>, tableKeys: Iterable<string>): string | null {
+  const registered = Object.entries(mockCsv).find(([, file]) => file === filePath)?.[0]
+  return registered ?? [...tableKeys].find(key => mockCsvFileOf(key) === filePath) ?? null
+}

@@ -5,7 +5,7 @@ import type { ChecksSnapshot } from '../shared/checks'
 import type { PreviewDraft, PreviewSource, PreviewStatus } from '../shared/preview'
 import type { RegistryEditRequest, RegistryEditResult, RegistryModel } from '../shared/registry'
 import type { CodeContext, CodeContextRequest, KeyRenameRequest, KeyRenameResult, SchemaEditRequest, SchemaEditResult, SchemaModel, SchemaTypes } from '../shared/schema'
-import type { DeleteTableResult, NewTableRequest, NewTableResult } from '../shared/tableFiles'
+import type { DeleteTableResult, MockTablesEditRequest, MockTablesEditResult, MockTablesModel, NewTableRequest, NewTableResult } from '../shared/tableFiles'
 import type { CodeCompletions, CodeDiagnostic, CodeRequest, CompletionRequest } from '../shared/typescript'
 
 async function request<T> (url: string, init?: RequestInit): Promise<T> {
@@ -82,6 +82,18 @@ export function editRegistry (body: RegistryEditRequest): Promise<RegistryEditRe
 
 export function createTable (body: NewTableRequest): Promise<NewTableResult> {
   return postJson('/api/table/create', body)
+}
+
+export function parseMockTablesText (text: string): Promise<MockTablesModel | null> {
+  return postJson('/api/mock-tables/parse', { text })
+}
+
+export function editMockTables (body: MockTablesEditRequest): Promise<MockTablesEditResult> {
+  return postJson('/api/mock-tables/edit', body)
+}
+
+export function createMockCsv (key: string): Promise<NewTableResult> {
+  return postJson('/api/mock-tables/create-csv', { key })
 }
 
 export function deleteTable (key: string): Promise<DeleteTableResult> {

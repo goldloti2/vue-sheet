@@ -25,6 +25,8 @@ export interface TableColumn {
   type: string | null
   /** 列於 virtualColumns 的欄位 */
   virtual: boolean
+  /** Sheet 的表頭（sheetHeader，省略時為 label）。虛擬欄位與不是以字串直接寫值時為 null */
+  header: string | null
 }
 
 export interface TableSummary {
@@ -44,6 +46,8 @@ export interface ProjectIndex {
   tableOrder: string[]
   /** 表的代號對應 services/mock/tables.ts 中登記的 CSV 的路徑 */
   mockCsv: Record<string, string>
+  /** mock/ 中各 CSV 的路徑對應資料的列數，不含表頭 */
+  csvRows: Record<string, number>
 }
 
 export interface FileChangedEvent {

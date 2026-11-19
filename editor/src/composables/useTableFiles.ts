@@ -1,9 +1,9 @@
-import { createTable, deleteTable } from '@/api'
+import { createMockCsv, createTable, deleteTable } from '@/api'
 import { useFilesStore } from '@/stores/files'
 import { MOCK_TABLES_FILE, schemaFileOf } from '../../shared/tableFiles'
 import { REGISTRY_FILE } from '../../shared/tableKeys'
 
-// 新增與刪除表立即寫入。登記用的檔案或要刪除的檔案有未儲存的修改時不執行
+// 新增與刪除表、建立 mock CSV 立即寫入。登記用的檔案或要刪除的檔案有未儲存的修改時不執行
 export function useTableFiles () {
   const files = useFilesStore()
 
@@ -47,5 +47,19 @@ export function useTableFiles () {
     return true
   }
 
-  return { create, remove }
+  /** 為表建立只有表頭的 mock CSV 並登記。成功時回傳 true */
+  async function createCsv (key: string): Promise<boolean> {
+    if (!checkClean([MOCK_TABLES_FILE], '建立 CSV')) {
+      return false
+    }
+    try {
+      await createMockCsv(key)
+    } catch (error) {
+      files.message = (error as Error).message
+      return false
+    }
+    return true
+  }
+
+  return { create, remove, createCsv }
 }

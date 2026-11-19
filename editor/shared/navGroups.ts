@@ -1,3 +1,4 @@
+import { MOCK_TABLES_FILE } from './tableFiles.ts'
 import { ACTIONS_DIR, actionsTableKeyOf, REGISTRY_FILE, tableKeyOf, TABLES_DIR } from './tableKeys.ts'
 
 // 左側的導覽：依類型把專案的檔案分組。每一組為最上層的節點，子項為該組的檔案與資料夾
@@ -140,6 +141,16 @@ function pageNodes (files: string[], tableKeys: ReadonlySet<string>, tableLabels
   })
 }
 
+// 登記於 mock CSV 的檔案以表命名，依表的順序。其他檔案以檔名命名，排在最後
+function csvNodes (files: string[], tableLabels: Readonly<Record<string, string>>, order: (a: string, b: string) => number, mockCsv: Readonly<Record<string, string>>): NavNode[] {
+  const tableOf = new Map(Object.entries(mockCsv).map(([key, file]) => [file, key]))
+  const registered = files.filter(file => tableOf.has(file)).toSorted((a, b) => order(tableOf.get(a)!, tableOf.get(b)!))
+  return [
+    ...registered.map(file => tableNode(tableOf.get(file)!, tableLabels, { path: file })),
+    ...files.filter(file => !tableOf.has(file)).map(file => fileNode(file)),
+  ]
+}
+
 // 節點之下所有檔案的路徑
 export function nodeFiles (node: NavNode): string[] {
   return node.path ? [node.path] : (node.children ?? []).flatMap(child => nodeFiles(child))
@@ -183,8 +194,17 @@ export function navFolderValues (group: NavNode, filePath: string): string[] | n
   return search(group, group.label)
 }
 
-// 沒有檔案的組不列出。表、動作與頁面中各表的資料夾依 tableOrder（schemas 中的順序）排列
-export function navGroups (files: readonly string[], tableLabels: Readonly<Record<string, string>> = {}, tableOrder: readonly string[] = []): NavNode[] {
+export interface NavContext {
+  /** 表的代號對應 tableLabel */
+  tableLabels?: Readonly<Record<string, string>>
+  /** schemas 中的順序 */
+  tableOrder?: readonly string[]
+  /** 表的代號對應登記的 mock CSV 的路徑 */
+  mockCsv?: Readonly<Record<string, string>>
+}
+
+// 沒有檔案的組不列出。表、動作、頁面中各表的資料夾與測試資料依 tableOrder（schemas 中的順序）排列
+export function navGroups (files: readonly string[], { tableLabels = {}, tableOrder = [], mockCsv = {} }: NavContext = {}): NavNode[] {
   const single = (label: string, filePath: string): NavNode[] => files.includes(filePath) ? [{ label, children: [fileNode(filePath)] }] : []
   const group = (label: string, children: NavNode[]): NavNode[] => children.length > 0 ? [{ label, children }] : []
 
@@ -207,9 +227,9 @@ export function navGroups (files: readonly string[], tableLabels: Readonly<Recor
     ...group('頁面', pages),
     ...single('導覽', `${SRC}config/navigation.ts`),
     ...single('後端', 'apps-script/Config.gs'),
-    ...group('資料', [
-      ...pick(file => file === `${SRC}services/mock/tables.ts`).map(file => fileNode(file)),
-      ...pick(file => file.startsWith('vue-build/mock/')).map(file => fileNode(file)),
+    ...group('測試資料', [
+      ...pick(file => file === MOCK_TABLES_FILE).map(file => fileNode(file, '總覽')),
+      ...csvNodes(pick(file => file.startsWith('vue-build/mock/')), tableLabels, order, mockCsv),
     ]),
   ]
 }

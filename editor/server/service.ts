@@ -1,7 +1,7 @@
 import type { FileChangedEvent, ProjectIndex, WriteRequest } from '../shared/api.ts'
 import type { RegistryEditRequest, RegistryEditResult } from '../shared/registry.ts'
 import type { CodeContextRequest, KeyRenameRequest, SchemaEditRequest, SchemaEditResult, SchemaTypes } from '../shared/schema.ts'
-import type { NewTableRequest } from '../shared/tableFiles.ts'
+import type { MockTablesEditRequest, MockTablesEditResult, NewTableRequest } from '../shared/tableFiles.ts'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import type { Plugin, ViteDevServer } from 'vite'
 import { readFile } from 'node:fs/promises'
@@ -9,15 +9,16 @@ import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { watch } from 'chokidar'
 import { FILE_CHANGED_EVENT, PROJECT_INDEX_EVENT } from '../shared/api.ts'
+import { parseCsv } from '../shared/csv.ts'
 import { PREVIEW_LOG_EVENT, PREVIEW_STATUS_EVENT, type PreviewDraft, type PreviewSource } from '../shared/preview.ts'
-import { MOCK_TABLES_FILE } from '../shared/tableFiles.ts'
+import { isMockCsvFile, MOCK_TABLES_FILE } from '../shared/tableFiles.ts'
 import { REGISTRY_FILE, tableKeyOf } from '../shared/tableKeys.ts'
 import { type CodeRequest, type CompletionRequest, hasTypeScriptService } from '../shared/typescript.ts'
 import { type Checks, createChecks } from './checks.ts'
 import { createLinter } from './eslint.ts'
 import { hashText, readProjectFile, writeProjectFile } from './files.ts'
 import { createLanguageClient, type LanguageClient } from './languageClient.ts'
-import { readMockCsvPaths } from './mockTables.ts'
+import { applyMockTablesEdits, parseMockTables, readMockCsvPaths } from './mockTables.ts'
 import { createPreview } from './preview.ts'
 import { absolutePath, isProjectFile, listProjectFiles, PROJECT_DIRS, ScopeError } from './projectFiles.ts'
 import { readSchemaTypes } from './schema/columnTypes.ts'
@@ -26,7 +27,7 @@ import { planKeyRename } from './schema/renameKey.ts'
 import { SchemaEditError } from './schema/schemaEdits.ts'
 import { parseSchema } from './schema/schemaModel.ts'
 import { applySchemaEdits, codeContext } from './schema/schemaService.ts'
-import { createTable, deleteTable } from './tables.ts'
+import { createMockCsv, createTable, deleteTable } from './tables.ts'
 import { readTableSummaries } from './tableSummaries.ts'
 import { loadTypeScript } from './vueBuild.ts'
 
@@ -73,7 +74,17 @@ async function readProjectIndex (root: string): Promise<ProjectIndex> {
     tables: await readTableSummaries(ts, root, paths),
     tableOrder: entries.flatMap(entry => entry.key === null ? [] : [entry.key]),
     mockCsv: mockTables ? readMockCsvPaths(ts, mockTables.text) : {},
+    csvRows: await readCsvRows(root, paths),
   }
+}
+
+// mock/ 中各 CSV 的資料列數
+async function readCsvRows (root: string, paths: readonly string[]): Promise<Record<string, number>> {
+  const entries = await Promise.all(paths.filter(file => isMockCsvFile(file)).map(async file => {
+    const content = await readProjectFile(root, file)
+    return [file, content ? Math.max(parseCsv(content.text).length - 1, 0) : 0] as const
+  }))
+  return Object.fromEntries(entries)
 }
 
 // 絕對路徑轉為專案中的路徑。不屬於專案時為 null
@@ -100,11 +111,11 @@ function watchProjectFiles (root: string, server: ViteDevServer, language: Langu
     server.ws.send(PROJECT_INDEX_EVENT, await readProjectIndex(root))
   }
 
-  // 新增或刪除檔案、修改表的 schema、表的登記或 mock CSV 的登記時，重送檔案清單與各表的摘要
+  // 新增或刪除檔案、修改表的 schema、表的登記、mock CSV 或其登記時，重送檔案清單與各表的摘要
   watcher.on('change', absolute => {
     void notifyChange(absolute, false)
     const filePath = toProjectPath(absolute)
-    if (tableKeyOf(filePath) !== null || filePath === MOCK_TABLES_FILE || filePath === REGISTRY_FILE) {
+    if (tableKeyOf(filePath) !== null || filePath === MOCK_TABLES_FILE || filePath === REGISTRY_FILE || isMockCsvFile(filePath)) {
       void notifyIndex()
     }
   })
@@ -183,6 +194,18 @@ export function editorService ({ root }: ServiceOptions): Plugin {
         'POST /table/create': async req => {
           const body = await json<NewTableRequest>(req)
           return [200, await createTable({ ts: await loadTypeScript(vueBuildRoot), root, format: checks.format }, body)]
+        },
+        'POST /mock-tables/parse': async req => [200, parseMockTables(await loadTypeScript(vueBuildRoot), (await json<{ text: string }>(req)).text)],
+        'POST /mock-tables/edit': async req => {
+          const body = await json<MockTablesEditRequest>(req)
+          const ts = await loadTypeScript(vueBuildRoot)
+          const text = applyMockTablesEdits(ts, body.text, body.edits)
+          const result: MockTablesEditResult = { text, model: parseMockTables(ts, text) }
+          return [200, result]
+        },
+        'POST /mock-tables/create-csv': async req => {
+          const body = await json<{ key: string }>(req)
+          return [200, await createMockCsv({ ts: await loadTypeScript(vueBuildRoot), root, format: checks.format }, body.key)]
         },
         'POST /table/delete': async req => {
           const body = await json<{ key: string }>(req)

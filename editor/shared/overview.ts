@@ -1,6 +1,8 @@
 // 總覽的各列：schemas 中登記的表依其順序在前，有 schema 檔但未登記的表在後
 import type { TableSummary } from './api.ts'
 import type { RegistryModel } from './registry.ts'
+import type { MockTablesModel } from './tableFiles.ts'
+import { isMockCsvFile, mockCsvFileOf } from './tableFiles.ts'
 import { actionsFileOf, tableKeyOf, TABLES_DIR } from './tableKeys.ts'
 
 /** 表的各個檔案。沒有時為 null */
@@ -58,4 +60,37 @@ export function overviewRows (model: RegistryModel, source: OverviewSource): Ove
     ...model.entries.map((entry, index) => row(entry.key, index, entry.variable)),
     ...unregistered.map(key => row(key, null, null)),
   ]
+}
+
+export interface MockOverviewRow {
+  /** 表的代號。沒有表對應的 CSV 為 null */
+  key: string | null
+  label: string | null
+  /** 登記於 mock CSV */
+  registered: boolean
+  /** 登記的 CSV。未登記時為 mock/<代號>-test.csv（存在時） */
+  csv: string | null
+  /** CSV 的資料列數 */
+  rows: number | null
+}
+
+export interface MockOverviewSource {
+  paths: readonly string[]
+  tables: Readonly<Record<string, TableSummary>>
+  tableOrder: readonly string[]
+  csvRows: Readonly<Record<string, number>>
+}
+
+/** 測試資料的總覽：各表依 schemas 中的順序，其他的表與登記的代號依代號排序，沒有表對應的 CSV 在最後 */
+export function mockOverviewRows (model: MockTablesModel, { paths, tables, tableOrder, csvRows }: MockOverviewSource): MockOverviewRow[] {
+  const others = new Set([...Object.keys(tables), ...Object.keys(model.csv)].filter(key => !tableOrder.includes(key)))
+  const keys = [...tableOrder, ...[...others].toSorted()]
+  const tableRows = keys.map(key => {
+    const registered = model.csv[key]
+    const csv = registered ?? (paths.includes(mockCsvFileOf(key)) ? mockCsvFileOf(key) : null)
+    return { key, label: tables[key]?.label ?? null, registered: registered !== undefined, csv, rows: csv === null ? null : csvRows[csv] ?? null }
+  })
+  const used = new Set(tableRows.map(row => row.csv))
+  const orphans = paths.filter(path => isMockCsvFile(path) && !used.has(path)).toSorted().map(csv => ({ key: null, label: null, registered: false, csv, rows: csvRows[csv] ?? null }))
+  return [...tableRows, ...orphans]
 }

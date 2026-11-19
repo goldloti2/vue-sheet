@@ -55,12 +55,13 @@ describe('table summaries', () => {
     expect(readTableSummary(ts, 'export const s = { tableLabel: LABEL }').label).toBeNull()
   })
 
-  it('reads the columns, real columns first', () => {
+  it('reads the columns and their Sheet headers, real columns first', () => {
     const text = `export const s = {
       tableLabel: '訂單',
       virtualColumns: [{ key: 'total', label: '總額', type: 'number', value: row => 1 }],
       columns: [
         { key: 'name', label: '名稱', type: 'text' },
+        { key: 'code', label: '編號', sheetHeader: 'ORD-ID', type: 'text' },
         { key: 'status', label: LABEL, type: 'select', options: ['a'] },
         COLUMN,
       ],
@@ -68,9 +69,10 @@ describe('table summaries', () => {
     }`
 
     expect(readTableSummary(ts, text).columns).toEqual([
-      { key: 'name', label: '名稱', type: 'text', virtual: false },
-      { key: 'status', label: null, type: 'select', virtual: false },
-      { key: 'total', label: '總額', type: 'number', virtual: true },
+      { key: 'name', label: '名稱', type: 'text', virtual: false, header: '名稱' },
+      { key: 'code', label: '編號', type: 'text', virtual: false, header: 'ORD-ID' },
+      { key: 'status', label: null, type: 'select', virtual: false, header: null },
+      { key: 'total', label: '總額', type: 'number', virtual: true, header: null },
     ])
   })
 
@@ -91,7 +93,7 @@ describe('table summaries', () => {
       'vue-build/src/schema/tables/order.ts',
     ])).toEqual({
       draft: { label: null, variable: null, columns: [] },
-      order: { label: '訂單', variable: null, columns: [{ key: 'a', label: null, type: null, virtual: false }] },
+      order: { label: '訂單', variable: null, columns: [{ key: 'a', label: null, type: null, virtual: false, header: null }] },
     })
   })
 })

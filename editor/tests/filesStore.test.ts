@@ -324,6 +324,7 @@ describe('files store initialize', () => {
       tables: {},
       tableOrder: ['missing', 'order', 'customer'],
       mockCsv: {},
+      csvRows: {},
     })
     const store = useFilesStore()
 

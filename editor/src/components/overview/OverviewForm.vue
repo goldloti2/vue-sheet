@@ -1,9 +1,11 @@
 <script lang="ts" setup>
   import type { OverviewRow, TableFiles } from '../../../shared/overview'
+  import type { RegistryEdit } from '../../../shared/registry'
   import { mdiDeleteOutline, mdiDragVertical, mdiPlus } from '@mdi/js'
   import { computed } from 'vue'
+  import { editRegistry, parseRegistryText } from '@/api'
   import { useDragSort } from '@/composables/useDragSort'
-  import { useRegistryForm } from '@/composables/useRegistryForm'
+  import { useParsedForm } from '@/composables/useParsedForm'
   import { useTableDialogs } from '@/composables/useTableDialogs'
   import { useFilesStore } from '@/stores/files'
   import { overviewRows } from '../../../shared/overview'
@@ -14,7 +16,12 @@
   }>()
 
   const files = useFilesStore()
-  const form = useRegistryForm(() => props.path, () => props.text)
+  const form = useParsedForm({
+    path: () => props.path,
+    text: () => props.text,
+    parse: parseRegistryText,
+    edit: (text, edits: RegistryEdit[]) => editRegistry({ text, edits }),
+  })
   const { newTableOpen, deletingTable } = useTableDialogs()
 
   const rows = computed(() => form.model.value

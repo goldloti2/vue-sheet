@@ -47,6 +47,7 @@
       class="editor-layout__nav"
       :current-path="store.currentPath"
       :dirty-paths="store.dirtyPaths"
+      :mock-csv="store.mockCsv"
       :paths="store.paths"
       :table-labels="store.tableLabels"
       :table-order="store.tableOrder"

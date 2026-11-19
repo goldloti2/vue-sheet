@@ -14,7 +14,7 @@ describe('navGroups', () => {
       'vue-build/src/services/mock/tables.ts',
     ])
 
-    expect(groups.map(group => group.label)).toEqual(['表', '動作', '頁面', '導覽', '後端', '資料'])
+    expect(groups.map(group => group.label)).toEqual(['表', '動作', '頁面', '導覽', '後端', '測試資料'])
     expect(groups[0]!.children).toEqual([
       { label: '總覽', path: 'vue-build/src/schema/index.ts' },
       { label: 'order', path: 'vue-build/src/schema/tables/order.ts' },
@@ -22,7 +22,7 @@ describe('navGroups', () => {
     expect(groups[1]!.children).toEqual([
       { label: 'order', path: 'vue-build/src/composables/actions/useOrderActions.ts' },
     ])
-    expect(groups[5]!.children!.map(node => node.label)).toEqual(['tables', 'order-test.csv'])
+    expect(groups[5]!.children!.map(node => node.label)).toEqual(['總覽', 'order-test.csv'])
   })
 
   it('puts the file of a single-file group under the group', () => {
@@ -56,7 +56,7 @@ describe('navGroups', () => {
       'vue-build/src/composables/actions/useCustomerActions.ts',
       'vue-build/src/schema/tables/orderLine.ts',
       'vue-build/src/schema/tables/customer.ts',
-    ], { orderLine: '訂單明細' })
+    ], { tableLabels: { orderLine: '訂單明細' } })
 
     expect(groups[0]!.children).toEqual([
       { label: 'customer', path: 'vue-build/src/schema/tables/customer.ts' },
@@ -83,7 +83,7 @@ describe('navGroups', () => {
       'vue-build/src/schema/tables/customer.ts',
       'vue-build/src/schema/tables/order.ts',
       'vue-build/src/schema/tables/orderLine.ts',
-    ], { customer: '客戶', order: '訂單', orderLine: '訂單明細' })
+    ], { tableLabels: { customer: '客戶', order: '訂單', orderLine: '訂單明細' } })
 
     expect(groups[1]!.children).toEqual([
       { label: '登入頁', path: 'vue-build/src/pages/login.vue' },
@@ -118,7 +118,7 @@ describe('navGroups', () => {
       'vue-build/src/schema/tables/customer.ts',
       'vue-build/src/schema/tables/draft.ts',
       'vue-build/src/schema/tables/order.ts',
-    ], { order: '訂單' }, ['order', 'customer'])
+    ], { tableLabels: { order: '訂單' }, tableOrder: ['order', 'customer'] })
 
     expect(groups[0]!.children!.map(node => node.label)).toEqual(['訂單', 'customer', 'draft'])
     expect(groups[1]!.children!.map(node => node.label)).toEqual(['訂單', 'customer'])
@@ -131,11 +131,31 @@ describe('navGroups', () => {
       'vue-build/src/pages/order/_ref/OrderList.vue',
       'vue-build/src/pages/report.vue',
       'vue-build/src/schema/tables/order.ts',
-    ], { order: '訂單' }).find(group => group.label === '頁面')
+    ], { tableLabels: { order: '訂單' } }).find(group => group.label === '頁面')
 
     expect(navFolderValues(pages!, 'vue-build/src/pages/order/_ref/OrderList.vue')).toEqual(['頁面/訂單', '頁面/訂單/引用畫面'])
     expect(navFolderValues(pages!, 'vue-build/src/pages/report.vue')).toEqual([])
     expect(navFolderValues(pages!, 'vue-build/src/pages/missing.vue')).toBeNull()
+  })
+
+  it('names the test data by the table and orders it by the schemas order', () => {
+    const [data] = navGroups([
+      'vue-build/mock/customer-test.csv',
+      'vue-build/mock/extra.csv',
+      'vue-build/mock/order-test.csv',
+      'vue-build/src/services/mock/tables.ts',
+    ], {
+      tableLabels: { order: '訂單' },
+      tableOrder: ['order', 'customer'],
+      mockCsv: { customer: 'vue-build/mock/customer-test.csv', order: 'vue-build/mock/order-test.csv' },
+    })
+
+    expect(data!.children).toEqual([
+      { label: '總覽', path: 'vue-build/src/services/mock/tables.ts' },
+      { label: '訂單', detail: 'order', path: 'vue-build/mock/order-test.csv' },
+      { label: 'customer', path: 'vue-build/mock/customer-test.csv' },
+      { label: 'extra.csv', path: 'vue-build/mock/extra.csv' },
+    ])
   })
 
   it('omits empty groups', () => {
@@ -147,7 +167,7 @@ describe('navGroups', () => {
       'vue-build/src/pages/order/index.vue',
       'vue-build/src/config/navigation.ts',
       'vue-build/src/schema/tables/order.ts',
-    ], { order: '訂單' })
+    ], { tableLabels: { order: '訂單' } })
 
     expect(navLocation(groups, 'vue-build/src/pages/order/index.vue')).toBe('頁面/訂單/列表頁')
     expect(navLocation(groups, 'vue-build/src/config/navigation.ts')).toBe('導覽/navigation')

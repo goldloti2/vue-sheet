@@ -9,6 +9,7 @@
     paths: readonly string[]
     tableLabels: Readonly<Record<string, string>>
     tableOrder: readonly string[]
+    mockCsv: Readonly<Record<string, string>>
     currentPath: string | null
     dirtyPaths: ReadonlySet<string>
   }>()
@@ -26,10 +27,10 @@
     頁面: mdiApplicationOutline,
     導覽: mdiRouterNetwork,
     後端: mdiScriptTextOutline,
-    資料: mdiFlaskOutline,
+    測試資料: mdiFlaskOutline,
   }
 
-  const groups = computed(() => navGroups(props.paths, props.tableLabels, props.tableOrder).map(group => ({
+  const groups = computed(() => navGroups(props.paths, { tableLabels: props.tableLabels, tableOrder: props.tableOrder, mockCsv: props.mockCsv }).map(group => ({
     node: group,
     files: nodeFiles(group),
   })))

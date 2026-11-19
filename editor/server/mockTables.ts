@@ -1,3 +1,4 @@
+import type { MockTablesEdit, MockTablesModel } from '../shared/tableFiles.ts'
 // services/mock/tables.ts 中各表登記的 mock CSV
 import type { TypeScript } from './vueBuild.ts'
 import type TS from 'typescript'
@@ -101,4 +102,19 @@ export function removeMockCsv (ts: TypeScript, text: string, key: string): strin
   }
   const end = removed[declaration.end] === '\n' ? declaration.end + 1 : declaration.end
   return removed.slice(0, declaration.getStart(after)) + removed.slice(end)
+}
+
+/** mock CSV 的登記。找不到 mockCsv 物件時為 null */
+export function parseMockTables (ts: TypeScript, text: string): MockTablesModel | null {
+  const source = ts.createSourceFile('tables.ts', text, ts.ScriptTarget.Latest, true)
+  return mockCsvObject(ts, source) ? { csv: readMockCsvPaths(ts, text) } : null
+}
+
+/** 依序套用。任一項失敗時拋出錯誤 */
+export function applyMockTablesEdits (ts: TypeScript, text: string, edits: readonly MockTablesEdit[]): string {
+  let next = text
+  for (const edit of edits) {
+    next = edit.kind === 'add' ? addMockCsv(ts, next, edit.key, edit.csvPath) : removeMockCsv(ts, next, edit.key)
+  }
+  return next
 }

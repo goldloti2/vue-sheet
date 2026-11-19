@@ -4,6 +4,7 @@ import type { Formatter } from './files.ts'
 import type { TypeScript } from './vueBuild.ts'
 import { readdir, readFile, rm, rmdir } from 'node:fs/promises'
 import path from 'node:path'
+import { csvRowText } from '../shared/csv.ts'
 import { literalText, propertyValue, stringValue } from '../shared/schema.ts'
 import { columnRows } from '../shared/schemaForm.ts'
 import { idPrefixError, MOCK_TABLES_FILE, mockCsvFileOf, PAGES_DIR, schemaFileOf, tableDeletionFiles, tableKeyError } from '../shared/tableFiles.ts'
@@ -15,6 +16,7 @@ import { applyRegistryEdits, parseRegistry } from './schema/registry.ts'
 import { removeColumn } from './schema/schemaColumns.ts'
 import { SchemaEditError } from './schema/schemaEdits.ts'
 import { parseSchema } from './schema/schemaModel.ts'
+import { readTableSummary } from './tableSummaries.ts'
 
 // 框架的範本，只讀取
 const TEMPLATE_DIR = 'vue-build/template/table'
@@ -55,14 +57,7 @@ function newSchemaText (ts: TypeScript, template: string, request: NewTableReque
 
 // mock CSV 只有表頭一列：真實欄位的 Sheet 表頭
 function csvHeaderText (ts: TypeScript, schemaText: string): string {
-  const headers = columnRows(parseSchema(ts, schemaText)).flatMap(row => {
-    if (row.list !== 'columns') {
-      return []
-    }
-    const header = stringValue(propertyValue(row.object, 'sheetHeader')) ?? stringValue(propertyValue(row.object, 'label'))
-    return header === null ? [] : [header]
-  })
-  return `${headers.join(',')}\n`
+  return csvRowText(readTableSummary(ts, schemaText).columns.flatMap(column => column.header === null ? [] : [column.header]))
 }
 
 async function readRequired (root: string, filePath: string) {
@@ -157,4 +152,18 @@ export async function deleteTable (tools: TableTools, key: string): Promise<Dele
   }
   await removeEmptyFolders(root, files)
   return { deleted: files }
+}
+
+/** 為表建立只有表頭的 mock CSV，並登記於 mock CSV */
+export async function createMockCsv (tools: TableTools, key: string): Promise<NewTableResult> {
+  const { ts, root } = tools
+  const [schema, mockTables] = await Promise.all([readRequired(root, schemaFileOf(key)), readRequired(root, MOCK_TABLES_FILE)])
+  const csvFile = mockCsvFileOf(key)
+  if (await readProjectFile(root, csvFile)) {
+    throw new SchemaEditError(`已有檔案：${csvFile}`)
+  }
+  const mockTablesText = addMockCsv(ts, mockTables.text, key, csvFile)
+  await writeOrFail(tools, csvFile, csvHeaderText(ts, schema.text), null)
+  await writeOrFail(tools, MOCK_TABLES_FILE, mockTablesText, mockTables.hash)
+  return { created: [csvFile] }
 }

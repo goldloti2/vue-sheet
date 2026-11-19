@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { createTable, deleteTable } from '../server/tables'
+import { createMockCsv, createTable, deleteTable } from '../server/tables'
 import { loadTypeScript } from '../server/vueBuild'
 import { tableDeletionFiles } from '../shared/tableFiles'
 
@@ -108,6 +108,20 @@ describe('deleteTable', () => {
     expect(await readdir(path.join(root, 'vue-build/src/pages/customer'))).toEqual(['index.vue'])
     expect(await read('vue-build/src/schema/index.ts')).toBe('\nexport const schemas = {}\n')
     expect(await read('vue-build/src/services/mock/tables.ts')).toBe('\nexport const mockCsv = {}\n')
+  })
+})
+
+describe('createMockCsv', () => {
+  it('writes the header row and registers the CSV', async () => {
+    await put('vue-build/src/schema/tables/customer.ts', 'export const customerSchema = { tableLabel: \'客戶\', columns: [{ key: \'code\', label: \'編號\', sheetHeader: \'CUS-ID\' }, { key: \'name\', label: \'名稱, 全名\' }] }\n')
+
+    expect(await createMockCsv(tools, 'customer')).toEqual({ created: ['vue-build/mock/customer-test.csv'] })
+    expect(await read('vue-build/mock/customer-test.csv')).toBe('CUS-ID,"名稱, 全名"\n')
+    expect(await read('vue-build/src/services/mock/tables.ts')).toContain('  order: orderCsv,\n  customer: customerCsv,\n}')
+  })
+
+  it('keeps an existing CSV', async () => {
+    await expect(createMockCsv(tools, 'order')).rejects.toThrow('已有檔案')
   })
 })
 

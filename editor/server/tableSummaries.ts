@@ -13,7 +13,10 @@ function columnsOf (value: SchemaValue | undefined, virtual: boolean): TableColu
   }
   return value.items.flatMap(item => {
     const key = stringValue(propertyValue(item, 'key'))
-    return key === null ? [] : [{ key, label: stringValue(propertyValue(item, 'label')), type: stringValue(propertyValue(item, 'type')), virtual }]
+    const label = stringValue(propertyValue(item, 'label'))
+    const sheetHeader = propertyValue(item, 'sheetHeader')
+    const header = virtual ? null : (sheetHeader ? stringValue(sheetHeader) : label)
+    return key === null ? [] : [{ key, label, type: stringValue(propertyValue(item, 'type')), virtual, header }]
   })
 }
 

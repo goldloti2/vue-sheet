@@ -1,5 +1,36 @@
 # 版本紀錄
 
+## v1.16
+
+### 框架
+
+- **篩選抽屜的搜尋框**：第二層的選項超過門檻時，勾選框上方顯示搜尋框，比對規則與搜尋列相同。已勾選的選項一律保留。說明見 [vue-build/docs/topics/search.md](vue-build/docs/topics/search.md) 的「抽屜分為兩層」，門檻見 [vue-build/docs/design/list.md](vue-build/docs/design/list.md) 的「篩選」
+- `schema/filter.ts` 匯出 `searchTerms` 與 `matchesTerms`，搜尋列與篩選抽屜共用
+- **數字的千分位依欄位設定**：`number` 欄位的 `separator: true` 為顯示時加上千分位，列表、詳細頁、篩選抽屜與圖表皆依此設定。圖表的數值與分組可以用 `separator` 覆寫，沒有欄位的數值（count、自訂的函數）預設不加。千分位與小數點的符號固定依 `zh-TW`。`schema/types.ts` 匯出 `formatNumber` 與 `columnSeparator`。說明見 [vue-build/docs/topics/schema.md](vue-build/docs/topics/schema.md) 的「欄位」與 [vue-build/docs/topics/chart.md](vue-build/docs/topics/chart.md) 的「千分位」
+- **長條加折線時，折線畫在長條上面**：圖例與提示仍依數值宣告的順序列出。說明見 [vue-build/docs/design/chart.md](vue-build/docs/design/chart.md) 的「外觀」
+- 共用色名的色值移至 `plugins/colors.ts`（`lightColors`、`darkColors`），`plugins/vuetify.ts` 由此匯入。編輯器也讀取此檔
+- **前端的部署**：根目錄的 [README.md](README.md) 新增「前端的部署」，說明 Cloudflare Workers 的託管與 Cloudflare Access 的存取限制
+- ROADMAP 改為一個功能一行，並連至說明的文件。細節移入各份文件。[vue-build/docs/topics/store.md](vue-build/docs/topics/store.md) 的「離線可用性」更正為 manifest 已建立
+- [AGENTS.md](AGENTS.md) 加入編輯器的規則：目錄、驗證、框架與專案、版本號
+
+#### 不相容的變更
+
+- 圖表的數字不再一律加上千分位，符號也不再依瀏覽器的語系。圖表的數字須加上千分位時，於所用的 `number` 欄位設定 `separator: true`，或於圖表的數值與分組指定 `separator`
+
+### 編輯器
+
+編輯器的第一個版本，位於 `editor/`。編輯器是於本機執行的網頁 App，用來修改專案的檔案，並即時預覽修改的結果。用法見 [editor/docs/README.md](editor/docs/README.md)。
+
+- **版面**：左側為依類型分組的導覽，中間為檔案區，右側為預覽，下方為問題、建置、欄位查詢與控制台的面板。導覽、預覽與下方面板皆可收合
+- **儲存**：修改按「儲存」或 Ctrl+S 才寫入，並以 ESLint 修正格式。檔案已在別處修改時不寫入。說明見 [editor/docs/README.md](editor/docs/README.md) 的「儲存」
+- **預覽**：以 vue-build 的 dev server 顯示 App，資料來源可切換為本地測試、線上測試與線上正式。預覽顯示未儲存的內容。有手機版與電腦版
+- **文字編輯器**：CodeMirror。`vue-build/src/` 中的 `.ts` 與 `.vue` 檔有即時的錯誤標示與補全
+- **檢查**：問題分頁彙整即時檢查、寫入時的 ESLint、背景的 vue-tsc 與預覽的 Vite 錯誤。建置分頁可執行 vite build
+- **表的表單**：表名、主鍵字首，以及欄位、搜尋與排序、條件式格式三個分頁。型別與條件式格式的設定依 `types.ts` 產生。說明見 [editor/docs/forms.md](editor/docs/forms.md)
+- **欄位的結構修改**：新增、刪除欄位，修改 key 與標籤。修改 key 時，其他檔案中的引用一併修改。儲存前列出欄位的修改，放棄修改時連帶的修改一併還原
+- **表的總覽**：調整 `schemas` 的順序，啟用與停用表，新增與刪除表
+- **測試資料**：測試資料的總覽登記各表的 CSV，並可建立 CSV。CSV 以表格顯示，表頭與 schema 比對
+
 ## v1.15
 
 - **電腦版的導覽**：

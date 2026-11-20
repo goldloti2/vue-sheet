@@ -3,10 +3,11 @@
 列表頁的整頁版型：載入狀態、逐列顯示、右下角的 FAB，並於點擊一列時發布畫面上的順序。詳細頁的上一列、下一列依此順序切換。每一列的外觀由頁面決定。
 
 此元件搭配 `useListPage(table, schema)` 使用：
-- `useListPage` 依序處理：整張表 → `scope` → 篩選 → 搜尋，並提供長按多選
+- `useListPage` 依序處理：整張表 → `scope` → 頁面的排序 → 篩選 → 搜尋，並提供長按多選
 - 回傳的 `rows`、`loading`、`error`、`selection` 直接對應此元件的 prop
 - 選用的 `scope`（`row => boolean`）在篩選與搜尋之前只保留部分的列，例如頁籤的狀態。儀表板面板的 `scope`（例如依所選的父列篩出子列）也位於這一步
 - 選用的 `ignoreFilter`（欄位 key 的陣列）指定不套用至 `rows` 的條件，抽屜中仍顯示這些條件。圖表以此忽略分組欄與系列欄（見 [chart.md](../../topics/chart.md#分組欄與系列欄上的條件)）
+- 選用的 `defaultSort`（格式與 schema 的 `defaultSort` 相同）為這個列表的預設排序。順序為排序面板的一欄、頁面的 `defaultSort`、schema 的 `defaultSort`。省略時只依 schema 的 `defaultSort`。頁籤頁與儀表板中，同一張表的各個列表可以各有不同的 `defaultSort`（見 [search.md](../../topics/search.md#排序)）
 
 **搜尋與排序來自 `useListPage`，不來自此元件**：
 - `useListPage` 內部呼叫 `useListControls`，因此使用它時，App Bar 即出現放大鏡。表在 `searchable` 中有可篩選的欄位時出現篩選按鈕，在 `sortable` 中有可排序的欄位時出現排序按鈕

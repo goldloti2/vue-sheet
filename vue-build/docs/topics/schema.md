@@ -187,11 +187,13 @@ export const orderSchema: TableSchema<OrderRow> = {
 | `searchable` | 哪些欄位進入搜尋列（`text`、`ref`）或篩選抽屜（其餘型別）。**順序即抽屜第一層的順序** |
 | `sortable` | 哪些欄位進入排序面板，`image` 列入也略過。**順序即面板上的順序** |
 | `detailOrder`、`formOrder` | 詳細頁與表單頁的欄位順序，未列出的欄位在詳細頁不顯示。`formOrder` 中的虛擬欄位為唯讀 |
-| `defaultSort` | 列表的預設排序。有多個時，依序作為次要的排序 |
+| `defaultSort` | 列表的預設排序。有多個時，依序作為次要的排序。頁面的 `defaultSort` 排在這份之前 |
 
 四份清單皆可省略，省略即表示沒有。`detailOrder`、`formOrder` 例外：省略時沿用 `columns` 的順序。key 打錯時 TS 擋下，型別為 `RowKey<Row>[]`，依 Row 介面檢查。
 
 `detailOrder`、`formOrder` 是這張表的預設。個別頁面須使用不同的欄位或順序時，以 `DetailPage` 的 `order` prop 或 `openForm` 的 `order` 選項覆寫，只影響那一次（見 [DetailPage](../components/page/DetailPage.md)、[FormLayerHost](../components/shell/FormLayerHost.md#openform-的選項)）。
+
+`defaultSort` 同樣是這張表的預設。個別列表須使用不同的順序時，以 `useListPage` 的 `defaultSort` 選項指定。頁面的排序排在表的 `defaultSort` 之前，不取代表的 `defaultSort`（見 [ListPage](../components/page/ListPage.md)）。
 
 ### 依條件顯示
 

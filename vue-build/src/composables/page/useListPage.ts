@@ -10,8 +10,9 @@ import { useMultiSelect } from '@/composables/list/useMultiSelect'
 import { useDashboardPanel } from '@/composables/shell/useDashboardLinks'
 import { useListControls } from '@/composables/shell/useListControls'
 import { useSharedListControls } from '@/composables/shell/useSharedListControls'
+import { sortRows } from '@/schema/sort'
 
-export interface ListPageOptions<Row> {
+export interface ListPageOptions<Row extends object> {
   // false：不自行登記，也不加入容器的共用控制，由頁面以 useListControls 登記（見 docs/topics/search.md）
   search?: boolean
   // 搭配 search: false 使用，每張表傳入同一個 query。省略時自行建立
@@ -20,9 +21,11 @@ export interface ListPageOptions<Row> {
   scope?: (row: Row) => boolean
   // 這些欄的篩選條件不套用至 rows，例如圖表的分組欄與系列欄（見 docs/topics/chart.md）
   ignoreFilter?: readonly string[]
+  // 這個列表的預設排序，排在 schema.defaultSort 之前、排序面板的排序之後（見 docs/topics/search.md）
+  defaultSort?: SortSpec<Row>[]
 }
 
-// 列表頁的資料層：整表 → scope（含 dashboard 面板的輸入）→ 篩選 → 搜尋，以及多選（見 docs/components/page/ListPage.md）
+// 列表頁的資料層：整表 → scope（含 dashboard 面板的輸入）→ 頁面的排序 → 篩選 → 搜尋，以及多選（見 docs/components/page/ListPage.md）
 export function useListPage<Row extends { id: string }> (
   table: TableKey,
   schema: AnyTableSchema,
@@ -45,11 +48,17 @@ export function useListPage<Row extends { id: string }> (
     return allRows.value.filter(row => tests.every(test => test(row)))
   })
 
+  // 頁面有 defaultSort 時，依「排序面板 → 頁面 → schema」重新排序。沒有時沿用整表的順序
+  const pageSort = (options.defaultSort ?? []) as SortSpec[]
+  const sortedRows = pageSort.length === 0
+    ? scopedRows
+    : computed(() => sortRows(scopedRows.value, schema, [...sort.value ? [sort.value] : [], ...pageSort]))
+
   const ignored = options.ignoreFilter ?? []
   const applied = () => ignored.length === 0
     ? filters.value
     : Object.fromEntries(Object.entries(filters.value).filter(([key]) => !ignored.includes(key)))
-  const rows = useSearch(query, useFilter(applied, scopedRows, schema), schema)
+  const rows = useSearch(query, useFilter(applied, sortedRows, schema), schema)
 
   return { rows, allRows, loading, error, query, filters, sort, selection: useMultiSelect() }
 }

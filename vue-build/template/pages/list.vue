@@ -16,6 +16,7 @@
   import { defineView } from '@/schema/view'
 
   // 整表 → 篩選 → 搜尋（搜尋、篩選與排序按鈕自動登記至 App Bar），以及長按多選
+  // 順序與 schema 的 defaultSort 不同時，以選項 { defaultSort: [...] } 指定，排在 schema 的 defaultSort 之前
   const { rows, loading, error, selection } = useListPage<__Table__Row>('__table__', __table__Schema)
 
   // 每列四個角的欄位：title 左上、subtitle 右上、summary 左下、aside 右下

@@ -1,5 +1,43 @@
 # 版本紀錄
 
+## v1.17
+
+### 框架
+
+- **虛擬表**：唯讀的表，列由規則從真實表產生，不在 Sheet 上，也不經過後端。說明見 [vue-build/docs/topics/schema.md](vue-build/docs/topics/schema.md) 的「虛擬表」，範本為 [vue-build/template/table/virtual/](vue-build/template/table/virtual/)
+  - schema 宣告為 `VirtualTableSchema<Row>`，與真實表同樣登記於 `schemas`。`rules` 中的每一條規則有來源表、條件與各規則欄位的值
+  - 來源表的每一列，每符合一條規則即產生一列。id 為「來源列的 id-規則的序號」
+  - 原始順序依 `columns` 逐欄升冪比較。`defaultSort` 與排序面板疊加於原始順序之上
+  - 規則讀取的資料改變時，store 立即重新產生整張虛擬表
+  - 虛擬表的 ref 欄位與真實表的 ref 欄位相同，雙向的 getter 皆自動掛上。真實表的 ref 欄位不可指向虛擬表
+  - 虛擬表可使用虛擬欄位，顯示、搜尋、篩選、排序、分組與圖表的用法與真實表相同
+- **型別**：
+  - `schema/index.ts` 新增 `RealTableKey` 與 `VirtualTableKey`，由 `schemas` 推導
+  - `schema/types.ts` 新增 `VirtualTableSchema`、`VirtualRule`、`RuleColumn` 與 `AnyTableSchema`，以及 `isVirtualSchema`
+  - 只讀取資料的函數、composables 與元件改為接收 `AnyTableSchema`，例如 `sortRows`、`defineView`、`defineChart`、`useListPage`、`DetailPage`、`DataTable`
+- 寫入的路徑只接受真實表：修改資料的 builder、表單、`openForm`、`runStep` 與 store 的寫入改為接收 `RealTableKey`。store 的寫入遇到虛擬表時拋出錯誤
+- **頁面的預設排序**：`useListPage` 的選項新增 `defaultSort`，排在 schema 的 `defaultSort` 之前、排序面板的排序之後。頁籤頁與儀表板中，同一張表的各個列表可以各有不同的 `defaultSort`。說明見 [vue-build/docs/topics/search.md](vue-build/docs/topics/search.md) 的「排序」
+- `schema/sort.ts` 匯出 `sortBySpecs`：依指定的排序條件排序，不加上 `defaultSort`
+- 新增表的範本：`template/table/virtual/` 的 schema 與 `use__Table__Actions.ts`。[template/README.md](vue-build/template/README.md) 新增「新增一張虛擬表」
+
+#### 不相容的變更
+
+- `schema/index.ts` 須加上 `RealTableKey` 與 `VirtualTableKey` 兩個型別，寫法見框架的 `schema/index.ts`
+- 修改資料的 builder、`openForm`、`runStep`、`useCreateForm`、`useEditForm` 與 store 的 `create`、`update`、`remove`、`removeMany` 的 `table` 改為 `RealTableKey`。以 `TableKey` 型別的變數呼叫時，型別檢查報錯
+- `services/types.ts` 的 `BatchOperation` 與 `fetchTable` 的 `table` 改為 `RealTableKey`
+
+### 編輯器
+
+- **虛擬表**：說明見 [editor/docs/forms.md](editor/docs/forms.md)
+  - 表的表單新增「規則」分頁。規則以小視窗編輯來源表、條件與各欄位的值
+  - 虛擬表沒有的設定不顯示：主鍵字首、Sheet 表頭、主鍵、必填、初始值、驗證與 `formOrder`
+  - 新增表的小視窗可勾選「虛擬表」。虛擬表由虛擬表的範本建立，沒有 CSV
+  - 登記於 `schemas` 時，真實表置於第一張虛擬表之前，虛擬表置於最後
+  - 測試資料的總覽不列出虛擬表
+  - 刪除欄位與修改 key 時，規則的 `values` 一併修改
+- 型別的小視窗中，虛擬表的欄位與虛擬欄位的 ref 只有 `refTable`。真實表的真實欄位的 `refTable` 不列出虛擬表
+- 控制台不顯示瀏覽器的「ResizeObserver loop」提示。瀏覽器的開發者工具同樣不顯示這則提示
+
 ## v1.16
 
 ### 框架

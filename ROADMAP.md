@@ -22,6 +22,7 @@
 - 條件式格式：`formatRules`。見 [topics/schema.md](vue-build/docs/topics/schema.md) 的「條件式格式」
 - 虛擬欄位：`virtualColumns`，以及稱呼一列的 `labelColumn`。見 [topics/schema.md](vue-build/docs/topics/schema.md) 的「欄位」與「row 上的 getter」
 - `TableSchema<Row>`：各表帶入自己的 Row 介面，欄位 key 由 TypeScript 檢查
+- 虛擬表：`VirtualTableSchema<Row>`，列由規則從真實表產生，唯讀。見 [topics/schema.md](vue-build/docs/topics/schema.md) 的「虛擬表」
 - 處理列的純函數置於 `schema/`：排序、分組、篩選、驗證、關聯、圖片。見 [architecture.md](vue-build/docs/architecture.md) 的「資料夾」
 
 ### 跨表關聯
@@ -76,7 +77,7 @@
 - 表層級的 `searchable`、`sortable` 清單，真實欄位與虛擬欄位皆可列入
 - 搜尋列：App Bar 的放大鏡，比對 `text` 與 `ref` 欄位。見 [topics/search.md](vue-build/docs/topics/search.md) 的「搜尋」
 - 篩選抽屜：兩層，一頁可以有多張表的條件。見 [topics/search.md](vue-build/docs/topics/search.md) 的「篩選」
-- 排序面板：一次依一欄排序，`defaultSort` 為次要排序。見 [topics/search.md](vue-build/docs/topics/search.md) 的「排序」
+- 排序面板：一次依一欄排序，頁面與 schema 的 `defaultSort` 為次要排序。見 [topics/search.md](vue-build/docs/topics/search.md) 的「排序」
 
 ### 動作系統
 - `PageAction`：FAB、App Bar、欄位動作共用的描述。見 [topics/actions.md](vue-build/docs/topics/actions.md) 的「PageAction」
@@ -145,6 +146,7 @@
 - 欄位的結構修改：新增、刪除欄位，修改 key 與標籤，連帶修改其他檔案
 - 表的總覽：順序、啟用與停用、新增與刪除表
 - 測試資料：測試資料的總覽、建立 CSV、唯讀的 CSV 表格與表頭的比對
+- 虛擬表：規則分頁與規則的小視窗、新增虛擬表（v1.17）
 
 ---
 
@@ -161,7 +163,6 @@
 
 ### UI 功能
 - **依顯示情境判斷的條件**（暫不實作）：比照 AppSheet 的 `CONTEXT()`，讓 schema 中以列判斷的函數以同一種方式取得情境，例如多一個 `context` 參數。現況見 [topics/schema.md](vue-build/docs/topics/schema.md) 的「已知缺口」
-- **列表的預設排序由頁面覆寫**（等確實需要時再實作）：做法同 `order`，schema 的 `defaultSort` 作為預設，頁面經由 `useSortedTableList` 的參數覆寫
 
 ### 列表效能（剩下的部分）
 - 🔲 見 [vue-build/docs/perf.md](vue-build/docs/perf.md) 的「尚未進行的部分」

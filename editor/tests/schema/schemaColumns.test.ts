@@ -64,6 +64,12 @@ describe('schema columns', () => {
     expect(removeKeyReferences(context.ts, text, 'a')).toBe('const s = { tableLabel: \'a\', formatRules: [{ when: () => true, columns: [\'b\'] }] }')
   })
 
+  it('removes the key from the values of virtual table rules', () => {
+    const text = 'const s = { tableLabel: \'a\', rules: [{ table: \'t\', values: { a: 1, b: 2 } }, { table: \'t\', values: { a: x => x.id } }] }'
+
+    expect(removeKeyReferences(context.ts, text, 'a')).toBe('const s = { tableLabel: \'a\', rules: [{ table: \'t\', values: { b: 2 } }, { table: \'t\', values: {} }] }')
+  })
+
   it('rejects a key that cannot be used', () => {
     expect(() => addColumn(context.ts, context.template, { key: 'id', label: 'ID', type: 'text', virtual: false }, context.columnTypes)).toThrow('id 為每一列共有的屬性')
     expect(() => addColumn(context.ts, context.template, { key: '1st', label: '第一', type: 'text', virtual: false }, context.columnTypes)).toThrow('key 只能使用')
@@ -83,6 +89,12 @@ describe('schema columns', () => {
     const text = 'const s = { tableLabel: \'a\', idColumn: \'a\', labelColumn: \'a\', formatRules: [{ when: () => true, columns: [\'b\', \'a\'] }] }'
 
     expect(renameKeyLiterals(context.ts, text, 'a', 'c')).toBe('const s = { tableLabel: \'a\', idColumn: \'c\', labelColumn: \'c\', formatRules: [{ when: () => true, columns: [\'b\', \'c\'] }] }')
+  })
+
+  it('renames the keys in the values of virtual table rules', () => {
+    const text = 'const s = { tableLabel: \'a\', rules: [{ table: \'t\', values: { a: 1, \'b\': 2 } }, { table: \'t\', values: { a: x => x.a } }] }'
+
+    expect(renameKeyLiterals(context.ts, text, 'a', 'c')).toBe('const s = { tableLabel: \'a\', rules: [{ table: \'t\', values: { c: 1, \'b\': 2 } }, { table: \'t\', values: { c: x => x.a } }] }')
   })
 
   it('finds the name of a Row member', () => {

@@ -14,8 +14,8 @@ describe('overviewRows', () => {
         'vue-build/src/schema/tables/order.ts',
       ],
       tables: {
-        order: { label: '訂單', variable: 'orderSchema', columns: [] },
-        draft: { label: null, variable: 'draftSchema', columns: [] },
+        order: { label: '訂單', variable: 'orderSchema', virtual: false, columns: [] },
+        draft: { label: null, variable: 'draftSchema', virtual: false, columns: [] },
       },
       mockCsv: { order: 'vue-build/mock/order-test.csv' },
     })
@@ -66,13 +66,27 @@ describe('overviewRows', () => {
 })
 
 describe('mockOverviewRows', () => {
+  it('leaves out virtual tables', () => {
+    const rows = mockOverviewRows({ csv: {} }, {
+      paths: [],
+      tables: {
+        order: { label: '訂單', variable: null, virtual: false, columns: [] },
+        ledger: { label: '帳目', variable: null, virtual: true, columns: [] },
+      },
+      tableOrder: ['order', 'ledger'],
+      csvRows: {},
+    })
+
+    expect(rows.map(row => row.key)).toEqual(['order'])
+  })
+
   it('lists the tables in order, then the CSV files without a table', () => {
     const rows = mockOverviewRows({ csv: { order: 'vue-build/mock/order-test.csv', ghost: 'vue-build/mock/ghost.csv' } }, {
       paths: ['vue-build/mock/customer-test.csv', 'vue-build/mock/extra.csv', 'vue-build/mock/order-test.csv'],
       tables: {
-        customer: { label: '客戶', variable: null, columns: [] },
-        draft: { label: null, variable: null, columns: [] },
-        order: { label: '訂單', variable: null, columns: [] },
+        customer: { label: '客戶', variable: null, virtual: false, columns: [] },
+        draft: { label: null, variable: null, virtual: false, columns: [] },
+        order: { label: '訂單', variable: null, virtual: false, columns: [] },
       },
       tableOrder: ['order', 'customer'],
       csvRows: { 'vue-build/mock/order-test.csv': 3, 'vue-build/mock/customer-test.csv': 0, 'vue-build/mock/extra.csv': 1 },

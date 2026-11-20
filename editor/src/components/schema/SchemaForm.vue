@@ -3,6 +3,7 @@
   import { SCHEMA_FORM_KEY, useSchemaForm } from '@/composables/useSchemaForm'
   import ColumnGrid from './ColumnGrid.vue'
   import FormatRuleList from './FormatRuleList.vue'
+  import RuleList from './RuleList.vue'
   import SchemaLists from './SchemaLists.vue'
   import SchemaSettings from './SchemaSettings.vue'
 
@@ -11,7 +12,7 @@
     text: string
   }>()
 
-  type FormTab = 'columns' | 'lists' | 'formatRules'
+  type FormTab = 'columns' | 'rules' | 'lists' | 'formatRules'
 
   const form = useSchemaForm(() => props.path, () => props.text)
   provide(SCHEMA_FORM_KEY, form)
@@ -37,12 +38,14 @@
         density="compact"
       >
         <v-tab text="欄位" value="columns" />
+        <v-tab v-if="form.model.value.virtual" text="規則" value="rules" />
         <v-tab text="搜尋與排序" value="lists" />
         <v-tab text="條件式格式" value="formatRules" />
       </v-tabs>
 
       <div class="schema-form__body">
         <ColumnGrid v-if="tab === 'columns'" />
+        <RuleList v-else-if="tab === 'rules' && form.model.value.virtual" />
         <SchemaLists v-else-if="tab === 'lists'" />
         <FormatRuleList v-else />
       </div>

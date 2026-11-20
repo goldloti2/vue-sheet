@@ -17,14 +17,20 @@
   const form = inject(SCHEMA_FORM_KEY)!
   const files = useFilesStore()
 
-  // refTable 以選單列出現有的表
+  // 虛擬表的欄位與虛擬欄位，ref 只有 refTable
+  const REF_WRITE_OPTIONS = new Set(['onDelete', 'onEmpty', 'refSort', 'allowCreate'])
+  const readOnly = computed(() => (form.model.value?.virtual ?? false) || props.row.list === 'virtualColumns')
+
+  // refTable 以選單列出現有的表。真實表的真實欄位不可指向虛擬表
   const tables = computed(() => Object.entries(files.tables)
+    .filter(([, table]) => readOnly.value || !table.virtual)
     .map(([key, table]) => ({ title: table.label ? `${table.label}（${key}）` : key, value: key }))
     .toSorted((a, b) => a.value.localeCompare(b.value)))
 
   const columnTypes = computed(() => form.types.value?.columnTypes ?? [])
   const type = computed(() => stringValue(propertyValue(props.row.object, 'type')))
   const info = computed(() => columnTypes.value.find(candidate => candidate.name === type.value) ?? null)
+  const options = computed(() => (info.value?.options ?? []).filter(option => !readOnly.value || !REF_WRITE_OPTIONS.has(option.name)))
 
   // 開啟時的內容，取消時改回
   const original = form.text()
@@ -72,7 +78,7 @@
 
         <p v-if="info?.doc" class="text-caption text-medium-emphasis mt-1 mb-3">{{ info.doc }}</p>
 
-        <div v-for="option in info?.options ?? []" :key="option.name" class="column-type-dialog__option">
+        <div v-for="option in options" :key="option.name" class="column-type-dialog__option">
           <span class="text-body-2">
             {{ option.name }}<span v-if="!option.optional" class="text-error">*</span>
           </span>
@@ -90,7 +96,7 @@
           </div>
         </div>
 
-        <p v-if="info && info.options.length === 0" class="text-body-2 text-medium-emphasis">此型別沒有其他設定</p>
+        <p v-if="info && options.length === 0" class="text-body-2 text-medium-emphasis">此型別沒有其他設定</p>
       </v-card-text>
 
       <v-card-actions>

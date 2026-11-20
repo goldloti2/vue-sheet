@@ -80,7 +80,7 @@ export function idPrefix (model: SchemaModel | null): string | null {
 }
 
 // schema 物件的屬性於表單中新增時的順序
-const SCHEMA_ORDER = ['tableLabel', 'idColumn', 'labelColumn', 'newId', 'columns', 'virtualColumns', ...KEY_LISTS, 'defaultSort', 'formatRules']
+const SCHEMA_ORDER = ['tableLabel', 'idColumn', 'labelColumn', 'newId', 'columns', 'rules', 'virtualColumns', ...KEY_LISTS, 'defaultSort', 'formatRules']
 
 // 新增 name 時置於其後的屬性：順序在 name 之前、且已存在的最後一個屬性。沒有時為 undefined
 export function propertyBefore (model: SchemaModel | null, name: string): string | undefined {
@@ -116,4 +116,13 @@ export interface ColumnOption {
 // 欄位的選項：以標籤顯示，值為 key
 export function columnOptions (rows: readonly ColumnRow[]): ColumnOption[] {
   return rows.flatMap(row => row.key === null ? [] : [{ title: stringValue(propertyValue(row.object, 'label')) ?? row.key, value: row.key }])
+}
+
+// 虛擬表的規則。不存在時為 null，不是以陣列直接寫成時為 undefined
+export function ruleItems (model: SchemaModel | null): SchemaValue[] | null | undefined {
+  const value = propertyValue(model?.schema, 'rules')
+  if (!value) {
+    return null
+  }
+  return value.kind === 'array' ? value.items : undefined
 }

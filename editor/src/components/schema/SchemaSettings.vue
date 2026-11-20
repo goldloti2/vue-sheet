@@ -43,24 +43,26 @@
 
     <span v-else class="text-medium-emphasis">以程式碼寫成：{{ sourceOf(form.text(), label) }}</span>
 
-    <span class="text-body-2">主鍵字首</span>
+    <template v-if="!form.model.value?.virtual">
+      <span class="text-body-2">主鍵字首</span>
 
-    <CommitTextField
-      v-if="prefix !== null"
-      :model-value="prefix"
-      placeholder="留空時主鍵為必填"
-      @commit="setPrefix"
-    />
+      <CommitTextField
+        v-if="prefix !== null"
+        :model-value="prefix"
+        placeholder="留空時主鍵為必填"
+        @commit="setPrefix"
+      />
 
-    <CodeField
-      v-else
-      :code="sourceOf(form.text(), propertyValue(form.model.value?.schema, 'newId'))"
-      :commit="commitNewId"
-      :doc="form.types.value?.schemaDocs.newId"
-      name="newId"
-      :object-path="[]"
-      title="主鍵字首"
-    />
+      <CodeField
+        v-else
+        :code="sourceOf(form.text(), propertyValue(form.model.value?.schema, 'newId'))"
+        :commit="commitNewId"
+        :doc="form.types.value?.schemaDocs.newId"
+        name="newId"
+        :object-path="[]"
+        title="主鍵字首"
+      />
+    </template>
   </div>
 </template>
 

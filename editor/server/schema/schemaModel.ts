@@ -1,4 +1,4 @@
-// 解析 schema 檔：Row 介面與 TableSchema<Row> 物件。以字面值寫成的設定轉為值，其他寫法保留原文
+// 解析 schema 檔：Row 介面與 TableSchema<Row> 或 VirtualTableSchema<Row> 物件。以字面值寫成的設定轉為值，其他寫法保留原文
 // 位置皆為文字中的 UTF-16 位移，供文字編輯使用
 import type { RowInterface, SchemaModel, SchemaPath, SchemaProperty, SchemaValue, TextRange } from '../../shared/schema.ts'
 import type { TypeScript } from '../vueBuild.ts'
@@ -39,7 +39,10 @@ export function findProperty (ts: TypeScript, object: TS.ObjectLiteralExpression
     ts.isPropertyAssignment(property) && propertyName(ts, property) === name)
 }
 
-// 型別為 TableSchema<Row> 的變數。沒有此變數時，改找第一個含 tableLabel 屬性的物件字面值
+// schema 變數的型別名稱
+const SCHEMA_TYPES = new Set(['TableSchema', 'VirtualTableSchema'])
+
+// 型別為 TableSchema<Row> 或 VirtualTableSchema<Row> 的變數。沒有此變數時，改找第一個含 tableLabel 屬性的物件字面值
 export function findSchemaNodes (ts: TypeScript, source: TS.SourceFile): SchemaNodes {
   let declaration: TS.VariableDeclaration | null = null
   let object: TS.ObjectLiteralExpression | null = null
@@ -50,7 +53,7 @@ export function findSchemaNodes (ts: TypeScript, source: TS.SourceFile): SchemaN
       return
     }
     if (ts.isVariableDeclaration(node) && node.type && ts.isTypeReferenceNode(node.type)
-      && node.type.typeName.getText(source) === 'TableSchema' && node.initializer) {
+      && SCHEMA_TYPES.has(node.type.typeName.getText(source)) && node.initializer) {
       const initializer = unwrap(ts, node.initializer)
       if (ts.isObjectLiteralExpression(initializer)) {
         declaration = node
@@ -137,10 +140,12 @@ function toRow (ts: TypeScript, source: TS.SourceFile, row: TS.InterfaceDeclarat
 export function parseSchema (ts: TypeScript, text: string): SchemaModel {
   const nodes = findSchemaNodes(ts, parseSource(ts, text))
   const schema = nodes.object ? toValue(ts, nodes.source, nodes.object) : null
+  const object = schema?.kind === 'object' ? schema : null
   return {
     variable: nodes.declaration && ts.isIdentifier(nodes.declaration.name) ? nodes.declaration.name.text : null,
-    schema: schema?.kind === 'object' ? schema : null,
+    schema: object,
     row: nodes.row ? toRow(ts, nodes.source, nodes.row) : null,
+    virtual: object?.properties.some(property => property.name === 'rules') ?? false,
   }
 }
 

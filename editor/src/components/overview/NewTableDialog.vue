@@ -13,6 +13,7 @@
   const label = shallowRef('')
   const key = shallowRef('')
   const prefix = shallowRef('')
+  const virtual = shallowRef(false)
   const saving = shallowRef(false)
 
   // 開啟時清空上次的輸入
@@ -21,20 +22,23 @@
       label.value = ''
       key.value = ''
       prefix.value = ''
+      virtual.value = false
     }
   })
 
   const existing = computed(() => [...files.tableOrder, ...files.paths.map(path => tableKeyOf(path)).filter(item => item !== null)])
   const keyError = computed(() => key.value === '' ? null : tableKeyError(key.value, existing.value))
   const prefixError = computed(() => prefix.value === '' ? null : idPrefixError(prefix.value))
-  const valid = computed(() => label.value.trim() !== '' && key.value !== '' && keyError.value === null && prefix.value !== '' && prefixError.value === null)
+  // 虛擬表沒有主鍵字首
+  const prefixValid = computed(() => virtual.value || (prefix.value !== '' && prefixError.value === null))
+  const valid = computed(() => label.value.trim() !== '' && key.value !== '' && keyError.value === null && prefixValid.value)
 
   async function submit (): Promise<void> {
     if (!valid.value || saving.value) {
       return
     }
     saving.value = true
-    const created = await tables.create(key.value, label.value.trim(), prefix.value)
+    const created = await tables.create(key.value, label.value.trim(), virtual.value ? '' : prefix.value, virtual.value)
     saving.value = false
     if (created) {
       open.value = false
@@ -69,7 +73,15 @@
           @keydown.enter="submit"
         />
 
+        <v-checkbox
+          v-model="virtual"
+          density="compact"
+          hide-details
+          label="虛擬表"
+        />
+
         <v-text-field
+          v-if="!virtual"
           v-model="prefix"
           autocomplete="off"
           class="new-table-dialog__code"
@@ -81,9 +93,15 @@
           @keydown.enter="submit"
         />
 
-        <div class="text-caption text-medium-emphasis">
-          <p>代號用於檔名、網址與程式，建立後無法在編輯器中修改。</p>
-          <p>新表只有主鍵與名稱兩個欄位，並建立 schema、動作與本地測試的 CSV。頁面不會建立。</p>
+        <div v-if="virtual" class="text-caption text-medium-emphasis">
+          <p>代號建立後無法在編輯器中修改。</p>
+          <p>虛擬表唯讀，列由規則從其他表產生。新表內建一個欄位，沒有規則。不會建立頁面。</p>
+          <p>建立後立即寫入。不需要加入 Config.gs 與本地測試的 CSV。</p>
+        </div>
+
+        <div v-else class="text-caption text-medium-emphasis">
+          <p>代號建立後無法在編輯器中修改。</p>
+          <p>新表內建主鍵與名稱兩個欄位，並建立本地測試的 CSV。不會建立頁面。</p>
           <p>建立後立即寫入。Config.gs 的登記請自行加入。</p>
         </div>
       </v-card-text>

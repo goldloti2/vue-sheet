@@ -55,7 +55,7 @@ afterEach(async () => {
 
 describe('createTable', () => {
   it('copies the template with only the primary key and the name', async () => {
-    const result = await createTable(tools, { key: 'orderLine', label: '訂單明細', prefix: 'OL' })
+    const result = await createTable(tools, { key: 'orderLine', label: '訂單明細', prefix: 'OL', virtual: false })
 
     expect(result.created).toEqual([
       'vue-build/src/schema/tables/orderLine.ts',
@@ -78,10 +78,33 @@ describe('createTable', () => {
     expect(await read('vue-build/src/services/mock/tables.ts')).toContain('  order: orderCsv,\n  orderLine: orderLineCsv,\n}')
   })
 
+  it('creates a virtual table without a CSV and registers it at the end', async () => {
+    const result = await createTable(tools, { key: 'ledger', label: '帳目', prefix: '', virtual: true })
+
+    expect(result.created).toEqual([
+      'vue-build/src/schema/tables/ledger.ts',
+      'vue-build/src/composables/actions/useLedgerActions.ts',
+    ])
+    const schema = await read('vue-build/src/schema/tables/ledger.ts')
+    expect(schema).not.toContain('複製到')
+    expect(schema).not.toContain('__')
+    expect(schema).toContain('export const ledgerSchema: VirtualTableSchema<LedgerRow> = {')
+    expect(schema).toContain('export interface LedgerRow extends RowBase {\n  kind: string | null\n}')
+    expect(schema).toContain('tableLabel: \'帳目\'')
+    expect(schema).toContain('rules: [],')
+    expect(schema).not.toMatch(/'amount'|'source'|doubled/)
+    expect(await read('vue-build/src/composables/actions/useLedgerActions.ts')).toContain('export function useLedgerActions')
+    expect(await read('vue-build/src/schema/index.ts')).toContain('  order: orderSchema,\n  ledger: ledgerSchema,\n}')
+    expect(await read('vue-build/src/services/mock/tables.ts')).toBe(MOCK_TABLES)
+
+    await createTable(tools, { key: 'line', label: '明細', prefix: 'LN', virtual: false })
+    expect(await read('vue-build/src/schema/index.ts')).toContain('  order: orderSchema,\n  line: lineSchema,\n  ledger: ledgerSchema,\n}')
+  })
+
   it('rejects a table key in use and writes nothing', async () => {
-    await expect(createTable(tools, { key: 'order', label: '訂單', prefix: 'ORD' })).rejects.toThrow('已有表 order。')
-    await expect(createTable(tools, { key: 'Line', label: '明細', prefix: 'L' })).rejects.toThrow('代號只能使用')
-    await expect(createTable(tools, { key: 'line', label: '明細', prefix: 'l' })).rejects.toThrow('主鍵字首只能使用')
+    await expect(createTable(tools, { key: 'order', label: '訂單', prefix: 'ORD', virtual: false })).rejects.toThrow('已有表 order。')
+    await expect(createTable(tools, { key: 'Line', label: '明細', prefix: 'L', virtual: false })).rejects.toThrow('代號只能使用')
+    await expect(createTable(tools, { key: 'line', label: '明細', prefix: 'l', virtual: false })).rejects.toThrow('主鍵字首只能使用')
     expect(await read('vue-build/src/schema/index.ts')).toBe(REGISTRY)
   })
 })

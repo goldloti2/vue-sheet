@@ -25,6 +25,8 @@
   const candidates = computed(() => new Set(idCandidates(rows.value, form.types.value?.columnTypes ?? [])))
   const idColumn = computed(() => stringValue(propertyValue(form.model.value?.schema, 'idColumn')))
   const labelColumn = computed(() => stringValue(propertyValue(form.model.value?.schema, 'labelColumn')))
+  // 虛擬表沒有 Sheet 表頭、主鍵、必填、初始值與驗證，不顯示這幾欄
+  const virtualTable = computed(() => form.model.value?.virtual ?? false)
 
   // 程式碼的欄。only 為只屬於真實或虛擬欄位的設定，null 為兩者皆有
   const CODE_COLUMNS: { name: string, title: string, only: ColumnList | null }[] = [
@@ -33,6 +35,9 @@
     { name: 'showIf', title: '顯示條件', only: null },
     { name: 'value', title: '計算方式', only: 'virtualColumns' },
   ]
+  const codeColumns = computed(() => virtualTable.value ? CODE_COLUMNS.filter(column => column.only !== 'columns') : CODE_COLUMNS)
+  // 程式碼以外的欄數：把手、key、標籤、型別、稱呼、刪除，以及真實表的 Sheet 表頭、主鍵、必填
+  const fixedColumnCount = computed(() => virtualTable.value ? 6 : 9)
 
   function isTrue (value: SchemaValue | undefined): boolean {
     return value?.kind === 'boolean' && value.value
@@ -74,7 +79,7 @@
         files.message = '標籤不可空白。'
         return false
       }
-      if (row.list === 'virtualColumns' || propertyValue(row.object, 'sheetHeader')) {
+      if (virtualTable.value || row.list === 'virtualColumns' || propertyValue(row.object, 'sheetHeader')) {
         setText(row, 'label', label, false)
         return true
       }
@@ -167,12 +172,12 @@
           <th />
           <th class="column-grid__text column-grid__text--wide">key</th>
           <th class="column-grid__text column-grid__text--wide">標籤</th>
-          <th class="column-grid__text column-grid__text--wide">Sheet 表頭</th>
+          <th v-if="!virtualTable" class="column-grid__text column-grid__text--wide">Sheet 表頭</th>
           <th class="column-grid__text">型別</th>
-          <th class="column-grid__center">主鍵</th>
+          <th v-if="!virtualTable" class="column-grid__center">主鍵</th>
           <th class="column-grid__center">稱呼</th>
-          <th class="column-grid__center">必填</th>
-          <th v-for="column in CODE_COLUMNS" :key="column.name" class="column-grid__code">{{ column.title }}</th>
+          <th v-if="!virtualTable" class="column-grid__center">必填</th>
+          <th v-for="column in codeColumns" :key="column.name" class="column-grid__code">{{ column.title }}</th>
           <th />
         </tr>
       </thead>
@@ -204,7 +209,7 @@
               <CommitTextField :commit="commitLabel(row)" :model-value="labelOf(row)" />
             </td>
 
-            <td class="column-grid__text column-grid__text--wide">
+            <td v-if="!virtualTable" class="column-grid__text column-grid__text--wide">
               <CommitTextField
                 :disabled="row.list === 'virtualColumns'"
                 :model-value="stringValue(propertyValue(row.object, 'sheetHeader')) ?? ''"
@@ -225,7 +230,7 @@
               />
             </td>
 
-            <td class="column-grid__center">
+            <td v-if="!virtualTable" class="column-grid__center">
               <v-btn
                 :disabled="row.key === null || !candidates.has(row.key)"
                 :icon="row.key !== null && idColumn === row.key ? mdiRadioboxMarked : mdiRadioboxBlank"
@@ -245,7 +250,7 @@
               />
             </td>
 
-            <td class="column-grid__center">
+            <td v-if="!virtualTable" class="column-grid__center">
               <v-checkbox-btn
                 density="compact"
                 :disabled="row.list === 'virtualColumns'"
@@ -254,7 +259,7 @@
               />
             </td>
 
-            <td v-for="column in CODE_COLUMNS" :key="column.name" class="column-grid__code">
+            <td v-for="column in codeColumns" :key="column.name" class="column-grid__code">
               <CodeField
                 :code="sourceOf(form.text(), propertyValue(row.object, column.name))"
                 :commit="commitCode(row.path, column.name)"
@@ -284,7 +289,7 @@
             </td>
           </template>
 
-          <td v-else class="column-grid__other text-medium-emphasis" :colspan="8 + CODE_COLUMNS.length">
+          <td v-else class="column-grid__other text-medium-emphasis" :colspan="fixedColumnCount - 1 + codeColumns.length">
             以程式碼寫成，請以文字編輯：{{ row.code }}
           </td>
         </tr>

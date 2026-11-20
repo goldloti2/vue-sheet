@@ -84,7 +84,8 @@ export interface MockOverviewSource {
 /** 測試資料的總覽：各表依 schemas 中的順序，其他的表與登記的代號依代號排序，沒有表對應的 CSV 在最後 */
 export function mockOverviewRows (model: MockTablesModel, { paths, tables, tableOrder, csvRows }: MockOverviewSource): MockOverviewRow[] {
   const others = new Set([...Object.keys(tables), ...Object.keys(model.csv)].filter(key => !tableOrder.includes(key)))
-  const keys = [...tableOrder, ...[...others].toSorted()]
+  // 虛擬表沒有 mock CSV，不列出
+  const keys = [...tableOrder, ...[...others].toSorted()].filter(key => !tables[key]?.virtual)
   const tableRows = keys.map(key => {
     const registered = model.csv[key]
     const csv = registered ?? (paths.includes(mockCsvFileOf(key)) ? mockCsvFileOf(key) : null)

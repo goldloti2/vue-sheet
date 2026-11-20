@@ -76,7 +76,9 @@ function applyEdit (ts: TypeScript, text: string, edit: RegistryEdit): string {
       if (object.properties.some(property => propertyName(ts, property) === edit.key)) {
         throw new SchemaEditError(`schemas 中已有 ${edit.key}。`)
       }
-      const added = applyEdits(text, insertItem(text, list, object.properties.length, `${edit.key}: ${edit.variable}`, 'multiline'))
+      const before = edit.before === undefined ? -1 : object.properties.findIndex(property => propertyName(ts, property) === edit.before)
+      const index = before === -1 ? object.properties.length : before
+      const added = applyEdits(text, insertItem(text, list, index, `${edit.key}: ${edit.variable}`, 'multiline'))
       return ensureNamedImport(ts, added, edit.variable, `./tables/${edit.key}`)
     }
     case 'remove': {

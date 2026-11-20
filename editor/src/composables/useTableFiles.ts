@@ -18,18 +18,20 @@ export function useTableFiles () {
   }
 
   /** 建立成功時開啟新表的 schema，回傳 true */
-  async function create (key: string, label: string, prefix: string): Promise<boolean> {
+  async function create (key: string, label: string, prefix: string, virtual: boolean): Promise<boolean> {
     if (!checkClean([REGISTRY_FILE, MOCK_TABLES_FILE], '新增表')) {
       return false
     }
     try {
-      await createTable({ key, label, prefix })
+      await createTable({ key, label, prefix, virtual })
     } catch (error) {
       files.message = (error as Error).message
       return false
     }
     await files.open(schemaFileOf(key))
-    files.message = `已建立表「${label}」。請在 Config.gs 中登記這張表，線上測試與線上正式才讀得到這張表。`
+    files.message = virtual
+      ? `已建立虛擬表「${label}」。請在規則分頁加入規則。`
+      : `已建立表「${label}」。請在 Config.gs 中登記這張表，線上測試與線上正式才讀得到這張表。`
     return true
   }
 

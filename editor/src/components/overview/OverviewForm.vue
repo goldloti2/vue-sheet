@@ -9,6 +9,7 @@
   import { useTableDialogs } from '@/composables/useTableDialogs'
   import { useFilesStore } from '@/stores/files'
   import { overviewRows } from '../../../shared/overview'
+  import { registryAddBefore } from '../../../shared/registry'
 
   const props = defineProps<{
     path: string
@@ -37,6 +38,11 @@
     ['csv', 'CSV'],
   ]
 
+  // 虛擬表不列出 CSV
+  function fileTitlesOf (key: string): [keyof TableFiles, string][] {
+    return files.tables[key]?.virtual ? FILE_TITLES.filter(([name]) => name !== 'csv') : FILE_TITLES
+  }
+
   // 只有登記的表可以拖曳
   const sort = useDragSort({
     items: () => registered.value,
@@ -48,13 +54,14 @@
     sort.start(event, index, (event.target as HTMLElement).closest('tr'))
   }
 
-  // 啟用即登記於 schemas 的最後，停用即從 schemas 刪除
+  // 啟用即登記於 schemas：真實表置於第一張虛擬表之前，虛擬表置於最後。停用即從 schemas 刪除
   function setEnabled (row: OverviewRow, enabled: boolean): void {
     if (row.key === null) {
       return
     }
-    if (enabled && row.variable !== null) {
-      void form.apply([{ kind: 'add', key: row.key, variable: row.variable }])
+    if (enabled && row.variable !== null && form.model.value) {
+      const before = registryAddBefore(form.model.value, key => files.tables[key]?.virtual ?? false, files.tables[row.key]?.virtual ?? false)
+      void form.apply([{ kind: 'add', key: row.key, variable: row.variable, before }])
     } else if (!enabled) {
       void form.apply([{ kind: 'remove', key: row.key }])
     }
@@ -122,7 +129,7 @@
             <td>
               <span class="overview-form__files">
                 <v-chip
-                  v-for="[name, title] in FILE_TITLES"
+                  v-for="[name, title] in fileTitlesOf(row.key)"
                   :key="name"
                   :disabled="row.files[name] === null"
                   size="small"

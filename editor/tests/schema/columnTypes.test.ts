@@ -89,5 +89,10 @@ interface Other {
       expect(types.columnDocs[name]).toBeTruthy()
     }
     expect(types.schemaDocs.newId).toBeTruthy()
+    expect(types.schemaDocs.tableLabel).toBeTruthy()
+    expect(types.schemaDocs.rules).toBeTruthy()
+    for (const name of ['table', 'when', 'values']) {
+      expect(types.ruleDocs[name]).toBeTruthy()
+    }
   })
 })

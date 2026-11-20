@@ -39,9 +39,9 @@
 - 預覽與檢查所用的 `vite`、`typescript`、`eslint` 的設定與外掛、`vue-tsc`，一律以 `vue-build/package.json` 的位置解析，取自 `vue-build/node_modules`。
 - 編輯器不匯入專案的檔案。
 - 編輯器讀取的框架檔案：
-  - `vue-build/src/schema/types.ts`：以 TypeScript 的 parser 讀取，不執行。取得欄位型別、各型別的設定與 `FormatRule` 的設定，以及欄位與 `TableSchema` 的各項設定的說明。
+  - `vue-build/src/schema/types.ts`：以 TypeScript 的 parser 讀取，不執行。取得欄位型別、各型別的設定與 `FormatRule` 的設定，以及欄位、`TableSchema`、`VirtualTableSchema` 與 `VirtualRule` 的各項設定的說明。
   - `vue-build/src/plugins/colors.ts`：以 Node 執行，取得共用色名於淺色與深色主題的色值。
-  - `vue-build/template/table/`：新增表時複製的範本。
+  - `vue-build/template/table/`：新增表時複製的範本。虛擬表的範本位於其中的 `virtual/`。
 - 型別的小視窗與條件式格式的設定，依 `types.ts` 的內容產生。框架新增設定時，表單自動多出該項（見 [forms.md](forms.md) 的「設定的輸入方式」）。
 
 ---
@@ -76,12 +76,12 @@
 
 ## schema 檔的修改
 
-- 服務以 TypeScript 的 parser 解析 schema 檔，找出 `Row` 介面與 `TableSchema<Row>` 物件。
+- 服務以 TypeScript 的 parser 解析 schema 檔，找出 `Row` 介面與 `TableSchema<Row>` 或 `VirtualTableSchema<Row>` 物件。物件有 `rules` 時為虛擬表。
 - 以字面值寫成的設定轉為表單的值。其他寫法保留原文，於表單中顯示為程式碼。
 - 表單的每一次修改是一組修改項目，例如取代值、設定屬性、插入、刪除與移動陣列的項目。服務依序套用，每一項皆重新解析。任一項失敗時，整組都不套用。
 - 新增與刪除欄位時，服務同時修改 `columns` 或 `virtualColumns` 與 `Row` 介面。值的型別取自 `types.ts` 的 `ColumnTypes`。虛擬欄位的成員加上 `readonly`。
-- 刪除欄位時，服務一併刪除同一檔案中以字串寫成的引用，例如各清單、`labelColumn`、條件式格式的 `columns`。
-- 修改 key 時，`Row` 成員的所有引用由 language service 找出，包括 `.vue` 檔。同一檔案中以字串寫成的 key 另行修改。
+- 刪除欄位時，服務一併刪除同一檔案中以字串寫成的引用，例如各清單、`labelColumn`、條件式格式的 `columns`，以及規則的 `values` 中此欄位的值。
+- 修改 key 時，`Row` 成員的所有引用由 language service 找出，包括 `.vue` 檔。同一檔案中以字串寫成的 key 與規則的 `values` 的屬性名另行修改。
 - 程式碼寫回 schema 前，服務先檢查語法。有語法錯誤時不寫回。
 - schema 檔的修改皆為未儲存的修改，按「儲存」才寫入。
 
@@ -94,7 +94,12 @@
   2. 取代 `__table__`、`__Table__`、`tableLabel` 與主鍵字首。
   3. 刪除主鍵與稱呼以外的欄位。
   4. 建立只有表頭的 mock CSV。
-  5. 登記於 `schemas` 與測試資料的登記。
+  5. 登記於 `schemas` 與測試資料的登記。`schemas` 中有虛擬表時，置於第一張虛擬表之前。
+- 新增虛擬表時，服務改為複製 `vue-build/template/table/virtual/` 的兩個檔案：
+  1. 刪除開頭「複製到」的註解。
+  2. 取代 `__table__`、`__Table__` 與 `tableLabel`。
+  3. 刪除稱呼以外的欄位，`rules` 改為空的陣列，並刪除來源表的匯入與 getter。
+  4. 登記於 `schemas` 的最後。不建立 mock CSV，也不登記於測試資料。
 - 服務先算出全部的內容，任一項失敗時不寫入任何檔案。
 - 刪除表時，服務刪除表的檔案與登記。範圍見 [forms.md](forms.md) 的「新增與刪除表」。刪除後，`pages/` 中變空的資料夾一併刪除。
 - 新增表、刪除表與建立 CSV 皆立即寫入，不經過介面的未儲存修改。

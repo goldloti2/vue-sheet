@@ -39,6 +39,23 @@ describe('parseSchema', () => {
     expect(propertyValue(amount, 'separator')).toMatchObject({ kind: 'boolean', value: true })
   })
 
+  it('finds a VirtualTableSchema variable and marks it virtual', () => {
+    const text = `import type { VirtualTableSchema } from './types'
+interface R { kind: string | null }
+export const s: VirtualTableSchema<R> = {
+  tableLabel: '虛擬',
+  columns: [{ key: 'kind', label: '種類', type: 'text' }],
+  rules: [],
+}
+`
+    const model = parseSchema(context.ts, text)
+
+    expect(model.variable).toBe('s')
+    expect(model.row?.name).toBe('R')
+    expect(model.virtual).toBe(true)
+    expect(parseSchema(context.ts, context.template).virtual).toBe(false)
+  })
+
   it('keeps other forms as code', () => {
     const text = `import type { TableSchema } from './types'
 interface R { readonly total?: number }
@@ -59,6 +76,6 @@ export const s: TableSchema<R> = {
   })
 
   it('has no schema without a schema object', () => {
-    expect(parseSchema(context.ts, 'export const a = 1')).toEqual({ variable: null, schema: null, row: null })
+    expect(parseSchema(context.ts, 'export const a = 1')).toEqual({ variable: null, schema: null, row: null, virtual: false })
   })
 })

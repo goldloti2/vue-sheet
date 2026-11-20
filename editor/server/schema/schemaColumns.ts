@@ -2,7 +2,7 @@
 import type { ColumnTypeInfo, NewColumn, SchemaPath, SchemaValue, SettingOption } from '../../shared/schema.ts'
 import type { TypeScript } from '../vueBuild.ts'
 import type TS from 'typescript'
-import { columnKeyError, literalText, propertyValue, stringValue } from '../../shared/schema.ts'
+import { columnKeyError, literalText, propertyKeyText, propertyValue, stringValue } from '../../shared/schema.ts'
 import { usedColumnKeys } from '../../shared/schemaForm.ts'
 import { applyEdits, insertItem as insertListItem, removeItem as removeListItem } from './listEdits.ts'
 import { insertItem, removeItem, replaceValue, SchemaEditError, setProperty } from './schemaEdits.ts'
@@ -172,12 +172,31 @@ function keyLiterals (ts: TypeScript, text: string, key: string): SchemaValue[] 
   ].filter((value): value is SchemaValue => value !== undefined && stringValue(value) === key)
 }
 
-/** 同一檔案中以字串寫成的 key 改為 newKey */
-export function renameKeyLiterals (ts: TypeScript, text: string, key: string, newKey: string): string {
-  return applyEdits(text, keyLiterals(ts, text, key).map(value => ({ from: value.from, to: value.to, insert: literalText(newKey) })))
+// 虛擬表的規則中，values 以 key 為屬性名之處的屬性名的位置
+function ruleValueNames (ts: TypeScript, text: string, key: string): { from: number, to: number }[] {
+  const rules = propertyValue(parseSchema(ts, text).schema, 'rules')
+  if (rules?.kind !== 'array') {
+    return []
+  }
+  return rules.items.flatMap(rule => {
+    const values = propertyValue(rule, 'values')
+    const properties = values?.kind === 'object' ? values.properties : []
+    return properties.flatMap(property => {
+      const name = property.name === key ? /^(['"]?)[\w$]+\1/.exec(text.slice(property.from)) : null
+      return name ? [{ from: property.from, to: property.from + name[0].length }] : []
+    })
+  })
 }
 
-// 同一檔案中以字面值引用 key 的下一處：labelColumn、各清單、defaultSort 與 formatRules 的 columns
+/** 同一檔案中以字串寫成的 key，以及規則的 values 中的屬性名，改為 newKey */
+export function renameKeyLiterals (ts: TypeScript, text: string, key: string, newKey: string): string {
+  return applyEdits(text, [
+    ...keyLiterals(ts, text, key).map(value => ({ from: value.from, to: value.to, insert: literalText(newKey) })),
+    ...ruleValueNames(ts, text, key).map(range => ({ ...range, insert: propertyKeyText(newKey) })),
+  ])
+}
+
+// 同一檔案中以字面值引用 key 的下一處：labelColumn、各清單、defaultSort、formatRules 的 columns 與規則的 values
 function nextReference (ts: TypeScript, text: string, key: string): { path: SchemaPath, index: number | null } | null {
   const { schema } = parseSchema(ts, text)
   if (!schema) {
@@ -205,6 +224,15 @@ function nextReference (ts: TypeScript, text: string, key: string): { path: Sche
       const index = columns?.kind === 'array' ? columns.items.findIndex(item => stringValue(item) === key) : -1
       if (index !== -1) {
         return { path: ['formatRules', ruleIndex, 'columns'], index }
+      }
+    }
+  }
+  const virtualRules = propertyValue(schema, 'rules')
+  if (virtualRules?.kind === 'array') {
+    for (const [ruleIndex, rule] of virtualRules.items.entries()) {
+      const values = propertyValue(rule, 'values')
+      if (values?.kind === 'object' && values.properties.some(property => property.name === key)) {
+        return { path: ['rules', ruleIndex, 'values', key], index: null }
       }
     }
   }

@@ -30,6 +30,8 @@
   }
 
   const NAMES: readonly ListName[] = [...KEY_LISTS, 'defaultSort']
+  // 虛擬表沒有表單，不顯示 formOrder
+  const names = computed(() => form.model.value?.virtual ? NAMES.filter(name => name !== 'formOrder') : NAMES)
 
   const selected = shallowRef<ListName>('searchable')
   const columns = computed(() => columnOptions(columnRows(form.model.value)))
@@ -80,7 +82,7 @@
   <div class="schema-lists">
     <v-list class="schema-lists__names py-0" density="compact">
       <v-list-item
-        v-for="name in NAMES"
+        v-for="name in names"
         :key="name"
         :active="name === selected"
         color="primary"

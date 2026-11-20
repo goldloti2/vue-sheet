@@ -12,10 +12,10 @@ export interface RegistryModel {
   entries: RegistryEntry[]
 }
 
-/** 對 schemas 的一項修改。add 加於最後，並加上 schema 的 import。remove 一併刪除 import */
+/** 對 schemas 的一項修改。add 加於 before 之前，沒有 before 時加於最後，並加上 schema 的 import。remove 一併刪除 import */
 export type RegistryEdit
   = | { kind: 'move', from: number, to: number }
-    | { kind: 'add', key: string, variable: string }
+    | { kind: 'add', key: string, variable: string, before?: string }
     | { kind: 'remove', key: string }
 
 export interface RegistryEditRequest {
@@ -26,4 +26,9 @@ export interface RegistryEditRequest {
 export interface RegistryEditResult {
   text: string
   model: RegistryModel | null
+}
+
+/** 新增登記時置於其前的表：真實表置於第一張虛擬表之前，虛擬表置於最後（undefined） */
+export function registryAddBefore (model: RegistryModel, isVirtual: (key: string) => boolean, virtual: boolean): string | undefined {
+  return virtual ? undefined : model.entries.find(entry => entry.key !== null && isVirtual(entry.key))?.key ?? undefined
 }

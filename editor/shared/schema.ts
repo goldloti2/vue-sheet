@@ -45,6 +45,8 @@ export interface SchemaModel {
   variable: string | null
   schema: ObjectValue | null
   row: RowInterface | null
+  /** 虛擬表：schema 物件有 rules */
+  virtual: boolean
 }
 
 /** schema 物件中的位置：字串為屬性名，數字為陣列的索引 */
@@ -119,8 +121,10 @@ export interface SchemaTypes {
   formatRule: SettingOption[]
   /** 欄位的各項設定的說明，例如 default、value */
   columnDocs: Record<string, string>
-  /** TableSchema 的各項設定的說明，例如 newId */
+  /** TableSchema 與 VirtualTableSchema 的各項設定的說明，例如 newId */
   schemaDocs: Record<string, string>
+  /** 虛擬表的規則（VirtualRule）的各項設定的說明，例如 when */
+  ruleDocs: Record<string, string>
   /** 共用色名（例如 vuesheet-red）於淺色與深色主題的色值，取自 vue-build/src/plugins/colors.ts */
   colors: { light: Record<string, string>, dark: Record<string, string> }
 }

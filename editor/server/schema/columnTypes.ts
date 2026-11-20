@@ -139,7 +139,8 @@ export function readSchemaTypes (ts: TypeScript, typesText: string, colors: Sche
     columnTypes: readColumnTypes(ts, typesText),
     formatRule: readInterfaceOptions(ts, typesText, 'FormatRule'),
     columnDocs: readPropertyDocs(ts, typesText, ['ColumnBase', 'SchemaColumn', 'VirtualColumn']),
-    schemaDocs: readPropertyDocs(ts, typesText, ['TableSchema']),
+    schemaDocs: readPropertyDocs(ts, typesText, ['TableSchema', 'VirtualTableSchema', 'SchemaBase']),
+    ruleDocs: readPropertyDocs(ts, typesText, ['VirtualRule']),
     colors,
   }
 }

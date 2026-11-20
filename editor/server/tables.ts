@@ -5,6 +5,7 @@ import type { TypeScript } from './vueBuild.ts'
 import { readdir, readFile, rm, rmdir } from 'node:fs/promises'
 import path from 'node:path'
 import { csvRowText } from '../shared/csv.ts'
+import { registryAddBefore } from '../shared/registry.ts'
 import { literalText, propertyValue, stringValue } from '../shared/schema.ts'
 import { columnRows } from '../shared/schemaForm.ts'
 import { idPrefixError, MOCK_TABLES_FILE, mockCsvFileOf, PAGES_DIR, schemaFileOf, tableDeletionFiles, tableKeyError } from '../shared/tableFiles.ts'
@@ -13,13 +14,14 @@ import { readProjectFile, writeProjectFile } from './files.ts'
 import { addMockCsv, readMockCsvPaths, removeMockCsv } from './mockTables.ts'
 import { absolutePath, listProjectFiles } from './projectFiles.ts'
 import { applyRegistryEdits, parseRegistry } from './schema/registry.ts'
-import { removeColumn } from './schema/schemaColumns.ts'
-import { SchemaEditError } from './schema/schemaEdits.ts'
+import { removeColumn, removeRowMember } from './schema/schemaColumns.ts'
+import { SchemaEditError, setProperty } from './schema/schemaEdits.ts'
 import { parseSchema } from './schema/schemaModel.ts'
-import { readTableSummary } from './tableSummaries.ts'
+import { readTableSummaries, readTableSummary } from './tableSummaries.ts'
 
-// 框架的範本，只讀取
+// 框架的範本，只讀取。虛擬表的範本位於其中的 virtual/
 const TEMPLATE_DIR = 'vue-build/template/table'
+const VIRTUAL_TEMPLATE_DIR = `${TEMPLATE_DIR}/virtual`
 
 export interface TableTools {
   ts: TypeScript
@@ -41,6 +43,7 @@ function fromTemplate (text: string, key: string): string {
 }
 
 // 範本的 schema 改為新表：表名、主鍵字首（範本為 TPL），並只留主鍵與稱呼的欄位
+// 虛擬表另外清空規則，並刪除來源表（範本為 __source__）的匯入與 getter
 function newSchemaText (ts: TypeScript, template: string, request: NewTableRequest): string {
   let text = fromTemplate(template, request.key)
     .replace(/tableLabel: '[^']*'/, `tableLabel: ${literalText(request.label)}`)
@@ -51,6 +54,11 @@ function newSchemaText (ts: TypeScript, template: string, request: NewTableReque
     if (row.key !== null && !kept.has(row.key)) {
       text = removeColumn(ts, text, row.key)
     }
+  }
+  if (request.virtual) {
+    text = setProperty(ts, text, [], 'rules', '[]')
+    text = removeRowMember(ts, text, '$source')
+    text = text.replace(/^import type \{ __Source__Row \} from '\.\/__source__'\n/m, '')
   }
   return text
 }
@@ -82,35 +90,44 @@ export async function createTable (tools: TableTools, request: NewTableRequest):
   const [registry, mockTables] = await Promise.all([readRequired(root, REGISTRY_FILE), readRequired(root, MOCK_TABLES_FILE)])
   const registered = parseRegistry(ts, registry.text)?.entries.map(entry => entry.key ?? '') ?? []
   const existing = [...registered, ...paths.map(file => tableKeyOf(file)).filter(key => key !== null)]
-  const error = tableKeyError(request.key, existing) ?? idPrefixError(request.prefix) ?? (request.label.trim() === '' ? '請輸入表名。' : null)
+  const error = tableKeyError(request.key, existing) ?? (request.virtual ? null : idPrefixError(request.prefix)) ?? (request.label.trim() === '' ? '請輸入表名。' : null)
   if (error) {
     throw new SchemaEditError(error)
   }
 
   const schemaFile = schemaFileOf(request.key)
   const actionsFile = actionsFileOf(request.key)
-  const csvFile = mockCsvFileOf(request.key)
-  const taken = [schemaFile, actionsFile, csvFile].filter(file => paths.includes(file))
+  const csvFile = request.virtual ? null : mockCsvFileOf(request.key)
+  const created = [schemaFile, actionsFile, ...csvFile === null ? [] : [csvFile]]
+  const taken = created.filter(file => paths.includes(file))
   if (taken.length > 0) {
     throw new SchemaEditError(`已有檔案：${taken.join('、')}`)
   }
 
+  const templateDir = request.virtual ? VIRTUAL_TEMPLATE_DIR : TEMPLATE_DIR
   const [schemaTemplate, actionsTemplate] = await Promise.all([
-    readFile(path.join(root, TEMPLATE_DIR, 'schema.ts'), 'utf8'),
-    readFile(path.join(root, TEMPLATE_DIR, 'use__Table__Actions.ts'), 'utf8'),
+    readFile(path.join(root, templateDir, 'schema.ts'), 'utf8'),
+    readFile(path.join(root, templateDir, 'use__Table__Actions.ts'), 'utf8'),
   ])
   const schemaText = newSchemaText(ts, schemaTemplate, { ...request, label: request.label.trim() })
   const variable = parseSchema(ts, schemaText).variable ?? `${request.key}Schema`
   // 先算出全部的內容，任一項失敗時不寫入任何檔案
-  const registryText = applyRegistryEdits(ts, registry.text, [{ kind: 'add', key: request.key, variable }])
-  const mockTablesText = addMockCsv(ts, mockTables.text, request.key, csvFile)
+  const registryModel = parseRegistry(ts, registry.text)
+  const summaries = await readTableSummaries(ts, root, paths)
+  const before = registryModel ? registryAddBefore(registryModel, key => summaries[key]?.virtual ?? false, request.virtual) : undefined
+  const registryText = applyRegistryEdits(ts, registry.text, [{ kind: 'add', key: request.key, variable, before }])
+  const mockTablesText = csvFile === null ? null : addMockCsv(ts, mockTables.text, request.key, csvFile)
 
   await writeOrFail(tools, schemaFile, schemaText, null)
   await writeOrFail(tools, actionsFile, fromTemplate(actionsTemplate, request.key), null)
-  await writeOrFail(tools, csvFile, csvHeaderText(ts, schemaText), null)
+  if (csvFile !== null && mockTablesText !== null) {
+    await writeOrFail(tools, csvFile, csvHeaderText(ts, schemaText), null)
+  }
   await writeOrFail(tools, REGISTRY_FILE, registryText, registry.hash)
-  await writeOrFail(tools, MOCK_TABLES_FILE, mockTablesText, mockTables.hash)
-  return { created: [schemaFile, actionsFile, csvFile] }
+  if (mockTablesText !== null) {
+    await writeOrFail(tools, MOCK_TABLES_FILE, mockTablesText, mockTables.hash)
+  }
+  return { created }
 }
 
 // 刪除檔案後，由內而外刪除 pages/ 中變空的資料夾

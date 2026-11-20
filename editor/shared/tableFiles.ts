@@ -9,8 +9,10 @@ export interface NewTableRequest {
   key: string
   /** tableLabel */
   label: string
-  /** 主鍵的字首，例如 ORD */
+  /** 主鍵的字首，例如 ORD。虛擬表不使用 */
   prefix: string
+  /** 虛擬表：由虛擬表的範本建立，沒有 mock CSV */
+  virtual: boolean
 }
 
 export interface NewTableResult {

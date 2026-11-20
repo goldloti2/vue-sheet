@@ -1,4 +1,4 @@
-import type { AnyColumn, TableSchema } from '@/schema/types'
+import type { AnyColumn, AnyTableSchema } from '@/schema/types'
 import type { ComputedRef, MaybeRefOrGetter } from 'vue'
 import { computed, toValue } from 'vue'
 import { matchesTerms, searchTerms } from '@/schema/filter'
@@ -18,7 +18,7 @@ function searchText (row: object, columns: readonly AnyColumn[]): string {
 export function useSearch<Row extends object> (
   query: MaybeRefOrGetter<string>,
   rows: MaybeRefOrGetter<readonly Row[]>,
-  schema: TableSchema,
+  schema: AnyTableSchema,
 ): ComputedRef<Row[]> {
   const columns = listedColumns(schema, schema.searchable).filter(column => isSearchable(column))
 

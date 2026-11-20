@@ -1,5 +1,5 @@
 import type { FormView, Layer, LayerMarker, LayerView, StoredMarker } from '@/composables/shell/formLayerState'
-import type { TableKey } from '@/schema'
+import type { RealTableKey } from '@/schema'
 import { layerNavigation, layers, layersAfterNavigation, layersLeaving, leaveConfirmText, markerOf, staleJump } from '@/composables/shell/formLayerState'
 import { confirm } from '@/composables/shell/useDialogs'
 import router from '@/router'
@@ -59,7 +59,7 @@ export function openLayer<Result> (view: LayerView, step?: FlowStepOptions): Pro
 }
 
 // 開啟新增或編輯的表單。送出時回傳寫入後的列，取消時為 null
-export function openForm<Row> (table: TableKey, options: OpenFormOptions = {}, step?: FlowStepOptions): Promise<Row | null> {
+export function openForm<Row> (table: RealTableKey, options: OpenFormOptions = {}, step?: FlowStepOptions): Promise<Row | null> {
   return openLayer<Row>({ kind: 'form', table, ...options }, step)
 }
 

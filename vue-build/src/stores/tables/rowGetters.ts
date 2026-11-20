@@ -1,6 +1,6 @@
 import type { TableKey } from '@/schema'
 import type { Relation } from '@/schema/relations'
-import type { TableSchema } from '@/schema/types'
+import type { AnyTableSchema } from '@/schema/types'
 import type { ComputedRef } from 'vue'
 import { computed } from 'vue'
 import { schemas } from '@/schema'
@@ -74,8 +74,8 @@ export function createRowGetters (rows: Partial<Record<TableKey, unknown[]>>) {
 
   // 掛上不可列舉的 getter（spread、JSON、Object.keys 皆看不到），種類見 docs/topics/schema.md 的「row 上的 getter」
   function attachGetters<Row extends { id: string }> (table: TableKey, row: Row): Row {
-    // 刻意以不帶 Row 的 TableSchema 接收，否則 value 的參數成為所有 Row 的交集
-    const schema: TableSchema = schemas[table]
+    // 刻意以不帶 Row 的 AnyTableSchema 接收，否則 value 的參數成為所有 Row 的交集
+    const schema: AnyTableSchema = schemas[table]
 
     for (const column of schema.virtualColumns ?? []) {
       defineGetter(row, column.key, () => column.value(row))

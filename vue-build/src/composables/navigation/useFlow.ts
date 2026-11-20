@@ -1,5 +1,5 @@
 import type { OpenFormOptions } from '@/composables/shell/useFormLayers'
-import type { TableKey } from '@/schema'
+import type { RealTableKey } from '@/schema'
 import { notify } from '@/composables/shell/useDialogs'
 import { leaveKeptEntry, openForm } from '@/composables/shell/useFormLayers'
 import { useTablesStore } from '@/stores/tables'
@@ -16,7 +16,7 @@ export class FlowCancelled extends Error {
 let stepsTaken = 0
 
 // 開啟表單，等待送出成功，回傳新增或修改後的列
-export async function runStep<Row extends object> (table: TableKey, options: OpenFormOptions = {}): Promise<Row> {
+export async function runStep<Row extends object> (table: RealTableKey, options: OpenFormOptions = {}): Promise<Row> {
   const later = stepsTaken > 0
   stepsTaken++
 

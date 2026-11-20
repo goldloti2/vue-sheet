@@ -1,4 +1,4 @@
-import type { TableKey } from '@/schema'
+import type { RealTableKey } from '@/schema'
 import type { TableSchema } from '@/schema/types'
 import type { Component } from 'vue'
 import { shallowRef } from 'vue'
@@ -25,7 +25,7 @@ export function markerOf (state: Record<string, unknown>, fullPath: string): Lay
 // 新增或編輯一列的表單，有 id 時為編輯
 export interface FormView {
   kind: 'form'
-  table: TableKey
+  table: RealTableKey
   id?: string
   defaults?: Record<string, unknown>
   order?: readonly string[]

@@ -76,6 +76,7 @@ interface PageAction {
 - 有預設外觀的 builder，最後一個參數一律為 `look`（`ActionLook`，`{ label?, icon? }`）。省略時使用預設的文字與圖示
 - 行為的設定（`newAction` 的 `{ defaults, lockId }`、刪除的 `onDone`）放在 `look` 之前。只更換外觀時，該參數傳入 `{}` 或 `undefined`
 - `quickEditAction` 與 `setFieldAction` 沒有預設外觀：`label` 與 `icon` 為必填，與其他設定放在同一個物件中
+- 修改資料的 builder 的 `table` 只接受真實表（`RealTableKey`），傳入虛擬表時型別檢查報錯（見 [schema.md](schema.md#虛擬表)）。`goToRefAction` 與 `openUrlAction` 接受任何一張表
 
 | 函數 | 回傳 | 說明 |
 | --- | --- | --- |
@@ -113,6 +114,7 @@ interface PageAction {
 - **動作屬於其所在資料的那張表**（對照 AppSheet）：
   - 詳細頁本身的 FAB、App Bar 與欄位動作，屬於這一頁的表
   - 子表區塊與子表列表中的動作（例如「新增」）屬於子表，以子表的 `use表名Actions` 帶入父列的預設值
+- **虛擬表的 `use表名Actions` 沒有寫入的動作**：範本為 [template/table/virtual/use__Table__Actions.ts](../../template/table/virtual/use__Table__Actions.ts)。虛擬表只有不修改資料的動作，例如 `goToRefAction`、`openUrlAction`
 - **一張表的 `use表名Actions` 不呼叫其他表的 `use表名Actions`**：須對其他表操作時（例如從訂單的詳細頁，為它的第一列明細新增出貨單），以內建 builder（例如 `newAction`）在自己的 `use表名Actions` 中組出，透過 ref 的 getter 讀取所需的資料
 
 取用方式見範本：

@@ -26,6 +26,7 @@ const { row, loading, error } = useTableRow<OrderRow>('order', id)              
 
 - **型別轉換只發生在 `fetchTable` 這一處**：後端的形狀為 `Record<string, string>`，前端的形狀為已轉換型別的 Row（`Date`、`number`、`null`）
 - **關聯的表一起載入**：ref 欄位指向的父表（虛擬的 ref 也包括在內），以及指向此表的子表
+- **虛擬表不抓取資料**：store 於來源表皆已載入時，由規則產生虛擬表的列，存入同一份快取。規則讀取的資料改變時，store 立即重新產生整張虛擬表（見 [schema.md](schema.md#虛擬表)）
 - **所有的表於背景載入**：首次導覽完成後，第一次位於須登入的頁面時，`AppShell` 呼叫 `store.preloadAll()`。已載入與載入中的表不重複抓取。載入失敗的表記錄錯誤，與一般的載入相同
 - **沒有「只重新抓取一張表」的 API**。重新抓取即整個 App 一起重新抓取，經由同步按鈕
 - **已有資料的表重新抓取時，`loading` 維持為否**：畫面保留原本的列，抓取完成後直接換成新的列。尚無資料的表（第一次載入、載入失敗）於抓取時 `loading` 為真
@@ -47,6 +48,8 @@ store.update(table, id, values)  // 回傳更新後的那一列，values 可以�
 store.remove(table, id)          // 從快取移除
 store.removeMany(table, ids)     // 從快取移除多列
 ```
+
+四個 action 只接受真實表。傳入虛擬表時拋出錯誤，不修改快取與佇列。
 
 **這四個 action 皆為同步**：只修改快取與待推送佇列，不使用網路。實際送出由 `flush()` 負責，在使用者按下同步按鈕時觸發。
 

@@ -109,6 +109,7 @@ export const orderSchema: TableSchema<OrderRow> = {
 
 - **真實欄位**（`columns`）：Sheet 上實際存在的欄位，可編輯
 - **虛擬欄位**（`virtualColumns`）：不存在於 Sheet 上，讀取時才計算。來源可以是這一列本身（例如價格加手續費），也可以是子列（例如父表以第一列子列的名稱作為標題、子列金額的加總）
+- **規則欄位**（虛擬表的 `columns`）：虛擬表的欄位，值由規則填入（見「[虛擬表](#虛擬表)」）
 
 虛擬欄位除了不能編輯，其餘都與真實欄位相同：
 - 可以顯示、排序、分組
@@ -316,6 +317,67 @@ Sheet 上的資料來源只有子表的 ref 欄位一份。父列上的陣列在
 
 ---
 
+## 虛擬表
+
+虛擬表為唯讀的表。虛擬表的列不在 Sheet 上，由規則從真實表產生。寫法見範本 [template/table/virtual/schema.ts](../../template/table/virtual/schema.ts)。
+
+- **宣告**：schema 宣告為 `VirtualTableSchema<Row>`，與真實表同樣登記於 `schemas`。建議登記於真實表之後。
+- **真實表**：沒有 `rules` 的表。型別 `RealTableKey` 為真實表的代稱，`VirtualTableKey` 為虛擬表的代稱。兩者皆由 `schemas` 推導，無須另外登記。
+- **後端**：虛擬表不經過後端。`Config.gs` 不登記虛擬表，本地測試也沒有虛擬表的 CSV。
+
+### 規則
+
+`rules` 中的每一條規則有三項設定：
+
+| 設定 | 說明 |
+| --- | --- |
+| `table` | 來源表，只能是真實表 |
+| `when` | 條件，接收來源表的一列。省略時每一列皆符合 |
+| `values` | 規則欄位的值，以欄位的 key 為屬性名。值為常數，或接收來源列並回傳值的函數 |
+
+- 來源表的每一列，每符合一條規則即產生一列。一列來源列符合多條規則時，產生多列。
+- 規則沒有指定的欄位為 null。
+- `when` 與 `values` 的參數型別依 `table` 推導。
+- 規則可讀取來源列的 getter，例如父列的 `$欄位key`。store 載入虛擬表時，一併載入來源表與來源表關聯的表。
+- 規則讀取的資料改變時，store 立即重新產生整張虛擬表。資料屬於其他表時，store 同樣重新產生。
+- 規則不可讀取會讀回此虛擬表的欄位，例如讀取 `$虛擬表_欄位key` 的虛擬欄位。這種讀取形成循環。
+
+### 規則欄位與虛擬欄位
+
+- **規則欄位**：`columns` 中的欄位，值由規則填入。規則欄位只有 `key`、`label`、`type`、`showIf` 與型別本身的設定。ref 只有 `refTable`。
+- **虛擬欄位**：用法與真實表的虛擬欄位相同。
+- 各規則不同的值寫於規則的 `values`，例如依規則讀取不同欄位的金額。
+- 各規則相同的計算，以及須讀取同一列其他欄位的計算，寫成虛擬欄位。
+- 顯示、搜尋、篩選、排序、分組與圖表的用法與真實表相同。
+
+### id 與原始順序
+
+- **id**：「來源列的 id-規則的序號」，序號從 1 起算，例如 `TPL-11eef1a8-2`。規則與資料不變時，id 不變。
+- **原始順序**：依 `columns` 的順序逐欄升冪比較，略過 image。比較方式與排序相同。
+- `defaultSort` 與排序面板的排序疊加於原始順序之上。原始順序的作用與真實表在 Sheet 上的順序相同。
+
+### 虛擬表的關聯
+
+- 虛擬表的 ref 欄位與真實表的 ref 欄位相同。虛擬表的列以 `row.$欄位key` 讀取父列，父列以 `row.$虛擬表_欄位key` 讀取虛擬表的列。
+- 真實表的 ref 欄位不可指向虛擬表。`schema/relations.ts` 於載入時檢查，ref 欄位指向虛擬表時拋出錯誤。
+- 來源列被刪除時，store 重新產生虛擬表，對應的列隨之消失。連帶刪除與 `onEmpty` 不處理虛擬表的列。
+
+### 唯讀
+
+- 寫入的動作只接受 `RealTableKey`，包括 `newAction`、`editAction`、`copyAction`、`deleteAction`、`bulkDeleteAction`、`quickEditAction`、`setFieldAction`。
+- 表單與 `openForm` 只接受 `RealTableKey`。虛擬表沒有表單，因此沒有 `idColumn`、`newId` 與 `formOrder`。
+- store 的 `create`、`update`、`remove`、`removeMany` 遇到虛擬表時拋出錯誤，不修改快取與佇列。
+- 詳細頁的快速編輯（`editable`）不作用於虛擬表。
+
+### 虛擬表的載入
+
+- 虛擬表本身不抓取資料。來源表皆已載入時，store 產生虛擬表的列。
+- 任一張來源表載入中時，虛擬表為載入中。
+- 任一張來源表載入失敗時，虛擬表同樣為載入失敗。錯誤訊息寫出來源表的名稱。
+- 同步按鈕只重新抓取真實表。虛擬表隨來源表重新產生。
+
+---
+
 ## 驗證
 
 | | 檢查的內容 | 位置 |
@@ -388,6 +450,7 @@ select 的 `allowCustom`：改為 `v-combobox`，`options` 只是建議，輸入
 - `sort.ts`：`sortRows`、`sortableColumns`
 - `group.ts`：`groupRows`、`flattenGroups`
 - `filter.ts`：`Filters` 與比對
+- `virtual.ts`：虛擬表的規則產生列
 - `validation.ts`、`relations.ts`、`image.ts`
 
 這些函數皆不使用 reactivity。`composables/data/` 中的 `useFilter`、`useTable` 只是把它們包裝成 computed。
@@ -402,7 +465,7 @@ select 的 `allowCustom`：改為 `v-combobox`，`options` 只是建議，輸入
 ## 擴充欄位型別
 
 - `ColumnTypes` 定義每種 `type` 的值型別與專屬設定
-- `ColumnBase` 為共同的骨架。`SchemaColumn` 疊加 Sheet 與表單的設定，`VirtualColumn` 疊加 `value`
+- `ColumnBase` 為共同的骨架。`SchemaColumn` 疊加 Sheet 與表單的設定，`VirtualColumn` 疊加 `value`，`RuleColumn` 為虛擬表的規則欄位
 
 新增一種型別至少須修改四處：`ColumnTypes`、`coerceValue`、`formatColumnValue`（顯示與寫回 Sheet 兩種文字）、`DataForm`。真實欄位與虛擬欄位即自動支援。須進入篩選抽屜或須特別的排序時，另外修改 `schema/filter.ts`、`FilterPanel` 與 `schema/sort.ts`。
 
@@ -410,7 +473,7 @@ select 的 `allowCustom`：改為 `v-combobox`，`options` 只是建議，輸入
 
 ## 已知缺口
 
-`refTable` 只存放代稱字串，沒有型別檢查它是否確實存在於 `schemas`。
+`refTable` 只存放代稱字串，沒有型別檢查它是否確實存在於 `schemas`。真實表的 `refTable` 指向虛擬表時，`schema/relations.ts` 於載入時拋出錯誤，型別檢查不報錯。
 
 **主鍵建立後不能修改**。實作修改主鍵時，記著舊 id 的地方皆須一併替換：
 - 子列的 ref：沿著關聯圖連帶更新為新 id，類似連帶刪除。子表的主鍵本身為 ref 時，須遞迴處理

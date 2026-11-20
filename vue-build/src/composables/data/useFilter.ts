@@ -1,5 +1,5 @@
 import type { Filters } from '@/schema/filter'
-import type { TableSchema } from '@/schema/types'
+import type { AnyTableSchema } from '@/schema/types'
 import type { ComputedRef, MaybeRefOrGetter } from 'vue'
 import { computed, toValue } from 'vue'
 import { rowMatcher } from '@/schema/filter'
@@ -8,7 +8,7 @@ import { rowMatcher } from '@/schema/filter'
 export function useFilter<Row extends object> (
   filters: MaybeRefOrGetter<Filters>,
   rows: MaybeRefOrGetter<readonly Row[]>,
-  schema: TableSchema,
+  schema: AnyTableSchema,
 ): ComputedRef<Row[]> {
   return computed(() => {
     const matches = rowMatcher(toValue(filters), schema)

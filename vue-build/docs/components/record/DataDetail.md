@@ -27,7 +27,7 @@ schema 的 `virtualColumns`（見 [schema.md](../../topics/schema.md#欄位)）�
 
 | prop | 型別 | 說明 |
 | --- | --- | --- |
-| `schema` | `TableSchema` | **必填** |
+| `schema` | `AnyTableSchema` | **必填**。真實表與虛擬表皆可 |
 | `row` | `Row \| null` | **必填**。`null` 時只顯示欄位名稱，值留白，也沒有欄位的動作。dashboard 的詳細面板尚未選取時，由 `DetailPage` 使用 |
 | `order` | `RowKey<Row>[]?` | 這一頁的欄位順序，覆寫 schema 的 `detailOrder`。未列出的欄位不顯示 |
 | `fieldActions` | `FieldActions<Row>?` | 欄位 key → `(row) => PageAction \| null`，每一欄一個 |
@@ -38,7 +38,7 @@ schema 的 `virtualColumns`（見 [schema.md](../../topics/schema.md#欄位)）�
 
 `editable` 列出的欄位不顯示文字，直接以輸入元件（[InlineField](InlineField.md)）呈現。修改後即以 `store.update` 寫入，不經過編輯頁。
 
-- **只限真實欄位**：主鍵與虛擬欄位即使列出，仍顯示為文字
+- **只限真實表的真實欄位**：主鍵、虛擬欄位與虛擬表的欄位即使列出，仍顯示為文字
 - **寫入的時機**：打字類的欄位在焦點離開或按 Enter 時寫入，長文只在焦點離開時寫入。其餘欄位一修改就寫入。驗證不通過時不寫入，錯誤顯示於欄位下方（細節見 [InlineField](InlineField.md)）
 - **與欄位動作並存**：同一欄有 `fieldActions` 時，動作的圖示接在輸入元件右側
 - **切換到另一列時重新建立**：未寫入的值先寫回原本那一列

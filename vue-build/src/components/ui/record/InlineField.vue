@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-  import type { TableKey } from '@/schema'
+  import type { RealTableKey } from '@/schema'
   import type { SchemaColumn, TableSchema } from '@/schema/types'
   import { computed, onBeforeUnmount, ref, watch } from 'vue'
   import FieldInput from '@/components/ui/record/FieldInput.vue'
@@ -8,7 +8,7 @@
 
   // 詳細頁的快速編輯：一欄直接顯示為輸入元件，修改後寫入 store（寫入時機見 docs/components/record/InlineField.md）
   const props = defineProps<{
-    table: TableKey
+    table: RealTableKey
     schema: TableSchema
     row: { id: string }
     column: SchemaColumn

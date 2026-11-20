@@ -2,7 +2,7 @@
   import type { FieldActions, PageAction } from '@/composables/actions/useTableActions'
   import type { DetailFieldLayout } from '@/config/app'
   import type { TableKey } from '@/schema'
-  import type { RowKey, TableSchema } from '@/schema/types'
+  import type { AnyTableSchema, RowKey } from '@/schema/types'
   import type { RowView } from '@/schema/view'
   import { computed, watch } from 'vue'
   import { Touch as vTouch } from 'vuetify/directives'
@@ -25,7 +25,7 @@
   const props = defineProps<{
     table: TableKey
     id: string
-    schema: TableSchema
+    schema: AnyTableSchema
     row: Row | null
     loading?: boolean
     error?: string | null

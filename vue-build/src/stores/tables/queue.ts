@@ -1,4 +1,4 @@
-import type { TableKey } from '@/schema'
+import type { RealTableKey } from '@/schema'
 import type { BatchOperation } from '@/services/appScript'
 import { computed, reactive, shallowRef } from 'vue'
 import { schemas } from '@/schema'
@@ -16,15 +16,15 @@ export type TableQueue = Map<string, PendingOp>
 
 // 待推送內容的單一資料來源與推送狀態。流程存檔點由呼叫端以 snapshot、restore 處理
 export function createQueue () {
-  const pending = reactive(new Map<TableKey, TableQueue>())
+  const pending = reactive(new Map<RealTableKey, TableQueue>())
   // 送出中或上次未寫入的一批。推送期間的修改另存於 pending，下一次推送開始時才併入
-  const sending = reactive(new Map<TableKey, TableQueue>())
+  const sending = reactive(new Map<RealTableKey, TableQueue>())
   const flushing = shallowRef(false)
   const flushError = shallowRef<string | null>(null)
   // 推送時作為 since 比對的檔案修改時間，為快取中各表的時間中最舊的一個
   const knownModifiedTime = shallowRef<string | null>(null)
   // 快取中每張表的資料所對應的檔案修改時間
-  const tableTimes = new Map<TableKey, string>()
+  const tableTimes = new Map<RealTableKey, string>()
   // 發生衝突（Sheet 已被別處修改）。佇列保留，等待使用者選擇處理方式
   const conflict = shallowRef(false)
   // 加入操作的次數，供計時推送判斷最後一次修改
@@ -41,7 +41,7 @@ export function createQueue () {
     return false
   })
 
-  function queueFor (queues: Map<TableKey, TableQueue>, table: TableKey): TableQueue {
+  function queueFor (queues: Map<RealTableKey, TableQueue>, table: RealTableKey): TableQueue {
     const existing = queues.get(table)
     if (existing) {
       return existing
@@ -72,24 +72,24 @@ export function createQueue () {
   }
 
   // 只保留 schema 中真實欄位的值
-  function enqueue (table: TableKey, id: string, kind: PendingOp['kind'], values: Record<string, unknown>) {
+  function enqueue (table: RealTableKey, id: string, kind: PendingOp['kind'], values: Record<string, unknown>) {
     edits.value++
     const columns = schemas[table].columns.filter(column => column.key in values)
     merge(queueFor(pending, table), id, kind, Object.fromEntries(columns.map(column => [column.key, values[column.key]])))
   }
 
   // 此列尚未推送的操作種類，沒有時為 undefined。推送期間的修改優先
-  function kindOf (table: TableKey, id: string): PendingOp['kind'] | undefined {
+  function kindOf (table: RealTableKey, id: string): PendingOp['kind'] | undefined {
     return pending.get(table)?.get(id)?.kind ?? sending.get(table)?.get(id)?.kind
   }
 
   // 一張表尚未推送的操作，sending 在前、pending 在後，各自依加入的先後。供重新抓取後蓋回快取
-  function opsOf (table: TableKey): [string, PendingOp][] {
+  function opsOf (table: RealTableKey): [string, PendingOp][] {
     return [...sending.get(table) ?? [], ...pending.get(table) ?? []]
   }
 
   // 套用一張表的抓取結果時呼叫。since 刻意取各表中最舊的時間：較新的表不得掩蓋較舊的表讀取之後的寫入
-  function recordFetch (table: TableKey, modifiedTime: string): void {
+  function recordFetch (table: RealTableKey, modifiedTime: string): void {
     tableTimes.set(table, modifiedTime)
     let oldest = modifiedTime
     for (const time of tableTimes.values()) {
@@ -172,11 +172,11 @@ export function createQueue () {
   }
 
   // 供流程存檔點使用：保留目前的 pending，之後原樣還原。流程進行中不推送，sending 不受流程影響
-  function snapshot (table: TableKey): TableQueue {
+  function snapshot (table: RealTableKey): TableQueue {
     return new Map(queueFor(pending, table))
   }
 
-  function restore (table: TableKey, saved: TableQueue): void {
+  function restore (table: RealTableKey, saved: TableQueue): void {
     pending.set(table, saved)
   }
 

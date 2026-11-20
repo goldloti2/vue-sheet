@@ -1,5 +1,5 @@
 import type { TableKey } from '@/schema'
-import type { SortSpec, TableSchema } from '@/schema/types'
+import type { AnyTableSchema, SortSpec } from '@/schema/types'
 import type { MaybeRefOrGetter } from 'vue'
 import { computed, toValue, watchEffect } from 'vue'
 import { sortRows } from '@/schema/sort'
@@ -24,7 +24,7 @@ export function useTableList<Row> (table: MaybeRefOrGetter<TableKey>) {
 
 export function useSortedTableList<Row> (
   table: MaybeRefOrGetter<TableKey>,
-  schema: TableSchema,
+  schema: AnyTableSchema,
   // 使用者於排序面板選擇的排序。省略時只依 schema.defaultSort
   sort?: MaybeRefOrGetter<SortSpec[] | null>,
 ) {

@@ -1,7 +1,7 @@
 import type { ListControls } from '@/composables/shell/useListControls'
 import type { TableKey } from '@/schema'
 import type { Filters } from '@/schema/filter'
-import type { SortSpec, TableSchema } from '@/schema/types'
+import type { AnyTableSchema, SortSpec } from '@/schema/types'
 import type { ComputedRef, InjectionKey, Ref } from 'vue'
 import { computed, effectScope, inject, provide, ref, shallowReactive } from 'vue'
 import { useSortedTableList } from '@/composables/data/useTable'
@@ -18,7 +18,7 @@ export interface SharedTable<Row = object> {
 export interface SharedListControls {
   query: Ref<string>
   // 取得此表共用的部分，由第一個加入的列表建立
-  join: <Row>(table: TableKey, schema: TableSchema) => SharedTable<Row>
+  join: <Row>(table: TableKey, schema: AnyTableSchema) => SharedTable<Row>
 }
 
 const sharedListControlsKey: InjectionKey<SharedListControls> = Symbol('sharedListControls')
@@ -26,11 +26,11 @@ const sharedListControlsKey: InjectionKey<SharedListControls> = Symbol('sharedLi
 // TabPage、DashboardPage 與 DashboardPanel 的共用控制（見 docs/topics/search.md 的「同一頁面中的多張表」）。回傳交給 App Bar 的值，由容器登記
 export function provideSharedListControls (current?: Readonly<Ref<string>>): ComputedRef<ListControls | null> {
   const query = ref('')
-  const tables = shallowReactive(new Map<TableKey, SharedTable & { schema: TableSchema }>())
+  const tables = shallowReactive(new Map<TableKey, SharedTable & { schema: AnyTableSchema }>())
   // 共用的部分屬於容器，不隨第一個加入的列表卸載而停止
   const scope = effectScope()
 
-  function join<Row> (table: TableKey, schema: TableSchema): SharedTable<Row> {
+  function join<Row> (table: TableKey, schema: AnyTableSchema): SharedTable<Row> {
     let shared = tables.get(table)
     if (!shared) {
       shared = scope.run(() => {

@@ -1,5 +1,5 @@
 import type { ColumnFilter, Filters } from './filter'
-import type { AnyColumn, ColorName, ColumnKey, RowKey, TableSchema } from './types'
+import type { AnyColumn, AnyTableSchema, ColorName, ColumnKey, RowKey } from './types'
 import { isActiveFilter, matchesFilter } from './filter'
 import { sortRows } from './sort'
 import { booleanText, columnSeparator, durationSeconds, findColumn, formatDate, formatDuration, formatNumber } from './types'
@@ -332,7 +332,7 @@ interface LooseInput {
 }
 
 // 型別檢查不到的規則，開發模式下以 console 警告
-function checkInput (schema: TableSchema, input: LooseInput): void {
+function checkInput (schema: AnyTableSchema, input: LooseInput): void {
   const warn = (message: string) => console.warn(`defineChart（${schema.tableLabel}）：${message}`)
 
   function column (key: string, allowed: ReadonlySet<string>, role: string): AnyColumn | undefined {
@@ -569,7 +569,7 @@ function declaredValues (column: AnyColumn): string[] {
 }
 
 // 依分組本身排序。「(空白)」一律排在最後
-function groupBuckets<Row> (schema: TableSchema, rows: readonly Row[], column: AnyColumn, group: ChartGroup<AnyRow>): Bucket<Row>[] {
+function groupBuckets<Row> (schema: AnyTableSchema, rows: readonly Row[], column: AnyColumn, group: ChartGroup<AnyRow>): Bucket<Row>[] {
   const blank: Row[] = []
   const direction = group.order?.direction ?? 'asc'
   let buckets: Bucket<Row>[]
@@ -735,7 +735,7 @@ function valueDatasets<Row> (value: Value, column: AnyColumn | undefined, bucket
 }
 
 // 依 group 分組。沒有 group 時（只有 stat），全部的列為一組，名稱為空字串。分組欄不存在時為 null
-function categoryBuckets<Row> (schema: TableSchema, input: CategoryInput, rows: readonly Row[], rankOf: (buckets: Bucket<Row>[]) => (bucket: Bucket<Row>) => number): Bucket<Row>[] | null {
+function categoryBuckets<Row> (schema: AnyTableSchema, input: CategoryInput, rows: readonly Row[], rankOf: (buckets: Bucket<Row>[]) => (bucket: Bucket<Row>) => number): Bucket<Row>[] | null {
   if (!input.group) {
     return [{ label: '', filter: null, rows: [...rows] }]
   }
@@ -747,7 +747,7 @@ function categoryBuckets<Row> (schema: TableSchema, input: CategoryInput, rows: 
   return orderAndLimit(buckets, input as GroupedInput, rankOf(buckets), groupColumn.key)
 }
 
-function computeCategory<Row> (schema: TableSchema, input: CategoryInput, rows: readonly Row[]): ChartData<Row> {
+function computeCategory<Row> (schema: AnyTableSchema, input: CategoryInput, rows: readonly Row[]): ChartData<Row> {
   const values = input.values as Value[]
   const columns = values.map(value => value.key ? findColumn(schema, value.key) : undefined)
   // 排序與 limit 依第一個數值。自訂的統計此時依分組本身的順序取得 index 與 groups。只在用到時計算
@@ -784,7 +784,7 @@ function computeCategory<Row> (schema: TableSchema, input: CategoryInput, rows: 
   }
 }
 
-function computePoints<Row> (schema: TableSchema, input: ScatterChart<AnyRow> | BubbleChart<AnyRow>, rows: readonly Row[]): ChartData<Row> {
+function computePoints<Row> (schema: AnyTableSchema, input: ScatterChart<AnyRow> | BubbleChart<AnyRow>, rows: readonly Row[]): ChartData<Row> {
   const xColumn = findColumn(schema, input.x)
   const yColumn = findColumn(schema, input.y)
   const rColumn = input.type === 'bubble' ? findColumn(schema, input.r) : undefined
@@ -817,7 +817,7 @@ function computePoints<Row> (schema: TableSchema, input: ScatterChart<AnyRow> | 
   }
 }
 
-export function defineChart<Row extends object> (schema: TableSchema<Row>, input: ChartInput<Row>): ChartDefinition<Row> {
+export function defineChart<Row extends object> (schema: AnyTableSchema<Row>, input: ChartInput<Row>): ChartDefinition<Row> {
   if (import.meta.env.DEV) {
     checkInput(schema, input as LooseInput)
   }

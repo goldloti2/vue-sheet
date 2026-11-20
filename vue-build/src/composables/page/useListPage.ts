@@ -1,6 +1,6 @@
 import type { TableKey } from '@/schema'
 import type { Filters } from '@/schema/filter'
-import type { SortSpec, TableSchema } from '@/schema/types'
+import type { AnyTableSchema, SortSpec } from '@/schema/types'
 import type { Ref } from 'vue'
 import { computed, ref } from 'vue'
 import { useFilter } from '@/composables/data/useFilter'
@@ -25,7 +25,7 @@ export interface ListPageOptions<Row> {
 // 列表頁的資料層：整表 → scope（含 dashboard 面板的輸入）→ 篩選 → 搜尋，以及多選（見 docs/components/page/ListPage.md）
 export function useListPage<Row extends { id: string }> (
   table: TableKey,
-  schema: TableSchema,
+  schema: AnyTableSchema,
   options: ListPageOptions<Row> = {},
 ) {
   const shared = options.search === false ? null : useSharedListControls()
@@ -55,7 +55,7 @@ export function useListPage<Row extends { id: string }> (
 }
 
 // 不在容器內時：自行建立排序、篩選與搜尋字串，並自行登記
-function ownControls<Row extends { id: string }> (table: TableKey, schema: TableSchema, options: ListPageOptions<Row>) {
+function ownControls<Row extends { id: string }> (table: TableKey, schema: AnyTableSchema, options: ListPageOptions<Row>) {
   // 使用者選擇的單欄排序，null 表示 schema.defaultSort。defaultSort 一律作為次要排序
   const sort = ref<SortSpec | null>(null)
   const { data: allRows, loading, error } = useSortedTableList<Row>(table, schema, () => sort.value ? [sort.value] : null)

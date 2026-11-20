@@ -1,5 +1,5 @@
 import type { AskFieldsOptions } from '@/composables/shell/useAskFields'
-import type { TableKey } from '@/schema'
+import type { RealTableKey, TableKey } from '@/schema'
 import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue'
 import { mdiChevronRightCircleOutline, mdiContentCopy, mdiDelete, mdiOpenInNew, mdiPencil, mdiPlus } from '@mdi/js'
 import { computed, toValue } from 'vue'
@@ -58,7 +58,7 @@ export interface NewActionOptions {
   lockId?: boolean
 }
 
-export function newAction (table: TableKey, options: NewActionOptions = {}, look: ActionLook = {}): PageAction {
+export function newAction (table: RealTableKey, options: NewActionOptions = {}, look: ActionLook = {}): PageAction {
   const { defaults, lockId } = options
 
   return {
@@ -69,7 +69,7 @@ export function newAction (table: TableKey, options: NewActionOptions = {}, look
   }
 }
 
-export function editAction (table: TableKey, row: { id: string }, look: ActionLook = {}): PageAction {
+export function editAction (table: RealTableKey, row: { id: string }, look: ActionLook = {}): PageAction {
   return {
     key: 'edit',
     label: look.label ?? '編輯',
@@ -79,7 +79,7 @@ export function editAction (table: TableKey, row: { id: string }, look: ActionLo
 }
 
 // 確認後複製一列：主鍵重新發號，其餘真實欄位照抄，完成後前往新的一列。子列不複製。表沒有 newId 時為 null
-export function copyAction (table: TableKey, row: { id: string }, look: ActionLook = {}): PageAction | null {
+export function copyAction (table: RealTableKey, row: { id: string }, look: ActionLook = {}): PageAction | null {
   const schema = schemas[table]
   if (!schema.newId) {
     return null
@@ -101,7 +101,7 @@ export function copyAction (table: TableKey, row: { id: string }, look: ActionLo
 }
 
 // 刪除的列為目前詳細頁所顯示的列時，自動離開詳細頁。onDone 用於其他額外的處理
-export function deleteAction (table: TableKey, row: { id: string }, onDone?: () => void, look: ActionLook = {}): PageAction {
+export function deleteAction (table: RealTableKey, row: { id: string }, onDone?: () => void, look: ActionLook = {}): PageAction {
   return {
     key: 'delete',
     label: look.label ?? '刪除',
@@ -117,7 +117,7 @@ export function deleteAction (table: TableKey, row: { id: string }, onDone?: () 
   }
 }
 
-export function bulkDeleteAction (table: TableKey, ids: ReadonlySet<string>, onDone?: () => void, look: ActionLook = {}): PageAction | null {
+export function bulkDeleteAction (table: RealTableKey, ids: ReadonlySet<string>, onDone?: () => void, look: ActionLook = {}): PageAction | null {
   if (ids.size === 0) {
     return null
   }
@@ -144,7 +144,7 @@ export interface QuickEditOptions {
 
 // 將選取的列的指定欄位改為同一個值。只選取一列時對話框顯示該列的現值，否則使用 defaults
 export function quickEditAction<Row extends { id: string }> (
-  table: TableKey,
+  table: RealTableKey,
   keys: (keyof Row & string)[],
   ids: ReadonlySet<string>,
   options: QuickEditOptions,
@@ -215,7 +215,7 @@ export interface SetFieldOptions {
 
 // 立即型：將此欄改為某個值。value 為函式，於點選時求值（例如 () => new Date()）
 export function setFieldAction (
-  table: TableKey,
+  table: RealTableKey,
   row: { id: string },
   key: string,
   value: () => unknown,

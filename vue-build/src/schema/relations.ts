@@ -1,5 +1,7 @@
-import type { TableKey } from './index'
+import type { RealTableKey, TableKey } from './index'
 import { schemas } from './index'
+import { isVirtualSchema } from './types'
+import { checkVirtualSchema } from './virtual'
 
 export interface Relation {
   childTable: TableKey
@@ -11,15 +13,28 @@ export interface Relation {
   onEmpty?: 'delete'
 }
 
-// 由所有 schema 的 ref 欄位自動算出關聯。新增關聯時只須在 schema 中標示 type: 'ref'
+// 已登記且不是虛擬表
+export function isRealTable (table: string): table is RealTableKey {
+  return table in schemas && !isVirtualSchema(schemas[table as TableKey])
+}
+
+// 由所有 schema 的 ref 欄位自動算出關聯。新增關聯時只須在 schema 中標示 type: 'ref'。真實表的 ref 指向虛擬表時拋出錯誤
 export const relations: Relation[] = Object.entries(schemas).flatMap(([table, schema]) => {
   const childTable = table as TableKey
   const result: Relation[] = []
 
+  if (isVirtualSchema(schema)) {
+    checkVirtualSchema(table, schema, isRealTable)
+  }
+
   for (const column of schema.columns) {
-    if (column.type === 'ref') {
-      result.push({ childTable, column: column.key, parentTable: column.refTable as TableKey, onDelete: column.onDelete, onEmpty: column.onEmpty })
+    if (column.type !== 'ref') {
+      continue
     }
+    if (!isVirtualSchema(schema) && column.refTable in schemas && !isRealTable(column.refTable)) {
+      throw new Error(`${table}.${column.key} 的 refTable "${column.refTable}" 為虛擬表，真實表的 ref 只能指向真實表`)
+    }
+    result.push({ childTable, column: column.key, parentTable: column.refTable as TableKey, onDelete: column.onDelete, onEmpty: column.onEmpty })
   }
 
   return result

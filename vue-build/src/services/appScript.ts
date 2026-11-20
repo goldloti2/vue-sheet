@@ -3,7 +3,7 @@
 // 未設定 VITE_APPS_SCRIPT_URL 時使用 mock/ 中的假後端，兩者回傳的形狀相同
 
 import type { ApiResponse, BatchOperation, LoginCredentials, TableData } from './types'
-import type { TableKey } from '@/schema'
+import type { RealTableKey } from '@/schema'
 import { schemas } from '@/schema'
 import { coerceRow } from '@/schema/types'
 import { clearToken, setToken, token } from './auth/token'
@@ -94,7 +94,7 @@ async function request<T> (label: string, shown: unknown, run: () => Promise<T>,
 }
 
 // GET：回傳整張表與檔案的 modifiedTime（推送時作為 since）。後端的字串於回傳前依 schema 轉型
-export async function fetchTable<Row> (table: TableKey): Promise<{ rows: Row[], modifiedTime: string }> {
+export async function fetchTable<Row> (table: RealTableKey): Promise<{ rows: Row[], modifiedTime: string }> {
   // trace 記錄的是轉型前的字串，即後端實際的回應
   const { rows, modifiedTime } = await request<TableData>(`GET ${table}`, { table }, async () => {
     if (API_URL) {

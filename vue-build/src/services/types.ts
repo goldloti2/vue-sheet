@@ -1,12 +1,12 @@
 // Apps Script Web App API
 
-import type { TableKey } from '@/schema'
+import type { RealTableKey } from '@/schema'
 
 export type SheetAction = 'create' | 'update' | 'delete'
 
 // 一次推送中的一個操作。update 的 values 只含修改過的欄位（見 docs/topics/store.md）
 export interface BatchOperation {
-  table: TableKey
+  table: RealTableKey
   kind: SheetAction
   id: string
   values?: Record<string, string>

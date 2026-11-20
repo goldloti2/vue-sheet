@@ -1,4 +1,4 @@
-import type { TableKey } from '@/schema'
+import type { RealTableKey } from '@/schema'
 import type { TableSchema } from '@/schema/types'
 import type * as Backend from '@/services/mock/backend'
 import { createPinia, setActivePinia } from 'pinia'
@@ -17,7 +17,7 @@ export async function freshBackend (): Promise<typeof Backend> {
 }
 
 // 假後端中一張表的一列，值為 Sheet 上的字串
-export function sheetRow (backend: typeof Backend, table: TableKey, id: string) {
+export function sheetRow (backend: typeof Backend, table: RealTableKey, id: string) {
   const header = idHeader((schemas as Record<string, TableSchema>)[table]!)
   return backend.mockList(table).rows.find(row => row[header] === id)
 }

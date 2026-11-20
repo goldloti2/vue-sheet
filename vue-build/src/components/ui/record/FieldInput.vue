@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-  import type { TableKey } from '@/schema'
+  import type { RealTableKey, TableKey } from '@/schema'
   import type { SchemaColumn, TableSchema } from '@/schema/types'
   import { computed, onBeforeUnmount, shallowRef } from 'vue'
   import FormattedValue from '@/components/ui/view/FormattedValue.vue'
@@ -54,7 +54,7 @@
 
   // ref 欄位的選項為父表整張表（共用快取）：值為 id，文字為父列的 $label，依 refSort 再依父表的 defaultSort 排序
   const refList = props.column.type === 'ref'
-    ? useTableList<{ id: string, $label: string }>(props.column.refTable as TableKey)
+    ? useTableList<{ id: string, $label: string }>(props.column.refTable as RealTableKey)
     : null
 
   // row 只在值對應到父列時存在。指向不存在的父列時，選取的值只有 id
@@ -62,14 +62,14 @@
     if (props.column.type !== 'ref' || !refList) {
       return []
     }
-    return sortRows(refList.data.value, schemas[props.column.refTable as TableKey], props.column.refSort)
+    return sortRows(refList.data.value, schemas[props.column.refTable as RealTableKey], props.column.refSort)
       .map(row => ({ id: row.id, title: row.$label, row }))
   })
 
   // 選項與選取的值皆套用父列的條件式格式，於繪製時才計算
   function refDisplay (title: string, row: object | undefined) {
     return row && props.column.type === 'ref'
-      ? labelDisplayValue(row, schemas[props.column.refTable as TableKey])
+      ? labelDisplayValue(row, schemas[props.column.refTable as RealTableKey])
       : { text: title }
   }
 
@@ -90,7 +90,7 @@
     }
 
     refMenu.value = false
-    const created = await openForm<{ id: string }>(props.column.refTable as TableKey)
+    const created = await openForm<{ id: string }>(props.column.refTable as RealTableKey)
     if (created && !unmounted) {
       refSearch.value = ''
       model.value = created.id

@@ -1,17 +1,31 @@
 import type { PendingOp, TableQueue } from './queue'
-import type { TableKey } from '@/schema'
+import type { RealTableKey, TableKey, VirtualTableKey } from '@/schema'
 import type { Relation } from '@/schema/relations'
 import { defineStore } from 'pinia'
 import { computed, reactive, shallowReactive, shallowRef, watch } from 'vue'
 import { schemas } from '@/schema'
 import { cascadeRelations, childRelations, emptyParentRelations } from '@/schema/relations'
-import { allColumns, idColumnOf } from '@/schema/types'
+import { sortBySpecs } from '@/schema/sort'
+import { allColumns, idColumnOf, isVirtualSchema } from '@/schema/types'
 import { isEmpty, validateRow } from '@/schema/validation'
+import { buildVirtualRows, sourceTables, virtualOrder } from '@/schema/virtual'
 import { fetchTable } from '@/services/appScript'
 import { createQueue } from './queue'
 import { createRowGetters } from './rowGetters'
 
 const pendingLoads = new Map<TableKey, Promise<void>>()
+
+function isVirtualTable (table: TableKey): table is VirtualTableKey {
+  return isVirtualSchema(schemas[table])
+}
+
+// 寫入前確認為真實表。虛擬表的列由規則產生，不可寫入
+function assertRealTable (table: TableKey): asserts table is RealTableKey {
+  const label = schemas[table].tableLabel
+  if (isVirtualTable(table)) {
+    throw new Error(`「${label}」為虛擬表，無法寫入`)
+  }
+}
 
 interface HasId {
   id: string
@@ -20,7 +34,7 @@ interface HasId {
 // 流程存檔點：每張表於首次改動前保留原值（快取與佇列），見 docs/topics/store.md
 interface FlowSnapshot {
   rows: Map<TableKey, unknown[] | undefined>
-  queue: Map<TableKey, TableQueue>
+  queue: Map<RealTableKey, TableQueue>
 }
 
 interface Fetched {
@@ -43,8 +57,39 @@ export const useTablesStore = defineStore('tables', () => {
 
   const canSync = computed(() => activeFlow.value === null && syncHolds.value === 0)
 
+  // 虛擬表：來源表皆已載入時由規則產生列，載入中與錯誤亦由來源表推得。sync 使寫入後立即讀取即為新的列
+  for (const table of Object.keys(schemas) as TableKey[]) {
+    const schema = schemas[table]
+    if (!isVirtualSchema(schema)) {
+      continue
+    }
+
+    const sources = sourceTables(schema)
+    const built = computed(() => {
+      if (!sources.every(source => rows[source])) {
+        return undefined
+      }
+      const created = buildVirtualRows(schema, source => rows[source] ?? []).map(row => attachGetters(table, row))
+      return sortBySpecs(created, schema, virtualOrder(schema))
+    })
+
+    watch(built, value => {
+      if (value) {
+        rows[table] = value
+      } else {
+        delete rows[table]
+      }
+    }, { flush: 'sync', immediate: true })
+    watch(() => sources.some(source => loading[source]), value => {
+      loading[table] = value
+    }, { flush: 'sync', immediate: true })
+    watch(() => sources.flatMap(source => error[source] ? [`來源表「${schemas[source].tableLabel}」：${error[source]}`] : []).join('\n') || null, value => {
+      error[table] = value
+    }, { flush: 'sync', immediate: true })
+  }
+
   // 不可同步時抓取完成的已載入表，恢復可同步時才套用。同一張表只保留最新的一次
-  const deferred = new Map<TableKey, Fetched>()
+  const deferred = new Map<RealTableKey, Fetched>()
 
   watch(canSync, value => {
     if (value) {
@@ -55,7 +100,7 @@ export const useTablesStore = defineStore('tables', () => {
   })
 
   // 抓取的列蓋上尚未推送的操作後存入快取。modifiedTime 為檔案層級的時間，由佇列記下，作為推送時的 since
-  function apply (table: TableKey, { rows: fetched, modifiedTime }: Fetched) {
+  function apply (table: RealTableKey, { rows: fetched, modifiedTime }: Fetched) {
     deferred.delete(table)
     const byId = new Map(fetched.map(row => [row.id, row]))
     for (const [id, op] of queue.opsOf(table)) {
@@ -69,7 +114,7 @@ export const useTablesStore = defineStore('tables', () => {
     queue.recordFetch(table, modifiedTime)
   }
 
-  async function load (table: TableKey) {
+  async function load (table: RealTableKey) {
     const existing = pendingLoads.get(table)
     if (existing) {
       await existing
@@ -102,11 +147,13 @@ export const useTablesStore = defineStore('tables', () => {
     }
   }
 
-  // 須一併載入的表：ref 欄位（含虛擬）指向的父表，以及指向此表的子表
+  // 須一併載入的表：ref 欄位（含虛擬）指向的父表、指向此表的子表，以及虛擬表的來源表
   function tablesNeededBy (table: TableKey): TableKey[] {
-    const parents = allColumns(schemas[table]).flatMap(column => column.type === 'ref' ? [column.refTable as TableKey] : [])
+    const schema = schemas[table]
+    const parents = allColumns(schema).flatMap(column => column.type === 'ref' ? [column.refTable as TableKey] : [])
     const children = childRelations(table).map(relation => relation.childTable)
-    return [...new Set([...parents, ...children])]
+    const sources = isVirtualSchema(schema) ? sourceTables(schema) : []
+    return [...new Set([...parents, ...children, ...sources])]
   }
 
   // 一併載入關聯的表，供 getter 與連帶刪除使用。seen 防止父子互相需要的循環
@@ -117,7 +164,7 @@ export const useTablesStore = defineStore('tables', () => {
     seen.add(table)
 
     await Promise.all([
-      table in rows ? Promise.resolve() : load(table),
+      table in rows || isVirtualTable(table) ? Promise.resolve() : load(table),
       ...tablesNeededBy(table).map(other => ensureLoaded(other, seen)),
     ])
   }
@@ -150,15 +197,15 @@ export const useTablesStore = defineStore('tables', () => {
     return true
   }
 
-  // 重新抓取已載入與載入失敗的表。載入失敗的表不在 rows 中，須另外列入
+  // 重新抓取已載入與載入失敗的真實表。載入失敗的表不在 rows 中，須另外列入。虛擬表隨來源表重算
   async function reload (): Promise<void> {
     const failed = Object.keys(error).filter(table => error[table as TableKey])
     const tables = new Set([...Object.keys(rows), ...failed]) as Set<TableKey>
-    await Promise.all([...tables].map(table => load(table)))
+    await Promise.all([...tables].flatMap(table => isVirtualTable(table) ? [] : [load(table)]))
   }
 
   // 流程首次改動此表前保留原值。同一張表只保留第一次
-  function remember (table: TableKey) {
+  function remember (table: RealTableKey) {
     const flow = activeFlow.value
     if (!flow) {
       return
@@ -172,7 +219,7 @@ export const useTablesStore = defineStore('tables', () => {
     }
   }
 
-  function patch (table: TableKey, update: (list: unknown[]) => unknown[]) {
+  function patch (table: RealTableKey, update: (list: unknown[]) => unknown[]) {
     remember(table)
 
     const current = rows[table]
@@ -182,7 +229,7 @@ export const useTablesStore = defineStore('tables', () => {
   }
 
   // 佇列不處理流程，加入操作前先建立流程的存檔
-  function enqueue (table: TableKey, id: string, kind: PendingOp['kind'], values: Record<string, unknown>) {
+  function enqueue (table: RealTableKey, id: string, kind: PendingOp['kind'], values: Record<string, unknown>) {
     remember(table)
     queue.enqueue(table, id, kind, values)
   }
@@ -245,7 +292,7 @@ export const useTablesStore = defineStore('tables', () => {
   }
 
   // 寫入前再次驗證，攔截繞過表單的寫入。有錯誤時拋出，不做任何修改
-  function assertValid (table: TableKey, values: Record<string, unknown>, keys?: readonly string[]): void {
+  function assertValid (table: RealTableKey, values: Record<string, unknown>, keys?: readonly string[]): void {
     const errors = validateRow(values, schemas[table], keys)
     const messages = Object.values(errors)
     if (messages.length > 0) {
@@ -254,7 +301,8 @@ export const useTablesStore = defineStore('tables', () => {
   }
 
   // 主鍵有值時以其為 id，為空時才以 newId 產生並填回主鍵
-  function create<Row extends HasId> (table: TableKey, values: Record<string, unknown>): Row {
+  function create<Row extends HasId> (table: RealTableKey, values: Record<string, unknown>): Row {
+    assertRealTable(table)
     const schema = schemas[table]
     const key = schema.idColumn
     const generated = isEmpty(values[key]) ? schema.newId?.() : undefined
@@ -279,7 +327,8 @@ export const useTablesStore = defineStore('tables', () => {
     return created
   }
 
-  function update<Row extends HasId> (table: TableKey, id: string, values: Record<string, unknown>): Row {
+  function update<Row extends HasId> (table: RealTableKey, id: string, values: Record<string, unknown>): Row {
+    assertRealTable(table)
     const schema = schemas[table]
     const key = schema.idColumn
     if (key in values && values[key] !== id) {
@@ -317,12 +366,17 @@ export const useTablesStore = defineStore('tables', () => {
     return attachGetters(table, { ...values } as Row & HasId)
   }
 
-  function remove (table: TableKey, id: string): void {
-    removeMany(table, [id])
+  function remove (table: RealTableKey, id: string): void {
+    removeRows(table, [id])
+  }
+
+  function removeMany (table: RealTableKey, ids: Iterable<string>): void {
+    removeRows(table, ids)
   }
 
   // 刪除後沿標示 cascade 的關聯遞迴刪除子列，同樣經過 patch 與 enqueue（見 docs/topics/schema.md 的「連帶刪除」）
-  function removeMany (table: TableKey, ids: Iterable<string>): void {
+  function removeRows (table: TableKey, ids: Iterable<string>): void {
+    assertRealTable(table)
     const targets = new Set(ids)
     if (targets.size === 0) {
       return
@@ -346,7 +400,7 @@ export const useTablesStore = defineStore('tables', () => {
     }
 
     for (const relation of cascades) {
-      removeMany(relation.childTable, (rows[relation.childTable] ?? [])
+      removeRows(relation.childTable, (rows[relation.childTable] ?? [])
         .filter(row => targets.has((row as Record<string, unknown>)[relation.column] as string))
         .map(row => (row as HasId).id))
     }
@@ -380,7 +434,7 @@ export const useTablesStore = defineStore('tables', () => {
     for (const [relation, ids] of parents) {
       const children = (rows[relation.childTable] ?? []) as Record<string, unknown>[]
       const existing = new Set((rows[relation.parentTable] ?? []).map(row => (row as HasId).id))
-      removeMany(relation.parentTable, [...ids].filter(id =>
+      removeRows(relation.parentTable, [...ids].filter(id =>
         existing.has(id) && !children.some(row => row[relation.column] === id)))
     }
   }

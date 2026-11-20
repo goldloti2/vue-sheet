@@ -1,4 +1,4 @@
-import type { TableKey } from '@/schema'
+import type { RealTableKey } from '@/schema'
 import type * as Backend from '@/services/mock/backend'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { encodeMessage } from '@/services/auth/tokenMessage'
@@ -16,7 +16,7 @@ beforeEach(async () => {
   backend = await import('@/services/mock/backend')
 })
 
-function row (table: TableKey, id: string) {
+function row (table: RealTableKey, id: string) {
   return sheetRow(backend, table, id)
 }
 
@@ -37,7 +37,7 @@ describe('mockList', () => {
   })
 
   it('沒有 CSV 的表拋出錯誤', () => {
-    expect(() => backend.mockList('missing' as string as TableKey)).toThrow('no mock data')
+    expect(() => backend.mockList('missing' as string as RealTableKey)).toThrow('no mock data')
   })
 })
 

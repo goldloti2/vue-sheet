@@ -58,7 +58,7 @@
     if (isVirtual(column) || isLocked(column)) {
       return false
     }
-    return Boolean(column.required) || (column.key === props.schema.idColumn && !props.schema.newId)
+    return ('required' in column && Boolean(column.required)) || (column.key === props.schema.idColumn && !props.schema.newId)
   }
 
   // 各欄共用的屬性：標籤、錯誤訊息、唯讀，以及主鍵的提示與鎖頭

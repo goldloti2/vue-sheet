@@ -1,5 +1,5 @@
 import type { Layer } from '@/composables/shell/formLayerState'
-import type { TableKey } from '@/schema'
+import type { RealTableKey } from '@/schema'
 import type { TableSchema } from '@/schema/types'
 import type { Ref } from 'vue'
 import { ref, shallowRef, watch } from 'vue'
@@ -93,7 +93,7 @@ export function formTitle (schema: TableSchema, editing: boolean): string {
 }
 
 // 初始值的優先順序：defaults 參數 > schema 的 default（見 docs/topics/schema.md）
-export function useCreateForm (table: TableKey, schema: TableSchema, layer: Layer, defaults?: Record<string, unknown>): TableForm {
+export function useCreateForm (table: RealTableKey, schema: TableSchema, layer: Layer, defaults?: Record<string, unknown>): TableForm {
   const store = useTablesStore()
 
   const form = ref<object | null>({ ...emptyRow<HasId>(schema), ...defaults })
@@ -120,7 +120,7 @@ export function useCreateForm (table: TableKey, schema: TableSchema, layer: Laye
   return { form, fieldErrors, error, loading: shallowRef(false), loadError: shallowRef(null), submitLabel: '新增', submit }
 }
 
-export function useEditForm (table: TableKey, schema: TableSchema, layer: Layer, id: string): TableForm {
+export function useEditForm (table: RealTableKey, schema: TableSchema, layer: Layer, id: string): TableForm {
   const store = useTablesStore()
 
   const { row, loading, error: loadError } = useTableRow<HasId>(table, id)

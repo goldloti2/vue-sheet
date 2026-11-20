@@ -156,7 +156,42 @@
 
 ---
 
-## 2. 無須自行撰寫的部分
+## 2. 新增一張虛擬表
+
+虛擬表為唯讀的表，列由規則從真實表產生，不在 Sheet 上（見 [docs/topics/schema.md](../docs/topics/schema.md#虛擬表)）。
+
+### 要複製的檔案
+
+| 範本 | 複製到 | 說明 |
+| --- | --- | --- |
+| `table/virtual/schema.ts` | `src/schema/tables/__table__.ts` | 規則欄位、規則、虛擬欄位與顯示的順序 |
+| `table/virtual/use__Table__Actions.ts` | `src/composables/actions/use__Table__Actions.ts` | 不修改資料的動作，例如前往父列 |
+| `pages/list.vue` 等列表頁 | `src/pages/__table__/index.vue` | **選用**：複製後刪除新增與刪除選取的列等寫入的動作 |
+| `pages/detail.vue` | `src/pages/__table__/[id]/index.vue` | **選用**：複製後刪除編輯與刪除的動作 |
+| `pages/chart.vue` | 檔名可自訂 | **選用**：一張圖表的頁面 |
+
+`table/virtual/schema.ts` 另有一組佔位字串：`__source__` 為規則的來源表的代稱，`__Source__` 為來源表的 PascalCase 前綴。
+
+### 要修改的既有檔案
+
+1. **`src/schema/index.ts`**：登記 schema，建議置於真實表之後。
+2. **`src/config/navigation.ts`**：須加入導覽時才修改。
+
+虛擬表不登記於 `services/mock/tables.ts` 與後端的 `Config.gs`，也沒有 mock CSV。
+
+### 檢查清單
+
+- 來源表：每條規則掃過哪一張真實表
+- 規則：每條規則的條件，以及每個規則欄位的值。同一列來源列符合幾條規則，便產生幾列
+- 規則欄位與虛擬欄位：各規則不同的值寫於規則中，各規則相同的計算寫成虛擬欄位
+- `labelColumn`
+- `columns` 的順序：即為原始順序，逐欄升冪比較
+- `searchable`、`sortable`、`defaultSort`、`detailOrder`
+- 頁面：列表、詳細頁或圖表，皆不放寫入的動作
+
+---
+
+## 3. 無須自行撰寫的部分
 
 新增一張表時，以下幾件常被誤以為須自行實作，框架其實都已接好：
 

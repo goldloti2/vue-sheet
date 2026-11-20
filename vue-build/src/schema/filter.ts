@@ -1,4 +1,4 @@
-import type { AnyColumn, TableSchema } from './types'
+import type { AnyColumn, AnyTableSchema } from './types'
 import { durationSeconds, listedColumns } from './types'
 import { isEmpty } from './validation'
 
@@ -28,7 +28,7 @@ function isFilterable (column: AnyColumn): boolean {
 const BOOLEAN_OPTIONS = ['true', 'false']
 
 // 抽屜第一層的欄位與順序：schema.searchable 中由篩選抽屜處理的欄位
-export function filterableColumns (schema: TableSchema): AnyColumn[] {
+export function filterableColumns (schema: AnyTableSchema): AnyColumn[] {
   return listedColumns(schema, schema.searchable).filter(column => isFilterable(column))
 }
 
@@ -91,12 +91,12 @@ export function isActiveFilter (filter: ColumnFilter | undefined): boolean {
 }
 
 // 可篩選的欄位中任一欄有條件即為篩選中（用於 App Bar 的圖示標記）。其他欄位上的條件不影響列，不計入
-export function hasActiveFilter (filters: Filters, schema: TableSchema): boolean {
+export function hasActiveFilter (filters: Filters, schema: AnyTableSchema): boolean {
   return activeFilters(filters, schema).length > 0
 }
 
 // 可篩選的欄位中有條件的欄位
-function activeFilters (filters: Filters, schema: TableSchema): { key: string, filter: ColumnFilter }[] {
+function activeFilters (filters: Filters, schema: AnyTableSchema): { key: string, filter: ColumnFilter }[] {
   return filterableColumns(schema)
     .map(column => ({ key: column.key, filter: filters[column.key] }))
     .filter((entry): entry is { key: string, filter: ColumnFilter } => isActiveFilter(entry.filter))
@@ -142,7 +142,7 @@ export function matchesFilter (value: unknown, filter: ColumnFilter): boolean {
 }
 
 // 檢查一列是否符合整張表條件的函數。欄位之間為 AND，只檢查 filterable 的欄位。沒有生效的條件時為 null
-export function rowMatcher (filters: Filters, schema: TableSchema): ((row: object) => boolean) | null {
+export function rowMatcher (filters: Filters, schema: AnyTableSchema): ((row: object) => boolean) | null {
   const active = activeFilters(filters, schema)
   if (active.length === 0) {
     return null

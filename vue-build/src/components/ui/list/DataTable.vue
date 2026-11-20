@@ -1,7 +1,7 @@
 <script generic="Row extends { id: string }" lang="ts" setup>
   import type { ColumnWidth } from '@/composables/list/useColumnWidths'
   import type { DisplayValue } from '@/schema/format'
-  import type { TableSchema } from '@/schema/types'
+  import type { AnyTableSchema } from '@/schema/types'
   import { computed, useTemplateRef } from 'vue'
   import { useRouter } from 'vue-router'
   import FormattedValue from '@/components/ui/view/FormattedValue.vue'
@@ -19,7 +19,7 @@
 
   const props = withDefaults(defineProps<{
     rows: readonly Row[]
-    schema: TableSchema
+    schema: AnyTableSchema
     // 要顯示的欄位 key，真實欄位與虛擬欄位皆可。省略時為全部
     columns?: string[]
     showHeader?: boolean

@@ -1,4 +1,4 @@
-import type { AnyColumn, ColorName, TableSchema } from './types'
+import type { AnyColumn, AnyTableSchema, ColorName } from './types'
 import { allColumns, formatColumnValue, rowLabel } from './types'
 
 // 條件式格式：純函數，計算一欄顯示的文字與套用的格式。顯示由 components/ui/view/FormattedValue.vue 處理
@@ -19,7 +19,7 @@ export interface DisplayValue {
 }
 
 // 符合的規則依宣告順序合併（見 docs/topics/schema.md）。值為空時不套用格式
-export function displayValue (row: object, schema: TableSchema, column: AnyColumn): DisplayValue {
+export function displayValue (row: object, schema: AnyTableSchema, column: AnyColumn): DisplayValue {
   const text = formatColumnValue(row, column)
   if (text === '') {
     return { text }
@@ -45,7 +45,7 @@ export function displayValue (row: object, schema: TableSchema, column: AnyColum
 }
 
 // 一列的名稱（rowLabel）與 labelColumn 的條件式格式，供 ref 欄位的選擇器使用
-export function labelDisplayValue (row: object, schema: TableSchema): DisplayValue {
+export function labelDisplayValue (row: object, schema: AnyTableSchema): DisplayValue {
   const column = allColumns(schema).find(candidate => candidate.key === schema.labelColumn)
   const text = rowLabel(row, schema)
   return column ? { ...displayValue(row, schema, column), text } : { text }

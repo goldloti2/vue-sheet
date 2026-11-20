@@ -1,12 +1,12 @@
 import type { SlotSetter } from '@/composables/shell/useActionSlot'
 import type { Filters } from '@/schema/filter'
-import type { SortSpec, TableSchema } from '@/schema/types'
+import type { AnyTableSchema, SortSpec } from '@/schema/types'
 import type { InjectionKey, Ref } from 'vue'
 import { registerSlot } from '@/composables/shell/useActionSlot'
 
 // 抽屜中的一張表。rows 為未過濾的整表，select 只列出其中出現過的值
 export interface ListTable {
-  schema: TableSchema
+  schema: AnyTableSchema
   filters: Ref<Filters>
   rows: Ref<readonly object[]>
   // 使用者選擇的排序，null 表示 schema.defaultSort。有提供且有可排序的欄位時才顯示排序按鈕

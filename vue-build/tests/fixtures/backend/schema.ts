@@ -1,4 +1,4 @@
-import type { TableKey } from '@/schema'
+import type { RealTableKey } from '@/schema'
 import type { RowBase, TableSchema } from '@/schema/types'
 import { prefixedId } from '@/schema/types'
 
@@ -104,7 +104,7 @@ const notes: TableSchema<NoteRow> = {
 
 export const schemas = { parents, children, notes }
 
-// 測試中的表名。TableKey 來自 src/schema，不含測試的表，因此於此轉型
-export const PARENTS = 'parents' as string as TableKey
-export const CHILDREN = 'children' as string as TableKey
-export const NOTES = 'notes' as string as TableKey
+// 測試中的表名。RealTableKey 來自 src/schema，不含測試的表，因此於此轉型
+export const PARENTS = 'parents' as string as RealTableKey
+export const CHILDREN = 'children' as string as RealTableKey
+export const NOTES = 'notes' as string as RealTableKey

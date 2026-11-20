@@ -1,5 +1,5 @@
 import type { DisplayValue } from './format'
-import type { RowBase, RowKey, TableSchema } from './types'
+import type { AnyTableSchema, RowBase, RowKey } from './types'
 import type { PageAction } from '@/composables/actions/useTableActions'
 import { displayValue } from './format'
 import { imageSrc } from './image'
@@ -47,7 +47,7 @@ function noActions (): (PageAction | null)[] {
 }
 
 // 欄位於建立時查找，之後每一列只讀值與格式化。schema 未定義的成員（id、$label）直接轉為字串，不套用條件式格式
-function textReader (schema: TableSchema, key: string | undefined): (row: object) => DisplayValue | undefined {
+function textReader (schema: AnyTableSchema, key: string | undefined): (row: object) => DisplayValue | undefined {
   if (!key) {
     return () => undefined
   }
@@ -68,7 +68,7 @@ function imageReader (key: string | undefined): (row: object) => string | null |
   return row => imageSrc((row as Record<string, unknown>)[key])
 }
 
-function compileGroup<Row extends object> (schema: TableSchema, group: FieldGroup<Row> = {}): (row: Row) => ResolvedGroup {
+function compileGroup<Row extends object> (schema: AnyTableSchema, group: FieldGroup<Row> = {}): (row: Row) => ResolvedGroup {
   const title = textReader(schema, group.title)
   const subtitle = textReader(schema, group.subtitle)
   const image = imageReader(group.image)
@@ -79,7 +79,7 @@ function compileGroup<Row extends object> (schema: TableSchema, group: FieldGrou
 }
 
 export function defineView<Row extends object> (
-  schema: TableSchema<Row>,
+  schema: AnyTableSchema<Row>,
   view: FieldGroup<Row> & { actions?: RowActions<Row> },
 ): RowView<Row> {
   const group = compileGroup(schema, view)
@@ -88,7 +88,7 @@ export function defineView<Row extends object> (
 }
 
 export function defineCardView<Row extends object> (
-  schema: TableSchema<Row>,
+  schema: AnyTableSchema<Row>,
   view: { header?: FieldGroup<Row>, body?: FieldGroup<Row>, actions?: RowActions<Row> },
 ): CardView<Row> {
   const header = compileGroup(schema, view.header)

@@ -1,4 +1,4 @@
-import type { TableKey } from './index'
+import type { RealTableKey, schemas, TableKey } from './index'
 
 // 新增表單的初始值。函式於開啟表單時求值
 export type ColumnDefault<T> = T | (() => T)
@@ -85,8 +85,18 @@ export type VirtualColumn<Row extends object = AnyRow> = {
   }
 }[ColumnType]
 
-// 真實或虛擬欄位，用於顯示
-export type AnyColumn<Row extends object = AnyRow> = SchemaColumn<Row> | VirtualColumn<Row>
+// 規則欄位：虛擬表的欄位，值由規則填入（見 docs/topics/schema.md 的「虛擬表」）。ref 只有 refTable
+export type RuleColumn<Row extends object = AnyRow> = {
+  [T in ColumnType]: ColumnBase<Row, T> & {
+    onDelete?: never
+    onEmpty?: never
+    refSort?: never
+    allowCreate?: never
+  }
+}[ColumnType]
+
+// 真實、規則或虛擬欄位，用於顯示
+export type AnyColumn<Row extends object = AnyRow> = SchemaColumn<Row> | RuleColumn<Row> | VirtualColumn<Row>
 
 export interface SortSpec<Row extends object = AnyRow> {
   /** 排序依據的欄位，真實或虛擬欄位皆可 */
@@ -94,19 +104,13 @@ export interface SortSpec<Row extends object = AnyRow> {
   direction: 'asc' | 'desc'
 }
 
-// 各表宣告為 TableSchema<XxxRow>，欄位 key 與 value 的 row 即有型別。框架端一律使用不帶參數的 TableSchema
-export interface TableSchema<Row extends object = AnyRow> {
+// 真實表與虛擬表共有的設定
+interface SchemaBase<Row extends object> {
   /** 表於畫面上的名稱（表的 chip、頁籤比對）。Sheet 分頁的名稱只有後端知道 */
   tableLabel: string
-  /** 主鍵，須為值為字串的欄位，其值即為 row.id。建立後不可修改（見 docs/topics/schema.md） */
-  idColumn: ColumnKey<Row, string | null>
-  /** 稱呼一列所用的欄位，真實或虛擬欄位皆可。store 據此掛上 row.$label。省略時為 id */
+  /** 稱呼一列所用的欄位，任一種欄位皆可。store 據此掛上 row.$label。省略時為 id */
   labelColumn?: RowKey<Row>
-  /** 新增時主鍵留空即以此產生（例如 prefixedId('TPL')）。省略時主鍵為必填 */
-  newId?: () => string
-  /** Sheet 上的欄位。順序即為表單與詳細頁的預設順序 */
-  columns: SchemaColumn<Row>[]
-  /** 虛擬欄位，不經過 coerceRow、serializeRow 與表單。顯示、排序與分組的用法與真實欄位相同 */
+  /** 虛擬欄位，不經過 coerceRow、serializeRow 與表單。顯示、排序與分組的用法與其他欄位相同 */
   virtualColumns?: VirtualColumn<Row>[]
   /** 可搜尋或篩選的欄位，text 與 ref 進搜尋列，其餘進篩選抽屜。順序即為抽屜第一層的順序 */
   searchable?: RowKey<Row>[]
@@ -114,12 +118,57 @@ export interface TableSchema<Row extends object = AnyRow> {
   sortable?: RowKey<Row>[]
   /** 詳細頁的欄位順序，省略時依 columns。未列出的欄位不顯示 */
   detailOrder?: RowKey<Row>[]
-  /** 表單頁的欄位順序，省略時依 columns */
-  formOrder?: RowKey<Row>[]
-  /** 列表頁的預設排序，依序作為次要排序。省略或為空陣列時維持 Sheet 上的原始順序 */
+  /** 列表頁的預設排序，依序作為次要排序。省略或為空陣列時維持原始順序：真實表為 Sheet 上的順序，虛擬表見 rules */
   defaultSort?: SortSpec<Row>[]
   /** 條件式格式：條件成立時改變指定欄位的呈現（見 docs/topics/schema.md 的「條件式格式」） */
   formatRules?: FormatRule<Row>[]
+}
+
+// 各表宣告為 TableSchema<XxxRow>，欄位 key 與 value 的 row 即有型別。框架端寫入的路徑使用不帶參數的 TableSchema
+export interface TableSchema<Row extends object = AnyRow> extends SchemaBase<Row> {
+  /** 主鍵，須為值為字串的欄位，其值即為 row.id。建立後不可修改（見 docs/topics/schema.md） */
+  idColumn: ColumnKey<Row, string | null>
+  /** 新增時主鍵留空即以此產生（例如 prefixedId('TPL')）。省略時主鍵為必填 */
+  newId?: () => string
+  /** Sheet 上的欄位。順序即為表單與詳細頁的預設順序 */
+  columns: SchemaColumn<Row>[]
+  /** 表單頁的欄位順序，省略時依 columns */
+  formOrder?: RowKey<Row>[]
+}
+
+// 規則的來源列：來源表的 Row
+type SourceRow<K extends RealTableKey> = (typeof schemas)[K] extends TableSchema<infer Source> ? Source : never
+
+// 規則填入的值：常數，或以來源列為參數的函數
+type RuleValues<Row extends object, Source> = {
+  [K in RowKey<Row>]?: Row[K] | ((source: Source) => Row[K])
+}
+
+// 虛擬表的一條規則。來源列的型別依 table 推導
+export type VirtualRule<Row extends object = AnyRow> = {
+  [K in RealTableKey]: {
+    /** 來源表，只能是真實表 */
+    table: K
+    /** 條件。來源表的每一列，條件成立即產生一列。省略時每一列皆產生 */
+    when?: (source: SourceRow<K>) => boolean
+    /** 規則欄位的值：常數，或以來源列為參數的函數。未指定的欄位為 null */
+    values: RuleValues<Row, SourceRow<K>>
+  }
+}[RealTableKey]
+
+// 虛擬表：唯讀，列由規則從真實表產生，不在 Sheet 上（見 docs/topics/schema.md 的「虛擬表」）
+export interface VirtualTableSchema<Row extends object = AnyRow> extends SchemaBase<Row> {
+  /** 規則欄位，值由 rules 填入。順序即為詳細頁的預設順序 */
+  columns: RuleColumn<Row>[]
+  /** 產生列的規則。來源列每符合一條規則即產生一列，id 為「來源列的 id-規則的序號」。原始順序依 columns 逐欄升冪 */
+  rules: VirtualRule<Row>[]
+}
+
+// 真實表或虛擬表，用於只讀取資料之處
+export type AnyTableSchema<Row extends object = AnyRow> = TableSchema<Row> | VirtualTableSchema<Row>
+
+export function isVirtualSchema (schema: AnyTableSchema): schema is VirtualTableSchema {
+  return 'rules' in schema
 }
 
 /** 共用的色名：條件式格式、圖表與文字統計皆使用。文字的色值隨深淺色主題切換，圖表另有一組色值 */
@@ -316,28 +365,28 @@ export function formatColumnValue (row: object, column: AnyColumn, target: Forma
 }
 
 // 真實欄位在前，虛擬欄位在後
-export function allColumns (schema: TableSchema): AnyColumn[] {
+export function allColumns (schema: AnyTableSchema): AnyColumn[] {
   return [...schema.columns, ...(schema.virtualColumns ?? [])]
 }
 
-export function findColumn (schema: TableSchema, key: string): AnyColumn | undefined {
+export function findColumn (schema: AnyTableSchema, key: string): AnyColumn | undefined {
   return allColumns(schema).find(column => column.key === key)
 }
 
 // searchable 與 sortable 為 key 的清單，順序即為面板上的順序。略過不存在的 key
-export function listedColumns (schema: TableSchema, keys: readonly string[] | undefined): AnyColumn[] {
+export function listedColumns (schema: AnyTableSchema, keys: readonly string[] | undefined): AnyColumn[] {
   const columns = new Map(allColumns(schema).map(column => [column.key, column]))
   return (keys ?? []).map(key => columns.get(key)).filter(column => column !== undefined)
 }
 
 // 只有欄位 key、沒有 column 物件時使用（供 rowLabel 使用）
-function formatField (row: object, schema: TableSchema, key: string): string {
+function formatField (row: object, schema: AnyTableSchema, key: string): string {
   const column = findColumn(schema, key)
   return column ? formatColumnValue(row, column) : ''
 }
 
 // 一列的名稱：labelColumn 的顯示文字，未設定或為空時為 id。store 以此掛上 row.$label
-export function rowLabel (row: object, schema: TableSchema): string {
+export function rowLabel (row: object, schema: AnyTableSchema): string {
   const label = schema.labelColumn ? formatField(row, schema, schema.labelColumn) : ''
   return label || String((row as { id?: unknown }).id ?? '')
 }

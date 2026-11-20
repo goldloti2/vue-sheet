@@ -1,4 +1,4 @@
-import type { AnyColumn, SortSpec, TableSchema } from './types'
+import type { AnyColumn, AnyTableSchema, SortSpec } from './types'
 import { allColumns, durationSeconds, listedColumns } from './types'
 
 // 排序：純函數。反應式的包裝位於 composables/data/useTable.ts
@@ -60,10 +60,14 @@ function sortValue (row: Record<string, unknown>, column: AnyColumn | undefined)
   return value
 }
 
-// 列表頁排序：先依 sort（SortPanel），再依 schema.defaultSort。兩者皆無時維持原始順序（row number）
-export function sortRows<Row> (rows: readonly Row[], schema: TableSchema, sort?: SortSpec[] | null): Row[] {
-  const sortSpecs = [...sort ?? [], ...schema.defaultSort ?? []]
-  if (sortSpecs.length === 0) {
+// 列表頁排序：先依 sort（SortPanel），再依 schema.defaultSort。兩者皆無時維持原始順序
+export function sortRows<Row> (rows: readonly Row[], schema: AnyTableSchema, sort?: SortSpec[] | null): Row[] {
+  return sortBySpecs(rows, schema, [...sort ?? [], ...schema.defaultSort ?? []])
+}
+
+// 依序比較每個條件，前面的條件相同時才比較下一個。全部相同時維持原本的順序
+export function sortBySpecs<Row> (rows: readonly Row[], schema: AnyTableSchema, specs: readonly SortSpec[]): Row[] {
+  if (specs.length === 0) {
     return [...rows]
   }
 
@@ -71,7 +75,7 @@ export function sortRows<Row> (rows: readonly Row[], schema: TableSchema, sort?:
 
   // eslint-disable-next-line unicorn/no-array-sort
   return [...rows].sort((rowA, rowB) => {
-    for (const spec of sortSpecs) {
+    for (const spec of specs) {
       const column = columns.get(spec.key)
       const result = compareWithDirection(
         sortValue(rowA as Record<string, unknown>, column),
@@ -87,7 +91,7 @@ export function sortRows<Row> (rows: readonly Row[], schema: TableSchema, sort?:
 }
 
 // 排序面板的欄位與順序與 schema.sortable 相同，略過 image 欄位
-export function sortableColumns (schema: TableSchema): AnyColumn[] {
+export function sortableColumns (schema: AnyTableSchema): AnyColumn[] {
   return listedColumns(schema, schema.sortable).filter(column => column.type !== 'image')
 }
 

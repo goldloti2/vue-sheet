@@ -3,7 +3,7 @@
 // 只存於記憶體，重新整理頁面即回到 CSV 的原始內容
 
 import type { BatchOperation, LoginCredentials, TableData } from '../types'
-import type { TableKey } from '@/schema'
+import type { RealTableKey } from '@/schema'
 import { authMethod } from '@/config/app'
 import { schemas } from '@/schema'
 import { idHeader } from '@/schema/types'
@@ -12,10 +12,10 @@ import { AuthError, ConflictError } from '../types'
 import { parseCsv } from './csv'
 import { mockCsv } from './tables'
 
-const tables = new Map<TableKey, Record<string, string>[]>()
+const tables = new Map<RealTableKey, Record<string, string>[]>()
 
 // 首次使用時才解析 CSV
-function tableRows (table: TableKey): Record<string, string>[] {
+function tableRows (table: RealTableKey): Record<string, string>[] {
   const loaded = tables.get(table)
   if (loaded) {
     return loaded
@@ -31,11 +31,11 @@ function tableRows (table: TableKey): Record<string, string>[] {
   return rows
 }
 
-function idHeaderOf (table: TableKey): string {
+function idHeaderOf (table: RealTableKey): string {
   return idHeader(schemas[table])
 }
 
-function rowIndexOf (table: TableKey, id: string): number {
+function rowIndexOf (table: RealTableKey, id: string): number {
   const header = idHeaderOf(table)
   const index = tableRows(table).findIndex(row => row[header] === id)
   if (index === -1) {
@@ -61,7 +61,7 @@ function readValues (row: Record<string, string>): Record<string, string> {
 }
 
 // 回傳複本，呼叫端的修改不影響此處的狀態
-export function mockList (table: TableKey): TableData {
+export function mockList (table: RealTableKey): TableData {
   return { rows: tableRows(table).map(row => readValues(row)), modifiedTime }
 }
 
@@ -109,7 +109,7 @@ export function mockBatch (operations: readonly BatchOperation[], since?: string
     throw new ConflictError()
   }
 
-  const backup = new Map<TableKey, Record<string, string>[]>()
+  const backup = new Map<RealTableKey, Record<string, string>[]>()
   for (const operation of operations) {
     if (!backup.has(operation.table)) {
       backup.set(operation.table, tableRows(operation.table).map(row => ({ ...row })))

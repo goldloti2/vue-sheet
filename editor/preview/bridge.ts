@@ -51,7 +51,15 @@ for (const level of ['warn', 'error'] as const) {
   }
 }
 
-window.addEventListener('error', event => send('error', [event.error ?? event.message]))
+// ResizeObserver 延後通知的提示不轉送
+const RESIZE_OBSERVER_NOTICE = /^ResizeObserver loop/
+
+window.addEventListener('error', event => {
+  if (!event.error && RESIZE_OBSERVER_NOTICE.test(event.message)) {
+    return
+  }
+  send('error', [event.error ?? event.message])
+})
 window.addEventListener('unhandledrejection', event => send('error', ['未處理的 Promise 錯誤：', event.reason]))
 
 import.meta.hot?.on('vite:error', payload => {

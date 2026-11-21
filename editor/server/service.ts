@@ -1,4 +1,6 @@
 import type { FileChangedEvent, ProjectIndex, WriteRequest } from '../shared/api.ts'
+import type { AppConfigEditRequest, AppConfigEditResult } from '../shared/appConfig.ts'
+import type { ConfigEditRequest, ConfigEditResult } from '../shared/configGs.ts'
 import type { RegistryEditRequest, RegistryEditResult } from '../shared/registry.ts'
 import type { CodeContextRequest, KeyRenameRequest, SchemaEditRequest, SchemaEditResult, SchemaTypes } from '../shared/schema.ts'
 import type { MockTablesEditRequest, MockTablesEditResult, NewTableRequest } from '../shared/tableFiles.ts'
@@ -9,12 +11,15 @@ import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { watch } from 'chokidar'
 import { FILE_CHANGED_EVENT, PROJECT_INDEX_EVENT } from '../shared/api.ts'
+import { CONFIG_FILE } from '../shared/configGs.ts'
 import { parseCsv } from '../shared/csv.ts'
 import { PREVIEW_LOG_EVENT, PREVIEW_STATUS_EVENT, type PreviewDraft, type PreviewSource } from '../shared/preview.ts'
 import { isMockCsvFile, MOCK_TABLES_FILE } from '../shared/tableFiles.ts'
 import { REGISTRY_FILE, tableKeyOf } from '../shared/tableKeys.ts'
 import { type CodeRequest, type CompletionRequest, hasTypeScriptService } from '../shared/typescript.ts'
+import { applyAppConfigEdits, parseAppConfig } from './appConfig.ts'
 import { type Checks, createChecks } from './checks.ts'
+import { applyConfigEdits, parseConfig, readConfigTables } from './configGs.ts'
 import { createLinter } from './eslint.ts'
 import { hashText, readProjectFile, writeProjectFile } from './files.ts'
 import { createLanguageClient, type LanguageClient } from './languageClient.ts'
@@ -67,13 +72,14 @@ async function readTypes (root: string, ts: Awaited<ReturnType<typeof loadTypeSc
 async function readProjectIndex (root: string): Promise<ProjectIndex> {
   const paths = await listProjectFiles(root)
   const ts = await loadTypeScript(path.join(root, 'vue-build'))
-  const [mockTables, registry] = await Promise.all([readProjectFile(root, MOCK_TABLES_FILE), readProjectFile(root, REGISTRY_FILE)])
+  const [mockTables, registry, config] = await Promise.all([readProjectFile(root, MOCK_TABLES_FILE), readProjectFile(root, REGISTRY_FILE), readProjectFile(root, CONFIG_FILE)])
   const entries = registry ? parseRegistry(ts, registry.text)?.entries ?? [] : []
   return {
     paths,
     tables: await readTableSummaries(ts, root, paths),
     tableOrder: entries.flatMap(entry => entry.key === null ? [] : [entry.key]),
     mockCsv: mockTables ? readMockCsvPaths(ts, mockTables.text) : {},
+    configTables: config ? readConfigTables(ts, config.text) : null,
     csvRows: await readCsvRows(root, paths),
   }
 }
@@ -111,11 +117,11 @@ function watchProjectFiles (root: string, server: ViteDevServer, language: Langu
     server.ws.send(PROJECT_INDEX_EVENT, await readProjectIndex(root))
   }
 
-  // 新增或刪除檔案、修改表的 schema、表的登記、mock CSV 或其登記時，重送檔案清單與各表的摘要
+  // 新增或刪除檔案、修改表的 schema、表的登記、mock CSV 或其登記、Config.gs 時，重送檔案清單與各表的摘要
   watcher.on('change', absolute => {
     void notifyChange(absolute, false)
     const filePath = toProjectPath(absolute)
-    if (tableKeyOf(filePath) !== null || filePath === MOCK_TABLES_FILE || filePath === REGISTRY_FILE || isMockCsvFile(filePath)) {
+    if (tableKeyOf(filePath) !== null || filePath === MOCK_TABLES_FILE || filePath === REGISTRY_FILE || filePath === CONFIG_FILE || isMockCsvFile(filePath)) {
       void notifyIndex()
     }
   })
@@ -189,6 +195,22 @@ export function editorService ({ root }: ServiceOptions): Plugin {
           const ts = await loadTypeScript(vueBuildRoot)
           const text = applyRegistryEdits(ts, body.text, body.edits)
           const result: RegistryEditResult = { text, model: parseRegistry(ts, text) }
+          return [200, result]
+        },
+        'POST /config/parse': async req => [200, parseConfig(await loadTypeScript(vueBuildRoot), (await json<{ text: string }>(req)).text)],
+        'POST /config/edit': async req => {
+          const body = await json<ConfigEditRequest>(req)
+          const ts = await loadTypeScript(vueBuildRoot)
+          const text = applyConfigEdits(ts, body.text, body.edits)
+          const result: ConfigEditResult = { text, model: parseConfig(ts, text) }
+          return [200, result]
+        },
+        'POST /app-config/parse': async req => [200, parseAppConfig(await loadTypeScript(vueBuildRoot), (await json<{ text: string }>(req)).text)],
+        'POST /app-config/edit': async req => {
+          const body = await json<AppConfigEditRequest>(req)
+          const ts = await loadTypeScript(vueBuildRoot)
+          const text = applyAppConfigEdits(ts, body.text, body.edits)
+          const result: AppConfigEditResult = { text, model: parseAppConfig(ts, text) }
           return [200, result]
         },
         'POST /table/create': async req => {

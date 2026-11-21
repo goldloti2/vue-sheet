@@ -78,6 +78,11 @@ describe('table summaries', () => {
     ])
   })
 
+  it('reads the primary key column', () => {
+    expect(readTableSummary(ts, 'export const s = { tableLabel: \'訂單\', idColumn: \'code\', columns: [] }').idColumn).toBe('code')
+    expect(readTableSummary(ts, 'export const s = { tableLabel: \'訂單\', idColumn: KEY, columns: [] }').idColumn).toBeNull()
+  })
+
   it('marks a virtual table, whose columns have no Sheet header', () => {
     const text = `export const s = {
       tableLabel: '帳目',
@@ -89,12 +94,13 @@ describe('table summaries', () => {
       label: '帳目',
       variable: null,
       virtual: true,
+      idColumn: null,
       columns: [{ key: 'kind', label: '種類', type: 'text', virtual: false, header: null, refTable: null }],
     })
   })
 
   it('has no label and no columns without a schema object', () => {
-    expect(readTableSummary(ts, 'export const s = { columns: [{ key: \'a\' }] }')).toEqual({ label: null, variable: null, virtual: false, columns: [] })
+    expect(readTableSummary(ts, 'export const s = { columns: [{ key: \'a\' }] }')).toEqual({ label: null, variable: null, virtual: false, idColumn: null, columns: [] })
   })
 
   it('reads the table files only', async () => {
@@ -109,8 +115,8 @@ describe('table summaries', () => {
       'vue-build/src/schema/tables/draft.ts',
       'vue-build/src/schema/tables/order.ts',
     ])).toEqual({
-      draft: { label: null, variable: null, virtual: false, columns: [] },
-      order: { label: '訂單', variable: null, virtual: false, columns: [{ key: 'a', label: null, type: null, virtual: false, header: null, refTable: null }] },
+      draft: { label: null, variable: null, virtual: false, idColumn: null, columns: [] },
+      order: { label: '訂單', variable: null, virtual: false, idColumn: null, columns: [{ key: 'a', label: null, type: null, virtual: false, header: null, refTable: null }] },
     })
   })
 })

@@ -25,12 +25,13 @@ function columnsOf (value: SchemaValue | undefined, virtual: boolean, noHeader: 
 export function readTableSummary (ts: TypeScript, text: string): TableSummary {
   const { schema, variable, virtual } = parseSchema(ts, text)
   if (!schema) {
-    return { label: null, variable, virtual, columns: [] }
+    return { label: null, variable, virtual, idColumn: null, columns: [] }
   }
   return {
     label: stringValue(propertyValue(schema, 'tableLabel')),
     variable,
     virtual,
+    idColumn: stringValue(propertyValue(schema, 'idColumn')),
     columns: [...columnsOf(propertyValue(schema, 'columns'), false, virtual), ...columnsOf(propertyValue(schema, 'virtualColumns'), true, true)],
   }
 }

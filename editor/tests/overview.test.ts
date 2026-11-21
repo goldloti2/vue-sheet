@@ -6,6 +6,7 @@ describe('overviewRows', () => {
   it('lists the registered tables in order, then the other tables', () => {
     const rows = overviewRows({ entries: [{ key: 'order', variable: 'orderSchema' }, { key: null, variable: null }] }, {
       paths: [
+        'apps-script/Config.gs',
         'vue-build/src/composables/actions/useOrderActions.ts',
         'vue-build/src/pages/order/[id]/index.vue',
         'vue-build/src/pages/order/index.vue',
@@ -14,8 +15,8 @@ describe('overviewRows', () => {
         'vue-build/src/schema/tables/order.ts',
       ],
       tables: {
-        order: { label: '訂單', variable: 'orderSchema', virtual: false, columns: [] },
-        draft: { label: null, variable: 'draftSchema', virtual: false, columns: [] },
+        order: { label: '訂單', variable: 'orderSchema', virtual: false, idColumn: null, columns: [] },
+        draft: { label: null, variable: 'draftSchema', virtual: false, idColumn: null, columns: [] },
       },
       mockCsv: { order: 'vue-build/mock/order-test.csv' },
     })
@@ -70,8 +71,8 @@ describe('mockOverviewRows', () => {
     const rows = mockOverviewRows({ csv: {} }, {
       paths: [],
       tables: {
-        order: { label: '訂單', variable: null, virtual: false, columns: [] },
-        ledger: { label: '帳目', variable: null, virtual: true, columns: [] },
+        order: { label: '訂單', variable: null, virtual: false, idColumn: null, columns: [] },
+        ledger: { label: '帳目', variable: null, virtual: true, idColumn: null, columns: [] },
       },
       tableOrder: ['order', 'ledger'],
       csvRows: {},
@@ -84,9 +85,9 @@ describe('mockOverviewRows', () => {
     const rows = mockOverviewRows({ csv: { order: 'vue-build/mock/order-test.csv', ghost: 'vue-build/mock/ghost.csv' } }, {
       paths: ['vue-build/mock/customer-test.csv', 'vue-build/mock/extra.csv', 'vue-build/mock/order-test.csv'],
       tables: {
-        customer: { label: '客戶', variable: null, virtual: false, columns: [] },
-        draft: { label: null, variable: null, virtual: false, columns: [] },
-        order: { label: '訂單', variable: null, virtual: false, columns: [] },
+        customer: { label: '客戶', variable: null, virtual: false, idColumn: null, columns: [] },
+        draft: { label: null, variable: null, virtual: false, idColumn: null, columns: [] },
+        order: { label: '訂單', variable: null, virtual: false, idColumn: null, columns: [] },
       },
       tableOrder: ['order', 'customer'],
       csvRows: { 'vue-build/mock/order-test.csv': 3, 'vue-build/mock/customer-test.csv': 0, 'vue-build/mock/extra.csv': 1 },

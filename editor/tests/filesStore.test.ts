@@ -1,4 +1,5 @@
 import type { FileContent, WriteResult } from '../shared/api'
+import type * as EditorPages from '../shared/editorPages'
 import type { SchemaTestContext } from './schema/setup'
 import { createPinia, setActivePinia } from 'pinia'
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -6,6 +7,9 @@ import { fetchFile, fetchProjectIndex, onServerEvent, parseSchemaText, putFile, 
 import { PREVIEW_SYNC_DELAY, useFilesStore } from '@/stores/files'
 import { parseSchema } from '../server/schema/schemaModel'
 import { FILE_CHANGED_EVENT } from '../shared/api'
+import { APP_CONFIG_FILE } from '../shared/appConfig'
+import { CONFIG_DEPLOY_MESSAGE, CONFIG_FILE } from '../shared/configGs'
+import { SETTINGS_PAGE } from '../shared/editorPages'
 import { loadSchemaTestContext } from './schema/setup'
 
 vi.mock('@/api', () => ({
@@ -19,11 +23,12 @@ vi.mock('@/api', () => ({
   renameColumnKey: vi.fn(),
 }))
 
-// 測試用的頁面，對應兩個檔案
-vi.mock('../shared/editorPages', () => {
-  const pages: Record<string, { title: string, paths: string[] }> = { 'page:test': { title: '測試頁', paths: ['a.ts', 'b.ts'] } }
+// 加上測試用的頁面，對應兩個檔案
+vi.mock('../shared/editorPages', async importOriginal => {
+  const actual = await importOriginal<typeof EditorPages>()
+  const pages: Record<string, { title: string, paths: readonly string[] }> = { ...actual.EDITOR_PAGES, 'page:test': { title: '測試頁', paths: ['a.ts', 'b.ts'] } }
   const pageOf = (target: string) => pages[target] ?? null
-  return { pageOf, targetPaths: (target: string) => [...pageOf(target)?.paths ?? [target]] }
+  return { ...actual, pageOf, targetPaths: (target: string) => [...pageOf(target)?.paths ?? [target]] }
 })
 
 const PATH = 'vue-build/src/schema/tables/order.ts'
@@ -186,6 +191,25 @@ describe('files store preview drafts', () => {
   })
 })
 
+describe('files store Config.gs', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    setActivePinia(createPinia())
+    vi.mocked(fetchFile).mockImplementation(async path => ({ path, text: 'a', hash: 'h1' }))
+  })
+
+  it('reminds to deploy after saving Config.gs', async () => {
+    const store = useFilesStore()
+    await store.open(CONFIG_FILE)
+    store.setText(CONFIG_FILE, 'b')
+    vi.mocked(putFile).mockResolvedValue({ ok: true, file: { path: CONFIG_FILE, text: 'b', hash: 'h2' } })
+
+    await store.save(CONFIG_FILE)
+
+    expect(store.message).toBe(CONFIG_DEPLOY_MESSAGE)
+  })
+})
+
 describe('files store column changes', () => {
   const PAGE = 'vue-build/src/pages/order/index.vue'
   const withoutDate = () => context.template.replace('    { key: \'date\', label: \'日期\', type: \'date\' },\n', '')
@@ -331,6 +355,7 @@ describe('files store initialize', () => {
       tables: {},
       tableOrder: ['missing', 'order', 'customer'],
       mockCsv: {},
+      configTables: null,
       csvRows: {},
     })
     const store = useFilesStore()
@@ -350,7 +375,7 @@ describe('files store pages', () => {
   })
 
   async function openPage (paths: string[]) {
-    vi.mocked(fetchProjectIndex).mockResolvedValue({ paths, tables: {}, tableOrder: [], mockCsv: {}, csvRows: {} })
+    vi.mocked(fetchProjectIndex).mockResolvedValue({ paths, tables: {}, tableOrder: [], mockCsv: {}, configTables: null, csvRows: {} })
     const store = useFilesStore()
     await store.initialize()
     await store.open('page:test')
@@ -382,5 +407,22 @@ describe('files store pages', () => {
 
     expect(vi.mocked(putFile).mock.calls.map(([request]) => request.path)).toEqual(['a.ts', 'b.ts'])
     expect(store.dirtyPaths.size).toBe(0)
+  })
+
+  it('opens the settings page for app.ts, and a form-only file without moving to a line', async () => {
+    vi.mocked(fetchProjectIndex).mockResolvedValue({ paths: [APP_CONFIG_FILE, CONFIG_FILE], tables: {}, tableOrder: [], mockCsv: {}, configTables: null, csvRows: {} })
+    const store = useFilesStore()
+    await store.initialize()
+
+    await store.open(APP_CONFIG_FILE, { line: 3, column: 1 })
+
+    expect(store.currentTarget).toBe(SETTINGS_PAGE)
+    expect(store.reveal).toBeNull()
+    expect(store.message).toBe(`${APP_CONFIG_FILE} 只有表單。第 3 行請以其他編輯器修改。`)
+
+    await store.open(CONFIG_FILE, { line: 5, column: 1 })
+
+    expect(store.currentTarget).toBe(CONFIG_FILE)
+    expect(store.reveal).toBeNull()
   })
 })

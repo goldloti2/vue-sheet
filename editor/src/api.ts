@@ -1,7 +1,9 @@
 // 介面與編輯器服務之間的呼叫。其他程式一律經由此處，不自行 fetch
 
 import type { FileContent, ProjectIndex, WriteRequest, WriteResult } from '../shared/api'
+import type { AppConfigEditRequest, AppConfigEditResult, AppConfigModel } from '../shared/appConfig'
 import type { ChecksSnapshot } from '../shared/checks'
+import type { ConfigEditRequest, ConfigEditResult, ConfigModel } from '../shared/configGs'
 import type { PreviewDraft, PreviewSource, PreviewStatus } from '../shared/preview'
 import type { RegistryEditRequest, RegistryEditResult, RegistryModel } from '../shared/registry'
 import type { CodeContext, CodeContextRequest, KeyRenameRequest, KeyRenameResult, SchemaEditRequest, SchemaEditResult, SchemaModel, SchemaTypes } from '../shared/schema'
@@ -82,6 +84,22 @@ export function editRegistry (body: RegistryEditRequest): Promise<RegistryEditRe
 
 export function createTable (body: NewTableRequest): Promise<NewTableResult> {
   return postJson('/api/table/create', body)
+}
+
+export function parseConfigText (text: string): Promise<ConfigModel> {
+  return postJson('/api/config/parse', { text })
+}
+
+export function editConfig (body: ConfigEditRequest): Promise<ConfigEditResult> {
+  return postJson('/api/config/edit', body)
+}
+
+export function parseAppConfigText (text: string): Promise<AppConfigModel> {
+  return postJson('/api/app-config/parse', { text })
+}
+
+export function editAppConfig (body: AppConfigEditRequest): Promise<AppConfigEditResult> {
+  return postJson('/api/app-config/edit', body)
 }
 
 export function parseMockTablesText (text: string): Promise<MockTablesModel | null> {

@@ -1,12 +1,15 @@
+import type * as EditorPages from '../shared/editorPages'
 import type { NavNode } from '../shared/navGroups'
 import { describe, expect, it, vi } from 'vitest'
+import { SETTINGS_PAGE } from '../shared/editorPages'
 import { navFolderValues, navGroups, navLocation, nodeFiles, nodeTargets, singleTarget } from '../shared/navGroups'
 
-// 測試用的頁面，對應兩個檔案
-vi.mock('../shared/editorPages', () => {
-  const pages: Record<string, { title: string, paths: string[] }> = { 'page:test': { title: '測試頁', paths: ['a.ts', 'b.ts'] } }
+// 加上測試用的頁面，對應兩個檔案
+vi.mock('../shared/editorPages', async importOriginal => {
+  const actual = await importOriginal<typeof EditorPages>()
+  const pages: Record<string, { title: string, paths: readonly string[] }> = { ...actual.EDITOR_PAGES, 'page:test': { title: '測試頁', paths: ['a.ts', 'b.ts'] } }
   const pageOf = (target: string) => pages[target] ?? null
-  return { pageOf, targetPaths: (target: string) => [...pageOf(target)?.paths ?? [target]] }
+  return { ...actual, pageOf, targetPaths: (target: string) => [...pageOf(target)?.paths ?? [target]] }
 })
 
 describe('navGroups', () => {
@@ -22,7 +25,7 @@ describe('navGroups', () => {
       'vue-build/src/services/mock/tables.ts',
     ])
 
-    expect(groups.map(group => group.label)).toEqual(['表', '動作', '頁面', '導覽', '後端', '測試資料'])
+    expect(groups.map(group => group.label)).toEqual(['表', '動作', '頁面', '導覽', '設定', '測試資料'])
     expect(groups[0]!.children).toEqual([
       { label: '總覽', path: 'vue-build/src/schema/index.ts' },
       { label: 'order', path: 'vue-build/src/schema/tables/order.ts' },
@@ -34,13 +37,24 @@ describe('navGroups', () => {
   })
 
   it('puts the file of a single-file group under the group', () => {
-    const groups = navGroups(['vue-build/src/config/navigation.ts', 'apps-script/Config.gs'])
+    const groups = navGroups(['vue-build/src/config/navigation.ts'])
 
     expect(groups).toEqual([
       { label: '導覽', children: [{ label: 'navigation', path: 'vue-build/src/config/navigation.ts' }] },
-      { label: '後端', children: [{ label: 'Config.gs', path: 'apps-script/Config.gs' }] },
     ])
-    expect(groups.map(group => singleTarget(group))).toEqual(['vue-build/src/config/navigation.ts', 'apps-script/Config.gs'])
+    expect(groups.map(group => singleTarget(group))).toEqual(['vue-build/src/config/navigation.ts'])
+  })
+
+  it('lists the backend tables and the settings page under the settings group', () => {
+    const [both] = navGroups(['apps-script/Config.gs', 'vue-build/src/config/app.ts'])
+    const [appOnly] = navGroups(['vue-build/src/config/app.ts'])
+
+    expect(both).toEqual({
+      label: '設定',
+      children: [{ label: '後端表頭', path: 'apps-script/Config.gs' }, { label: 'App 設定', page: SETTINGS_PAGE }],
+    })
+    expect(appOnly).toEqual({ label: '設定', children: [{ label: 'App 設定', page: SETTINGS_PAGE }] })
+    expect(singleTarget(appOnly!)).toBe(SETTINGS_PAGE)
   })
 
   it('lists the files under a node', () => {

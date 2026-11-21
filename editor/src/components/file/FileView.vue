@@ -1,11 +1,15 @@
 <script lang="ts" setup>
   import type { EditorState } from '@codemirror/state'
   import { computed, shallowRef, watch } from 'vue'
+  import ConfigForm from '@/components/config/ConfigForm.vue'
   import CsvForm from '@/components/overview/CsvForm.vue'
   import MockOverviewForm from '@/components/overview/MockOverviewForm.vue'
   import OverviewForm from '@/components/overview/OverviewForm.vue'
   import SchemaForm from '@/components/schema/SchemaForm.vue'
+  import SettingsPage from '@/components/settings/SettingsPage.vue'
   import { useFilesStore } from '@/stores/files'
+  import { CONFIG_FILE } from '../../../shared/configGs'
+  import { FORM_ONLY_FILES, SETTINGS_PAGE } from '../../../shared/editorPages'
   import { isMockCsvFile, MOCK_TABLES_FILE } from '../../../shared/tableFiles'
   import { REGISTRY_FILE, tableKeyOf } from '../../../shared/tableKeys'
   import CodeEditor from './CodeEditor.vue'
@@ -21,9 +25,9 @@
   const dirty = computed(() => store.currentPaths.some(path => store.dirtyPaths.has(path)))
   const reveal = computed(() => store.reveal !== null && store.reveal.path === file.value?.path ? store.reveal : null)
 
-  // 表的 schema、兩個總覽與 mock CSV 有表單。各檔案共用同一個選擇
+  // 表的 schema、兩個總覽、mock CSV 與 Config.gs 有表單。各檔案共用同一個選擇。設定頁另外顯示
   const mode = shallowRef<ViewMode>('form')
-  type FormKind = 'schema' | 'overview' | 'mockOverview' | 'csv'
+  type FormKind = 'schema' | 'overview' | 'mockOverview' | 'csv' | 'config'
   const formKind = computed<FormKind | null>(() => {
     const path = file.value?.path ?? null
     if (path === null) {
@@ -38,10 +42,15 @@
     if (path === MOCK_TABLES_FILE) {
       return 'mockOverview'
     }
+    if (path === CONFIG_FILE) {
+      return 'config'
+    }
     return isMockCsvFile(path) ? 'csv' : null
   })
   const hasForm = computed(() => formKind.value !== null)
-  const showForm = computed(() => hasForm.value && mode.value === 'form')
+  // 只有表單的檔案不顯示切換，一律顯示表單
+  const formOnly = computed(() => file.value !== null && FORM_ONLY_FILES.has(file.value.path))
+  const showForm = computed(() => hasForm.value && (mode.value === 'form' || formOnly.value))
 
   // 移至某一行時改用文字編輯器
   watch(reveal, target => {
@@ -82,7 +91,7 @@
         </v-toolbar-title>
 
         <v-btn-toggle
-          v-if="hasForm"
+          v-if="hasForm && !formOnly"
           v-model="mode"
           border
           class="mr-2"
@@ -145,6 +154,14 @@
           :text="file.text"
         />
 
+        <ConfigForm
+          v-else-if="showForm && formKind === 'config'"
+          :key="`form-${file.path}`"
+          class="file-view__editor"
+          :path="file.path"
+          :text="file.text"
+        />
+
         <SchemaForm
           v-else-if="showForm"
           :key="`form-${file.path}`"
@@ -167,6 +184,8 @@
           @revealed="store.clearReveal"
         />
       </template>
+
+      <SettingsPage v-else-if="target === SETTINGS_PAGE" class="file-view__editor" />
     </template>
 
     <div v-else class="file-view__empty text-medium-emphasis">

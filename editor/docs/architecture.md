@@ -18,7 +18,7 @@
 
 | 位置 | 職責 |
 | --- | --- |
-| `server/` | 服務：檔案的範圍與讀寫、監看、language service、檢查、預覽的子程序、新增與刪除表 |
+| `server/` | 服務：檔案的範圍與讀寫、監看、language service、檢查、預覽的子程序、新增與刪除表、`Config.gs` 與 `config/app.ts` 的解析與修改 |
 | `server/schema/` | schema 檔的解析與文字修改、`types.ts` 的讀取、`schemas` 的登記、key 的改名 |
 | `shared/` | 服務與介面共用的資料形狀與純函數，例如 CSV 的解析、導覽的分組、欄位的修改的比較 |
 | `src/` | 介面：Vue 元件、Pinia 的 store、composables |
@@ -55,6 +55,7 @@
 - `vue-build/src/schema/index.ts`
 - `vue-build/src/composables/actions/` 中的 `use表名Actions.ts`，`useTableActions.ts` 除外
 - `vue-build/src/config/navigation.ts`
+- `vue-build/src/config/app.ts`：只修改各設定項的值。服務以 TypeScript 的 parser 讀取值與型別列出的選項，不執行
 - `vue-build/src/services/mock/tables.ts`
 - `vue-build/mock/` 中的 CSV
 - `apps-script/Config.gs`
@@ -69,11 +70,12 @@
 - 服務以 chokidar 監看專案的資料夾。檔案在別處修改或刪除時，服務推送變動，介面依此更新記憶體中的內容。
   - 檔案沒有未儲存的修改時，介面改為顯示新的內容。
   - 檔案有未儲存的修改時，介面保留修改，並顯示提示。
-- 新增或刪除檔案，或修改各表的 schema、`schemas` 的登記、測試資料的登記與 CSV 時，服務重送檔案清單與各表的摘要。
+- 新增或刪除檔案，或修改各表的 schema、`schemas` 的登記、測試資料的登記、CSV 與 `Config.gs` 時，服務重送檔案清單、各表的摘要與 `Config.gs` 的 `TABLES` 中的登記。
 - 介面只為目前的檔案建立畫面。其他開過的檔案只保留資料：內容、讀取時的 hash、CodeMirror 的狀態、解析的結果。
 - 檔案區開啟的對象為一個檔案，或一個頁面。頁面對應數個檔案，定義於 `shared/editorPages.ts`。
   - 開啟頁面時，介面讀入頁面的檔案中存在的檔案。
   - 儲存、放棄修改與導覽的未儲存標示，皆涵蓋頁面的所有檔案。
+  - 只在頁面中修改的檔案（`app.ts`），開啟時改為開啟頁面。
 
 ---
 

@@ -12,6 +12,7 @@ describe('isProjectFile', () => {
     expect(isProjectFile('vue-build/src/schema/index.ts')).toBe(true)
     expect(isProjectFile('vue-build/src/composables/actions/useOrderActions.ts')).toBe(true)
     expect(isProjectFile('vue-build/src/config/navigation.ts')).toBe(true)
+    expect(isProjectFile('vue-build/src/config/app.ts')).toBe(true)
     expect(isProjectFile('vue-build/src/services/mock/tables.ts')).toBe(true)
     expect(isProjectFile('vue-build/mock/order-test.csv')).toBe(true)
     expect(isProjectFile('apps-script/Config.gs')).toBe(true)
@@ -20,7 +21,6 @@ describe('isProjectFile', () => {
   it('rejects framework files', () => {
     expect(isProjectFile('vue-build/src/schema/types.ts')).toBe(false)
     expect(isProjectFile('vue-build/src/composables/actions/useTableActions.ts')).toBe(false)
-    expect(isProjectFile('vue-build/src/config/app.ts')).toBe(false)
     expect(isProjectFile('vue-build/src/services/mock/backend.ts')).toBe(false)
     expect(isProjectFile('apps-script/Code.gs')).toBe(false)
     expect(isProjectFile('PROJECT-ROADMAP.md')).toBe(false)

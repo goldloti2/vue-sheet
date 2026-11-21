@@ -1,4 +1,5 @@
 import type { FileChangedEvent, FileContent, ProjectIndex, TableSummary, WriteResult } from '../../shared/api'
+import type { ConfigTableEntry } from '../../shared/configGs'
 import type { SchemaModel } from '../../shared/schema'
 import type { EditorState } from '@codemirror/state'
 import { defineStore } from 'pinia'
@@ -6,8 +7,9 @@ import { computed, reactive, shallowRef } from 'vue'
 import { clearPreviewDrafts, fetchFile, fetchProjectIndex, onServerEvent, parseSchemaText, putFile, putPreviewDraft, renameColumnKey } from '@/api'
 import { FILE_CHANGED_EVENT, PROJECT_INDEX_EVENT } from '../../shared/api'
 import { columnChanges } from '../../shared/columnChanges'
+import { CONFIG_DEPLOY_MESSAGE, CONFIG_FILE } from '../../shared/configGs'
 import { renameCsvHeader } from '../../shared/csv'
-import { pageOf, targetPaths } from '../../shared/editorPages'
+import { FILE_PAGES, FORM_ONLY_FILES, pageOf, targetPaths } from '../../shared/editorPages'
 import { navGroups, navLocation } from '../../shared/navGroups'
 import { tableKeyOf, TABLES_DIR } from '../../shared/tableKeys'
 
@@ -58,6 +60,7 @@ export const useFilesStore = defineStore('files', () => {
   const mockCsv = shallowRef<Record<string, string>>({})
   const tableOrder = shallowRef<string[]>([])
   const csvRows = shallowRef<Record<string, number>>({})
+  const configTables = shallowRef<Record<string, ConfigTableEntry> | null>(null)
   const files = reactive(new Map<string, OpenFile>())
   // 檔案區開啟的對象：檔案的路徑或頁面的識別值（見 editorPages.ts）
   const currentTarget = shallowRef<string | null>(null)
@@ -122,6 +125,7 @@ export const useFilesStore = defineStore('files', () => {
     mockCsv.value = index.mockCsv
     tableOrder.value = index.tableOrder
     csvRows.value = index.csvRows
+    configTables.value = index.configTables
   }
 
   // 編輯器開啟時，清除上次留在預覽中的未儲存內容，並開啟 schemas 中的第一張表
@@ -240,8 +244,9 @@ export const useFilesStore = defineStore('files', () => {
     return true
   }
 
-  /** 開啟檔案或頁面。頁面讀入它的檔案中存在的檔案。position 只用於檔案 */
-  async function open (target: string, position?: { line: number, column: number }): Promise<void> {
+  /** 開啟檔案或頁面。頁面讀入它的檔案中存在的檔案。position 只用於有文字編輯器的檔案 */
+  async function open (requested: string, position?: { line: number, column: number }): Promise<void> {
+    const target = FILE_PAGES[requested] ?? requested
     const page = pageOf(target)
     if (page) {
       await Promise.all(page.paths.filter(path => paths.value.includes(path)).map(path => load(path)))
@@ -249,7 +254,11 @@ export const useFilesStore = defineStore('files', () => {
       return
     }
     currentTarget.value = target
-    reveal.value = position && !page ? { path: target, ...position } : null
+    const formOnly = FORM_ONLY_FILES.has(requested)
+    reveal.value = position && !page && !formOnly ? { path: target, ...position } : null
+    if (position && formOnly) {
+      message.value = `${requested} 只有表單。第 ${position.line} 行請以其他編輯器修改。`
+    }
   }
 
   function clearReveal (): void {
@@ -376,6 +385,9 @@ export const useFilesStore = defineStore('files', () => {
     }
     if (result.ok) {
       linkedEdits.delete(path)
+      if (path === CONFIG_FILE) {
+        message.value = CONFIG_DEPLOY_MESSAGE
+      }
     }
     await syncPreview(path)
     await releaseLinked(path)
@@ -505,6 +517,7 @@ export const useFilesStore = defineStore('files', () => {
     mockCsv,
     tableOrder,
     csvRows,
+    configTables,
     tableLabels,
     currentTarget,
     reveal,

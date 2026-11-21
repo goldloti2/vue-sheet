@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-  import { mdiApplicationOutline, mdiChevronLeft, mdiDatabaseOutline, mdiFlaskOutline, mdiGestureTapButton, mdiPlus, mdiRouterNetwork, mdiScriptTextOutline } from '@mdi/js'
+  import { mdiApplicationOutline, mdiChevronLeft, mdiCogOutline, mdiDatabaseOutline, mdiFlaskOutline, mdiGestureTapButton, mdiPlus, mdiRouterNetwork } from '@mdi/js'
   import { computed, shallowRef, watch } from 'vue'
   import { useTableDialogs } from '@/composables/useTableDialogs'
   import { navFolderValues, navGroups, nodeFiles, nodeTarget, nodeTargets, singleTarget } from '../../../shared/navGroups'
@@ -30,7 +30,7 @@
     動作: mdiGestureTapButton,
     頁面: mdiApplicationOutline,
     導覽: mdiRouterNetwork,
-    後端: mdiScriptTextOutline,
+    設定: mdiCogOutline,
     測試資料: mdiFlaskOutline,
   }
 

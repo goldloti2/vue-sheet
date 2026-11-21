@@ -1,4 +1,5 @@
 // 編輯器的服務與介面之間的資料形狀。路徑一律相對於 repo 根目錄，以 / 分隔
+import type { ConfigTableEntry } from './configGs.ts'
 
 export interface FileContent {
   path: string
@@ -38,6 +39,8 @@ export interface TableSummary {
   variable: string | null
   /** 虛擬表：schema 物件有 rules */
   virtual: boolean
+  /** 主鍵欄的 key。不是以字串直接寫值或沒有此設定時為 null */
+  idColumn: string | null
   columns: TableColumn[]
 }
 
@@ -50,6 +53,8 @@ export interface ProjectIndex {
   tableOrder: string[]
   /** 表的代號對應 services/mock/tables.ts 中登記的 CSV 的路徑 */
   mockCsv: Record<string, string>
+  /** apps-script/Config.gs 的 TABLES 中各表的值。沒有 Config.gs 或找不到 TABLES 物件時為 null */
+  configTables: Record<string, ConfigTableEntry> | null
   /** mock/ 中各 CSV 的路徑對應資料的列數，不含表頭 */
   csvRows: Record<string, number>
 }

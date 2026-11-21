@@ -1,4 +1,5 @@
-import { targetPaths } from './editorPages.ts'
+import { CONFIG_FILE } from './configGs.ts'
+import { EDITOR_PAGES, SETTINGS_PAGE, targetPaths } from './editorPages.ts'
 import { MOCK_TABLES_FILE } from './tableFiles.ts'
 import { ACTIONS_DIR, actionsTableKeyOf, REGISTRY_FILE, tableKeyOf, TABLES_DIR } from './tableKeys.ts'
 
@@ -241,7 +242,10 @@ export function navGroups (files: readonly string[], { tableLabels = {}, tableOr
     ...group('動作', actions),
     ...group('頁面', pages),
     ...single('導覽', `${SRC}config/navigation.ts`),
-    ...single('後端', 'apps-script/Config.gs'),
+    ...group('設定', [
+      ...pick(file => file === CONFIG_FILE).map(file => fileNode(file, '後端表頭')),
+      ...EDITOR_PAGES[SETTINGS_PAGE]!.paths.some(file => files.includes(file)) ? [{ label: EDITOR_PAGES[SETTINGS_PAGE]!.title, page: SETTINGS_PAGE }] : [],
+    ]),
     ...group('測試資料', [
       ...pick(file => file === MOCK_TABLES_FILE).map(file => fileNode(file, '總覽')),
       ...csvNodes(pick(file => file.startsWith('vue-build/mock/')), tableLabels, order, mockCsv),

@@ -183,7 +183,7 @@
           <td>
             <span class="overview-form__files">
               <v-chip
-                v-for="[name, title] in FILE_TITLES"
+                v-for="[name, title] in fileTitlesOf(row.key!)"
                 :key="name"
                 :disabled="row.files[name] === null"
                 size="small"

@@ -14,8 +14,11 @@
 
   const store = useFilesStore()
 
+  // 開啟的對象：檔案的路徑或頁面的識別值。對象為頁面時，file 為 null
+  const target = computed(() => store.currentTarget)
   const file = computed(() => store.current)
-  const dirty = computed(() => file.value !== null && store.dirtyPaths.has(file.value.path))
+  const page = computed(() => store.currentPage)
+  const dirty = computed(() => store.currentPaths.some(path => store.dirtyPaths.has(path)))
   const reveal = computed(() => store.reveal !== null && store.reveal.path === file.value?.path ? store.reveal : null)
 
   // 表的 schema、兩個總覽與 mock CSV 有表單。各檔案共用同一個選擇
@@ -64,10 +67,17 @@
 
 <template>
   <section class="file-view">
-    <template v-if="file">
+    <template v-if="target !== null">
       <v-toolbar class="file-view__toolbar" color="surface" density="compact">
+        <!-- 頁面以名稱為標題，旁邊列出它的檔案 -->
         <v-toolbar-title class="text-body-2">
-          {{ file.path }}
+          <template v-if="page">
+            {{ page.title }}
+            <span class="text-medium-emphasis">{{ page.paths.join('、') }}</span>
+          </template>
+
+          <template v-else>{{ target }}</template>
+
           <span v-if="dirty" class="text-medium-emphasis">（未儲存）</span>
         </v-toolbar-title>
 
@@ -90,7 +100,7 @@
           :disabled="!dirty"
           text="放棄修改"
           variant="text"
-          @click="store.discard(file.path)"
+          @click="store.discard(target)"
         />
 
         <v-btn
@@ -106,55 +116,57 @@
           :disabled="!dirty"
           text="儲存"
           variant="flat"
-          @click="store.requestSave(file.path)"
+          @click="store.requestSave(target)"
         />
       </v-toolbar>
 
-      <OverviewForm
-        v-if="showForm && formKind === 'overview'"
-        :key="`form-${file.path}`"
-        class="file-view__editor"
-        :path="file.path"
-        :text="file.text"
-      />
+      <template v-if="file">
+        <OverviewForm
+          v-if="showForm && formKind === 'overview'"
+          :key="`form-${file.path}`"
+          class="file-view__editor"
+          :path="file.path"
+          :text="file.text"
+        />
 
-      <MockOverviewForm
-        v-else-if="showForm && formKind === 'mockOverview'"
-        :key="`form-${file.path}`"
-        class="file-view__editor"
-        :path="file.path"
-        :text="file.text"
-      />
+        <MockOverviewForm
+          v-else-if="showForm && formKind === 'mockOverview'"
+          :key="`form-${file.path}`"
+          class="file-view__editor"
+          :path="file.path"
+          :text="file.text"
+        />
 
-      <CsvForm
-        v-else-if="showForm && formKind === 'csv'"
-        :key="`form-${file.path}`"
-        class="file-view__editor"
-        :path="file.path"
-        :text="file.text"
-      />
+        <CsvForm
+          v-else-if="showForm && formKind === 'csv'"
+          :key="`form-${file.path}`"
+          class="file-view__editor"
+          :path="file.path"
+          :text="file.text"
+        />
 
-      <SchemaForm
-        v-else-if="showForm"
-        :key="`form-${file.path}`"
-        class="file-view__editor"
-        :path="file.path"
-        :text="file.text"
-      />
+        <SchemaForm
+          v-else-if="showForm"
+          :key="`form-${file.path}`"
+          class="file-view__editor"
+          :path="file.path"
+          :text="file.text"
+        />
 
-      <CodeEditor
-        v-else
-        :key="file.path"
-        class="file-view__editor"
-        :initial-state="store.editorState(file.path)"
-        :path="file.path"
-        :reveal="reveal"
-        :text="file.text"
-        @blur="onBlur"
-        @change="onChange"
-        @leave="onLeave"
-        @revealed="store.clearReveal"
-      />
+        <CodeEditor
+          v-else
+          :key="file.path"
+          class="file-view__editor"
+          :initial-state="store.editorState(file.path)"
+          :path="file.path"
+          :reveal="reveal"
+          :text="file.text"
+          @blur="onBlur"
+          @change="onChange"
+          @leave="onLeave"
+          @revealed="store.clearReveal"
+        />
+      </template>
     </template>
 
     <div v-else class="file-view__empty text-medium-emphasis">

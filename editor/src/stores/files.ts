@@ -7,6 +7,7 @@ import { clearPreviewDrafts, fetchFile, fetchProjectIndex, onServerEvent, parseS
 import { FILE_CHANGED_EVENT, PROJECT_INDEX_EVENT } from '../../shared/api'
 import { columnChanges } from '../../shared/columnChanges'
 import { renameCsvHeader } from '../../shared/csv'
+import { pageOf, targetPaths } from '../../shared/editorPages'
 import { navGroups, navLocation } from '../../shared/navGroups'
 import { tableKeyOf, TABLES_DIR } from '../../shared/tableKeys'
 
@@ -58,7 +59,8 @@ export const useFilesStore = defineStore('files', () => {
   const tableOrder = shallowRef<string[]>([])
   const csvRows = shallowRef<Record<string, number>>({})
   const files = reactive(new Map<string, OpenFile>())
-  const currentPath = shallowRef<string | null>(null)
+  // 檔案區開啟的對象：檔案的路徑或頁面的識別值（見 editorPages.ts）
+  const currentTarget = shallowRef<string | null>(null)
   // 文字編輯器移至此位置後清除
   const reveal = shallowRef<RevealTarget | null>(null)
   const message = shallowRef<string | null>(null)
@@ -79,7 +81,11 @@ export const useFilesStore = defineStore('files', () => {
   // 內容對應解析的結果
   const modelCache = new Map<string, Promise<SchemaModel | null>>()
 
-  const current = computed(() => currentPath.value === null ? null : files.get(currentPath.value) ?? null)
+  // 對象為頁面時為 null
+  const current = computed(() => currentTarget.value === null ? null : files.get(currentTarget.value) ?? null)
+  const currentPage = computed(() => currentTarget.value === null ? null : pageOf(currentTarget.value))
+  // 對象讀寫的檔案
+  const currentPaths = computed(() => currentTarget.value === null ? [] : targetPaths(currentTarget.value))
   // 讀得到 tableLabel 的表
   const tableLabels = computed(() => Object.fromEntries(Object.entries(tables.value)
     .flatMap(([key, table]) => table.label === null ? [] : [[key, table.label]])))
@@ -104,8 +110,8 @@ export const useFilesStore = defineStore('files', () => {
   function forget (path: string): void {
     files.delete(path)
     editorStates.delete(path)
-    if (currentPath.value === path) {
-      currentPath.value = null
+    if (currentTarget.value === path) {
+      currentTarget.value = null
     }
     void syncPreview(path)
   }
@@ -123,7 +129,7 @@ export const useFilesStore = defineStore('files', () => {
     const [index] = await Promise.all([fetchProjectIndex(), clearPreviewDrafts()])
     setIndex(index)
     const first = index.tableOrder.map(key => `${TABLES_DIR}${key}.ts`).find(path => index.paths.includes(path))
-    if (currentPath.value === null && first) {
+    if (currentTarget.value === null && first) {
       await open(first)
     }
   }
@@ -234,12 +240,16 @@ export const useFilesStore = defineStore('files', () => {
     return true
   }
 
-  async function open (path: string, position?: { line: number, column: number }): Promise<void> {
-    if (!await load(path)) {
+  /** 開啟檔案或頁面。頁面讀入它的檔案中存在的檔案。position 只用於檔案 */
+  async function open (target: string, position?: { line: number, column: number }): Promise<void> {
+    const page = pageOf(target)
+    if (page) {
+      await Promise.all(page.paths.filter(path => paths.value.includes(path)).map(path => load(path)))
+    } else if (!await load(target)) {
       return
     }
-    currentPath.value = path
-    reveal.value = position ? { path, ...position } : null
+    currentTarget.value = target
+    reveal.value = position && !page ? { path: target, ...position } : null
   }
 
   function clearReveal (): void {
@@ -414,9 +424,9 @@ export const useFilesStore = defineStore('files', () => {
     saveConfirm.value = { paths, changes, unsavedLinked }
   }
 
-  /** 儲存一個檔案。有欄位的修改時先確認 */
-  function requestSave (path: string): Promise<void> {
-    return requestSaving([path])
+  /** 儲存一個檔案，或頁面的所有檔案。有欄位的修改時先確認 */
+  function requestSave (target: string): Promise<void> {
+    return requestSaving(targetPaths(target))
   }
 
   /** 儲存所有未儲存的檔案。有欄位的修改時先確認 */
@@ -436,8 +446,15 @@ export const useFilesStore = defineStore('files', () => {
     saveConfirm.value = null
   }
 
-  /** 放棄未儲存的修改。連帶修改其他檔案的操作先反向執行 */
-  async function discard (path: string): Promise<void> {
+  /** 放棄一個檔案，或頁面的所有檔案的未儲存的修改 */
+  async function discard (target: string): Promise<void> {
+    for (const path of targetPaths(target)) {
+      await discardFile(path)
+    }
+  }
+
+  // 連帶修改其他檔案的操作先反向執行
+  async function discardFile (path: string): Promise<void> {
     const failed = await revertLinkedEdits(path)
     const file = files.get(path)
     if (file) {
@@ -489,9 +506,11 @@ export const useFilesStore = defineStore('files', () => {
     tableOrder,
     csvRows,
     tableLabels,
-    currentPath,
+    currentTarget,
     reveal,
     current,
+    currentPage,
+    currentPaths,
     dirtyPaths,
     previewHeld,
     saveConfirm,

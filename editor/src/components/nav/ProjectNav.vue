@@ -2,7 +2,7 @@
   import { mdiApplicationOutline, mdiChevronLeft, mdiDatabaseOutline, mdiFlaskOutline, mdiGestureTapButton, mdiPlus, mdiRouterNetwork, mdiScriptTextOutline } from '@mdi/js'
   import { computed, shallowRef, watch } from 'vue'
   import { useTableDialogs } from '@/composables/useTableDialogs'
-  import { navFolderValues, navGroups, nodeFiles, singleFile } from '../../../shared/navGroups'
+  import { navFolderValues, navGroups, nodeFiles, nodeTarget, nodeTargets, singleTarget } from '../../../shared/navGroups'
   import NavTreeNode from './NavTreeNode.vue'
 
   const props = defineProps<{
@@ -10,12 +10,13 @@
     tableLabels: Readonly<Record<string, string>>
     tableOrder: readonly string[]
     mockCsv: Readonly<Record<string, string>>
-    currentPath: string | null
+    /** 檔案的路徑或頁面的識別值 */
+    currentTarget: string | null
     dirtyPaths: ReadonlySet<string>
   }>()
 
   const emit = defineEmits<{
-    select: [path: string]
+    select: [target: string]
   }>()
 
   // 收合時只留各組的圖示。各組的清單保留，展開時維持展開的資料夾
@@ -36,30 +37,31 @@
   const groups = computed(() => navGroups(props.paths, { tableLabels: props.tableLabels, tableOrder: props.tableOrder, mockCsv: props.mockCsv }).map(group => ({
     node: group,
     files: nodeFiles(group),
+    targets: nodeTargets(group),
   })))
 
-  function ownerOf (path: string | null) {
-    return path === null ? undefined : groups.value.find(group => group.files.includes(path))
+  function ownerOf (target: string | null) {
+    return target === null ? undefined : groups.value.find(group => group.targets.includes(target))
   }
 
-  // 面板顯示的組。尚未選取時為目前的檔案所在的組，再沒有時為第一組
+  // 面板顯示的組。尚未選取時為目前的對象所在的組，再沒有時為第一組
   const selected = shallowRef<string | null>(null)
   const shown = computed(() => groups.value.find(group => group.node.label === selected.value)
-    ?? ownerOf(props.currentPath)
+    ?? ownerOf(props.currentTarget)
     ?? groups.value[0]
     ?? null)
 
   // 各組展開的資料夾
   const opened = shallowRef<Record<string, string[]>>({})
 
-  // 開啟其他組的檔案時，面板切換至該組，並展開檔案所在的資料夾
-  watch(() => props.currentPath, path => {
-    const owner = ownerOf(path)
-    if (!owner || path === null) {
+  // 開啟其他組的對象時，面板切換至該組，並展開對象所在的資料夾
+  watch(() => props.currentTarget, target => {
+    const owner = ownerOf(target)
+    if (!owner || target === null) {
       return
     }
     selected.value = owner.node.label
-    const folders = navFolderValues(owner.node, path)
+    const folders = navFolderValues(owner.node, target)
     if (folders && folders.length > 0) {
       opened.value = { ...opened.value, [owner.node.label]: folders }
     }
@@ -69,14 +71,14 @@
     opened.value = { ...opened.value, [label]: values as string[] }
   }
 
-  // 點選組時展開面板。組只有一個檔案時，一併開啟該檔案
+  // 點選組時展開面板。組只有一個檔案或頁面時，一併開啟
   function selectGroup (label: string): void {
     selected.value = label
     collapsed.value = false
     const group = groups.value.find(item => item.node.label === label)
-    const file = group ? singleFile(group.node) : null
-    if (file !== null) {
-      emit('select', file)
+    const target = group ? singleTarget(group.node) : null
+    if (target !== null) {
+      emit('select', target)
     }
   }
 
@@ -155,8 +157,8 @@
       >
         <NavTreeNode
           v-for="child in group.node.children"
-          :key="child.path ?? child.label"
-          :current-path="currentPath"
+          :key="nodeTarget(child) ?? child.label"
+          :current-target="currentTarget"
           :dirty-paths="dirtyPaths"
           :node="child"
           :parent="group.node.label"

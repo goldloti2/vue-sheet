@@ -2,21 +2,26 @@
   import type { NavNode } from '../../../shared/navGroups'
   import { mdiCircleMedium } from '@mdi/js'
   import { computed } from 'vue'
+  import { nodeFiles, nodeTarget } from '../../../shared/navGroups'
 
   const props = defineProps<{
     node: NavNode
     /** 上一層的識別值。資料夾的識別值為上一層的識別值加上 / 與名稱，各表的同名資料夾不會一起展開。須與 navFolderValues 相同 */
     parent: string
-    currentPath: string | null
+    /** 檔案的路徑或頁面的識別值 */
+    currentTarget: string | null
     dirtyPaths: ReadonlySet<string>
   }>()
 
   const emit = defineEmits<{
-    select: [path: string]
+    select: [target: string]
   }>()
 
   const value = computed(() => `${props.parent}/${props.node.label}`)
   const itemClass = computed(() => ({ 'nav-tree-node--detail': props.node.detail !== undefined }))
+  const target = computed(() => nodeTarget(props.node))
+  // 頁面的任一個檔案未儲存時，頁面標示未儲存
+  const dirty = computed(() => target.value !== null && nodeFiles(props.node).some(path => props.dirtyPaths.has(path)))
 </script>
 
 <template>
@@ -29,8 +34,8 @@
 
     <NavTreeNode
       v-for="child in node.children"
-      :key="child.path ?? child.label"
-      :current-path="currentPath"
+      :key="nodeTarget(child) ?? child.label"
+      :current-target="currentTarget"
       :dirty-paths="dirtyPaths"
       :node="child"
       :parent="value"
@@ -39,16 +44,16 @@
   </v-list-group>
 
   <v-list-item
-    v-else-if="node.path"
-    :active="node.path === currentPath"
+    v-else-if="target !== null"
+    :active="target === currentTarget"
     :class="itemClass"
     color="primary"
     :title="node.label"
-    @click="emit('select', node.path)"
+    @click="emit('select', target)"
   >
     <span v-if="node.detail" class="nav-tree-node__detail">{{ node.detail }}</span>
 
-    <template v-if="dirtyPaths.has(node.path)" #append>
+    <template v-if="dirty" #append>
       <v-icon aria-label="未儲存" :icon="mdiCircleMedium" />
     </template>
   </v-list-item>

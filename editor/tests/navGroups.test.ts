@@ -1,5 +1,13 @@
-import { describe, expect, it } from 'vitest'
-import { navFolderValues, navGroups, navLocation, nodeFiles, singleFile } from '../shared/navGroups'
+import type { NavNode } from '../shared/navGroups'
+import { describe, expect, it, vi } from 'vitest'
+import { navFolderValues, navGroups, navLocation, nodeFiles, nodeTargets, singleTarget } from '../shared/navGroups'
+
+// 測試用的頁面，對應兩個檔案
+vi.mock('../shared/editorPages', () => {
+  const pages: Record<string, { title: string, paths: string[] }> = { 'page:test': { title: '測試頁', paths: ['a.ts', 'b.ts'] } }
+  const pageOf = (target: string) => pages[target] ?? null
+  return { pageOf, targetPaths: (target: string) => [...pageOf(target)?.paths ?? [target]] }
+})
 
 describe('navGroups', () => {
   it('groups the files by kind', () => {
@@ -32,7 +40,7 @@ describe('navGroups', () => {
       { label: '導覽', children: [{ label: 'navigation', path: 'vue-build/src/config/navigation.ts' }] },
       { label: '後端', children: [{ label: 'Config.gs', path: 'apps-script/Config.gs' }] },
     ])
-    expect(groups.map(group => singleFile(group))).toEqual(['vue-build/src/config/navigation.ts', 'apps-script/Config.gs'])
+    expect(groups.map(group => singleTarget(group))).toEqual(['vue-build/src/config/navigation.ts', 'apps-script/Config.gs'])
   })
 
   it('lists the files under a node', () => {
@@ -47,7 +55,17 @@ describe('navGroups', () => {
       'vue-build/src/pages/order/[id]/index.vue',
       'vue-build/src/pages/order/index.vue',
     ])
-    expect(singleFile(pages!)).toBeNull()
+    expect(singleTarget(pages!)).toBeNull()
+  })
+
+  it('treats a page node as one target with the files of the page', () => {
+    const group: NavNode = { label: '設定', children: [{ label: '測試頁', page: 'page:test' }, { label: 'c', path: 'c.ts' }] }
+
+    expect(nodeFiles(group)).toEqual(['a.ts', 'b.ts', 'c.ts'])
+    expect(nodeTargets(group)).toEqual(['page:test', 'c.ts'])
+    expect(navFolderValues(group, 'page:test')).toEqual([])
+    expect(navLocation([group], 'page:test')).toBe('設定/測試頁')
+    expect(singleTarget({ label: '設定', children: [{ label: '測試頁', page: 'page:test' }] })).toBe('page:test')
   })
 
   it('names tables and actions by the table label and sorts them by file name', () => {

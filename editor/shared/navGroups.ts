@@ -1,15 +1,23 @@
+import { targetPaths } from './editorPages.ts'
 import { MOCK_TABLES_FILE } from './tableFiles.ts'
 import { ACTIONS_DIR, actionsTableKeyOf, REGISTRY_FILE, tableKeyOf, TABLES_DIR } from './tableKeys.ts'
 
-// 左側的導覽：依類型把專案的檔案分組。每一組為最上層的節點，子項為該組的檔案與資料夾
+// 左側的導覽：依類型把專案的檔案分組。每一組為最上層的節點，子項為該組的檔案、頁面與資料夾
 
 export interface NavNode {
   label: string
   /** 名稱旁的淡色小字，例如表的代號 */
   detail?: string
-  /** 檔案的路徑。資料夾與有子項的組為 undefined */
+  /** 檔案的路徑。頁面、資料夾與有子項的組為 undefined */
   path?: string
+  /** 頁面的識別值（見 editorPages.ts）。檔案、資料夾與有子項的組為 undefined */
+  page?: string
   children?: NavNode[]
+}
+
+/** 點選節點時開啟的對象：檔案的路徑或頁面的識別值。資料夾與有子項的組為 null */
+export function nodeTarget (node: NavNode): string | null {
+  return node.path ?? node.page ?? null
 }
 
 const SRC = 'vue-build/src/'
@@ -151,24 +159,31 @@ function csvNodes (files: string[], tableLabels: Readonly<Record<string, string>
   ]
 }
 
-// 節點之下所有檔案的路徑
+// 節點之下所有檔案的路徑。頁面為頁面的檔案
 export function nodeFiles (node: NavNode): string[] {
-  return node.path ? [node.path] : (node.children ?? []).flatMap(child => nodeFiles(child))
+  const target = nodeTarget(node)
+  return target === null ? (node.children ?? []).flatMap(child => nodeFiles(child)) : targetPaths(target)
 }
 
-// 組只有一個子項，且子項為檔案時，回傳該檔案的路徑
-export function singleFile (group: NavNode): string | null {
+// 節點之下所有的對象
+export function nodeTargets (node: NavNode): string[] {
+  const target = nodeTarget(node)
+  return target === null ? (node.children ?? []).flatMap(child => nodeTargets(child)) : [target]
+}
+
+// 組只有一個子項，且子項為檔案或頁面時，回傳該對象
+export function singleTarget (group: NavNode): string | null {
   const [only, ...rest] = group.children ?? []
-  return rest.length === 0 ? only?.path ?? null : null
+  return rest.length === 0 && only !== undefined ? nodeTarget(only) : null
 }
 
-/** 檔案於導覽中的位置，例如 頁面/訂單/列表頁。不在導覽中時為 null */
-export function navLocation (nodes: readonly NavNode[], filePath: string): string | null {
+/** 對象於導覽中的位置，例如 頁面/訂單/列表頁。不在導覽中時為 null */
+export function navLocation (nodes: readonly NavNode[], target: string): string | null {
   for (const node of nodes) {
-    if (node.path === filePath) {
+    if (nodeTarget(node) === target) {
       return node.label
     }
-    const inner = node.children ? navLocation(node.children, filePath) : null
+    const inner = node.children ? navLocation(node.children, target) : null
     if (inner !== null) {
       return `${node.label}/${inner}`
     }
@@ -176,11 +191,11 @@ export function navLocation (nodes: readonly NavNode[], filePath: string): strin
   return null
 }
 
-/** 通往檔案的各層資料夾的識別值，由外而內。識別值為上一層的識別值加上 / 與名稱，最上層為組名。不在組中時為 null */
-export function navFolderValues (group: NavNode, filePath: string): string[] | null {
+/** 通往對象的各層資料夾的識別值，由外而內。識別值為上一層的識別值加上 / 與名稱，最上層為組名。不在組中時為 null */
+export function navFolderValues (group: NavNode, target: string): string[] | null {
   const search = (node: NavNode, value: string): string[] | null => {
     for (const child of node.children ?? []) {
-      if (child.path === filePath) {
+      if (nodeTarget(child) === target) {
         return []
       }
       const childValue = `${value}/${child.label}`

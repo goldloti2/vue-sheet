@@ -21,9 +21,10 @@
   const preview = usePreviewStore()
   const problems = useProblemsStore()
 
-  const currentTableKey = computed(() => files.currentPath === null
+  // 頁面沒有對應的表
+  const currentTableKey = computed(() => files.current === null
     ? null
-    : tableKeyOfFile(files.currentPath, new Set(Object.keys(files.tables))))
+    : tableKeyOfFile(files.current.path, new Set(Object.keys(files.tables))))
 
   // 收合時沒有選取的分頁，點選任一分頁皆會觸發
   function openTab (value: unknown): void {

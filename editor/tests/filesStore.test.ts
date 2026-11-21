@@ -19,6 +19,13 @@ vi.mock('@/api', () => ({
   renameColumnKey: vi.fn(),
 }))
 
+// 測試用的頁面，對應兩個檔案
+vi.mock('../shared/editorPages', () => {
+  const pages: Record<string, { title: string, paths: string[] }> = { 'page:test': { title: '測試頁', paths: ['a.ts', 'b.ts'] } }
+  const pageOf = (target: string) => pages[target] ?? null
+  return { pageOf, targetPaths: (target: string) => [...pageOf(target)?.paths ?? [target]] }
+})
+
 const PATH = 'vue-build/src/schema/tables/order.ts'
 
 let context: SchemaTestContext
@@ -330,6 +337,50 @@ describe('files store initialize', () => {
 
     await store.initialize()
 
-    expect(store.currentPath).toBe('vue-build/src/schema/tables/order.ts')
+    expect(store.currentTarget).toBe('vue-build/src/schema/tables/order.ts')
+  })
+})
+
+describe('files store pages', () => {
+  beforeEach(async () => {
+    vi.clearAllMocks()
+    setActivePinia(createPinia())
+    vi.mocked(fetchFile).mockImplementation(async path => ({ path, text: 'a', hash: 'h1' }))
+    vi.mocked(putFile).mockImplementation(async ({ path, text }) => ({ ok: true, file: { path, text, hash: 'h2' } }))
+  })
+
+  async function openPage (paths: string[]) {
+    vi.mocked(fetchProjectIndex).mockResolvedValue({ paths, tables: {}, tableOrder: [], mockCsv: {}, csvRows: {} })
+    const store = useFilesStore()
+    await store.initialize()
+    await store.open('page:test')
+    return store
+  }
+
+  it('opens a page and loads the files of the page that exist', async () => {
+    const store = await openPage(['a.ts'])
+
+    expect(store.currentTarget).toBe('page:test')
+    expect(store.current).toBeNull()
+    expect(store.currentPage?.title).toBe('測試頁')
+    expect(store.currentPaths).toEqual(['a.ts', 'b.ts'])
+    expect(vi.mocked(fetchFile).mock.calls).toEqual([['a.ts']])
+  })
+
+  it('saves and discards all the files of a page', async () => {
+    const store = await openPage(['a.ts', 'b.ts'])
+    store.setText('a.ts', 'b')
+    store.setText('b.ts', 'c')
+
+    await store.discard('page:test')
+
+    expect(store.dirtyPaths.size).toBe(0)
+
+    store.setText('a.ts', 'b')
+    store.setText('b.ts', 'c')
+    await store.requestSave('page:test')
+
+    expect(vi.mocked(putFile).mock.calls.map(([request]) => request.path)).toEqual(['a.ts', 'b.ts'])
+    expect(store.dirtyPaths.size).toBe(0)
   })
 })

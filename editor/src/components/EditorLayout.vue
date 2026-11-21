@@ -54,7 +54,7 @@
     <ProjectNav
       v-model:collapsed="navCollapsed"
       class="editor-layout__nav"
-      :current-path="store.currentPath"
+      :current-target="store.currentTarget"
       :dirty-paths="store.dirtyPaths"
       :mock-csv="store.mockCsv"
       :paths="store.paths"

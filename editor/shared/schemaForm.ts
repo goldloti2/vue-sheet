@@ -43,6 +43,16 @@ export function columnRows (model: SchemaModel | null): ColumnRow[] {
   })
 }
 
+/** 主鍵欄的 Sheet 表頭：sheetHeader，沒有時為標籤。不是以字串直接寫值或找不到主鍵欄時為 null */
+export function idHeaderOfSchema (model: SchemaModel | null): string | null {
+  const idColumn = stringValue(propertyValue(model?.schema, 'idColumn'))
+  const row = columnRows(model).find(item => item.list === 'columns' && item.key !== null && item.key === idColumn)
+  if (!row || model?.virtual) {
+    return null
+  }
+  return stringValue(propertyValue(row.object, 'sheetHeader') ?? propertyValue(row.object, 'label'))
+}
+
 // 欄位與 Row 的成員已使用的名稱
 export function usedColumnKeys (model: SchemaModel | null): string[] {
   const keys = columnRows(model).flatMap(row => row.key === null ? [] : [row.key])

@@ -13,16 +13,22 @@ export interface NewTableRequest {
   prefix: string
   /** 虛擬表：由虛擬表的範本建立，沒有 mock CSV */
   virtual: boolean
+  /** Config.gs 的 TABLES 中的 Sheet 分頁名稱。空白時為表名。虛擬表不使用 */
+  sheetName: string
 }
 
 export interface NewTableResult {
   /** 新建的檔案 */
   created: string[]
+  /** 已登記於 Config.gs */
+  config: boolean
 }
 
 export interface DeleteTableResult {
   /** 刪除的檔案 */
   deleted: string[]
+  /** 已刪除 Config.gs 中的登記 */
+  config: boolean
 }
 
 export function schemaFileOf (key: string): string {

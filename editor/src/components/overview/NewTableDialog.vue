@@ -13,6 +13,9 @@
   const label = shallowRef('')
   const key = shallowRef('')
   const prefix = shallowRef('')
+  const sheetName = shallowRef('')
+  // 使用者修改過分頁名稱之前，分頁名稱跟隨表名
+  const sheetNameEdited = shallowRef(false)
   const virtual = shallowRef(false)
   const saving = shallowRef(false)
 
@@ -22,10 +25,23 @@
       label.value = ''
       key.value = ''
       prefix.value = ''
+      sheetName.value = ''
+      sheetNameEdited.value = false
       virtual.value = false
       saving.value = false
     }
   })
+
+  watch(label, value => {
+    if (!sheetNameEdited.value) {
+      sheetName.value = value
+    }
+  })
+
+  function editSheetName (value: string): void {
+    sheetName.value = value
+    sheetNameEdited.value = true
+  }
 
   const existing = computed(() => [...files.tableOrder, ...files.paths.map(path => tableKeyOf(path)).filter(item => item !== null)])
   // 建立中不檢查：新表寫入後，代號已在 existing 中
@@ -40,7 +56,13 @@
       return
     }
     saving.value = true
-    const created = await tables.create(key.value, label.value.trim(), virtual.value ? '' : prefix.value, virtual.value)
+    const created = await tables.create({
+      key: key.value,
+      label: label.value.trim(),
+      prefix: virtual.value ? '' : prefix.value,
+      virtual: virtual.value,
+      sheetName: virtual.value ? '' : sheetName.value.trim(),
+    })
     // 建立成功時維持建立中直到關閉，小視窗淡出時內容不變
     if (created) {
       open.value = false
@@ -101,6 +123,20 @@
           @keydown.enter="submit"
         />
 
+        <v-text-field
+          v-if="!virtual"
+          autocomplete="off"
+          density="compact"
+          :disabled="saving"
+          hide-details
+          label="Sheet 分頁名稱"
+          :model-value="sheetName"
+          :placeholder="label"
+          variant="outlined"
+          @keydown.enter="submit"
+          @update:model-value="editSheetName"
+        />
+
         <div v-if="virtual" class="text-caption text-medium-emphasis">
           <p>代號建立後無法在編輯器中修改。</p>
           <p>虛擬表唯讀，列由規則從其他表產生。新表內建一個欄位，沒有規則。不會建立頁面。</p>
@@ -110,7 +146,7 @@
         <div v-else class="text-caption text-medium-emphasis">
           <p>代號建立後無法在編輯器中修改。</p>
           <p>新表內建主鍵與名稱兩個欄位，並建立本地測試的 CSV。不會建立頁面。</p>
-          <p>建立後立即寫入。Config.gs 的登記請自行加入。</p>
+          <p>建立後立即寫入，並以 Sheet 分頁名稱登記於 Config.gs。分頁名稱空白時使用表名。</p>
         </div>
       </v-card-text>
 

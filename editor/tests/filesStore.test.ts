@@ -3,8 +3,9 @@ import type * as EditorPages from '../shared/editorPages'
 import type { SchemaTestContext } from './schema/setup'
 import { createPinia, setActivePinia } from 'pinia'
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
-import { fetchFile, fetchProjectIndex, onServerEvent, parseSchemaText, putFile, putPreviewDraft, renameColumnKey } from '@/api'
+import { editConfig, fetchFile, fetchProjectIndex, onServerEvent, parseSchemaText, putFile, putPreviewDraft, renameColumnKey } from '@/api'
 import { PREVIEW_SYNC_DELAY, useFilesStore } from '@/stores/files'
+import { applyConfigEdits, parseConfig } from '../server/configGs'
 import { parseSchema } from '../server/schema/schemaModel'
 import { FILE_CHANGED_EVENT } from '../shared/api'
 import { APP_CONFIG_FILE } from '../shared/appConfig'
@@ -14,6 +15,7 @@ import { loadSchemaTestContext } from './schema/setup'
 
 vi.mock('@/api', () => ({
   clearPreviewDrafts: vi.fn(),
+  editConfig: vi.fn(),
   fetchFile: vi.fn(),
   fetchProjectIndex: vi.fn(),
   onServerEvent: vi.fn(),
@@ -325,6 +327,48 @@ describe('files store column changes', () => {
     await store.discard(PATH)
 
     expect(store.message).toContain('表頭「下訂日期」改回「日期」')
+  })
+
+  it('renames the Config.gs idColumn as a linked edit and reverses it on discard', async () => {
+    const CONFIG = 'const TABLES = {\n  order: { sheetName: \'訂單\', idColumn: \'ORD-ID\' },\n}\n'
+    const store = useFilesStore()
+    vi.mocked(fetchFile).mockImplementation(async path => ({ path, text: path === CONFIG_FILE ? CONFIG : context.template, hash: 'h1' }))
+    vi.mocked(editConfig).mockImplementation(async ({ text, edits }) => {
+      const next = applyConfigEdits(context.ts, text, edits)
+      return { text: next, model: parseConfig(context.ts, next) }
+    })
+    await store.open(PATH)
+
+    await store.renameConfigIdColumn(PATH, 'order', 'ORD-ID', '訂單編號')
+    await store.renameConfigIdColumn(PATH, 'order', '其他', '編號')
+    expect(store.textOf(CONFIG_FILE)).toContain('idColumn: \'訂單編號\'')
+
+    store.setText(PATH, withoutDate())
+    await store.requestSave(PATH)
+    expect(store.saveConfirm?.unsavedLinked).toEqual([CONFIG_FILE])
+    store.cancelSave()
+
+    await store.discard(PATH)
+    expect(store.textOf(CONFIG_FILE)).toBe(CONFIG)
+    expect(store.message).toBeNull()
+    expect(vi.mocked(editConfig)).toHaveBeenCalledTimes(3)
+  })
+
+  it('reports the Config.gs idColumn that cannot be reversed', async () => {
+    const CONFIG = 'const TABLES = {\n  order: { sheetName: \'訂單\', idColumn: \'ORD-ID\' },\n}\n'
+    const store = useFilesStore()
+    vi.mocked(fetchFile).mockImplementation(async path => ({ path, text: path === CONFIG_FILE ? CONFIG : context.template, hash: 'h1' }))
+    vi.mocked(editConfig).mockImplementation(async ({ text, edits }) => {
+      const next = applyConfigEdits(context.ts, text, edits)
+      return { text: next, model: parseConfig(context.ts, next) }
+    })
+    await store.open(PATH)
+    await store.renameConfigIdColumn(PATH, 'order', 'ORD-ID', '訂單編號')
+    store.setText(CONFIG_FILE, CONFIG.replace('ORD-ID', '其他'))
+
+    await store.discard(PATH)
+
+    expect(store.message).toContain('idColumn「訂單編號」改回「ORD-ID」')
   })
 
   it('forgets the linked edits after save', async () => {

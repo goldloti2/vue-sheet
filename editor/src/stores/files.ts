@@ -4,7 +4,7 @@ import type { SchemaModel } from '../../shared/schema'
 import type { EditorState } from '@codemirror/state'
 import { defineStore } from 'pinia'
 import { computed, reactive, shallowRef } from 'vue'
-import { clearPreviewDrafts, fetchFile, fetchProjectIndex, onServerEvent, parseSchemaText, putFile, putPreviewDraft, renameColumnKey } from '@/api'
+import { clearPreviewDrafts, editConfig, fetchFile, fetchProjectIndex, onServerEvent, parseSchemaText, putFile, putPreviewDraft, renameColumnKey } from '@/api'
 import { FILE_CHANGED_EVENT, PROJECT_INDEX_EVENT } from '../../shared/api'
 import { columnChanges } from '../../shared/columnChanges'
 import { CONFIG_DEPLOY_MESSAGE, CONFIG_FILE } from '../../shared/configGs'
@@ -43,6 +43,7 @@ export interface SaveConfirm {
 type LinkedEdit
   = | { kind: 'key', oldKey: string, newKey: string }
     | { kind: 'header', csvPath: string, oldHeader: string, header: string }
+    | { kind: 'configId', tableKey: string, oldHeader: string, header: string }
 
 // 解析結果的快取保留的份數
 const MODEL_CACHE_SIZE = 20
@@ -311,6 +312,28 @@ export const useFilesStore = defineStore('files', () => {
     return true
   }
 
+  // Config.gs 中此表的 idColumn 由 oldHeader 改為 header，為未儲存的修改。回傳是否修改
+  async function applyConfigIdRename (path: string, tableKey: string, oldHeader: string, header: string): Promise<boolean> {
+    const text = await load(CONFIG_FILE) ? textOf(CONFIG_FILE) : null
+    if (text === null) {
+      return false
+    }
+    const result = await editConfig({ text, edits: [{ kind: 'renameIdColumn', key: tableKey, oldHeader, header }] }).catch(() => null)
+    if (result === null || result.text === text) {
+      return false
+    }
+    setText(CONFIG_FILE, result.text)
+    linkFiles(path, [CONFIG_FILE])
+    return true
+  }
+
+  /** 主鍵的表頭改變時，修改 Config.gs 中此表的 idColumn，並記錄此操作。idColumn 不是 oldHeader 時不修改 */
+  async function renameConfigIdColumn (path: string, tableKey: string, oldHeader: string, header: string): Promise<void> {
+    if (await applyConfigIdRename(path, tableKey, oldHeader, header)) {
+      recordLinkedEdit(path, { kind: 'configId', tableKey, oldHeader, header })
+    }
+  }
+
   /** 修改欄位的 key 與其他檔案中的引用，並記錄此操作。失敗時回傳錯誤訊息 */
   async function renameKey (path: string, oldKey: string, newKey: string): Promise<string | null> {
     try {
@@ -343,8 +366,12 @@ export const useFilesStore = defineStore('files', () => {
         } catch (error) {
           failed.push(`欄位 ${edit.newKey} 改回 ${edit.oldKey}：${(error as Error).message}`)
         }
-      } else if (!await applyHeaderRename(path, edit.csvPath, edit.header, edit.oldHeader)) {
-        failed.push(`${locationOf(edit.csvPath)} 的表頭「${edit.header}」改回「${edit.oldHeader}」：CSV 中沒有表頭「${edit.header}」。`)
+      } else if (edit.kind === 'header') {
+        if (!await applyHeaderRename(path, edit.csvPath, edit.header, edit.oldHeader)) {
+          failed.push(`${locationOf(edit.csvPath)} 的表頭「${edit.header}」改回「${edit.oldHeader}」：CSV 中沒有表頭「${edit.header}」。`)
+        }
+      } else if (!await applyConfigIdRename(path, edit.tableKey, edit.header, edit.oldHeader)) {
+        failed.push(`Config.gs 中 ${edit.tableKey} 的 idColumn「${edit.header}」改回「${edit.oldHeader}」：idColumn 已不是「${edit.header}」。`)
       }
     }
     return failed
@@ -539,6 +566,7 @@ export const useFilesStore = defineStore('files', () => {
     linkFiles,
     renameKey,
     renameMockHeader,
+    renameConfigIdColumn,
     columnChangesOf,
     setEditorState,
     editorState,

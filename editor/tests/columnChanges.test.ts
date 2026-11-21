@@ -33,6 +33,11 @@ describe('columnChanges', () => {
     ])
   })
 
+  it('lists a new primary key, but not a rename of the primary key column', () => {
+    expect(changes(text => text.replace('idColumn: \'code\'', 'idColumn: \'name\''))).toEqual(['主鍵由 code 改為 name'])
+    expect(changes(text => text.replace('idColumn: \'code\'', 'idColumn: \'serial\'').replace('{ key: \'code\',', '{ key: \'serial\','))).toEqual(['欄位 code 改為 serial'])
+  })
+
   it('lists header and type changes', () => {
     expect(changes(text => text
       .replace('{ key: \'code\', label: \'編號\', sheetHeader: \'TPL-ID\'', '{ key: \'code\', label: \'代碼\', sheetHeader: \'TPL-CODE\'')

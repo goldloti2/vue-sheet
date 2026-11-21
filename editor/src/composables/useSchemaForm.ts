@@ -6,6 +6,7 @@ import { liveProblems } from '@/components/file/typeScript'
 import { useFilesStore } from '@/stores/files'
 import { useProblemsStore } from '@/stores/problems'
 import { literalText } from '../../shared/schema'
+import { idHeaderOfSchema } from '../../shared/schemaForm'
 import { tableKeyOf } from '../../shared/tableKeys'
 
 /** 修改表頭的方式：sheet 為自行修改 Sheet 的表頭，keep 為加上 sheetHeader 保留原表頭 */
@@ -97,13 +98,20 @@ export function useSchemaForm (pathSource: () => string, textSource: () => strin
     return run
   }
 
+  // 主鍵的表頭改變時，一併修改 Config.gs 的 idColumn
   const applyNow = async (edits: SchemaEdit[], timing: PreviewTiming): Promise<string | null> => {
     const path = toValue(pathSource)
     try {
+      const oldHeader = idHeaderOfSchema(model.value)
       const result = await editSchema({ text: toValue(textSource), edits })
       model.value = result.model
       modelText = result.text
       files.setText(path, result.text)
+      const header = idHeaderOfSchema(result.model)
+      const tableKey = tableKeyOf(path)
+      if (oldHeader !== null && header !== null && oldHeader !== header && tableKey !== null) {
+        await files.renameConfigIdColumn(path, tableKey, oldHeader, header)
+      }
       if (timing === 'now') {
         syncPreview()
       } else if (timing === 'soon') {

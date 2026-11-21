@@ -4,12 +4,14 @@ import type { Formatter } from './files.ts'
 import type { TypeScript } from './vueBuild.ts'
 import { readdir, readFile, rm, rmdir } from 'node:fs/promises'
 import path from 'node:path'
+import { CONFIG_FILE, idHeaderOf } from '../shared/configGs.ts'
 import { csvRowText } from '../shared/csv.ts'
 import { registryAddBefore } from '../shared/registry.ts'
 import { literalText, propertyValue, stringValue } from '../shared/schema.ts'
 import { columnRows } from '../shared/schemaForm.ts'
 import { idPrefixError, MOCK_TABLES_FILE, mockCsvFileOf, PAGES_DIR, schemaFileOf, tableDeletionFiles, tableKeyError } from '../shared/tableFiles.ts'
 import { actionsFileOf, REGISTRY_FILE, tableKeyOf } from '../shared/tableKeys.ts'
+import { applyConfigEdits, readConfigTables } from './configGs.ts'
 import { readProjectFile, writeProjectFile } from './files.ts'
 import { addMockCsv, readMockCsvPaths, removeMockCsv } from './mockTables.ts'
 import { absolutePath, listProjectFiles } from './projectFiles.ts'
@@ -76,6 +78,12 @@ async function readRequired (root: string, filePath: string) {
   return file
 }
 
+// Config.gs 與其中的 TABLES。沒有此檔或 TABLES 不是物件字面值時為 null
+async function readConfig (ts: TypeScript, root: string) {
+  const config = await readProjectFile(root, CONFIG_FILE)
+  return config && readConfigTables(ts, config.text) !== null ? config : null
+}
+
 async function writeOrFail (tools: TableTools, filePath: string, text: string, baseHash: string | null): Promise<void> {
   const result = await writeProjectFile(tools.root, filePath, text, baseHash, tools.format)
   if (!result.ok) {
@@ -83,7 +91,7 @@ async function writeOrFail (tools: TableTools, filePath: string, text: string, b
   }
 }
 
-/** 由範本建立 schema、動作與 mock CSV，並登記於 schemas 與 mock CSV */
+/** 由範本建立 schema、動作與 mock CSV，並登記於 schemas 與 mock CSV。真實表另登記於 Config.gs */
 export async function createTable (tools: TableTools, request: NewTableRequest): Promise<NewTableResult> {
   const { ts, root } = tools
   const paths = await listProjectFiles(root)
@@ -117,6 +125,11 @@ export async function createTable (tools: TableTools, request: NewTableRequest):
   const before = registryModel ? registryAddBefore(registryModel, key => summaries[key]?.virtual ?? false, request.virtual) : undefined
   const registryText = applyRegistryEdits(ts, registry.text, [{ kind: 'add', key: request.key, variable, before }])
   const mockTablesText = csvFile === null ? null : addMockCsv(ts, mockTables.text, request.key, csvFile)
+  const config = request.virtual ? null : await readConfig(ts, root)
+  const idHeader = idHeaderOf(readTableSummary(ts, schemaText))
+  const configText = config === null || idHeader === null
+    ? null
+    : applyConfigEdits(ts, config.text, [{ kind: 'addTable', key: request.key, sheetName: request.sheetName.trim() || request.label.trim(), idColumn: idHeader }])
 
   await writeOrFail(tools, schemaFile, schemaText, null)
   await writeOrFail(tools, actionsFile, fromTemplate(actionsTemplate, request.key), null)
@@ -127,7 +140,10 @@ export async function createTable (tools: TableTools, request: NewTableRequest):
   if (mockTablesText !== null) {
     await writeOrFail(tools, MOCK_TABLES_FILE, mockTablesText, mockTables.hash)
   }
-  return { created }
+  if (config !== null && configText !== null && configText !== config.text) {
+    await writeOrFail(tools, CONFIG_FILE, configText, config.hash)
+  }
+  return { created, config: configText !== null }
 }
 
 // 刪除檔案後，由內而外刪除 pages/ 中變空的資料夾
@@ -147,7 +163,7 @@ async function removeEmptyFolders (root: string, files: readonly string[]): Prom
   }
 }
 
-/** 刪除表的檔案（見 tableDeletionFiles），以及 schemas 與 mock CSV 的登記 */
+/** 刪除表的檔案（見 tableDeletionFiles），以及 schemas、mock CSV 與 Config.gs 的登記 */
 export async function deleteTable (tools: TableTools, key: string): Promise<DeleteTableResult> {
   const { ts, root } = tools
   const paths = await listProjectFiles(root)
@@ -157,6 +173,9 @@ export async function deleteTable (tools: TableTools, key: string): Promise<Dele
   // 先算出登記修改後的內容，失敗時不刪除任何檔案
   const registryText = registered ? applyRegistryEdits(ts, registry.text, [{ kind: 'remove', key }]) : null
   const mockTablesText = removeMockCsv(ts, mockTables.text, key)
+  const config = await readConfig(ts, root)
+  const configText = config === null ? null : applyConfigEdits(ts, config.text, [{ kind: 'removeTable', key }])
+  const configChanged = config !== null && configText !== null && configText !== config.text
 
   if (registryText !== null) {
     await writeOrFail(tools, REGISTRY_FILE, registryText, registry.hash)
@@ -164,11 +183,14 @@ export async function deleteTable (tools: TableTools, key: string): Promise<Dele
   if (mockTablesText !== mockTables.text) {
     await writeOrFail(tools, MOCK_TABLES_FILE, mockTablesText, mockTables.hash)
   }
+  if (configChanged) {
+    await writeOrFail(tools, CONFIG_FILE, configText, config.hash)
+  }
   for (const file of files) {
     await rm(absolutePath(root, file), { force: true })
   }
   await removeEmptyFolders(root, files)
-  return { deleted: files }
+  return { deleted: files, config: configChanged }
 }
 
 /** 為表建立只有表頭的 mock CSV，並登記於 mock CSV */
@@ -182,5 +204,5 @@ export async function createMockCsv (tools: TableTools, key: string): Promise<Ne
   const mockTablesText = addMockCsv(ts, mockTables.text, key, csvFile)
   await writeOrFail(tools, csvFile, csvHeaderText(ts, schema.text), null)
   await writeOrFail(tools, MOCK_TABLES_FILE, mockTablesText, mockTables.hash)
-  return { created: [csvFile] }
+  return { created: [csvFile], config: false }
 }

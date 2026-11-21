@@ -2,7 +2,7 @@ import type { SchemaTestContext } from './setup'
 import { beforeAll, describe, expect, it } from 'vitest'
 import { parseSchema } from '../../server/schema/schemaModel'
 import { columnKeyError } from '../../shared/schema'
-import { columnOptions, columnRows, idCandidates, idPrefix, keyListItems, propertyBefore, sortItems, sourceOf, usedColumnKeys } from '../../shared/schemaForm'
+import { columnOptions, columnRows, idCandidates, idHeaderOfSchema, idPrefix, keyListItems, propertyBefore, sortItems, sourceOf, usedColumnKeys } from '../../shared/schemaForm'
 import { loadSchemaTestContext } from './setup'
 
 let context: SchemaTestContext
@@ -94,5 +94,11 @@ describe('schema form', () => {
     expect(columnKeyError('note-1', [])).toMatch(/^key 只能使用/)
     expect(columnKeyError('id', [])).toMatch(/^id 為/)
     expect(columnKeyError('name', ['name'])).toBe('已有欄位 name。')
+  })
+
+  it('reads the Sheet header of the primary key column', () => {
+    expect(idHeaderOfSchema(parseSchema(context.ts, context.template))).toBe('TPL-ID')
+    expect(idHeaderOfSchema(parseSchema(context.ts, context.template.replace('idColumn: \'code\'', 'idColumn: \'name\'')))).toBe('名稱')
+    expect(idHeaderOfSchema(parseSchema(context.ts, OTHER))).toBeNull()
   })
 })

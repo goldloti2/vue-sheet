@@ -1,6 +1,5 @@
 <script lang="ts" setup>
   import type { HeaderChange } from '@/composables/useSchemaForm'
-  import { mdiAlertOutline } from '@mdi/js'
   import { shallowRef } from 'vue'
 
   defineProps<{
@@ -60,11 +59,10 @@
           v-if="isId && change === 'sheet'"
           class="mt-3"
           density="compact"
-          :icon="mdiAlertOutline"
-          type="warning"
+          type="info"
           variant="tonal"
         >
-          此欄位為主鍵。Config.gs 中此表的 idColumn 也須改為「{{ label }}」，請自行修改。
+          此欄位為主鍵。Config.gs 中此表的 idColumn 為「{{ oldLabel }}」時，一併改為「{{ label }}」。
         </v-alert>
       </v-card-text>
 

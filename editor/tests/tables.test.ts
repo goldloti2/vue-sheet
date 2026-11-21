@@ -19,6 +19,13 @@ const REGISTRY = [
   '',
 ].join('\n')
 
+const CONFIG = [
+  'const TABLES = {',
+  '  order: { sheetName: \'訂單\', idColumn: \'ORD-ID\' },',
+  '}',
+  '',
+].join('\n')
+
 const MOCK_TABLES = [
   'import orderCsv from \'../../../mock/order-test.csv?raw\'',
   '',
@@ -55,7 +62,7 @@ afterEach(async () => {
 
 describe('createTable', () => {
   it('copies the template with only the primary key and the name', async () => {
-    const result = await createTable(tools, { key: 'orderLine', label: '訂單明細', prefix: 'OL', virtual: false })
+    const result = await createTable(tools, { key: 'orderLine', label: '訂單明細', prefix: 'OL', virtual: false, sheetName: '' })
 
     expect(result.created).toEqual([
       'vue-build/src/schema/tables/orderLine.ts',
@@ -76,10 +83,29 @@ describe('createTable', () => {
     expect(await read('vue-build/src/schema/index.ts')).toContain('  order: orderSchema,\n  orderLine: orderLineSchema,\n}')
     expect(await read('vue-build/src/services/mock/tables.ts')).toContain('import orderLineCsv from \'../../../mock/orderLine-test.csv?raw\'\n')
     expect(await read('vue-build/src/services/mock/tables.ts')).toContain('  order: orderCsv,\n  orderLine: orderLineCsv,\n}')
+    expect(result.config).toBe(false)
+  })
+
+  it('registers a real table in Config.gs with the primary key header', async () => {
+    await put('apps-script/Config.gs', CONFIG)
+
+    const result = await createTable(tools, { key: 'orderLine', label: '訂單明細', prefix: 'OL', virtual: false, sheetName: '明細' })
+    await createTable(tools, { key: 'product', label: '商品', prefix: 'PRD', virtual: false, sheetName: ' ' })
+    await createTable(tools, { key: 'ledger', label: '帳目', prefix: '', virtual: true, sheetName: '' })
+
+    expect(result.config).toBe(true)
+    expect(await read('apps-script/Config.gs')).toBe([
+      'const TABLES = {',
+      '  order: { sheetName: \'訂單\', idColumn: \'ORD-ID\' },',
+      '  orderLine: { sheetName: \'明細\', idColumn: \'OL-ID\' },',
+      '  product: { sheetName: \'商品\', idColumn: \'PRD-ID\' },',
+      '}',
+      '',
+    ].join('\n'))
   })
 
   it('creates a virtual table without a CSV and registers it at the end', async () => {
-    const result = await createTable(tools, { key: 'ledger', label: '帳目', prefix: '', virtual: true })
+    const result = await createTable(tools, { key: 'ledger', label: '帳目', prefix: '', virtual: true, sheetName: '' })
 
     expect(result.created).toEqual([
       'vue-build/src/schema/tables/ledger.ts',
@@ -97,14 +123,14 @@ describe('createTable', () => {
     expect(await read('vue-build/src/schema/index.ts')).toContain('  order: orderSchema,\n  ledger: ledgerSchema,\n}')
     expect(await read('vue-build/src/services/mock/tables.ts')).toBe(MOCK_TABLES)
 
-    await createTable(tools, { key: 'line', label: '明細', prefix: 'LN', virtual: false })
+    await createTable(tools, { key: 'line', label: '明細', prefix: 'LN', virtual: false, sheetName: '' })
     expect(await read('vue-build/src/schema/index.ts')).toContain('  order: orderSchema,\n  line: lineSchema,\n  ledger: ledgerSchema,\n}')
   })
 
   it('rejects a table key in use and writes nothing', async () => {
-    await expect(createTable(tools, { key: 'order', label: '訂單', prefix: 'ORD', virtual: false })).rejects.toThrow('已有表 order。')
-    await expect(createTable(tools, { key: 'Line', label: '明細', prefix: 'L', virtual: false })).rejects.toThrow('代號只能使用')
-    await expect(createTable(tools, { key: 'line', label: '明細', prefix: 'l', virtual: false })).rejects.toThrow('主鍵字首只能使用')
+    await expect(createTable(tools, { key: 'order', label: '訂單', prefix: 'ORD', virtual: false, sheetName: '' })).rejects.toThrow('已有表 order。')
+    await expect(createTable(tools, { key: 'Line', label: '明細', prefix: 'L', virtual: false, sheetName: '' })).rejects.toThrow('代號只能使用')
+    await expect(createTable(tools, { key: 'line', label: '明細', prefix: 'l', virtual: false, sheetName: '' })).rejects.toThrow('主鍵字首只能使用')
     expect(await read('vue-build/src/schema/index.ts')).toBe(REGISTRY)
   })
 })
@@ -131,6 +157,16 @@ describe('deleteTable', () => {
     expect(await readdir(path.join(root, 'vue-build/src/pages/customer'))).toEqual(['index.vue'])
     expect(await read('vue-build/src/schema/index.ts')).toBe('\nexport const schemas = {}\n')
     expect(await read('vue-build/src/services/mock/tables.ts')).toBe('\nexport const mockCsv = {}\n')
+    expect(result.config).toBe(false)
+  })
+
+  it('removes the Config.gs registration', async () => {
+    await put('apps-script/Config.gs', CONFIG)
+
+    const result = await deleteTable(tools, 'order')
+
+    expect(result.config).toBe(true)
+    expect(await read('apps-script/Config.gs')).toBe('const TABLES = {}\n')
   })
 })
 
@@ -138,7 +174,7 @@ describe('createMockCsv', () => {
   it('writes the header row and registers the CSV', async () => {
     await put('vue-build/src/schema/tables/customer.ts', 'export const customerSchema = { tableLabel: \'客戶\', columns: [{ key: \'code\', label: \'編號\', sheetHeader: \'CUS-ID\' }, { key: \'name\', label: \'名稱, 全名\' }] }\n')
 
-    expect(await createMockCsv(tools, 'customer')).toEqual({ created: ['vue-build/mock/customer-test.csv'] })
+    expect(await createMockCsv(tools, 'customer')).toEqual({ created: ['vue-build/mock/customer-test.csv'], config: false })
     expect(await read('vue-build/mock/customer-test.csv')).toBe('CUS-ID,"名稱, 全名"\n')
     expect(await read('vue-build/src/services/mock/tables.ts')).toContain('  order: orderCsv,\n  customer: customerCsv,\n}')
   })

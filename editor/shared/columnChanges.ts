@@ -1,4 +1,4 @@
-// 兩個版本的 schema 之間欄位的修改：新增、刪除、key 的改名、表頭與型別的修改
+// 兩個版本的 schema 之間欄位的修改：新增、刪除、key 的改名、表頭與型別的修改、主鍵的更換
 import type { SchemaModel } from './schema.ts'
 import type { ColumnList, ColumnRow } from './schemaForm.ts'
 import { propertyValue, stringValue } from './schema.ts'
@@ -53,10 +53,12 @@ export function columnChanges (before: SchemaModel, beforeText: string, after: S
   const additions: string[] = []
   const details: string[] = []
   const renamed = new Set<ColumnSnapshot>()
+  const newKeyOf = new Map<string, string>()
   for (const column of added) {
     const old = removed.find(candidate => candidate.list === column.list && candidate.index === column.index && !renamed.has(candidate))
     if (old) {
       renamed.add(old)
+      newKeyOf.set(old.key, column.key)
       renames.push(`欄位 ${old.key} 改為 ${column.key}`)
       details.push(...detailChanges(old, column))
     } else {
@@ -70,5 +72,11 @@ export function columnChanges (before: SchemaModel, beforeText: string, after: S
     }
   }
   const removals = removed.filter(column => !renamed.has(column)).map(column => `刪除欄位 ${column.key}`)
-  return [...renames, ...additions, ...removals, ...details]
+  // 主鍵的欄位改名時，不另列主鍵的更換
+  const oldId = stringValue(propertyValue(before.schema, 'idColumn'))
+  const newId = stringValue(propertyValue(after.schema, 'idColumn'))
+  const idChanges = oldId !== null && newId !== null && oldId !== newId && newKeyOf.get(oldId) !== newId
+    ? [`主鍵由 ${oldId} 改為 ${newId}`]
+    : []
+  return [...renames, ...additions, ...removals, ...idChanges, ...details]
 }

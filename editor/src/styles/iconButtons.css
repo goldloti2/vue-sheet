@@ -1,0 +1,5 @@
+/* 小的圖示按鈕為方形，圓角與 Vuetify 的一般按鈕相同 */
+.v-btn--icon.v-btn--size-small,
+.v-btn--icon.v-btn--size-x-small {
+  border-radius: 4px;
+}

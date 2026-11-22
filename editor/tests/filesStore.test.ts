@@ -400,6 +400,7 @@ describe('files store initialize', () => {
       tableOrder: ['missing', 'order', 'customer'],
       mockCsv: {},
       configTables: null,
+      navLinks: null,
       csvRows: {},
     })
     const store = useFilesStore()
@@ -419,7 +420,7 @@ describe('files store pages', () => {
   })
 
   async function openPage (paths: string[]) {
-    vi.mocked(fetchProjectIndex).mockResolvedValue({ paths, tables: {}, tableOrder: [], mockCsv: {}, configTables: null, csvRows: {} })
+    vi.mocked(fetchProjectIndex).mockResolvedValue({ paths, tables: {}, tableOrder: [], mockCsv: {}, configTables: null, navLinks: null, csvRows: {} })
     const store = useFilesStore()
     await store.initialize()
     await store.open('page:test')
@@ -454,7 +455,7 @@ describe('files store pages', () => {
   })
 
   it('opens the settings page for app.ts, and a form-only file without moving to a line', async () => {
-    vi.mocked(fetchProjectIndex).mockResolvedValue({ paths: [APP_CONFIG_FILE, CONFIG_FILE], tables: {}, tableOrder: [], mockCsv: {}, configTables: null, csvRows: {} })
+    vi.mocked(fetchProjectIndex).mockResolvedValue({ paths: [APP_CONFIG_FILE, CONFIG_FILE], tables: {}, tableOrder: [], mockCsv: {}, configTables: null, navLinks: null, csvRows: {} })
     const store = useFilesStore()
     await store.initialize()
 

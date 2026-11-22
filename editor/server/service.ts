@@ -14,7 +14,7 @@ import { watch } from 'chokidar'
 import { FILE_CHANGED_EVENT, PROJECT_INDEX_EVENT } from '../shared/api.ts'
 import { CONFIG_FILE } from '../shared/configGs.ts'
 import { parseCsv } from '../shared/csv.ts'
-import { pageRoutes } from '../shared/navigationForm.ts'
+import { NAVIGATION_FILE, navLinksOf, pageRoutes } from '../shared/navigationForm.ts'
 import { PREVIEW_LOG_EVENT, PREVIEW_STATUS_EVENT, type PreviewDraft, type PreviewSource } from '../shared/preview.ts'
 import { isMockCsvFile, MOCK_TABLES_FILE } from '../shared/tableFiles.ts'
 import { REGISTRY_FILE, tableKeyOf } from '../shared/tableKeys.ts'
@@ -75,7 +75,7 @@ async function readTypes (root: string, ts: Awaited<ReturnType<typeof loadTypeSc
 async function readProjectIndex (root: string): Promise<ProjectIndex> {
   const paths = await listProjectFiles(root)
   const ts = await loadTypeScript(path.join(root, 'vue-build'))
-  const [mockTables, registry, config] = await Promise.all([readProjectFile(root, MOCK_TABLES_FILE), readProjectFile(root, REGISTRY_FILE), readProjectFile(root, CONFIG_FILE)])
+  const [mockTables, registry, config, navigation] = await Promise.all([MOCK_TABLES_FILE, REGISTRY_FILE, CONFIG_FILE, NAVIGATION_FILE].map(file => readProjectFile(root, file)))
   const entries = registry ? parseRegistry(ts, registry.text)?.entries ?? [] : []
   return {
     paths,
@@ -83,6 +83,7 @@ async function readProjectIndex (root: string): Promise<ProjectIndex> {
     tableOrder: entries.flatMap(entry => entry.key === null ? [] : [entry.key]),
     mockCsv: mockTables ? readMockCsvPaths(ts, mockTables.text) : {},
     configTables: config ? readConfigTables(ts, config.text) : null,
+    navLinks: navigation ? navLinksOf(parseNavigation(ts, navigation.text, [])) : null,
     csvRows: await readCsvRows(root, paths),
   }
 }
@@ -120,11 +121,11 @@ function watchProjectFiles (root: string, server: ViteDevServer, language: Langu
     server.ws.send(PROJECT_INDEX_EVENT, await readProjectIndex(root))
   }
 
-  // 新增或刪除檔案、修改表的 schema、表的登記、mock CSV 或其登記、Config.gs 時，重送檔案清單與各表的摘要
+  // 新增或刪除檔案、修改表的 schema、表的登記、mock CSV 或其登記、Config.gs、navigation.ts 時，重送檔案清單與各表的摘要
   watcher.on('change', absolute => {
     void notifyChange(absolute, false)
     const filePath = toProjectPath(absolute)
-    if (tableKeyOf(filePath) !== null || filePath === MOCK_TABLES_FILE || filePath === REGISTRY_FILE || filePath === CONFIG_FILE || isMockCsvFile(filePath)) {
+    if (tableKeyOf(filePath) !== null || [MOCK_TABLES_FILE, REGISTRY_FILE, CONFIG_FILE, NAVIGATION_FILE].includes(filePath) || isMockCsvFile(filePath)) {
       void notifyIndex()
     }
   })

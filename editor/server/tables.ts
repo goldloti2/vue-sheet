@@ -6,6 +6,7 @@ import { readdir, readFile, rm, rmdir } from 'node:fs/promises'
 import path from 'node:path'
 import { CONFIG_FILE, idHeaderOf } from '../shared/configGs.ts'
 import { csvRowText } from '../shared/csv.ts'
+import { NAVIGATION_FILE, pageRoutes } from '../shared/navigationForm.ts'
 import { registryAddBefore } from '../shared/registry.ts'
 import { literalText, propertyValue, stringValue } from '../shared/schema.ts'
 import { columnRows } from '../shared/schemaForm.ts'
@@ -14,6 +15,7 @@ import { actionsFileOf, REGISTRY_FILE, tableKeyOf } from '../shared/tableKeys.ts
 import { applyConfigEdits, readConfigTables } from './configGs.ts'
 import { readProjectFile, writeProjectFile } from './files.ts'
 import { addMockCsv, readMockCsvPaths, removeMockCsv } from './mockTables.ts'
+import { removeNavLinks } from './navigationForm.ts'
 import { absolutePath, listProjectFiles } from './projectFiles.ts'
 import { applyRegistryEdits, parseRegistry } from './schema/registry.ts'
 import { removeColumn, removeRowMember } from './schema/schemaColumns.ts'
@@ -176,6 +178,8 @@ export async function deleteTable (tools: TableTools, key: string): Promise<Dele
   const config = await readConfig(ts, root)
   const configText = config === null ? null : applyConfigEdits(ts, config.text, [{ kind: 'removeTable', key }])
   const configChanged = config !== null && configText !== null && configText !== config.text
+  const navigation = await readProjectFile(root, NAVIGATION_FILE)
+  const navigationText = navigation === null ? null : removeNavLinks(ts, navigation.text, pageRoutes(files))
 
   if (registryText !== null) {
     await writeOrFail(tools, REGISTRY_FILE, registryText, registry.hash)
@@ -185,6 +189,9 @@ export async function deleteTable (tools: TableTools, key: string): Promise<Dele
   }
   if (configChanged) {
     await writeOrFail(tools, CONFIG_FILE, configText, config.hash)
+  }
+  if (navigation !== null && navigationText !== null && navigationText !== navigation.text) {
+    await writeOrFail(tools, NAVIGATION_FILE, navigationText, navigation.hash)
   }
   for (const file of files) {
     await rm(absolutePath(root, file), { force: true })

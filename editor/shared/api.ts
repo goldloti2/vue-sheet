@@ -1,5 +1,6 @@
 // 編輯器的服務與介面之間的資料形狀。路徑一律相對於 repo 根目錄，以 / 分隔
 import type { ConfigTableEntry } from './configGs.ts'
+import type { NavLink } from './navigationForm.ts'
 
 export interface FileContent {
   path: string
@@ -55,6 +56,8 @@ export interface ProjectIndex {
   mockCsv: Record<string, string>
   /** apps-script/Config.gs 的 TABLES 中各表的值。沒有 Config.gs 或找不到 TABLES 物件時為 null */
   configTables: Record<string, ConfigTableEntry> | null
+  /** config/navigation.ts 中以字面值寫成的項目。沒有 navigation.ts 時為 null */
+  navLinks: NavLink[] | null
   /** mock/ 中各 CSV 的路徑對應資料的列數，不含表頭 */
   csvRows: Record<string, number>
 }

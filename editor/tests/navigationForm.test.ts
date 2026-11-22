@@ -2,7 +2,7 @@ import type { TypeScript } from '../server/vueBuild'
 import type { NavigationEdit, NavigationModel } from '../shared/navigationForm'
 import { fileURLToPath } from 'node:url'
 import { beforeAll, describe, expect, it } from 'vitest'
-import { applyNavigationEdits, normalizeSections, parseNavigation } from '../server/navigationForm'
+import { applyNavigationEdits, normalizeSections, parseNavigation, removeNavLinks } from '../server/navigationForm'
 import { loadTypeScript } from '../server/vueBuild'
 import { addDrawerItemEdits, moveChoices, moveSectionEdits, navLinksOf, NEW_NAV_ITEM, pageRoutes, routeOfPage } from '../shared/navigationForm'
 
@@ -191,6 +191,17 @@ describe('applyNavigationEdits', () => {
     expect(() => edit(NAV, [{ kind: 'setItem', at: { list: 'navItems' }, index: 1, name: 'title', value: 'A' }])).toThrow('以程式碼寫成')
     expect(() => edit(NAV, [{ kind: 'setItem', at: { list: 'navItems' }, index: 0, name: 'icon', value: 'star' }])).toThrow('@mdi/js')
     expect(() => edit('export const navItems = []', [{ kind: 'addSection', index: 0, title: null }])).toThrow('drawerSections')
+  })
+})
+
+describe('removeNavLinks', () => {
+  it('removes the items that link to the routes from every list', () => {
+    const text = removeNavLinks(ts, NAV, ['/order', '/customer'])
+
+    expect(parse(text).navItems).toEqual([{ kind: 'code', text: 'ITEM' }])
+    expect(parse(text).drawerSections![0]).toMatchObject({ items: [] })
+    expect(text).not.toContain('@mdi/js')
+    expect(removeNavLinks(ts, NAV, ['/other'])).toBe(NAV)
   })
 })
 

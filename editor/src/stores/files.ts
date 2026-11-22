@@ -1,5 +1,6 @@
 import type { FileChangedEvent, FileContent, ProjectIndex, TableSummary, WriteResult } from '../../shared/api'
 import type { ConfigTableEntry } from '../../shared/configGs'
+import type { NavLink } from '../../shared/navigationForm'
 import type { SchemaModel } from '../../shared/schema'
 import type { EditorState } from '@codemirror/state'
 import { defineStore } from 'pinia'
@@ -62,6 +63,7 @@ export const useFilesStore = defineStore('files', () => {
   const tableOrder = shallowRef<string[]>([])
   const csvRows = shallowRef<Record<string, number>>({})
   const configTables = shallowRef<Record<string, ConfigTableEntry> | null>(null)
+  const navLinks = shallowRef<NavLink[] | null>(null)
   const files = reactive(new Map<string, OpenFile>())
   // 檔案區開啟的對象：檔案的路徑或頁面的識別值（見 editorPages.ts）
   const currentTarget = shallowRef<string | null>(null)
@@ -127,6 +129,7 @@ export const useFilesStore = defineStore('files', () => {
     tableOrder.value = index.tableOrder
     csvRows.value = index.csvRows
     configTables.value = index.configTables
+    navLinks.value = index.navLinks
   }
 
   // 編輯器開啟時，清除上次留在預覽中的未儲存內容，並開啟 schemas 中的第一張表
@@ -545,6 +548,7 @@ export const useFilesStore = defineStore('files', () => {
     tableOrder,
     csvRows,
     configTables,
+    navLinks,
     tableLabels,
     currentTarget,
     reveal,

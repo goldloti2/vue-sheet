@@ -228,6 +228,21 @@ export function pruneIconImports (ts: TypeScript, text: string): string {
   return unused.reduce((next, name) => removeNamedImport(ts, next, name), text)
 }
 
+/** 刪除 to 為 routes 之一的項目，以及不再使用的圖示的匯入。有標題的組保留 */
+export function removeNavLinks (ts: TypeScript, text: string, routes: readonly string[]): string {
+  const model = parseNavigation(ts, text, [])
+  const matches = (entry: NavItemEntry) => entry.kind === 'item' && entry.item.to?.kind === 'value' && routes.includes(entry.item.to.value)
+  // 同一份清單由後往前刪除，前面的索引不變。組不刪除，其他清單的索引也不變
+  const removals = (at: NavListRef, entries: readonly NavItemEntry[]): NavigationEdit[] => entries
+    .flatMap((entry, index) => matches(entry) ? [{ kind: 'removeItem', at, index } as const] : [])
+    .toReversed()
+  const edits = [
+    ...(model.drawerSections ?? []).flatMap((section, index) => section.kind === 'section' && section.items ? removals({ list: 'drawer', section: index }, section.items) : []),
+    ...removals({ list: 'navItems' }, model.navItems ?? []),
+  ]
+  return edits.length === 0 ? text : applyNavigationEdits(ts, text, edits)
+}
+
 // 只有 items 陣列的組的項目數。其他寫法為 null
 function plainUntitledLength (ts: TypeScript, node: TS.Expression | undefined): number | null {
   const object = objectOf(ts, node)

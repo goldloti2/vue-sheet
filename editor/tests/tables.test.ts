@@ -168,6 +168,43 @@ describe('deleteTable', () => {
     expect(result.config).toBe(true)
     expect(await read('apps-script/Config.gs')).toBe('const TABLES = {}\n')
   })
+
+  it('removes the navigation items that link to the deleted pages, keeping the sections', async () => {
+    await put('vue-build/src/pages/order/index.vue', '')
+    await put('vue-build/src/pages/customer/index.vue', '')
+    await put('vue-build/src/config/navigation.ts', [
+      'import { mdiAccount, mdiCart } from \'@mdi/js\'',
+      'export const navItems = [',
+      '  { title: \'訂單\', icon: mdiCart, to: \'/order\' },',
+      '  { title: \'客戶\', icon: mdiAccount, to: \'/customer\' },',
+      ']',
+      'export const drawerSections = [',
+      '  {',
+      '    title: \'其他\',',
+      '    items: [',
+      '      { title: \'訂單\', icon: mdiCart, to: \'/order\' },',
+      '    ],',
+      '  },',
+      ']',
+      '',
+    ].join('\n'))
+
+    await deleteTable(tools, 'order')
+
+    expect(await read('vue-build/src/config/navigation.ts')).toBe([
+      'import { mdiAccount } from \'@mdi/js\'',
+      'export const navItems = [',
+      '  { title: \'客戶\', icon: mdiAccount, to: \'/customer\' },',
+      ']',
+      'export const drawerSections = [',
+      '  {',
+      '    title: \'其他\',',
+      '    items: [],',
+      '  },',
+      ']',
+      '',
+    ].join('\n'))
+  })
 })
 
 describe('createMockCsv', () => {

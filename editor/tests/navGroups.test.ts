@@ -40,7 +40,7 @@ describe('navGroups', () => {
     const groups = navGroups(['vue-build/src/config/navigation.ts'])
 
     expect(groups).toEqual([
-      { label: '導覽', children: [{ label: 'navigation', path: 'vue-build/src/config/navigation.ts' }] },
+      { label: '導覽', children: [{ label: '導覽列', path: 'vue-build/src/config/navigation.ts' }] },
     ])
     expect(groups.map(group => singleTarget(group))).toEqual(['vue-build/src/config/navigation.ts'])
   })
@@ -202,7 +202,7 @@ describe('navGroups', () => {
     ], { tableLabels: { order: '訂單' } })
 
     expect(navLocation(groups, 'vue-build/src/pages/order/index.vue')).toBe('頁面/訂單/列表頁')
-    expect(navLocation(groups, 'vue-build/src/config/navigation.ts')).toBe('導覽/navigation')
+    expect(navLocation(groups, 'vue-build/src/config/navigation.ts')).toBe('導覽/導覽列')
     expect(navLocation(groups, 'vue-build/src/pages/missing.vue')).toBeNull()
   })
 })

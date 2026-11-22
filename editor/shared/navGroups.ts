@@ -221,7 +221,6 @@ export interface NavContext {
 
 // 沒有檔案的組不列出。表、動作、頁面中各表的資料夾與測試資料依 tableOrder（schemas 中的順序）排列
 export function navGroups (files: readonly string[], { tableLabels = {}, tableOrder = [], mockCsv = {} }: NavContext = {}): NavNode[] {
-  const single = (label: string, filePath: string): NavNode[] => files.includes(filePath) ? [{ label, children: [fileNode(filePath)] }] : []
   const group = (label: string, children: NavNode[]): NavNode[] => children.length > 0 ? [{ label, children }] : []
 
   const pick = (test: (file: string) => boolean) => files.filter(file => test(file)).toSorted(byPath)
@@ -241,7 +240,7 @@ export function navGroups (files: readonly string[], { tableLabels = {}, tableOr
     ...group('表', [...registry, ...tables]),
     ...group('動作', actions),
     ...group('頁面', pages),
-    ...single('導覽', `${SRC}config/navigation.ts`),
+    ...group('導覽', pick(file => file === `${SRC}config/navigation.ts`).map(file => fileNode(file, '導覽列'))),
     ...group('設定', [
       ...pick(file => file === CONFIG_FILE).map(file => fileNode(file, '後端表頭')),
       ...EDITOR_PAGES[SETTINGS_PAGE]!.paths.some(file => files.includes(file)) ? [{ label: EDITOR_PAGES[SETTINGS_PAGE]!.title, page: SETTINGS_PAGE }] : [],

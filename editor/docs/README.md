@@ -45,7 +45,7 @@
 | **表** | 總覽（`schema/index.ts`），以及各表的 schema。表以 `tableLabel` 與代號顯示 |
 | **動作** | 各表的 `use表名Actions` |
 | **頁面** | `pages/` 中的檔案。依序為登入頁、首頁、各表的資料夾、其他頁面 |
-| **導覽** | `config/navigation.ts` |
+| **導覽** | 導覽列（`config/navigation.ts`） |
 | **設定** | 後端表頭（`apps-script/Config.gs`），以及 App 設定（`config/app.ts` 與 `Config.gs` 的各項設定） |
 | **測試資料** | 總覽（`services/mock/tables.ts`），以及 `mock/` 中的 CSV。CSV 以對應的表名與代號顯示 |
 
@@ -60,7 +60,7 @@
 - 表的 schema、表的總覽、測試資料的總覽與 CSV 有表單。右上的開關切換表單與文字編輯器。
 - `Config.gs` 與 `config/app.ts` 只有表單。`app.ts` 只在「App 設定」中修改。從問題分頁開啟這兩個檔案時，開啟表單，並提示以其他編輯器修改該行。
 - 其他檔案只有文字編輯器。
-- 開啟頁面時，工具列顯示頁面的名稱與它的檔案。
+- 工具列的標題為檔案或頁面於導覽中的位置，例如「表/訂單」「設定/App 設定」。不在導覽中的檔案以路徑為標題。
 - 文字編輯器為 CodeMirror。`vue-build/src/` 中的 `.ts` 與 `.vue` 檔有即時的錯誤標示與補全。補全依欄位的 key 比對。
 - 切換檔案時，未儲存的修改、游標與捲動的位置皆保留。
 

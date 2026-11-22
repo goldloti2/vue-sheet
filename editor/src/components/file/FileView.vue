@@ -23,6 +23,14 @@
   const file = computed(() => store.current)
   const page = computed(() => store.currentPage)
   const dirty = computed(() => store.currentPaths.some(path => store.dirtyPaths.has(path)))
+  // 導覽中的位置，例如「表/訂單」。不在導覽中的檔案為 null，頁面至少為頁面的名稱
+  const location = computed(() => {
+    if (target.value === null) {
+      return null
+    }
+    const found = store.locationOf(target.value)
+    return found === target.value ? page.value?.title ?? null : found
+  })
   const reveal = computed(() => store.reveal !== null && store.reveal.path === file.value?.path ? store.reveal : null)
 
   // 表的 schema、兩個總覽、mock CSV 與 Config.gs 有表單。各檔案共用同一個選擇。設定頁另外顯示
@@ -78,15 +86,9 @@
   <section class="file-view">
     <template v-if="target !== null">
       <v-toolbar class="file-view__toolbar" color="surface" density="compact">
-        <!-- 頁面以名稱為標題，旁邊列出它的檔案 -->
+        <!-- 標題為導覽中的位置。不在導覽中時為路徑 -->
         <v-toolbar-title class="text-body-2">
-          <template v-if="page">
-            {{ page.title }}
-            <span class="text-medium-emphasis">{{ page.paths.join('、') }}</span>
-          </template>
-
-          <template v-else>{{ target }}</template>
-
+          {{ location ?? target }}
           <span v-if="dirty" class="text-medium-emphasis">（未儲存）</span>
         </v-toolbar-title>
 

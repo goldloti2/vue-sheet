@@ -1,6 +1,7 @@
 import type { FileChangedEvent, ProjectIndex, WriteRequest } from '../shared/api.ts'
 import type { AppConfigEditRequest, AppConfigEditResult } from '../shared/appConfig.ts'
 import type { ConfigEditRequest, ConfigEditResult } from '../shared/configGs.ts'
+import type { NavigationEditRequest, NavigationEditResult } from '../shared/navigationForm.ts'
 import type { RegistryEditRequest, RegistryEditResult } from '../shared/registry.ts'
 import type { CodeContextRequest, KeyRenameRequest, SchemaEditRequest, SchemaEditResult, SchemaTypes } from '../shared/schema.ts'
 import type { MockTablesEditRequest, MockTablesEditResult, NewTableRequest } from '../shared/tableFiles.ts'
@@ -13,6 +14,7 @@ import { watch } from 'chokidar'
 import { FILE_CHANGED_EVENT, PROJECT_INDEX_EVENT } from '../shared/api.ts'
 import { CONFIG_FILE } from '../shared/configGs.ts'
 import { parseCsv } from '../shared/csv.ts'
+import { pageRoutes } from '../shared/navigationForm.ts'
 import { PREVIEW_LOG_EVENT, PREVIEW_STATUS_EVENT, type PreviewDraft, type PreviewSource } from '../shared/preview.ts'
 import { isMockCsvFile, MOCK_TABLES_FILE } from '../shared/tableFiles.ts'
 import { REGISTRY_FILE, tableKeyOf } from '../shared/tableKeys.ts'
@@ -24,6 +26,7 @@ import { createLinter } from './eslint.ts'
 import { hashText, readProjectFile, writeProjectFile } from './files.ts'
 import { createLanguageClient, type LanguageClient } from './languageClient.ts'
 import { applyMockTablesEdits, parseMockTables, readMockCsvPaths } from './mockTables.ts'
+import { applyNavigationEdits, parseNavigation } from './navigationForm.ts'
 import { createPreview } from './preview.ts'
 import { absolutePath, isProjectFile, listProjectFiles, PROJECT_DIRS, ScopeError } from './projectFiles.ts'
 import { readSchemaTypes } from './schema/columnTypes.ts'
@@ -211,6 +214,17 @@ export function editorService ({ root }: ServiceOptions): Plugin {
           const ts = await loadTypeScript(vueBuildRoot)
           const text = applyAppConfigEdits(ts, body.text, body.edits)
           const result: AppConfigEditResult = { text, model: parseAppConfig(ts, text) }
+          return [200, result]
+        },
+        'POST /navigation/parse': async req => {
+          const routes = pageRoutes(await listProjectFiles(root))
+          return [200, parseNavigation(await loadTypeScript(vueBuildRoot), (await json<{ text: string }>(req)).text, routes)]
+        },
+        'POST /navigation/edit': async req => {
+          const body = await json<NavigationEditRequest>(req)
+          const ts = await loadTypeScript(vueBuildRoot)
+          const text = applyNavigationEdits(ts, body.text, body.edits)
+          const result: NavigationEditResult = { text, model: parseNavigation(ts, text, pageRoutes(await listProjectFiles(root))) }
           return [200, result]
         },
         'POST /table/create': async req => {

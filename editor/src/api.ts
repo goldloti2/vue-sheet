@@ -4,6 +4,7 @@ import type { FileContent, ProjectIndex, WriteRequest, WriteResult } from '../sh
 import type { AppConfigEditRequest, AppConfigEditResult, AppConfigModel } from '../shared/appConfig'
 import type { ChecksSnapshot } from '../shared/checks'
 import type { ConfigEditRequest, ConfigEditResult, ConfigModel } from '../shared/configGs'
+import type { NavigationEditRequest, NavigationEditResult, NavigationModel } from '../shared/navigationForm'
 import type { PreviewDraft, PreviewSource, PreviewStatus } from '../shared/preview'
 import type { RegistryEditRequest, RegistryEditResult, RegistryModel } from '../shared/registry'
 import type { CodeContext, CodeContextRequest, KeyRenameRequest, KeyRenameResult, SchemaEditRequest, SchemaEditResult, SchemaModel, SchemaTypes } from '../shared/schema'
@@ -92,6 +93,14 @@ export function parseConfigText (text: string): Promise<ConfigModel> {
 
 export function editConfig (body: ConfigEditRequest): Promise<ConfigEditResult> {
   return postJson('/api/config/edit', body)
+}
+
+export function parseNavigationText (text: string): Promise<NavigationModel> {
+  return postJson('/api/navigation/parse', { text })
+}
+
+export function editNavigation (body: NavigationEditRequest): Promise<NavigationEditResult> {
+  return postJson('/api/navigation/edit', body)
 }
 
 export function parseAppConfigText (text: string): Promise<AppConfigModel> {

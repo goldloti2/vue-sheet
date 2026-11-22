@@ -2,6 +2,7 @@
   import type { EditorState } from '@codemirror/state'
   import { computed, shallowRef, watch } from 'vue'
   import ConfigForm from '@/components/config/ConfigForm.vue'
+  import NavigationForm from '@/components/navigation/NavigationForm.vue'
   import CsvForm from '@/components/overview/CsvForm.vue'
   import MockOverviewForm from '@/components/overview/MockOverviewForm.vue'
   import OverviewForm from '@/components/overview/OverviewForm.vue'
@@ -10,6 +11,7 @@
   import { useFilesStore } from '@/stores/files'
   import { CONFIG_FILE } from '../../../shared/configGs'
   import { FORM_ONLY_FILES, SETTINGS_PAGE } from '../../../shared/editorPages'
+  import { NAVIGATION_FILE } from '../../../shared/navigationForm'
   import { isMockCsvFile, MOCK_TABLES_FILE } from '../../../shared/tableFiles'
   import { REGISTRY_FILE, tableKeyOf } from '../../../shared/tableKeys'
   import CodeEditor from './CodeEditor.vue'
@@ -33,9 +35,9 @@
   })
   const reveal = computed(() => store.reveal !== null && store.reveal.path === file.value?.path ? store.reveal : null)
 
-  // 表的 schema、兩個總覽、mock CSV 與 Config.gs 有表單。各檔案共用同一個選擇。設定頁另外顯示
+  // 表的 schema、兩個總覽、mock CSV、Config.gs 與 navigation.ts 有表單。各檔案共用同一個選擇。設定頁另外顯示
   const mode = shallowRef<ViewMode>('form')
-  type FormKind = 'schema' | 'overview' | 'mockOverview' | 'csv' | 'config'
+  type FormKind = 'schema' | 'overview' | 'mockOverview' | 'csv' | 'config' | 'navigation'
   const formKind = computed<FormKind | null>(() => {
     const path = file.value?.path ?? null
     if (path === null) {
@@ -52,6 +54,9 @@
     }
     if (path === CONFIG_FILE) {
       return 'config'
+    }
+    if (path === NAVIGATION_FILE) {
+      return 'navigation'
     }
     return isMockCsvFile(path) ? 'csv' : null
   })
@@ -150,6 +155,14 @@
 
         <CsvForm
           v-else-if="showForm && formKind === 'csv'"
+          :key="`form-${file.path}`"
+          class="file-view__editor"
+          :path="file.path"
+          :text="file.text"
+        />
+
+        <NavigationForm
+          v-else-if="showForm && formKind === 'navigation'"
           :key="`form-${file.path}`"
           class="file-view__editor"
           :path="file.path"

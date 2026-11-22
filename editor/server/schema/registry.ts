@@ -43,8 +43,8 @@ function loadObject (ts: TypeScript, text: string): { source: TS.SourceFile, obj
   return { source, object }
 }
 
-// 刪除只匯入 name 的 import。同一行還匯入其他名稱時只刪除 name
-function removeNamedImport (ts: TypeScript, text: string, name: string): string {
+/** 刪除只匯入 name 的 import。同一行還匯入其他名稱時只刪除 name */
+export function removeNamedImport (ts: TypeScript, text: string, name: string): string {
   const source = parseSource(ts, text)
   for (const statement of source.statements) {
     const bindings = ts.isImportDeclaration(statement) ? statement.importClause?.namedBindings : undefined

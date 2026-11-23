@@ -6,7 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createSSRApp, defineComponent, h } from 'vue'
 import { renderToString } from 'vue/server-renderer'
 import { freshBackend } from '../../fixtures/backend/fresh'
-import { PARENTS, schemas } from '../../fixtures/backend/schema'
+import { PARENTS } from '../../fixtures/backend/schema'
 
 vi.mock('@/schema', () => import('../../fixtures/backend/schema'))
 vi.mock('@/services/mock/tables', () => import('../../fixtures/backend/tables'))
@@ -27,8 +27,9 @@ beforeEach(async () => {
 async function listOf (options: ListPageOptions<ParentRow>, results: ListResult[]): Promise<Component> {
   const { useListPage } = await import('@/composables/page/useListPage')
   return defineComponent(() => {
-    const { rows, sort } = useListPage<ParentRow>(PARENTS, schemas.parents, options)
-    results.push({ rows, sort })
+    // PARENTS 的型別為所有真實表的聯集，選項與結果因此轉為父表的型別
+    const { rows, sort } = useListPage(PARENTS, options as never)
+    results.push({ rows: rows as unknown as ListResult['rows'], sort })
     return () => null
   })
 }

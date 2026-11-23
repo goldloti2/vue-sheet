@@ -1,6 +1,6 @@
 import type { ChartData } from '@/schema/chart'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { defineChart, highlightOf, pickElement, shownDatasets, toggleLegend, togglePicked } from '@/schema/chart'
+import { buildChart, highlightOf, pickElement, shownDatasets, toggleLegend, togglePicked } from '@/schema/chart'
 import { sampleSchema } from '../fixtures/schema'
 
 const r1 = { id: '1', status: '高', price: 10, level: 1, done: true, day: new Date(2026, 0, 15), tag: 'A' }
@@ -21,7 +21,7 @@ function category (data: ChartData<typeof r1>): Category {
 
 describe('分組', () => {
   it('select 依 options 的順序，沒有列的選項也列出，其他的值接在後面，空值為最後的「(空白)」', () => {
-    const data = category(defineChart(sampleSchema, { type: 'bar', group: { key: 'status' }, values: [{ stat: 'count' }] }).compute(rows))
+    const data = category(buildChart(sampleSchema, { type: 'bar', group: { key: 'status' }, values: [{ stat: 'count' }] }).compute(rows))
     expect(data.labels).toEqual(['高', '中', '低', '其他', '(空白)'])
     expect(data.datasets[0]).toMatchObject({ label: '數量', unit: 'number', data: [2, 0, 1, 1, 1] })
     expect(data.groups[0].filter).toEqual({ key: 'status', condition: { values: ['高'] } })
@@ -29,12 +29,12 @@ describe('分組', () => {
   })
 
   it('excludeBlank 時不列出空值', () => {
-    const data = category(defineChart(sampleSchema, { type: 'bar', group: { key: 'status', excludeBlank: true }, values: [{ stat: 'count' }] }).compute(rows))
+    const data = category(buildChart(sampleSchema, { type: 'bar', group: { key: 'status', excludeBlank: true }, values: [{ stat: 'count' }] }).compute(rows))
     expect(data.labels).not.toContain('(空白)')
   })
 
   it('依數值排序，前 N 組以外合併為「其他」。數值相同時依分組本身，降序時反轉', () => {
-    const data = category(defineChart(sampleSchema, {
+    const data = category(buildChart(sampleSchema, {
       type: 'bar',
       group: { key: 'tag', order: { by: 'value', direction: 'desc' }, limit: 2 },
       values: [{ stat: 'count' }],
@@ -45,14 +45,14 @@ describe('分組', () => {
   })
 
   it('date 依月分組，從最早到最晚的月份皆列出', () => {
-    const data = category(defineChart(sampleSchema, { type: 'bar', group: { key: 'day', unit: 'month' }, values: [{ stat: 'count' }] }).compute(rows))
+    const data = category(buildChart(sampleSchema, { type: 'bar', group: { key: 'day', unit: 'month' }, values: [{ stat: 'count' }] }).compute(rows))
     expect(data.labels).toEqual(['2026/01', '2026/02', '2026/03', '(空白)'])
     expect(data.datasets[0].data).toEqual([2, 0, 2, 1])
     expect(data.groups[0].filter).toEqual({ key: 'day', condition: { segment: { min: new Date(2026, 0, 1), below: new Date(2026, 1, 1) } } })
   })
 
   it('number 在最小值與最大值之間等分，最後一段包含最大值', () => {
-    const data = category(defineChart(sampleSchema, { type: 'bar', group: { key: 'price', bins: 3 }, values: [{ stat: 'count' }] }).compute(rows))
+    const data = category(buildChart(sampleSchema, { type: 'bar', group: { key: 'price', bins: 3 }, values: [{ stat: 'count' }] }).compute(rows))
     expect(data.labels).toEqual(['10 ～ 20', '20 ～ 30', '30 ～ 40', '(空白)'])
     expect(data.datasets[0].data).toEqual([1, 1, 2, 1])
     expect(data.groups[0].filter?.condition).toEqual({ segment: { min: 10, below: 20 } })
@@ -60,7 +60,7 @@ describe('分組', () => {
   })
 
   it('沒有 group 的文字統計，全部的列為一組', () => {
-    const data = category(defineChart(sampleSchema, { type: 'stat', values: [{ stat: 'count' }] }).compute(rows))
+    const data = category(buildChart(sampleSchema, { type: 'stat', values: [{ stat: 'count' }] }).compute(rows))
     expect(data.labels).toEqual([''])
     expect(data.datasets[0].data).toEqual([5])
   })
@@ -68,7 +68,7 @@ describe('分組', () => {
 
 describe('統計', () => {
   it('sum 沒有值時為 0，avg、min、max 沒有值時為 null', () => {
-    const data = category(defineChart(sampleSchema, {
+    const data = category(buildChart(sampleSchema, {
       type: 'bar',
       group: { key: 'done' },
       values: [{ stat: 'sum', key: 'price' }, { stat: 'avg', key: 'price' }, { stat: 'min', key: 'price' }, { stat: 'max', key: 'price' }],
@@ -79,17 +79,17 @@ describe('統計', () => {
   })
 
   it('count 的百分比為佔全部的比例', () => {
-    const data = category(defineChart(sampleSchema, { type: 'bar', group: { key: 'status' }, values: [{ stat: 'count', percent: true }] }).compute(rows))
+    const data = category(buildChart(sampleSchema, { type: 'bar', group: { key: 'status' }, values: [{ stat: 'count', percent: true }] }).compute(rows))
     expect(data.datasets[0]).toMatchObject({ unit: 'percent', data: [40, 0, 20, 20, 20] })
   })
 
   it('boolean 的百分比為組內為「是」的比例，沒有列的組為 null', () => {
-    const data = category(defineChart(sampleSchema, { type: 'bar', group: { key: 'status' }, values: [{ stat: 'sum', key: 'done', percent: true }] }).compute(rows))
+    const data = category(buildChart(sampleSchema, { type: 'bar', group: { key: 'status' }, values: [{ stat: 'sum', key: 'done', percent: true }] }).compute(rows))
     expect(data.datasets[0]).toMatchObject({ label: '完成為「是」的比例', data: [100, null, 0, 0, 0] })
   })
 
   it('自訂的統計可讀取各組的列與此組的位置', () => {
-    const data = category(defineChart(sampleSchema, {
+    const data = category(buildChart(sampleSchema, {
       type: 'bar',
       group: { key: 'status', excludeBlank: true },
       values: [{ stat: (list, { index, groups }) => index === 0 ? null : list.length - groups[index - 1].length, label: '差' }],
@@ -99,7 +99,7 @@ describe('統計', () => {
 })
 
 describe('系列', () => {
-  const chart = (percent: boolean) => category(defineChart(sampleSchema, {
+  const chart = (percent: boolean) => category(buildChart(sampleSchema, {
     type: 'bar',
     group: { key: 'status', excludeBlank: true },
     series: { key: 'done', excludeBlank: true },
@@ -122,7 +122,7 @@ describe('系列', () => {
 
 describe('座標類', () => {
   it('每一列為一個點，座標為空的列略過', () => {
-    const data = defineChart(sampleSchema, { type: 'scatter', x: 'price', y: 'level' }).compute(rows)
+    const data = buildChart(sampleSchema, { type: 'scatter', x: 'price', y: 'level' }).compute(rows)
     expect(data).toMatchObject({
       kind: 'point',
       xUnit: 'number',
@@ -136,7 +136,7 @@ describe('千分位', () => {
   const big = [{ id: '1', price: 1000 }, { id: '2', price: 3000 }]
 
   it('數值依 key 欄位的 separator，可由 separator 覆寫。count 與百分比不加', () => {
-    const data = category(defineChart(separated, {
+    const data = category(buildChart(separated, {
       type: 'bar',
       group: { key: 'price', bins: 2 },
       values: [{ stat: 'sum', key: 'price' }, { stat: 'sum', key: 'price', separator: false, label: '不加' }, { stat: 'count' }, { stat: 'sum', key: 'price', percent: true, label: '比例' }],
@@ -145,42 +145,42 @@ describe('千分位', () => {
   })
 
   it('沒有欄位的數值可指定 separator', () => {
-    const data = category(defineChart(sampleSchema, { type: 'bar', group: { key: 'status' }, values: [{ stat: 'count', separator: true }] }).compute(rows))
+    const data = category(buildChart(sampleSchema, { type: 'bar', group: { key: 'status' }, values: [{ stat: 'count', separator: true }] }).compute(rows))
     expect(data.datasets[0]?.separator).toBe(true)
   })
 
   it('number 區間的名稱依分組欄位的 separator，可由 group 的 separator 覆寫', () => {
-    const labels = (group: { key: 'price', bins: number, separator?: boolean }) => category(defineChart(separated, { type: 'bar', group, values: [{ stat: 'count' }] }).compute(big)).labels
+    const labels = (group: { key: 'price', bins: number, separator?: boolean }) => category(buildChart(separated, { type: 'bar', group, values: [{ stat: 'count' }] }).compute(big)).labels
     expect(labels({ key: 'price', bins: 2 })).toEqual(['1,000 ～ 2,000', '2,000 ～ 3,000'])
     expect(labels({ key: 'price', bins: 2, separator: false })).toEqual(['1000 ～ 2000', '2000 ～ 3000'])
   })
 
   it('座標類依 x、y、r 各自欄位的 separator', () => {
-    const data = defineChart(separated, { type: 'scatter', x: 'price', y: 'level' }).compute(rows)
+    const data = buildChart(separated, { type: 'scatter', x: 'price', y: 'level' }).compute(rows)
     expect(data).toMatchObject({ separators: { x: true, y: false, r: false } })
   })
 })
 
-describe('defineChart', () => {
+describe('buildChart', () => {
   afterEach(() => {
     vi.restoreAllMocks()
   })
 
   it('分組欄與系列欄列入 filterKeys', () => {
-    const chart = defineChart(sampleSchema, { type: 'bar', group: { key: 'status' }, series: { key: 'done' }, values: [{ stat: 'count' }] })
+    const chart = buildChart(sampleSchema, { type: 'bar', group: { key: 'status' }, series: { key: 'done' }, values: [{ stat: 'count' }] })
     expect(chart.filterKeys).toEqual(['status', 'done'])
   })
 
   it('開發模式下警告 date 沒有 unit，以及不在 searchable 中的分組欄', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
-    defineChart(sampleSchema, { type: 'bar', group: { key: 'day' }, values: [{ stat: 'count' }] })
-    defineChart(sampleSchema, { type: 'bar', group: { key: 'level' }, values: [{ stat: 'count' }] })
+    buildChart(sampleSchema, { type: 'bar', group: { key: 'day' }, values: [{ stat: 'count' }] })
+    buildChart(sampleSchema, { type: 'bar', group: { key: 'level' }, values: [{ stat: 'count' }] })
     expect(warn).toHaveBeenCalledTimes(2)
   })
 })
 
 describe('高光與點擊', () => {
-  const data = category(defineChart(sampleSchema, { type: 'bar', group: { key: 'status' }, values: [{ stat: 'count' }] }).compute(rows))
+  const data = category(buildChart(sampleSchema, { type: 'bar', group: { key: 'status' }, values: [{ stat: 'count' }] }).compute(rows))
 
   it('有條件時標出符合的組，沒有列的組不算符合', () => {
     expect(highlightOf(data.groups, 'status', { status: { values: ['高'] } })).toEqual([true, false, false, false, false])

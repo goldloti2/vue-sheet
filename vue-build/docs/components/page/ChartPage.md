@@ -2,7 +2,7 @@
 
 圖表頁的整頁版型：載入狀態、圖表的高度、高光，以及點擊後進入詳細頁或寫入條件。圖表本身由 [DataChart](../chart/DataChart.md) 繪製，`type` 為 `stat` 時改由 [DataStat](../chart/DataStat.md) 以文字顯示。宣告方式與計算規則見 [chart.md](../../topics/chart.md)。
 
-此元件搭配 `useListPage(table, schema)` 使用：
+此元件搭配 `useListPage(table)` 使用：
 - 回傳的 `rows`、`loading`、`error` 直接對應此元件的 prop，`filters` 以 `v-model:filters` 傳入
 - 搜尋、篩選與 `scope` 照常生效，圖表只畫出剩下的列
 - 圖表以 `defineChart` 宣告於頁面，只執行一次。宣告於 `useListPage` 之前，`filterKeys` 傳入 `useListPage` 的 `ignoreFilter`

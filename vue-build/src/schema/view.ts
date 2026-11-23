@@ -1,8 +1,10 @@
 import type { DisplayValue } from './format'
-import type { AnyTableSchema, RowBase, RowKey } from './types'
+import type { TableKey } from './index'
+import type { AnyTableSchema, RowBase, RowKey, RowOf } from './types'
 import type { PageAction } from '@/composables/actions/useTableActions'
 import { displayValue } from './format'
 import { imageSrc } from './image'
+import { schemas } from './index'
 import { findColumn } from './types'
 
 // 視圖：一列的欄位置於版面的哪個位置，以及此列的動作。於頁面定義，交給版面元件（見 ROADMAP 的「頁面類型（對照 AppSheet）」）
@@ -78,21 +80,23 @@ function compileGroup<Row extends object> (schema: AnyTableSchema, group: FieldG
   return row => ({ title: title(row), subtitle: subtitle(row), image: image(row), summary: summary(row), aside: aside(row) })
 }
 
-export function defineView<Row extends object> (
-  schema: AnyTableSchema<Row>,
-  view: FieldGroup<Row> & { actions?: RowActions<Row> },
-): RowView<Row> {
-  const group = compileGroup(schema, view)
+// 以表的 key 指定，Row 由 key 推出
+export function defineView<K extends TableKey> (
+  table: K,
+  view: FieldGroup<RowOf<K>> & { actions?: RowActions<RowOf<K>> },
+): RowView<RowOf<K>> {
+  const group = compileGroup<RowOf<K>>(schemas[table], view)
   const actions = view.actions ?? noActions
   return row => ({ ...group(row), actions: actions(row) })
 }
 
-export function defineCardView<Row extends object> (
-  schema: AnyTableSchema<Row>,
-  view: { header?: FieldGroup<Row>, body?: FieldGroup<Row>, actions?: RowActions<Row> },
-): CardView<Row> {
-  const header = compileGroup(schema, view.header)
-  const body = compileGroup(schema, view.body)
+export function defineCardView<K extends TableKey> (
+  table: K,
+  view: { header?: FieldGroup<RowOf<K>>, body?: FieldGroup<RowOf<K>>, actions?: RowActions<RowOf<K>> },
+): CardView<RowOf<K>> {
+  const schema = schemas[table]
+  const header = compileGroup<RowOf<K>>(schema, view.header)
+  const body = compileGroup<RowOf<K>>(schema, view.body)
   const actions = view.actions ?? noActions
   return row => ({ header: header(row), body: body(row), actions: actions(row) })
 }

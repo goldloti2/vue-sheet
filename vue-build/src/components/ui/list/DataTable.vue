@@ -1,13 +1,14 @@
 <script generic="Row extends { id: string }" lang="ts" setup>
   import type { ColumnWidth } from '@/composables/list/useColumnWidths'
+  import type { TableKey } from '@/schema'
   import type { DisplayValue } from '@/schema/format'
-  import type { AnyTableSchema } from '@/schema/types'
   import { computed, useTemplateRef } from 'vue'
   import { useRouter } from 'vue-router'
   import FormattedValue from '@/components/ui/view/FormattedValue.vue'
   import { useColumnWidths } from '@/composables/list/useColumnWidths'
   import { usePublishListOrder } from '@/composables/navigation/useListOrder'
   import { usePanelBordered } from '@/composables/shell/usePanelActive'
+  import { schemas } from '@/schema'
   import { displayValue } from '@/schema/format'
   import { allColumns } from '@/schema/types'
 
@@ -19,7 +20,7 @@
 
   const props = withDefaults(defineProps<{
     rows: readonly Row[]
-    schema: AnyTableSchema
+    table: TableKey
     // 要顯示的欄位 key，真實欄位與虛擬欄位皆可。省略時為全部
     columns?: string[]
     showHeader?: boolean
@@ -44,10 +45,11 @@
   const bordered = usePanelBordered()
 
   const resolvedColumns = computed<ResolvedColumn<Row>[]>(() => {
-    const columnList: ResolvedColumn<Row>[] = allColumns(props.schema).map(column => ({
+    const schema = schemas[props.table]
+    const columnList: ResolvedColumn<Row>[] = allColumns(schema).map(column => ({
       key: column.key,
       label: column.label,
-      getValue: (row: Row) => displayValue(row, props.schema, column),
+      getValue: (row: Row) => displayValue(row, schema, column),
     }))
 
     if (!props.columns) {

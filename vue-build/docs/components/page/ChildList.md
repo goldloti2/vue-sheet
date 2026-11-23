@@ -38,7 +38,7 @@
 
 ```ts
 const { new: newChild } = use__Table__Actions({ defaults: () => ({ __parent__: id.value }) })
-const childView = defineView(__table__Schema, { title: '$label' })
+const childView = defineView('__table__', { title: '$label' })
 ```
 
 ## Props
@@ -62,7 +62,7 @@ slot 提供的是整批子列，表格可直接交給 `DataTable`：
 
 ```vue
 <template #default="{ rows: children }">
-  <DataTable :columns="['name', 'amount']" :row-to="(child) => `/__table__/${child.id}`" :rows="children" :schema="__table__Schema" :show-header="false" />
+  <DataTable :columns="['name', 'amount']" :row-to="(child) => `/__table__/${child.id}`" :rows="children" :show-header="false" table="__table__" />
 </template>
 ```
 

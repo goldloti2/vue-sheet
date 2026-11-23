@@ -25,7 +25,7 @@
   }
 
   const props = defineProps<{
-    schema: AnyTableSchema
+    table: TableKey
     // null 時只顯示欄位名稱，值留白
     row: Row | null
     // 這一頁的欄位順序，覆寫 schema 的 detailOrder
@@ -38,16 +38,17 @@
     layout?: DetailFieldLayout
   }>()
 
-  // 寫入須使用表的代稱，由 schema 從 schemas 反查（schema 物件為單例）。虛擬表不可寫入
-  const found = (Object.keys(schemas) as TableKey[]).find(key => schemas[key] === props.schema)
-  const table = found && isRealTable(found) ? found : undefined
+  const schema = computed<AnyTableSchema>(() => schemas[props.table])
+
+  // 寫入的表，虛擬表不可寫入
+  const writeTable = computed(() => isRealTable(props.table) ? props.table : undefined)
 
   // 快速編輯所用的 schema，虛擬表為 null
-  const editSchema = computed(() => isVirtualSchema(props.schema) ? null : props.schema)
+  const editSchema = computed(() => isVirtualSchema(schema.value) ? null : schema.value)
 
   function editColumnOf (key: string): SchemaColumn | undefined {
     const schema = editSchema.value
-    if (!table || !schema || key === schema.idColumn || !(props.editable as readonly string[] | undefined)?.includes(key)) {
+    if (!writeTable.value || !schema || key === schema.idColumn || !(props.editable as readonly string[] | undefined)?.includes(key)) {
       return undefined
     }
     return schema.columns.find(column => column.key === key)
@@ -56,13 +57,13 @@
   // 真實與虛擬欄位依 order（省略時為 detailOrder）排列。showIf 不成立的欄位不顯示，row 為 null 時一律顯示
   const fields = computed<Field[]>(() => {
     const row = props.row
-    const columns = allColumns(props.schema).filter(column => !row || !column.showIf || column.showIf(row))
+    const columns = allColumns(schema.value).filter(column => !row || !column.showIf || column.showIf(row))
 
     const fieldList: Field[] = columns.map(column => row
       ? {
         key: column.key,
         label: column.label,
-        value: displayValue(row, props.schema, column),
+        value: displayValue(row, schema.value, column),
         image: column.type === 'image' ? imageSrc((row as Record<string, unknown>)[column.key]) : null,
         action: props.fieldActions?.[column.key]?.(row),
         multiline: column.type === 'text' && Boolean(column.multiline),
@@ -70,7 +71,7 @@
       }
       : { key: column.key, label: column.label, value: { text: '' } })
 
-    const order: readonly string[] | undefined = props.order ?? props.schema.detailOrder
+    const order: readonly string[] | undefined = props.order ?? schema.value.detailOrder
     if (!order) {
       return fieldList
     }
@@ -88,7 +89,7 @@
   <v-container>
     <template v-for="field in fields" :key="field.key">
       <DetailField
-        v-if="field.editColumn && editSchema && table && row"
+        v-if="field.editColumn && editSchema && writeTable && row"
         :action="field.action"
         :label="field.label"
         :layout="layout"
@@ -100,7 +101,7 @@
             :column="field.editColumn"
             :row="row as { id: string }"
             :schema="editSchema"
-            :table="table"
+            :table="writeTable"
           />
         </template>
       </DetailField>

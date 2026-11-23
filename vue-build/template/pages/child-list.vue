@@ -6,18 +6,16 @@
 </route>
 
 <script lang="ts" setup>
-  import type { __Parent__Row } from '@/schema/tables/__parent__'
   import DataList from '@/components/ui/list/DataList.vue'
   import ListPage from '@/components/ui/page/ListPage.vue'
   import { use__Table__Actions } from '@/composables/actions/use__Table__Actions'
   import { useRecordPage } from '@/composables/page/useRecordPage'
-  import { __table__Schema } from '@/schema/tables/__table__'
   import { defineView } from '@/schema/view'
 
   // 讀取父列，子列取自 store 掛上的 $子表_欄位key getter（依子表的 defaultSort 排序）
-  const { id, row, loading, error } = useRecordPage<__Parent__Row>('__parent__')
+  const { id, row, loading, error } = useRecordPage('__parent__')
 
-  const view = defineView(__table__Schema, { title: 'name', summary: 'amount' })
+  const view = defineView('__table__', { title: 'name', summary: 'amount' })
 
   // 於此新增的子列預設屬於此父列
   const { new: newAction } = use__Table__Actions({ defaults: () => ({ __parent__: id.value }) })

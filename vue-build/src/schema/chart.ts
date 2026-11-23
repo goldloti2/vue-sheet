@@ -1,6 +1,8 @@
 import type { ColumnFilter, Filters } from './filter'
-import type { AnyColumn, AnyTableSchema, ColorName, ColumnKey, RowKey } from './types'
+import type { TableKey } from './index'
+import type { AnyColumn, AnyTableSchema, ColorName, ColumnKey, RowKey, RowOf } from './types'
 import { isActiveFilter, matchesFilter } from './filter'
+import { schemas } from './index'
 import { sortRows } from './sort'
 import { booleanText, columnSeparator, durationSeconds, findColumn, formatDate, formatDuration, formatNumber } from './types'
 import { isEmpty } from './validation'
@@ -817,7 +819,13 @@ function computePoints<Row> (schema: AnyTableSchema, input: ScatterChart<AnyRow>
   }
 }
 
-export function defineChart<Row extends object> (schema: AnyTableSchema<Row>, input: ChartInput<Row>): ChartDefinition<Row> {
+// 以表的 key 指定，Row 由 key 推出
+export function defineChart<K extends TableKey> (table: K, input: ChartInput<RowOf<K>>): ChartDefinition<RowOf<K>> {
+  return buildChart<RowOf<K>>(schemas[table] as AnyTableSchema, input)
+}
+
+// defineChart 的本體，直接接收 schema
+export function buildChart<Row extends object> (schema: AnyTableSchema<Row>, input: ChartInput<Row>): ChartDefinition<Row> {
   if (import.meta.env.DEV) {
     checkInput(schema, input as LooseInput)
   }

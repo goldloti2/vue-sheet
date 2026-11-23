@@ -5,11 +5,11 @@ import { useTableRow } from '@/composables/data/useTable'
 import { useRouteId } from '@/composables/navigation/useRouteId'
 import { useDashboardPanel } from '@/composables/shell/useDashboardLinks'
 
-// 詳細頁的資料層：網址上的 id 與對應的列。位於 dashboard 的面板中時，id 取自面板的輸入
-export function useRecordPage<Row extends { id: string }> (table: TableKey) {
+// 詳細頁的資料層：網址上的 id 與對應的列，Row 由表的 key 推出。位於 dashboard 的面板中時，id 取自面板的輸入
+export function useRecordPage<K extends TableKey> (table: K) {
   const panel = useDashboardPanel()
   const id: Readonly<Ref<string>> = panel ? computed(() => panel.recordId()) : useRouteId()
-  const { row, loading, error } = useTableRow<Row>(table, id)
+  const { row, loading, error } = useTableRow(table, id)
 
   return { id, row, loading, error }
 }

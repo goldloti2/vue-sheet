@@ -20,7 +20,7 @@
 
 ```vue
 <PageState :empty="!row" :error="error" :loading="loading">
-  <DataDetail :row="row" :schema="schema" />
+  <DataDetail :row="row" table="__table__" />
 </PageState>
 ```
 

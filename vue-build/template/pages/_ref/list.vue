@@ -2,23 +2,22 @@
      只供其他頁面引用的列表（_ref/ 不產生路由），用於 TabPage 的頁籤（見 tab-list.vue）、dashboard 的面板或其他頁面。
      以 props 傳入條件，同一個元件可用於不同頁面。說明見 docs/topics/search.md 的「同一頁面中的多張表」 -->
 <script lang="ts" setup>
-  import type { __Table__Row } from '@/schema/tables/__table__'
+  import type { RowOf } from '@/schema/types'
   import DataList from '@/components/ui/list/DataList.vue'
   import ListPage from '@/components/ui/page/ListPage.vue'
   import { use__Table__Actions } from '@/composables/actions/use__Table__Actions'
   import { useListPage } from '@/composables/page/useListPage'
   import { useAppBarActions } from '@/composables/shell/useShellActions'
-  import { __table__Schema } from '@/schema/tables/__table__'
   import { defineView } from '@/schema/view'
 
   // status：常用且意義固定的條件，定為專屬的 prop。scope：須任意條件時使用。兩者合併套用
   const { status, scope } = defineProps<{
     status?: string
-    scope?: (row: __Table__Row) => boolean
+    scope?: (row: RowOf<'__table__'>) => boolean
   }>()
 
   // scope 於篩選與搜尋之前套用。判斷寫於函式內，prop 改變時才會重算
-  const { rows, loading, error, selection } = useListPage<__Table__Row>('__table__', __table__Schema, {
+  const { rows, loading, error, selection } = useListPage('__table__', {
     scope: row => (!status || row.status === status) && (!scope || scope(row)),
   })
 
@@ -31,7 +30,7 @@
   useAppBarActions(() => [bulkDelete.value])
 
   // 每列四個角的欄位：title 左上、subtitle 右上、summary 左下、aside 右下
-  const view = defineView(__table__Schema, { title: 'name', subtitle: 'date', summary: 'amount' })
+  const view = defineView('__table__', { title: 'name', subtitle: 'date', summary: 'amount' })
 </script>
 
 <template>

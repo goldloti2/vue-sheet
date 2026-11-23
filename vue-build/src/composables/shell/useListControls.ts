@@ -1,8 +1,10 @@
 import type { SlotSetter } from '@/composables/shell/useActionSlot'
+import type { TableKey } from '@/schema'
 import type { Filters } from '@/schema/filter'
 import type { AnyTableSchema, SortSpec } from '@/schema/types'
 import type { InjectionKey, Ref } from 'vue'
 import { registerSlot } from '@/composables/shell/useActionSlot'
+import { schemas } from '@/schema'
 
 // 抽屜中的一張表。rows 為未過濾的整表，select 只列出其中出現過的值
 export interface ListTable {
@@ -26,7 +28,17 @@ export interface ListControls {
 
 export const listControlsKey: InjectionKey<SlotSetter<ListControls | null>> = Symbol('listControls')
 
+// 頁面登記的一張表：以表的 key 指定，schema 由 schemas 查找
+export type ListTableInput = Omit<ListTable, 'schema'> & { table: TableKey }
+
 // 頁面登記後 App Bar 才顯示搜尋與排序按鈕。query、filters、sort 屬於頁面，AppShell 只提供修改的介面
-export function useListControls (query: Ref<string>, drawer?: ListControls['drawer']): void {
-  registerSlot(listControlsKey, () => ({ query, drawer }), null)
+export function useListControls (
+  query: Ref<string>,
+  drawer?: { tables: ListTableInput[], current?: Readonly<Ref<string>> },
+): void {
+  const resolved = drawer && {
+    tables: drawer.tables.map(({ table, ...rest }) => ({ ...rest, schema: schemas[table] })),
+    current: drawer.current,
+  }
+  registerSlot(listControlsKey, () => ({ query, drawer: resolved }), null)
 }

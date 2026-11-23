@@ -13,8 +13,8 @@
 同一張表在全 App 只抓取一次，共用一份。頁面不直接使用 store：
 
 ```ts
-const { data, loading, error } = useSortedTableList<OrderRow>('order', orderSchema)  // 列表頁
-const { row, loading, error } = useTableRow<OrderRow>('order', id)                   // 詳細頁
+const { data, loading, error } = useSortedTableList('order')  // 列表頁
+const { row, loading, error } = useTableRow('order', id)      // 詳細頁
 ```
 
 ```

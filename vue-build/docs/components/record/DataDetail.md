@@ -19,7 +19,7 @@ schema 的 `virtualColumns`（見 [schema.md](../../topics/schema.md#欄位)）�
 
 ```vue
 <template>
-  <DataDetail :field-actions="fieldActions" :row="row" :schema="__table__Schema" />
+  <DataDetail :field-actions="fieldActions" :row="row" table="__table__" />
 </template>
 ```
 
@@ -27,7 +27,7 @@ schema 的 `virtualColumns`（見 [schema.md](../../topics/schema.md#欄位)）�
 
 | prop | 型別 | 說明 |
 | --- | --- | --- |
-| `schema` | `AnyTableSchema` | **必填**。真實表與虛擬表皆可 |
+| `table` | `TableKey` | **必填**。表的 key，schema 由此查找。真實表與虛擬表皆可 |
 | `row` | `Row \| null` | **必填**。`null` 時只顯示欄位名稱，值留白，也沒有欄位的動作。dashboard 的詳細面板尚未選取時，由 `DetailPage` 使用 |
 | `order` | `RowKey<Row>[]?` | 這一頁的欄位順序，覆寫 schema 的 `detailOrder`。未列出的欄位不顯示 |
 | `fieldActions` | `FieldActions<Row>?` | 欄位 key → `(row) => PageAction \| null`，每一欄一個 |

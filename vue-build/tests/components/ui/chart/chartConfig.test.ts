@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { buildConfig, formatParts, formatValue, paletteColors, withAlpha, wrapText } from '@/components/ui/chart/chartConfig'
-import { defineChart } from '@/schema/chart'
+import { buildChart } from '@/schema/chart'
 import { sampleSchema } from '../../../fixtures/schema'
 
 // 每個字寬 1，空白也算
@@ -87,7 +87,7 @@ describe('paletteColors', () => {
 })
 
 describe('buildConfig 的 marks.shown', () => {
-  const definition = defineChart(sampleSchema, {
+  const definition = buildChart(sampleSchema, {
     type: 'bar',
     group: { key: 'status' },
     values: [{ stat: 'count', label: '數量' }, { stat: 'sum', key: 'price', label: '總價', axis: 'right' }],
@@ -120,7 +120,7 @@ describe('buildConfig 的 marks.shown', () => {
   })
 
   it('長條加折線時，折線畫在長條上面', () => {
-    const mixed = defineChart(sampleSchema, {
+    const mixed = buildChart(sampleSchema, {
       type: 'bar',
       group: { key: 'status' },
       values: [{ stat: 'count', label: '數量' }, { stat: 'sum', key: 'price', label: '總價', type: 'line', axis: 'right' }],

@@ -139,6 +139,11 @@ export interface TableSchema<Row extends object = AnyRow> extends SchemaBase<Row
 // 規則的來源列：來源表的 Row
 type SourceRow<K extends RealTableKey> = (typeof schemas)[K] extends TableSchema<infer Source> ? Source : never
 
+// 表的 key 對應的 Row。K 為多張表時為各表的 Row 的聯集
+export type RowOf<K extends TableKey> = K extends TableKey
+  ? ((typeof schemas)[K] extends AnyTableSchema<infer Row extends RowBase> ? Row : never)
+  : never
+
 // 規則填入的值：常數，或以來源列為參數的函數
 type RuleValues<Row extends object, Source> = {
   [K in RowKey<Row>]?: Row[K] | ((source: Source) => Row[K])

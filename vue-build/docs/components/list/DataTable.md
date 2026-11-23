@@ -19,7 +19,7 @@
     :row-to="(row) => `/路徑/${row.id}`"
     :rows="rows"
     :show-header="false"
-    :schema="__table__Schema"
+    table="__table__"
   />
 </template>
 ```
@@ -29,7 +29,7 @@
 | prop | 型別 | 說明 |
 | --- | --- | --- |
 | `rows` | `readonly Row[]` | **必填** |
-| `schema` | `AnyTableSchema` | **必填**。真實表與虛擬表皆可 |
+| `table` | `TableKey` | **必填**。表的 key，schema 由此查找。真實表與虛擬表皆可 |
 | `columns` | `string[]?` | 要顯示的欄位 key。省略時為全部的真實欄位加上全部的虛擬欄位 |
 | `showHeader` | `boolean?` | 預設 `true` |
 | `rowTo` | `((row) => string)?` | 提供時，點擊一列即導覽。未提供時為純顯示 |

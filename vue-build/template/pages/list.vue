@@ -6,21 +6,19 @@
 </route>
 
 <script lang="ts" setup>
-  import type { __Table__Row } from '@/schema/tables/__table__'
   import DataList from '@/components/ui/list/DataList.vue'
   import ListPage from '@/components/ui/page/ListPage.vue'
   import { use__Table__Actions } from '@/composables/actions/use__Table__Actions'
   import { useListPage } from '@/composables/page/useListPage'
   import { useAppBarActions } from '@/composables/shell/useShellActions'
-  import { __table__Schema } from '@/schema/tables/__table__'
   import { defineView } from '@/schema/view'
 
   // 整表 → 篩選 → 搜尋（搜尋、篩選與排序按鈕自動登記至 App Bar），以及長按多選
   // 順序與 schema 的 defaultSort 不同時，以選項 { defaultSort: [...] } 指定，排在 schema 的 defaultSort 之前
-  const { rows, loading, error, selection } = useListPage<__Table__Row>('__table__', __table__Schema)
+  const { rows, loading, error, selection } = useListPage('__table__')
 
   // 每列四個角的欄位：title 左上、subtitle 右上、summary 左下、aside 右下
-  const view = defineView(__table__Schema, { title: 'name', subtitle: 'date', summary: 'amount' })
+  const view = defineView('__table__', { title: 'name', subtitle: 'date', summary: 'amount' })
 
   // 不須多選時，不傳 selectedIds、onDone，也不將 selection 交給 ListPage。defaults 可傳 getter，依頁面狀態預填新增表單
   const { new: newAction, bulkDelete } = use__Table__Actions({

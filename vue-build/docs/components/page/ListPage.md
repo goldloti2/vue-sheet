@@ -2,7 +2,8 @@
 
 列表頁的整頁版型：載入狀態、逐列顯示、右下角的 FAB，並於點擊一列時發布畫面上的順序。詳細頁的上一列、下一列依此順序切換。每一列的外觀由頁面決定。
 
-此元件搭配 `useListPage(table, schema)` 使用：
+此元件搭配 `useListPage(table)` 使用：
+- `table` 為表的 key，Row 的型別由 key 推出
 - `useListPage` 依序處理：整張表 → `scope` → 頁面的排序 → 篩選 → 搜尋，並提供長按多選
 - 回傳的 `rows`、`loading`、`error`、`selection` 直接對應此元件的 prop
 - 選用的 `scope`（`row => boolean`）在篩選與搜尋之前只保留部分的列，例如頁籤的狀態。儀表板面板的 `scope`（例如依所選的父列篩出子列）也位於這一步
@@ -45,7 +46,7 @@
 ```vue
 <ListPage :error="error" :fab="[newAction]" :loading="loading" :rows="rows" table="__table__">
   <template #rows="{ rows: list }">
-    <DataTable :columns="['name', 'amount']" :row-to="(row) => `/__table__/${row.id}`" :rows="list" :schema="__table__Schema" />
+    <DataTable :columns="['name', 'amount']" :row-to="(row) => `/__table__/${row.id}`" :rows="list" table="__table__" />
   </template>
 </ListPage>
 ```
@@ -83,13 +84,13 @@ const groups = computed(() => sort.value ? undefined : groupRows(rows.value, gro
 
 ```ts
 const query = ref('')
-const parents = useListPage<ParentRow>('parent', parentSchema, { search: false, query })
-const children = useListPage<ChildRow>('child', childSchema, { search: false, query })
+const parents = useListPage('parent', { search: false, query })
+const children = useListPage('child', { search: false, query })
 
 useListControls(query, {
   tables: [
-    { schema: parentSchema, filters: parents.filters, rows: parents.allRows, sort: parents.sort },
-    { schema: childSchema, filters: children.filters, rows: children.allRows, sort: children.sort },
+    { table: 'parent', filters: parents.filters, rows: parents.allRows, sort: parents.sort },
+    { table: 'child', filters: children.filters, rows: children.allRows, sort: children.sort },
   ],
   current: selectedTable,
 })

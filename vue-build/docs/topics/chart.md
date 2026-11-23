@@ -19,7 +19,7 @@
 
 | 步驟 | 負責 | 內容 |
 | --- | --- | --- |
-| 1 | 頁面 | 以 `defineChart(schema, {…})` 宣告圖表，只執行一次。以 `useListPage` 取得 `rows` 與 `filters`，`ignoreFilter` 傳入圖表的 `filterKeys` |
+| 1 | 頁面 | 以 `defineChart(table, {…})` 宣告圖表，只執行一次。以 `useListPage` 取得 `rows` 與 `filters`，`ignoreFilter` 傳入圖表的 `filterKeys` |
 | 2 | `defineChart` | 於開發模式下檢查輸入，回傳 `type`、`stacked`、`horizontal`、`groupKey`、`seriesKey`、`filterKeys`、`colors` 與 `compute` |
 | 3 | [`ChartPage`](../components/page/ChartPage.md) | 整頁層級的事：載入狀態、錯誤、高度、點擊後的處理。範本為 `template/pages/chart.vue` |
 | 4-1 | [`DataChart`](../components/chart/DataChart.md) | 以 `computed` 執行 `compute(rows)`，依 `filters` 標示高光，套上顏色後交給 Chart.js。資料改變時更新圖表，卸載時銷毀 Chart.js 的實例 |
@@ -52,7 +52,7 @@
 
 ## 宣告
 
-- **`defineChart(schema, input)` 宣告於頁面**，與 `defineView` 相同。實作於 `schema/chart.ts`
+- **`defineChart(table, input)` 宣告於頁面**，與 `defineView` 相同。`table` 為表的 key，Row 的型別由 key 推出。實作於 `schema/chart.ts`，本體為直接接收 schema 的 `buildChart`
 - **`input` 為一般物件**：可填的項目依 `type` 而定，由 TypeScript 型別檢查。欄位名稱打錯、某種圖表不支援的項目，皆於撰寫時報錯
 - **型別檢查不到的規則，於開發模式下以 console 警告**：
   - 欄位不存在

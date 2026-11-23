@@ -6,17 +6,15 @@
 </route>
 
 <script lang="ts" setup>
-  import type { __Table__Row } from '@/schema/tables/__table__'
   import DetailPage from '@/components/ui/page/DetailPage.vue'
   import { use__Table__Actions } from '@/composables/actions/use__Table__Actions'
   import { useRowAction } from '@/composables/actions/useTableActions'
   import { useRecordPage } from '@/composables/page/useRecordPage'
   import { useAppBarActions } from '@/composables/shell/useShellActions'
-  import { __table__Schema } from '@/schema/tables/__table__'
   import { defineView } from '@/schema/view'
 
   // 網址上的 id 與對應的列。載入狀態與左右滑動切換列皆由 DetailPage 處理
-  const { id, row, loading, error } = useRecordPage<__Table__Row>('__table__')
+  const { id, row, loading, error } = useRecordPage('__table__')
 
   // 以列為參數的動作以 useRowAction 綁定至此列。刪除此列後自動離開
   const { delete: remove, edit, fieldActions } = use__Table__Actions()
@@ -25,7 +23,7 @@
   useAppBarActions(() => [deleteAction.value])
 
   // 選用：整頁最上方的標頭區塊。actions 為圖片下方的左右各兩格（見 docs/components/record/DetailHeader.md）
-  const header = defineView(__table__Schema, { title: 'name', subtitle: 'date' })
+  const header = defineView('__table__', { title: 'name', subtitle: 'date' })
 </script>
 
 <template>
@@ -38,7 +36,6 @@
     :header="header"
     :loading="loading"
     :row="row"
-    :schema="__table__Schema"
     table="__table__"
   />
 </template>

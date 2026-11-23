@@ -35,7 +35,7 @@ export function provideSharedListControls (current?: Readonly<Ref<string>>): Com
     if (!shared) {
       shared = scope.run(() => {
         const sort = ref<SortSpec | null>(null)
-        const { data, loading, error } = useSortedTableList<object>(table, schema, () => sort.value ? [sort.value] : null)
+        const { data, loading, error } = useSortedTableList(table, () => sort.value ? [sort.value] : null)
         return { schema, allRows: data, loading, error, filters: ref<Filters>({}), sort }
       })!
       tables.set(table, shared)

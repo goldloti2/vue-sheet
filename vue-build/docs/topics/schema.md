@@ -53,6 +53,8 @@ export const orderSchema: TableSchema<OrderRow> = {
 
 最後在 `src/schema/index.ts` 註冊這張表，`TableKey` 即自動多一個值。
 
+頁面須寫出某張表的 Row 型別時，以 `RowOf<表的 key>` 取得，例如 props 與另外宣告的函數的參數。頁面不匯入各表的 schema 檔。
+
 ---
 
 ## Sheet 上的慣例
@@ -168,7 +170,7 @@ export const orderSchema: TableSchema<OrderRow> = {
 顯示時一律以 `imageSrc(value)`（`schema/image.ts`）轉換為 `<img src>`：Drive 使用 `https://drive.google.com/thumbnail?id=<id>&sz=w<寬>`，SVG 轉換為 `data:image/svg+xml,`。
 
 - **詳細頁自動顯示圖片**（`DataDetail` → `DetailField`），無須另外處理
-- **列表的縮圖於 view 中指定**：`defineView(schema, { image: 'photo', … })`，由 view 轉換為 src（見 [DataList](../components/list/DataList.md)、[DataProfile](../components/list/DataProfile.md)、[DataCard](../components/list/DataCard.md)、[DataGallery](../components/list/DataGallery.md)）
+- **列表的縮圖於 view 中指定**：`defineView(table, { image: 'photo', … })`，由 view 轉換為 src（見 [DataList](../components/list/DataList.md)、[DataProfile](../components/list/DataProfile.md)、[DataCard](../components/list/DataCard.md)、[DataGallery](../components/list/DataGallery.md)）
   - `DataList` 顯示為縮圖，`DataProfile` 顯示為圓形頭像
   - `DataCard` 依所在的組顯示為頭像或大圖
   - `DataGallery` 顯示為正方形圖片

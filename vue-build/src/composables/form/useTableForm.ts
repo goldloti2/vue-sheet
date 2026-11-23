@@ -123,12 +123,12 @@ export function useCreateForm (table: RealTableKey, schema: TableSchema, layer: 
 export function useEditForm (table: RealTableKey, schema: TableSchema, layer: Layer, id: string): TableForm {
   const store = useTablesStore()
 
-  const { row, loading, error: loadError } = useTableRow<HasId>(table, id)
+  const { row, loading, error: loadError } = useTableRow(table, id)
 
   // 編輯複本，不直接修改快取中的列
   const form = ref<object | null>(null)
   watch(row, newRow => {
-    form.value = newRow ? { ...newRow } : null
+    form.value = newRow ? { ...(newRow as object) } : null
   }, { immediate: true })
 
   const { error, run } = useSubmitState()

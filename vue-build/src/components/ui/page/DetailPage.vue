@@ -2,7 +2,7 @@
   import type { FieldActions, PageAction } from '@/composables/actions/useTableActions'
   import type { DetailFieldLayout } from '@/config/app'
   import type { TableKey } from '@/schema'
-  import type { AnyTableSchema, RowKey } from '@/schema/types'
+  import type { RowKey } from '@/schema/types'
   import type { RowView } from '@/schema/view'
   import { computed, watch } from 'vue'
   import { Touch as vTouch } from 'vuetify/directives'
@@ -25,7 +25,6 @@
   const props = defineProps<{
     table: TableKey
     id: string
-    schema: AnyTableSchema
     row: Row | null
     loading?: boolean
     error?: string | null
@@ -69,7 +68,7 @@
       :layout="layout"
       :order="order"
       :row="null"
-      :schema="schema"
+      :table="table"
     />
 
     <PageState v-else :empty="!row" :error="error" :loading="loading">
@@ -85,7 +84,7 @@
           :layout="layout"
           :order="order"
           :row="row"
-          :schema="schema"
+          :table="table"
         />
 
         <!-- 這張表額外放置的內容，例如子表、說明、圖表 -->

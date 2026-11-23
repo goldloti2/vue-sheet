@@ -20,9 +20,8 @@
 
 | prop | 型別 | 說明 |
 | --- | --- | --- |
-| `table` | `TableKey` | **必填**，上一列、下一列的順序與導覽皆依此表 |
+| `table` | `TableKey` | **必填**，表的 key。顯示的欄位與順序依此表的 schema，上一列、下一列的順序與導覽也依此表。真實表與虛擬表皆可 |
 | `id` | `string` | **必填**，網址上的那一列。dashboard 中為面板的 `scope` 剛好一列時的那一列，否則為空字串 |
-| `schema` | `AnyTableSchema` | **必填**，決定顯示的欄位與順序。真實表與虛擬表皆可 |
 | `row` | `Row \| null` | **必填**，`null` 時顯示「找不到這一列」。dashboard 中 `id` 為空字串時，改為只顯示欄位名稱，標頭與兩個 slot 皆不顯示 |
 | `loading` | `boolean?` | 載入中 |
 | `error` | `string \| null?` | 載入失敗的訊息 |
@@ -48,9 +47,9 @@
 
   ```vue
   <PageState :empty="!row" :error="error" :loading="loading">
-    <DataDetail :order="['total', 'status']" :row="row" :schema="schema" />
+    <DataDetail :order="['total', 'status']" :row="row" table="__table__" />
     <ChildList … />
-    <DataDetail :order="['note1', 'note2']" :row="row" :schema="schema" />
+    <DataDetail :order="['note1', 'note2']" :row="row" table="__table__" />
   </PageState>
   ```
 

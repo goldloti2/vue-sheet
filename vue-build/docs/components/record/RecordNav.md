@@ -19,9 +19,8 @@
   import { computed } from 'vue'
   import { provideListOrder } from '@/composables/navigation/useListOrder'
   import { useSortedTableList } from '@/composables/data/useTable'
-  import { __table__Schema } from '@/schema/tables/__table__'
 
-  const { data } = useSortedTableList<__Table__Row>('__table__', __table__Schema)
+  const { data } = useSortedTableList('__table__')
 
   provideListOrder('__table__', computed(() => data.value.map(row => row.id)))
 </script>

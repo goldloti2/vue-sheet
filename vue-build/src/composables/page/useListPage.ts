@@ -1,7 +1,7 @@
 import type { TableKey } from '@/schema'
 import type { Filters } from '@/schema/filter'
-import type { AnyTableSchema, SortSpec } from '@/schema/types'
-import type { Ref } from 'vue'
+import type { AnyTableSchema, RowOf, SortSpec } from '@/schema/types'
+import type { ComputedRef, Ref } from 'vue'
 import { computed, ref } from 'vue'
 import { useFilter } from '@/composables/data/useFilter'
 import { useSearch } from '@/composables/data/useSearch'
@@ -10,6 +10,7 @@ import { useMultiSelect } from '@/composables/list/useMultiSelect'
 import { useDashboardPanel } from '@/composables/shell/useDashboardLinks'
 import { useListControls } from '@/composables/shell/useListControls'
 import { useSharedListControls } from '@/composables/shell/useSharedListControls'
+import { schemas } from '@/schema'
 import { sortRows } from '@/schema/sort'
 
 export interface ListPageOptions<Row extends object> {
@@ -25,11 +26,15 @@ export interface ListPageOptions<Row extends object> {
   defaultSort?: SortSpec<Row>[]
 }
 
-// 列表頁的資料層：整表 → scope（含 dashboard 面板的輸入）→ 頁面的排序 → 篩選 → 搜尋，以及多選（見 docs/components/page/ListPage.md）
-export function useListPage<Row extends { id: string }> (
+// 列表頁的資料層：整表 → scope（含 dashboard 面板的輸入）→ 頁面的排序 → 篩選 → 搜尋，以及多選（見 docs/components/page/ListPage.md）。Row 由表的 key 推出
+export function useListPage<K extends TableKey> (table: K, options: ListPageOptions<RowOf<K>> = {}) {
+  return listPage<RowOf<K>>(table, schemas[table], options)
+}
+
+function listPage<Row extends { id: string }> (
   table: TableKey,
   schema: AnyTableSchema,
-  options: ListPageOptions<Row> = {},
+  options: ListPageOptions<Row>,
 ) {
   const shared = options.search === false ? null : useSharedListControls()
   const { allRows, loading, error, filters, sort, query } = shared
@@ -67,12 +72,13 @@ export function useListPage<Row extends { id: string }> (
 function ownControls<Row extends { id: string }> (table: TableKey, schema: AnyTableSchema, options: ListPageOptions<Row>) {
   // 使用者選擇的單欄排序，null 表示 schema.defaultSort。defaultSort 一律作為次要排序
   const sort = ref<SortSpec | null>(null)
-  const { data: allRows, loading, error } = useSortedTableList<Row>(table, schema, () => sort.value ? [sort.value] : null)
+  const { data, loading, error } = useSortedTableList(table, () => sort.value ? [sort.value] : null)
+  const allRows = data as unknown as ComputedRef<Row[]>
 
   const query = options.query ?? ref('')
   const filters = ref<Filters>({})
   if (options.search !== false) {
-    useListControls(query, { tables: [{ schema, filters, rows: allRows, sort }] })
+    useListControls(query, { tables: [{ table, filters, rows: allRows, sort }] })
   }
 
   return { allRows, loading, error, filters, sort, query }

@@ -54,7 +54,7 @@
 
   // ref 欄位的選項為父表整張表（共用快取）：值為 id，文字為父列的 $label，依 refSort 再依父表的 defaultSort 排序
   const refList = props.column.type === 'ref'
-    ? useTableList<{ id: string, $label: string }>(props.column.refTable as RealTableKey)
+    ? useTableList(props.column.refTable as RealTableKey)
     : null
 
   // row 只在值對應到父列時存在。指向不存在的父列時，選取的值只有 id
@@ -99,7 +99,7 @@
 
   // suggestedValues 的 rows 為所屬這張表的列，由 schema 從 schemas 反查代稱（schema 物件為單例）
   const ownTable = (Object.keys(schemas) as TableKey[]).find(key => schemas[key] === props.schema)
-  const ownList = ownTable && props.column.suggestedValues ? useTableList<object>(ownTable) : null
+  const ownList = ownTable && props.column.suggestedValues ? useTableList(ownTable) : null
 
   // combobox 的建議：options 依原順序在前，再接 suggestedValues 算出的值，去除重複與空值
   const suggestions = computed(() => {

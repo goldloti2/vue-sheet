@@ -2,7 +2,7 @@
 
 「名稱 + 列數」：列數以一個小標籤接在名稱後面。數字多一位時標籤自動變寬，高度與圓角不變。
 
-分組標題（[GroupedList](GroupedList.md)）與子表區塊的標題（[ChildList](../page/ChildList.md)）皆使用此元件。自行撰寫的頁面要標示列數時，也可以直接使用。
+分組列（[GroupedList](GroupedList.md)）、全展開列（[ExpandAllRow](ExpandAllRow.md)）與子表區塊的標題（[ChildList](../page/ChildList.md)）皆使用此元件。自行撰寫的頁面要標示列數時，也可以直接使用。
 
 ## Usage
 

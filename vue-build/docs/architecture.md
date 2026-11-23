@@ -31,7 +31,7 @@ src/
   components/ui/     共用元件庫，用法見 docs/components/
     shell/             AppShell、PageFab、FilterPanel、SortPanel、TableChips、FormLayerHost、FormLayer、FieldsLayer
     dialog/            AppDialog、ConfirmDialog、FieldsDialog
-    list/              DataList、DataProfile、DataCard、DataGallery、ListLayout、ListField、GroupedList、DataTable、CountLabel
+    list/              DataList、DataProfile、DataCard、DataGallery、ListLayout、ListField、GroupedList、ExpandAllRow、DataTable、CountLabel
     record/            DataDetail、DetailField、DetailHeader、DataForm、FieldInput、InlineField、RecordNav
     page/              整頁的版型：PageState（載入中、失敗、找不到）、DetailPage、ListPage、ChildList、ChartPage
     panel/             含多個面板的頁面：TabPage、TabPanel（頁籤）、DashboardPage、DashboardPanel（dashboard），

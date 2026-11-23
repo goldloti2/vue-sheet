@@ -1,12 +1,14 @@
 import type { TableKey } from '@/schema'
 import type { Filters } from '@/schema/filter'
+import type { GroupLevel } from '@/schema/group'
 import type { AnyTableSchema, RowOf, SortSpec } from '@/schema/types'
-import type { ComputedRef, Ref } from 'vue'
-import { computed, ref } from 'vue'
+import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue'
+import { computed, ref, toValue } from 'vue'
 import { useFilter } from '@/composables/data/useFilter'
 import { useSearch } from '@/composables/data/useSearch'
 import { useSortedTableList } from '@/composables/data/useTable'
 import { useMultiSelect } from '@/composables/list/useMultiSelect'
+import { provideListGrouping } from '@/composables/page/listGrouping'
 import { useDashboardPanel } from '@/composables/shell/useDashboardLinks'
 import { useListControls } from '@/composables/shell/useListControls'
 import { useSharedListControls } from '@/composables/shell/useSharedListControls'
@@ -27,6 +29,8 @@ export interface ListPageOptions<Row extends object> {
   ignoreFilter?: readonly string[]
   // 這個列表的預設排序，排在 schema.defaultSort 之前、排序面板的排序之後（見 docs/topics/search.md）
   defaultSort?: SortSpec<Row>[]
+  // 由外到內的分組，由同一張表的 ListPage 套用。undefined 為不分組，使用者選了排序時也不分組
+  levels?: MaybeRefOrGetter<readonly GroupLevel<Row>[] | undefined>
 }
 
 // 列表頁的資料層：整表 → match 與 scope（含 dashboard 面板的輸入）→ 頁面的排序 → 篩選 → 搜尋，以及多選（見 docs/components/page/ListPage.md）。Row 由表的 key 推出
@@ -70,6 +74,8 @@ function listPage<Row extends { id: string }> (
     ? filters.value
     : Object.fromEntries(Object.entries(filters.value).filter(([key]) => !ignored.includes(key)))
   const rows = useSearch(query, useFilter(applied, sortedRows, schema), schema)
+
+  provideListGrouping<Row>(table, { levels: () => toValue(options.levels), sorted: () => sort.value !== null })
 
   return { rows, allRows, loading, error, query, filters, sort, match, selection: useMultiSelect() }
 }

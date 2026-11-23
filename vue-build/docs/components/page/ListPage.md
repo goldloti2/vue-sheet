@@ -21,7 +21,7 @@
 - 位於 `TabPage` 之內時，`useListPage` 改為加入 `TabPage` 的共用控制，不自行登記
 - 不需要搜尋，或同一頁面須手動登記多張表時，傳入 `{ search: false }`，見下方「手動登記多張表」
 
-**使用者選了排序時不分組**：回傳的 `sort` 不是 null 時，以 `rows` 取代 `groups`，見 [search.md 的排序](../../topics/search.md#排序)。
+**使用者選了排序時不分組**，見下方「分組與頁籤」。
 
 ## Usage
 
@@ -32,8 +32,7 @@
 | prop | 型別 | 說明 |
 | --- | --- | --- |
 | `table` | `TableKey` | **必填**，發布列表順序時使用 |
-| `rows` | `Row[]?` | 已篩選、搜尋過的列，即畫面上的順序。與 `groups` 擇一提供 |
-| `groups` | `RowGroup<Row>[]?` | 分組後的結果（`groupRows` 的回傳值），元件內部改以 `GroupedList` 顯示 |
+| `rows` | `Row[]` | **必填**，已篩選、搜尋與排序的列 |
 | `loading` | `boolean?` | 載入中，顯示長條進度列 |
 | `error` | `string \| null?` | 載入失敗的訊息 |
 | `selection` | `MultiSelect?` | 提供時才綁定長按多選，即 `useListPage` 的 `selection` |
@@ -59,35 +58,34 @@
 </ListPage>
 ```
 
-卡片適合瀏覽，表格適合比對欄位。兩者的載入狀態、FAB、列表順序皆由此元件處理。分組（`groups`）只支援卡片。
+卡片適合瀏覽，表格適合比對欄位。兩者的載入狀態、FAB、列表順序皆由此元件處理。分組只支援卡片。
 
 ## 分組與頁籤
 
-分組時提供 `groups`，不提供 `rows`，`item` 與 `view` 的寫法相同。使用者選了排序時，改為提供 `rows`：
+分組以 `useListPage` 的選項 `levels` 指定，由外到內排列。每一層的寫法見 [GroupedList](../list/GroupedList.md)：
 
 ```ts
-const groups = computed(() => sort.value ? undefined : groupRows(rows.value, groupLevels))
+const { rows, loading, error, selection, match } = useListPage('__table__', {
+  levels: [
+    { sortKey: row => row.date?.getFullYear() ?? 0, label: row => row.date ? `${row.date.getFullYear()}年` : '未知' },
+  ],
+})
 ```
 
-```vue
-<ListPage
-  :error="error"
-  :fab="[newAction]"
-  :groups="groups"
-  :loading="loading"
-  :row-to="row => `/__table__/${row.id}`"
-  :rows="groups ? undefined : rows"
-  :selection="selection"
-  table="__table__"
-  :view="view"
-/>
-```
+- `levels` 可為陣列、ref 或 getter。值為 `undefined` 時不分組
+- `useListPage` 將 `levels` 與使用者選的排序交給同一張表的 `ListPage`，頁面無須另外傳入。同一個元件中，同一張表以最後一次呼叫的 `useListPage` 為準
+- **使用者選了排序時不分組**，依 `rows` 的順序平鋪
+- **列表的最上方有一條全展開列**（[ExpandAllRow](../list/ExpandAllRow.md)），文字為「全部」與列數。展開時依分組的順序平鋪全部的列，收合時回到分組
+  - 沒有分組、使用者選了排序、沒有列，或最外層只有一組時不顯示。最外層只有一組時一律分組
+  - 使用者選了排序再清除，或只剩一組後又有兩組以上時，恢復先前的狀態
+- 判斷的邏輯為 `schema/group.ts` 的 `arrangeRows`
+- 沒有 `useListPage` 的 `ListPage` 不分組，例如展開頁。表格式（`#rows`）也不分組
 
 **頁籤**：
 - 將列表拆成只供引用的元件（`_ref/`），每個頁籤放一個，各自以 `useListPage` 的 `match` 只保留該頁籤的列
 - 搜尋、篩選與排序由 `TabPage` 統一登記，並跨頁籤共用（見 [search.md](../../topics/search.md#同一頁面中的多張表)）。範本為 `template/pages/tab-list.vue` 與 `template/pages/_ref/list.vue`
 - 每個頁籤各有一個 `ListPage`，各自計算 FAB、多選與列表順序。FAB 只有目前頁籤的那一份生效，依 `TabPanel` 的訊號判斷。列表順序由被點擊的那個頁籤發布
-- 發布順序前先執行 `flattenGroups`，順序與畫面上的先後一致
+- 發布的順序與畫面上的先後一致，分組時為分組由上往下的順序
 
 ## 手動登記多張表
 
@@ -130,10 +128,10 @@ useListControls(query, {
 
 哪個欄位放在哪個位置，由頁面定義的 view 指定（見 [DataList](../list/DataList.md#view)）。同一個 view 可交給 deck、profile 或 gallery，換版面時無須改寫欄位的對應。各版面的外觀與適用情況見 [design/list.md](../../design/list.md)。
 
-- **gallery 為格狀排列**，其餘版面依序往下排列（見 [ListLayout](../list/ListLayout.md)）。分組時每一組各自排列，組的標題一律佔一整行
+- **gallery 為格狀排列**，其餘版面依序往下排列（見 [ListLayout](../list/ListLayout.md)）。分組時每一組各自排列，分組列一律佔一整行
 - **table 經由 `#rows` slot**，全部的列交給 `DataTable`。表格不支援多選，須多選操作時改用其他版面
 - **deck、profile、card、gallery 皆支援長按多選**，提供 `selection` 即可。自訂每一列時，以 `v-bind` 綁定 slot 提供的 `props`。多選模式下，各版面的動作皆隱藏
-- **排序與分組與版面無關**：順序來自 `useListPage`（`defaultSort` 或使用者選的排序）與 `groupRows`，各版面皆依同一個順序呈現。gallery 由左往右、再由上往下排列
+- **排序與分組與版面無關**：順序來自 `useListPage`（`defaultSort` 或使用者選的排序）與 `levels`，各版面皆依同一個順序呈現。gallery 由左往右、再由上往下排列
 - **間距、陰影與點擊、選取的樣式為各版面共用**，定義於 `src/styles/list.css`（見 [ListLayout](../list/ListLayout.md) 的「共用的樣式」）
 - 範本見 `template/pages/` 中的 `list.vue`（deck）、`profile-list.vue`、`card-list.vue`、`gallery-list.vue`
 
@@ -142,5 +140,5 @@ useListControls(query, {
 - **版面確實不同時，才自行組合**：總覽頁那類混合的版面不使用此元件，資料層仍可使用 `useListPage`。此時頁面須自行呼叫 `provideListOrder(table, computed(() => 畫面上的順序))`（見 [RecordNav](../record/RecordNav.md)）
 - 空列表即顯示為空，不顯示「找不到資料」（見 [PageState](PageState.md)）
 - **位於 dashboard 的面板中時，自動輸出列出的列與選取的列**（見 [DashboardPage](../panel/DashboardPage.md#面板的輸出)）。頁籤中的列表只在目前的頁籤時輸出，載入中不輸出。不使用此元件的自訂列表沒有輸出
-- **內容區不留白**，由內容決定：list 式的列與組的標題貼齊外緣，卡片四周留白（見 [ListLayout](../list/ListLayout.md) 的「留白」）。`#rows` 的表格四周留白
+- **內容區不留白**，由內容決定：list 式的列與分組列貼齊外緣，卡片四周留白（見 [ListLayout](../list/ListLayout.md) 的「留白」）。`#rows` 的表格四周留白
 - **畫面寬時，內容區有最大寬度並置中**，沿用 `v-container` 的設定。數值見 [design/list.md](../../design/list.md#尺寸與樣式) 的「尺寸與樣式」

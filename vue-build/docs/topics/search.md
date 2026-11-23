@@ -125,6 +125,6 @@
 
 不論遞增或遞減，空值一律排在最後。
 
-**排序與分組只能擇一**，由頁面自行判斷，框架不介入：`useListPage` 回傳的 `sort` 有值時，交給 `ListPage` 的是 `rows`，不是 `groups`。寫法見 [ListPage.md](../components/page/ListPage.md#分組與頁籤)。
+**排序與分組只能擇一**：使用者選了排序時，`ListPage` 不套用 `useListPage` 的 `levels`，依所選的順序平鋪。分組的寫法見 [ListPage.md](../components/page/ListPage.md#分組與頁籤)。
 
 點擊一列時，`ListPage` 發布當時畫面上的順序。因此詳細頁的上一列、下一列與左右滑動，與點擊時的畫面一致。

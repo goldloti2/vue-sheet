@@ -6,7 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createSSRApp, defineComponent, h } from 'vue'
 import { renderToString } from 'vue/server-renderer'
 import { freshBackend } from '../../fixtures/backend/fresh'
-import { PARENTS } from '../../fixtures/backend/schema'
+import { CHILDREN, PARENTS } from '../../fixtures/backend/schema'
 
 vi.mock('@/schema', () => import('../../fixtures/backend/schema'))
 vi.mock('@/services/mock/tables', () => import('../../fixtures/backend/tables'))
@@ -101,5 +101,51 @@ describe('match', () => {
 
     expect(idsOf(results[0]!)).toEqual(['P-0003', 'P-0005', 'P-0004', 'P-0007', 'P-0001'])
     expect(results[0]!.match()).toEqual({ source: '來源甲' })
+  })
+})
+
+describe('levels', () => {
+  const levels = [{ sortKey: () => 0, label: (row: ParentRow) => row.status }]
+
+  // 以 useListPage 列出父表的元件，其子元件取得的分組設定
+  async function groupingIn (options: ListPageOptions<ParentRow>, table = PARENTS) {
+    const { useListGrouping } = await import('@/composables/page/listGrouping')
+    const results: ListResult[] = []
+    const found: ReturnType<typeof useListGrouping>[] = []
+    const Child = defineComponent(() => {
+      found.push(useListGrouping(table))
+      return () => null
+    })
+    const { useListPage } = await import('@/composables/page/useListPage')
+    await renderToString(createSSRApp(defineComponent(() => {
+      const { rows, sort, match } = useListPage(PARENTS, options as never)
+      results.push({ rows: rows as unknown as ListResult['rows'], sort, match: match as ListResult['match'] })
+      return () => h(Child)
+    })))
+    return { grouping: found[0]!, list: results[0]! }
+  }
+
+  it('子元件取得 levels，以及使用者是否選了排序', async () => {
+    const { grouping, list } = await groupingIn({ levels })
+
+    expect(grouping?.levels()).toBe(levels)
+    expect(grouping?.sorted()).toBe(false)
+    list.sort.value = { key: 'source', direction: 'asc' }
+    expect(grouping?.sorted()).toBe(true)
+  })
+
+  it('levels 可為 getter', async () => {
+    let grouped = true
+    const { grouping } = await groupingIn({ levels: () => grouped ? levels : undefined })
+
+    expect(grouping?.levels()).toBe(levels)
+    grouped = false
+    expect(grouping?.levels()).toBeUndefined()
+  })
+
+  it('其他表的列表取不到', async () => {
+    const { grouping } = await groupingIn({ levels }, CHILDREN)
+
+    expect(grouping).toBeNull()
   })
 })

@@ -7,7 +7,7 @@
   const props = withDefaults(defineProps<{
     groups: RowGroup<Row>[]
     path?: string
-    // 每一組中各列的排法，組的標題一律佔一整行（見 ListLayout）
+    // 每一組中各列的排法，分組列一律佔一整行（見 ListLayout）
     layout?: 'list' | 'grid'
   }>(), {
     path: '',
@@ -40,7 +40,7 @@
     }
   }, { immediate: true })
 
-  // 固定展開的那一組：移除切換用的點擊，標題列不再可點擊
+  // 固定展開的那一組：移除切換用的點擊，分組列不再可點擊
   function headerProps (group: RowGroup<Row>, activatorProps: Record<string, unknown>) {
     return valueOf(group) === locked.value ? { ...activatorProps, onClick: undefined, link: false } : activatorProps
   }
@@ -84,22 +84,3 @@
     </template>
   </v-list>
 </template>
-
-<style scoped>
-/* v-list 預設 overflow: auto，會裁切 profile、card、gallery 往右下的陰影。不留上下的內距，分組的標題貼齊外緣。巢狀的各層皆適用 */
-.grouped-list {
-  overflow: visible;
-  padding-block: 0;
-}
-
-/* 展開箭頭與標題之間的間距較 Vuetify 的預設小，窄面板中也放得下標題。高度見 docs/design/list.md 的「尺寸與樣式」 */
-.grouped-list :deep(.v-list-group__header) {
-  --v-list-prepend-gap: 8px;
-  min-height: 44px;
-}
-
-/* min-width 改回 0，窄面板中不被標題撐寬。卡片的陰影落在 ListLayout 的留白之內，展開的動畫不會裁切 */
-.grouped-list :deep(.v-list-group__items) {
-  min-width: 0;
-}
-</style>

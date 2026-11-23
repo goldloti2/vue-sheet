@@ -14,6 +14,7 @@
 
   // 整表 → 篩選 → 搜尋（搜尋、篩選與排序按鈕自動登記至 App Bar），以及長按多選
   // 順序與 schema 的 defaultSort 不同時，以選項 { defaultSort: [...] } 指定，排在 schema 的 defaultSort 之前
+  // 分組以選項 { levels: [...] } 指定，見 docs/components/page/ListPage.md
   const { rows, loading, error, selection, match } = useListPage('__table__')
 
   // 每列四個角的欄位：title 左上、subtitle 右上、summary 左下、aside 右下

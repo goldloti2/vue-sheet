@@ -63,6 +63,28 @@ export function groupRows<Row> (rows: readonly Row[], levels: readonly GroupLeve
   return buildGroups(sorted, levels)
 }
 
+// 列表的呈現：groups 為 null 時依 rows 的順序平鋪。rows 一律為畫面上由上往下的順序
+export interface Arrangement<Row> {
+  rows: readonly Row[]
+  groups: RowGroup<Row>[] | null
+  // 是否可以切換為平鋪
+  switchable: boolean
+}
+
+// 沒有分組，或使用者選了排序時，依 rows 的順序平鋪。使用者切換為平鋪時，依分組的順序平鋪。最外層只有一組時一律分組，不能切換
+export function arrangeRows<Row> (
+  rows: readonly Row[],
+  levels: readonly GroupLevel<Row>[] | undefined,
+  { sorted, flat }: { sorted: boolean, flat: boolean },
+): Arrangement<Row> {
+  if (!levels || levels.length === 0 || sorted || rows.length === 0) {
+    return { rows, groups: null, switchable: false }
+  }
+  const groups = groupRows(rows, levels)
+  const switchable = groups.length > 1
+  return { rows: flattenGroups(groups), groups: flat && switchable ? null : groups, switchable }
+}
+
 // 將巢狀分組攤平為一維，順序與畫面由上往下的順序相同（供 useListOrder 使用）
 export function flattenGroups<Row> (groups: readonly RowGroup<Row>[]): Row[] {
   return groups.flatMap(group => 'rows' in group ? group.rows : flattenGroups(group.subgroups))

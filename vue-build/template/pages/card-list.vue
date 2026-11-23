@@ -6,7 +6,6 @@
 </route>
 
 <script lang="ts" setup>
-  import DataCard from '@/components/ui/list/DataCard.vue'
   import ListPage from '@/components/ui/page/ListPage.vue'
   import { useActions } from '@/composables/actions'
   import { useListPage } from '@/composables/page/useListPage'
@@ -34,14 +33,12 @@
   <ListPage
     :error="error"
     :fab="[newAction]"
+    item="card"
     :loading="loading"
+    :row-to="row => `/__table__/${row.id}`"
     :rows="rows"
     :selection="selection"
     table="__table__"
-  >
-    <!-- props 為每列多選所需的屬性 -->
-    <template #default="{ row, props: itemProps }">
-      <DataCard v-bind="itemProps" :row="row" :to="`/__table__/${row.id}`" :view="view" />
-    </template>
-  </ListPage>
+    :view="view"
+  />
 </template>

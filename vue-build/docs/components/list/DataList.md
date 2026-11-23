@@ -2,13 +2,13 @@
 
 卡片式列表（deck）的**單一列**：左側為縮圖，右側四個角各顯示一個欄位。各欄位的位置由 **view** 指定（`defineView`，見下方），元件依欄位型別格式化。
 
-- 元件本身不做迴圈。列表頁將此元件置於 [ListPage](../page/ListPage.md) 的 slot 中，迴圈與分組皆由 `ListPage` 處理。其他地方以 `v-for` 或 `GroupedList` 的 slot 使用
+- 元件本身不做迴圈。列表頁由 [ListPage](../page/ListPage.md) 依 `item` 放置此元件，迴圈與分組皆由 `ListPage` 處理。其他地方以 `v-for` 或 `GroupedList` 的 slot 使用
 - 提供 `to` 時，整列即為連結
-- 多選的四個 prop 無須逐一接上：`v-bind` `ListPage` 的 slot 提供的 `props` 即可，自行組合時使用 `selection.itemProps(row.id)`。如此一次綁定 `selectable`、`selectMode`、`selected` 與長按、點選的事件
+- 多選的 prop 由 `ListPage` 綁定，自行組合時使用 `selection.itemProps(row.id)`。如此一次綁定 `selectable`、`selectMode`、`selected` 與長按、點選的事件
 
 ## Usage
 
-範本見 `template/pages/list.vue`：列表頁將 `DataList` 置於 `ListPage` 的 slot 中，並 `v-bind` 該 slot 提供的多選綁定。
+範本見 `template/pages/list.vue`：`ListPage` 的 `item` 為 `'list'`，頁面另外傳入 `view` 與 `row-to`。
 
 ## view
 

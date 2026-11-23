@@ -35,13 +35,21 @@ interface ResolvedGroup {
 }
 
 // defineView 的結果：接收一列並回傳各位置的內容與此列的動作（deck、profile、gallery、詳細頁標頭）
-export type RowView<Row extends object> = (row: Row) => ResolvedGroup & { actions: (PageAction | null)[] }
+export type RowView<Row extends object> = ((row: Row) => ResolvedGroup & { actions: (PageAction | null)[] }) & { kind?: undefined }
 
 // defineCardView 的結果：header 為第 1 層（image 為頭像），body 為第 2、3 層（image 為大圖），actions 為第 4 層
-export type CardView<Row extends object> = (row: Row) => {
+export type CardView<Row extends object> = ((row: Row) => {
   header: ResolvedGroup
   body: ResolvedGroup
   actions: (PageAction | null)[]
+}) & { kind: 'card' }
+
+// ListPage 的每一列以哪一種版面顯示
+export type ListItemKind = 'list' | 'profile' | 'gallery' | 'card'
+
+// 只有 card 使用 defineCardView 的 view，其他版面使用 defineView 的 view
+export function fitsView (item: ListItemKind, view: { kind?: 'card' }): boolean {
+  return (item === 'card') === (view.kind === 'card')
 }
 
 function noActions (): (PageAction | null)[] {
@@ -98,5 +106,5 @@ export function defineCardView<K extends TableKey> (
   const header = compileGroup<RowOf<K>>(schema, view.header)
   const body = compileGroup<RowOf<K>>(schema, view.body)
   const actions = view.actions ?? noActions
-  return row => ({ header: header(row), body: body(row), actions: actions(row) })
+  return Object.assign((row: RowOf<K>) => ({ header: header(row), body: body(row), actions: actions(row) }), { kind: 'card' as const })
 }

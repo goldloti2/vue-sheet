@@ -3,9 +3,9 @@
 card 式列表的**單一張卡片**：上下共四層，未指定任何位置的那一層整層隱藏。與 [DataProfile](DataProfile.md) 相同，卡片之間有間隔，點擊卡片進入詳細頁。
 
 - 各位置由 card 專用的 view（`defineCardView`）指定，分為 `header`、`body` 兩組。每一組可用的位置與 [DataList](DataList.md#view) 的 view 相同
-- 元件本身不做迴圈。列表頁將此元件置於 [ListPage](../page/ListPage.md) 的 slot 中，其他地方以 `v-for` 或 `GroupedList` 的 slot 使用
+- 元件本身不做迴圈。列表頁由 [ListPage](../page/ListPage.md) 的 `item="card"` 放置此元件，其他地方以 `v-for` 或 `GroupedList` 的 slot 使用
 - 提供 `to` 時，整張卡片即為連結
-- 多選的接法與 DataList 相同：`v-bind` `ListPage` 的 slot 提供的 `props`，自行組合時使用 `selection.itemProps(row.id)`。如此一次綁定 `selectable`、`selectMode`、`selected` 與長按、點選的事件
+- 多選的 prop 與 DataList 相同，由 `ListPage` 綁定，自行組合時使用 `selection.itemProps(row.id)`。如此一次綁定 `selectable`、`selectMode`、`selected` 與長按、點選的事件
 
 ## Usage
 

@@ -1,6 +1,6 @@
 # ListPage
 
-列表頁的整頁版型：載入狀態、逐列顯示、右下角的 FAB，並於點擊一列時發布畫面上的順序。詳細頁的上一列、下一列依此順序切換。每一列的外觀由頁面決定。
+列表頁的整頁版型：載入狀態、逐列顯示、右下角的 FAB，並於點擊一列時發布畫面上的順序。詳細頁的上一列、下一列依此順序切換。每一列以哪一種版面顯示、顯示哪些欄位，由頁面以 `item` 與 `view` 指定。
 
 此元件搭配 `useListPage(table)` 使用：
 - `table` 為表的 key，Row 的型別由 key 推出
@@ -38,13 +38,15 @@
 | `error` | `string \| null?` | 載入失敗的訊息 |
 | `selection` | `MultiSelect?` | 提供時才綁定長按多選，即 `useListPage` 的 `selection` |
 | `fab` | `(PageAction \| null)[]?` | 右下角的 FAB，通常為新增。`null` 略過 |
-| `layout` | `'list' \| 'grid'?` | 各列的排法，預設 `'list'`（依序往下排列）。gallery 使用 `'grid'`（格狀排列）。分組時一併轉交給 `GroupedList`，見 [ListLayout](../list/ListLayout.md) |
+| `item` | `'list' \| 'profile' \| 'gallery' \| 'card'` | 每一列的版面，`'list'` 為 deck。提供 `view` 時**必填**，以 slot 呈現時可省略。各列的排法隨之決定：`'gallery'` 為格狀排列，其他依序往下排列（見 [ListLayout](../list/ListLayout.md)） |
+| `view` | `RowView<Row>?` 或 `CardView<Row>?` | 每個位置顯示的欄位。`item` 為 `'card'` 時使用 `defineCardView` 的結果，其他使用 `defineView` 的結果。兩者不符時型別檢查報錯，開發模式下另以 console 警告 |
+| `rowTo` | `((row: Row) => string)?` | 每一列的連結。省略時為純顯示的一列 |
 
 ## Slots
 
 | slot | scope | 說明 |
 | --- | --- | --- |
-| `default` | `{ row, props }` | 每一列。`props` 為多選須綁定的屬性：`selectable`、`selectMode`、`selected` 與長按、點選的事件。以 `v-bind` 綁定至 `DataList`、`DataProfile`、`DataCard` 或 `DataGallery` 即可。位於開啟 `selects` 的 dashboard 面板中時，另含 `current`、`pickable`、`pick`，點擊改為選取。兩者皆無時為空物件 |
+| `default` | `{ row, props }` | 自訂每一列，取代 `view` 與 `rowTo`。`item` 只決定各列的排法，省略時依序往下排列。`props` 為多選須綁定的屬性：`selectable`、`selectMode`、`selected` 與長按、點選的事件。以 `v-bind` 綁定至 `DataList`、`DataProfile`、`DataCard` 或 `DataGallery` 即可。位於開啟 `selects` 的 dashboard 面板中時，另含 `current`、`pickable`、`pick`，點擊改為選取。兩者皆無時為空物件 |
 | `rows` | `{ rows }` | 一次提供全部的列，用於表格式列表。提供此 slot 時不使用 `default`，也沒有多選的綁定，`DataTable` 本身不支援多選 |
 
 ### 表格式
@@ -61,18 +63,24 @@
 
 ## 分組與頁籤
 
-分組時提供 `groups`，不提供 `rows`，列的 slot 寫法相同。使用者選了排序時，改為提供 `rows`：
+分組時提供 `groups`，不提供 `rows`，`item` 與 `view` 的寫法相同。使用者選了排序時，改為提供 `rows`：
 
 ```ts
 const groups = computed(() => sort.value ? undefined : groupRows(rows.value, groupLevels))
 ```
 
 ```vue
-<ListPage :error="error" :fab="[newAction]" :groups="groups" :loading="loading" :rows="groups ? undefined : rows" :selection="selection" table="__table__">
-  <template #default="{ row, props: itemProps }">
-    <DataList v-bind="itemProps" :row="row" :to="`/__table__/${row.id}`" :view="view" />
-  </template>
-</ListPage>
+<ListPage
+  :error="error"
+  :fab="[newAction]"
+  :groups="groups"
+  :loading="loading"
+  :row-to="row => `/__table__/${row.id}`"
+  :rows="groups ? undefined : rows"
+  :selection="selection"
+  table="__table__"
+  :view="view"
+/>
 ```
 
 **頁籤**：
@@ -108,15 +116,23 @@ useListControls(query, {
 
 ## 各種版面
 
-每一列的呈現方式由置於 default slot 的元件決定：
-- deck 為 [DataList](../list/DataList.md)，另有 [DataProfile](../list/DataProfile.md)、[DataCard](../list/DataCard.md)、[DataGallery](../list/DataGallery.md)
+每一列的版面由 `item` 決定：
+
+| `item` | 元件 | view |
+| --- | --- | --- |
+| `'list'`（deck） | [DataList](../list/DataList.md) | `defineView` |
+| `'profile'` | [DataProfile](../list/DataProfile.md) | `defineView` |
+| `'gallery'` | [DataGallery](../list/DataGallery.md) | `defineView` |
+| `'card'` | [DataCard](../list/DataCard.md) | `defineCardView` |
+
+- 版面不在其中時，以 default slot 自訂每一列
 - 表格經由 `#rows` 使用 [DataTable](../list/DataTable.md)
 
-哪個欄位放在哪個位置，由頁面定義的 view 指定（`defineView`，card 為 `defineCardView`，見 [DataList](../list/DataList.md#view)）。同一個 view 可交給 deck、profile 或 gallery，換版面時無須改寫欄位的對應。各版面的外觀與適用情況見 [design/list.md](../../design/list.md)。
+哪個欄位放在哪個位置，由頁面定義的 view 指定（見 [DataList](../list/DataList.md#view)）。同一個 view 可交給 deck、profile 或 gallery，換版面時無須改寫欄位的對應。各版面的外觀與適用情況見 [design/list.md](../../design/list.md)。
 
-- **gallery 須搭配 `layout="grid"`**，其餘版面維持預設的 `list`（見 [ListLayout](../list/ListLayout.md)）。分組時每一組各自排列，組的標題一律佔一整行
+- **gallery 為格狀排列**，其餘版面依序往下排列（見 [ListLayout](../list/ListLayout.md)）。分組時每一組各自排列，組的標題一律佔一整行
 - **table 經由 `#rows` slot**，全部的列交給 `DataTable`。表格不支援多選，須多選操作時改用其他版面
-- **deck、profile、card、gallery 皆支援長按多選**，接法相同：以 `v-bind` 綁定 slot 提供的 `props`。多選模式下，各版面的動作皆隱藏
+- **deck、profile、card、gallery 皆支援長按多選**，提供 `selection` 即可。自訂每一列時，以 `v-bind` 綁定 slot 提供的 `props`。多選模式下，各版面的動作皆隱藏
 - **排序與分組與版面無關**：順序來自 `useListPage`（`defaultSort` 或使用者選的排序）與 `groupRows`，各版面皆依同一個順序呈現。gallery 由左往右、再由上往下排列
 - **間距、陰影與點擊、選取的樣式為各版面共用**，定義於 `src/styles/list.css`（見 [ListLayout](../list/ListLayout.md) 的「共用的樣式」）
 - 範本見 `template/pages/` 中的 `list.vue`（deck）、`profile-list.vue`、`card-list.vue`、`gallery-list.vue`

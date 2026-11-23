@@ -3,7 +3,6 @@
      以 props 傳入條件，同一個元件可用於不同頁面。說明見 docs/topics/search.md 的「同一頁面中的多張表」 -->
 <script lang="ts" setup>
   import type { RowOf } from '@/schema/types'
-  import DataList from '@/components/ui/list/DataList.vue'
   import ListPage from '@/components/ui/page/ListPage.vue'
   import { useActions } from '@/composables/actions'
   import { useListPage } from '@/composables/page/useListPage'
@@ -33,13 +32,12 @@
   <ListPage
     :error="error"
     :fab="[newAction]"
+    item="list"
     :loading="loading"
+    :row-to="row => `/__table__/${row.id}`"
     :rows="rows"
     :selection="selection"
     table="__table__"
-  >
-    <template #default="{ row, props: itemProps }">
-      <DataList v-bind="itemProps" :row="row" :to="`/__table__/${row.id}`" :view="view" />
-    </template>
-  </ListPage>
+    :view="view"
+  />
 </template>

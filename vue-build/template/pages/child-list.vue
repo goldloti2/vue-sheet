@@ -6,7 +6,6 @@
 </route>
 
 <script lang="ts" setup>
-  import DataList from '@/components/ui/list/DataList.vue'
   import ListPage from '@/components/ui/page/ListPage.vue'
   import { useActions } from '@/composables/actions'
   import { useRecordPage } from '@/composables/page/useRecordPage'
@@ -25,12 +24,11 @@
   <ListPage
     :error="error"
     :fab="[newAction]"
+    item="list"
     :loading="loading"
+    :row-to="child => `/__table__/${child.id}`"
     :rows="row?.$__table_____parent__ ?? []"
     table="__table__"
-  >
-    <template #default="{ row: child }">
-      <DataList :row="child" :to="`/__table__/${child.id}`" :view="view" />
-    </template>
-  </ListPage>
+    :view="view"
+  />
 </template>

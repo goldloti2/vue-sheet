@@ -3,9 +3,9 @@
 profile 式列表的**單一張卡片**：左側為圓形頭像，中間上下排列標題與副標，右側以 ⋮ 選單收納這一列的動作。與 [DataList](DataList.md) 不同，卡片之間有間隔，不連成一串。點擊卡片進入詳細頁。
 
 此元件與 DataList 的共同點：
-- 各欄位的位置由 view（`defineView`）指定，元件本身不做迴圈。列表頁將此元件置於 [ListPage](../page/ListPage.md) 的 slot 中，其他地方以 `v-for` 或 `GroupedList` 的 slot 使用
+- 各欄位的位置由 view（`defineView`）指定，元件本身不做迴圈。列表頁由 [ListPage](../page/ListPage.md) 的 `item="profile"` 放置此元件，其他地方以 `v-for` 或 `GroupedList` 的 slot 使用
 - 提供 `to` 時，整張卡片即為連結
-- 多選的接法相同：`v-bind` `ListPage` 的 slot 提供的 `props`，自行組合時使用 `selection.itemProps(row.id)`。如此一次綁定 `selectable`、`selectMode`、`selected` 與長按、點選的事件
+- 多選的 prop 同樣由 `ListPage` 綁定，自行組合時使用 `selection.itemProps(row.id)`。如此一次綁定 `selectable`、`selectMode`、`selected` 與長按、點選的事件
 
 ## Usage
 

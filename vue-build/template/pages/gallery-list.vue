@@ -6,7 +6,6 @@
 </route>
 
 <script lang="ts" setup>
-  import DataGallery from '@/components/ui/list/DataGallery.vue'
   import ListPage from '@/components/ui/page/ListPage.vue'
   import { useActions } from '@/composables/actions'
   import { useListPage } from '@/composables/page/useListPage'
@@ -30,19 +29,16 @@
 </script>
 
 <template>
-  <!-- layout="grid" 使各格格狀排列，手機上為兩欄 -->
+  <!-- item 為 gallery 時各格格狀排列，手機上為兩欄 -->
   <ListPage
     :error="error"
     :fab="[newAction]"
-    layout="grid"
+    item="gallery"
     :loading="loading"
+    :row-to="row => `/__table__/${row.id}`"
     :rows="rows"
     :selection="selection"
     table="__table__"
-  >
-    <!-- props 為每列多選所需的屬性 -->
-    <template #default="{ row, props: itemProps }">
-      <DataGallery v-bind="itemProps" :row="row" :to="`/__table__/${row.id}`" :view="view" />
-    </template>
-  </ListPage>
+    :view="view"
+  />
 </template>

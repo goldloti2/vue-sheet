@@ -1,15 +1,15 @@
 # DataGallery
 
-gallery 式列表的**單一格**：上方為正方形圖片，下方為標題與副標，右下角以 ⋮ 選單收納這一列的動作。須搭配 [ListPage](../page/ListPage.md) 的 `layout="grid"` 使用，各格才會格狀排列（見 [ListLayout](ListLayout.md)）。
+gallery 式列表的**單一格**：上方為正方形圖片，下方為標題與副標，右下角以 ⋮ 選單收納這一列的動作。列表頁由 [ListPage](../page/ListPage.md) 的 `item="gallery"` 放置此元件，各格為格狀排列（見 [ListLayout](ListLayout.md)）。
 
 此元件與 [DataList](DataList.md) 的共同點：
 - 各欄位的位置由 view（`defineView`）指定，元件本身不做迴圈
 - 提供 `to` 時，整格即為連結
-- 多選的接法相同：`v-bind` `ListPage` 的 slot 提供的 `props`
+- 多選的 prop 同樣由 `ListPage` 綁定
 
 ## Usage
 
-範本見 `template/pages/gallery-list.vue`。`ListPage` 須設定 `layout="grid"`。
+範本見 `template/pages/gallery-list.vue`。
 
 ## 使用的位置
 

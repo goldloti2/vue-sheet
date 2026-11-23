@@ -3,7 +3,13 @@
   import type { MultiSelect } from '@/composables/list/useMultiSelect'
   import type { TableKey } from '@/schema'
   import type { RowGroup } from '@/schema/group'
+  import type { CardView, ListItemKind, RowView } from '@/schema/view'
+  import type { Component } from 'vue'
   import { computed, watch } from 'vue'
+  import DataCard from '@/components/ui/list/DataCard.vue'
+  import DataGallery from '@/components/ui/list/DataGallery.vue'
+  import DataList from '@/components/ui/list/DataList.vue'
+  import DataProfile from '@/components/ui/list/DataProfile.vue'
   import GroupedList from '@/components/ui/list/GroupedList.vue'
   import ListLayout from '@/components/ui/list/ListLayout.vue'
   import PageState from '@/components/ui/page/PageState.vue'
@@ -11,7 +17,9 @@
   import { provideListOrder } from '@/composables/navigation/useListOrder'
   import { useDashboardPanel } from '@/composables/shell/useDashboardLinks'
   import { usePanelFullPage, usePanelVisible } from '@/composables/shell/usePanelActive'
+  import { schemas } from '@/schema'
   import { flattenGroups } from '@/schema/group'
+  import { fitsView } from '@/schema/view'
 
   const props = defineProps<{
     table: TableKey
@@ -25,12 +33,18 @@
     selection?: MultiSelect
     // 右下角的 FAB，通常為新增
     fab?: (PageAction | null)[]
-    // 各列的排法：list 依序往下排列（預設），grid 為格狀排列（gallery）
-    layout?: 'list' | 'grid'
-  }>()
+    // 每一列的連結。省略時不可點擊
+    rowTo?: (row: Row) => string
+  } & (
+    // 每一列的版面與各位置的欄位，兩者一起提供。card 使用 defineCardView，其他使用 defineView
+    | { item: 'list' | 'profile' | 'gallery', view: RowView<Row> }
+    | { item: 'card', view: CardView<Row> }
+    // 以 slot 呈現時不提供 view。default slot 的 item 只決定各列的排法
+    | { item?: ListItemKind, view?: undefined }
+  )>()
 
   defineSlots<{
-    // props 為每一列的多選綁定，直接以 v-bind 綁定至 DataList
+    // 自訂每一列，取代 item 與 view。props 為每一列的多選綁定
     default?: (slotProps: { row: Row, props: object }) => unknown
     // 一次提供全部的列，用於表格式列表。提供此 slot 時不使用 default，也沒有多選綁定
     rows?: (slotProps: { rows: Row[] }) => unknown
@@ -62,6 +76,23 @@
       : {}
     return { ...props.selection?.itemProps(id), ...marked, ...linked }
   }
+
+  // 每一列的元件，prop 皆為 row、view、to 與 rowProps
+  const ITEMS: Record<ListItemKind, Component> = { list: DataList, profile: DataProfile, gallery: DataGallery, card: DataCard }
+  const item = computed<ListItemKind>(() => props.item ?? 'list')
+  const layout = computed(() => item.value === 'gallery' ? 'grid' : 'list')
+
+  function itemProps (row: Row): object {
+    return { ...rowProps(row.id), row, view: props.view, to: props.rowTo?.(row) }
+  }
+
+  if (import.meta.env.DEV) {
+    watch([item, () => props.view], ([kind, view]) => {
+      if (view && !fitsView(kind, view)) {
+        console.warn(`ListPage（${schemas[props.table].tableLabel}）：item 為 ${kind} 時，view 須以 ${kind === 'card' ? 'defineCardView' : 'defineView'} 定義`)
+      }
+    }, { immediate: true })
+  }
 </script>
 
 <template>
@@ -70,7 +101,9 @@
       <PageState :error="error" :loading="loading" spinner="linear">
         <GroupedList v-if="groups" :groups="groups" :layout="layout">
           <template #default="{ row }">
-            <slot :props="rowProps(row.id)" :row="row" />
+            <slot :props="rowProps(row.id)" :row="row">
+              <component :is="ITEMS[item]" v-if="view" v-bind="itemProps(row)" />
+            </slot>
           </template>
         </GroupedList>
 
@@ -78,7 +111,9 @@
 
         <ListLayout v-else :layout="layout">
           <template v-for="row in rows" :key="row.id">
-            <slot :props="rowProps(row.id)" :row="row" />
+            <slot :props="rowProps(row.id)" :row="row">
+              <component :is="ITEMS[item]" v-if="view" v-bind="itemProps(row)" />
+            </slot>
           </template>
         </ListLayout>
       </PageState>

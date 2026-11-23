@@ -8,12 +8,11 @@
 <script lang="ts" setup>
   import { ref } from 'vue'
   import TabPage from '@/components/ui/panel/TabPage.vue'
-  import { __table__Schema } from '@/schema/tables/__table__'
+  import { optionsOf } from '@/schema/options'
   import StatusList from './_ref/__Table__List.vue'
 
-  // 頁籤直接取自 select 欄位的 options，不另外維護清單。取 options 前須以 type 縮小型別
-  const statusColumn = __table__Schema.columns.find(column => column.key === 'status')
-  const statusTabs = statusColumn?.type === 'select' ? statusColumn.options : []
+  // 頁籤直接取自 select 欄位的 options，不另外維護清單
+  const statusTabs = optionsOf('__table__', 'status')
   const selectedStatus = ref(statusTabs[0])
 </script>
 

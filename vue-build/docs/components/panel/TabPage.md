@@ -31,7 +31,7 @@
 - 同一條規則只接其中一個，依規則回答的問題選擇。`useMultiSelect` 在切換頁籤時清空選取，使用 `useCurrentTab()`
 - `useCurrentTab()` 由此元件 provide，讀取最近一層 `TabPage` 的頁籤。此元件之外為 `null`。頁面本身須知道目前的頁籤時，直接讀取自己的 `v-model`
 
-常見的用法是依某個 `select` 欄位篩選列表，頁籤直接讀取該欄位的 `options`。讀取 `options` 前，須先以 `column?.type === 'select'` 縮小型別，此判斷不可省略。
+常見的用法是依某個 `select` 欄位篩選列表，頁籤直接讀取該欄位的 `options`。讀取的方式見 [schema.md](../../topics/schema.md) 的 `optionsOf`。
 
 ## Usage
 

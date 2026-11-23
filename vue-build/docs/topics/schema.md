@@ -126,6 +126,11 @@ export const orderSchema: TableSchema<OrderRow> = {
 
 型別共有八種：`text`、`number`、`date`、`duration`、`boolean`、`select`、`ref`、`image`。每種型別有專屬的設定，例如 `number` 的 `min`、`max`、`step`，`select` 的 `options`，`ref` 的 `refTable`。完整清單見 [`types.ts`](../../src/schema/types.ts)。
 
+頁面讀取 `select` 欄位的 `options` 時，使用 `optionsOf(表的 key, 欄位的 key)`（`schema/options.ts`），例如頁籤與分組的先後。
+- 真實欄位與虛擬欄位皆可。欄位的 key 受型別檢查，限於該表的欄位
+- 回傳的順序即 `options` 宣告的順序
+- 欄位不是 `select` 或不存在時回傳空陣列。開發模式下另以 console 警告
+
 `text` 的 `multiline: true` 為長文：表單與快速編輯改為多行的輸入框，詳細頁保留值中的換行。列表與標頭中，換行顯示為空格。值、搜尋、篩選與排序皆與一般的 `text` 相同。外觀見 [design/form.md](../design/form.md) 與 [design/detail.md](../design/detail.md)。
 
 `number` 的 `step` 為表單上 −／＋ 每次的增減，預設為 1。輸入的值不受 `step` 限制，例如 `step: 0.5` 時仍可輸入 1.3。表單不限制小數位數，輸入的值不會被四捨五入。

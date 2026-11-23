@@ -7,7 +7,7 @@
 
 <script lang="ts" setup>
   import DetailPage from '@/components/ui/page/DetailPage.vue'
-  import { use__Table__Actions } from '@/composables/actions/use__Table__Actions'
+  import { useActions } from '@/composables/actions'
   import { useRowAction } from '@/composables/actions/useTableActions'
   import { useRecordPage } from '@/composables/page/useRecordPage'
   import { useAppBarActions } from '@/composables/shell/useShellActions'
@@ -17,7 +17,7 @@
   const { id, row, loading, error } = useRecordPage('__table__')
 
   // 以列為參數的動作以 useRowAction 綁定至此列。刪除此列後自動離開
-  const { delete: remove, edit, fieldActions } = use__Table__Actions()
+  const { delete: remove, edit, fieldActions } = useActions('__table__')
   const editAction = useRowAction(row, edit)
   const deleteAction = useRowAction(row, remove)
   useAppBarActions(() => [deleteAction.value])

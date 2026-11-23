@@ -1,7 +1,7 @@
 import { CONFIG_FILE } from './configGs.ts'
 import { EDITOR_PAGES, SETTINGS_PAGE, targetPaths } from './editorPages.ts'
 import { MOCK_TABLES_FILE } from './tableFiles.ts'
-import { ACTIONS_DIR, actionsTableKeyOf, REGISTRY_FILE, tableKeyOf, TABLES_DIR } from './tableKeys.ts'
+import { ACTIONS_DIR, ACTIONS_REGISTRY_FILE, actionsTableKeyOf, REGISTRY_FILE, tableKeyOf, TABLES_DIR } from './tableKeys.ts'
 
 // 左側的導覽：依類型把專案的檔案分組。每一組為最上層的節點，子項為該組的檔案、頁面與資料夾
 
@@ -231,14 +231,15 @@ export function navGroups (files: readonly string[], { tableLabels = {}, tableOr
     .map(file => tableNode(tableKeyOf(file) ?? baseName(file), tableLabels, { path: file }))
     .toSorted((a, b) => order(a.detail ?? a.label, b.detail ?? b.label))
   const registry = pick(file => file === REGISTRY_FILE).map(file => fileNode(file, '總覽'))
-  const actions = pick(file => file.startsWith(ACTIONS_DIR))
+  const actionsRegistry = pick(file => file === ACTIONS_REGISTRY_FILE).map(file => fileNode(file, '總覽'))
+  const actions = pick(file => file.startsWith(ACTIONS_DIR) && file !== ACTIONS_REGISTRY_FILE)
     .map(file => tableNode(actionsTableKeyOf(file) ?? baseName(file), tableLabels, { path: file }))
     .toSorted((a, b) => order(a.detail ?? a.label, b.detail ?? b.label))
   const pages = pageNodes(pick(file => file.startsWith(PAGES)), tableKeys, tableLabels, tableOrder)
 
   return [
     ...group('表', [...registry, ...tables]),
-    ...group('動作', actions),
+    ...group('動作', [...actionsRegistry, ...actions]),
     ...group('頁面', pages),
     ...group('導覽', pick(file => file === `${SRC}config/navigation.ts`).map(file => fileNode(file, '導覽列'))),
     ...group('設定', [

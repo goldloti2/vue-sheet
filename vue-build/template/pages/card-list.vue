@@ -8,20 +8,17 @@
 <script lang="ts" setup>
   import DataCard from '@/components/ui/list/DataCard.vue'
   import ListPage from '@/components/ui/page/ListPage.vue'
-  import { use__Table__Actions } from '@/composables/actions/use__Table__Actions'
+  import { useActions } from '@/composables/actions'
   import { useListPage } from '@/composables/page/useListPage'
   import { useAppBarActions } from '@/composables/shell/useShellActions'
   import { defineCardView } from '@/schema/view'
 
   // 整表 → 篩選 → 搜尋（搜尋、篩選與排序按鈕自動登記至 App Bar），以及長按多選
   // 順序與 schema 的 defaultSort 不同時，以選項 { defaultSort: [...] } 指定，排在 schema 的 defaultSort 之前
-  const { rows, loading, error, selection } = useListPage('__table__')
+  const { rows, loading, error, selection, match } = useListPage('__table__')
 
-  // 不須多選時，不傳 selectedIds、onDone，也不將 selection 交給 ListPage
-  const { new: newAction, bulkDelete, edit, delete: remove } = use__Table__Actions({
-    selectedIds: selection.selectedIds,
-    onDone: selection.clear,
-  })
+  // 不須多選時，不將 selection 交給 ListPage
+  const { new: newAction, bulkDelete, edit, delete: remove } = useActions('__table__', { list: { selection, match } })
   useAppBarActions(() => [bulkDelete.value])
 
   // header 為第 1 層，body 為第 2、3 層，actions 為第 4 層（見 docs/components/list/DataCard.md）

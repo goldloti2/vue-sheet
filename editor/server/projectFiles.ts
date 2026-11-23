@@ -8,6 +8,7 @@ const PROJECT_FILE_PATTERNS = [
   /^vue-build\/src\/schema\/tables\/[^/]+\.ts$/,
   /^vue-build\/src\/schema\/index\.ts$/,
   /^vue-build\/src\/composables\/actions\/use\w+Actions\.ts$/,
+  /^vue-build\/src\/composables\/actions\/index\.ts$/,
   /^vue-build\/src\/config\/navigation\.ts$/,
   // 只以設定頁修改各設定項的值
   /^vue-build\/src\/config\/app\.ts$/,

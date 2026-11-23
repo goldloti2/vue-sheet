@@ -4,7 +4,7 @@ import { useFilesStore } from '@/stores/files'
 import { CONFIG_DEPLOY_MESSAGE, CONFIG_FILE } from '../../shared/configGs'
 import { NAVIGATION_FILE } from '../../shared/navigationForm'
 import { MOCK_TABLES_FILE, schemaFileOf } from '../../shared/tableFiles'
-import { REGISTRY_FILE } from '../../shared/tableKeys'
+import { ACTIONS_REGISTRY_FILE, REGISTRY_FILE } from '../../shared/tableKeys'
 
 // 新增與刪除表、建立 mock CSV 立即寫入。登記用的檔案或要刪除的檔案有未儲存的修改時不執行
 export function useTableFiles () {
@@ -22,7 +22,7 @@ export function useTableFiles () {
 
   /** 建立成功時開啟新表的 schema，回傳 true */
   async function create (request: NewTableRequest): Promise<boolean> {
-    if (!checkClean([REGISTRY_FILE, MOCK_TABLES_FILE, CONFIG_FILE], '新增表')) {
+    if (!checkClean([REGISTRY_FILE, ACTIONS_REGISTRY_FILE, MOCK_TABLES_FILE, CONFIG_FILE], '新增表')) {
       return false
     }
     let result: NewTableResult
@@ -45,7 +45,7 @@ export function useTableFiles () {
 
   /** paths 為要刪除的檔案。刪除成功時回傳 true */
   async function remove (key: string, paths: readonly string[]): Promise<boolean> {
-    if (!checkClean([REGISTRY_FILE, MOCK_TABLES_FILE, CONFIG_FILE, NAVIGATION_FILE, ...paths], '刪除表')) {
+    if (!checkClean([REGISTRY_FILE, ACTIONS_REGISTRY_FILE, MOCK_TABLES_FILE, CONFIG_FILE, NAVIGATION_FILE, ...paths], '刪除表')) {
       return false
     }
     try {

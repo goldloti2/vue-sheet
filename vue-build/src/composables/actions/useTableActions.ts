@@ -2,11 +2,12 @@ import type { AskFieldsOptions } from '@/composables/shell/useAskFields'
 import type { RealTableKey, TableKey } from '@/schema'
 import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue'
 import { mdiChevronRightCircleOutline, mdiContentCopy, mdiDelete, mdiOpenInNew, mdiPencil, mdiPlus } from '@mdi/js'
-import { computed, toValue } from 'vue'
+import { computed, shallowRef, toValue } from 'vue'
 import { askFields } from '@/composables/shell/useAskFields'
 import { openForm } from '@/composables/shell/useFormLayers'
 import router, { leaveAfterAction } from '@/router'
 import { schemas } from '@/schema'
+import { matchDefaults } from '@/schema/match'
 import { rowLabel } from '@/schema/types'
 import { useTablesStore } from '@/stores/tables'
 
@@ -52,20 +53,44 @@ export function useRowAction<Row> (row: Ref<Row | null>, build: (row: Row) => Pa
 
 // 以下的 builder 皆為一般函式，接收當下的值並回傳動作，不適用時回傳 null（包裝方式見 docs/topics/actions.md）
 
-export interface NewActionOptions {
-  defaults?: MaybeRefOrGetter<Record<string, unknown>>
+// 列表的多選，即 useListPage 回傳的 selection
+export interface ListSelection {
+  selectedIds: Readonly<Ref<ReadonlySet<string>>>
+  clear: () => void
+}
+
+// 只含一列的選取。以列為參數的動作以此呼叫接收選取的 builder，clear 不做任何事
+export function selectionOf (row: { id: string }): ListSelection {
+  return { selectedIds: shallowRef(new Set([row.id])), clear: () => {} }
+}
+
+// 列表頁交給動作的值，即 useListPage 回傳的 selection 與 match
+export interface ActionList<Row extends object = object> {
+  selection: ListSelection
+  match: () => Partial<Row>
+}
+
+// 各表的 use表名Actions 的選項。呼叫端只提供自身具備的參數，缺少參數的動作為 null
+export interface ActionOptions<Row extends object = object> {
+  list?: ActionList<Row>
+  // 新增時的預設值，優先於列表的 match
+  defaults?: MaybeRefOrGetter<Partial<Row>>
   // 主鍵唯讀，只能由 defaults 帶入
   lockId?: boolean
 }
 
-export function newAction (table: RealTableKey, options: NewActionOptions = {}, look: ActionLook = {}): PageAction {
-  const { defaults, lockId } = options
+// 新增時的預設值：列表的 match 中的真實欄位，再以 defaults 覆寫
+export function newDefaults (table: RealTableKey, options: ActionOptions): Record<string, unknown> {
+  const matched = options.list ? matchDefaults(schemas[table], options.list.match() as Record<string, unknown>) : {}
+  return { ...matched, ...toValue(options.defaults) }
+}
 
+export function newAction (table: RealTableKey, options: ActionOptions = {}, look: ActionLook = {}): PageAction {
   return {
     key: 'new',
     label: look.label ?? '新增',
     icon: look.icon ?? actionIcons.new,
-    onClick: () => void openForm(table, { defaults: toValue(defaults), lockId }),
+    onClick: () => void openForm(table, { defaults: newDefaults(table, options), lockId: options.lockId }),
   }
 }
 
@@ -100,8 +125,8 @@ export function copyAction (table: RealTableKey, row: { id: string }, look: Acti
   }
 }
 
-// 刪除的列為目前詳細頁所顯示的列時，自動離開詳細頁。onDone 用於其他額外的處理
-export function deleteAction (table: RealTableKey, row: { id: string }, onDone?: () => void, look: ActionLook = {}): PageAction {
+// 刪除的列為目前詳細頁所顯示的列時，自動離開詳細頁
+export function deleteAction (table: RealTableKey, row: { id: string }, look: ActionLook = {}): PageAction {
   return {
     key: 'delete',
     label: look.label ?? '刪除',
@@ -109,7 +134,6 @@ export function deleteAction (table: RealTableKey, row: { id: string }, onDone?:
     confirm: { title: '刪除確認', text: '確定要刪除嗎？' },
     onClick: async () => {
       await useTablesStore().remove(table, row.id)
-      onDone?.()
       if (router.currentRoute.value.path === `/${table}/${row.id}`) {
         leaveAfterAction(`/${table}`)
       }
@@ -117,8 +141,10 @@ export function deleteAction (table: RealTableKey, row: { id: string }, onDone?:
   }
 }
 
-export function bulkDeleteAction (table: RealTableKey, ids: ReadonlySet<string>, onDone?: () => void, look: ActionLook = {}): PageAction | null {
-  if (ids.size === 0) {
+// 刪除選取的列，完成後清除選取。沒有選取時為 null
+export function bulkDeleteAction (table: RealTableKey, selection: ListSelection | undefined, look: ActionLook = {}): PageAction | null {
+  const ids = selection?.selectedIds.value
+  if (!selection || !ids || ids.size === 0) {
     return null
   }
 
@@ -129,7 +155,7 @@ export function bulkDeleteAction (table: RealTableKey, ids: ReadonlySet<string>,
     confirm: { title: '刪除確認', text: `確定要刪除選取的 ${ids.size} 個項目嗎?` },
     onClick: async () => {
       await useTablesStore().removeMany(table, ids)
-      onDone?.()
+      selection.clear()
     },
   }
 }
@@ -139,17 +165,17 @@ export interface QuickEditOptions {
   label: string
   icon: string
   defaults?: AskFieldsOptions['defaults']
-  onDone?: () => void
 }
 
-// 將選取的列的指定欄位改為同一個值。只選取一列時對話框顯示該列的現值，否則使用 defaults
+// 將選取的列的指定欄位改為同一個值，完成後清除選取。只選取一列時對話框顯示該列的現值，否則使用 defaults。沒有選取時為 null
 export function quickEditAction<Row extends { id: string }> (
   table: RealTableKey,
   keys: (keyof Row & string)[],
-  ids: ReadonlySet<string>,
+  selection: ListSelection | undefined,
   options: QuickEditOptions,
 ): PageAction | null {
-  if (ids.size === 0) {
+  const ids = selection?.selectedIds.value
+  if (!selection || !ids || ids.size === 0) {
     return null
   }
 
@@ -168,7 +194,7 @@ export function quickEditAction<Row extends { id: string }> (
       for (const id of ids) {
         store.update(table, id, values)
       }
-      options.onDone?.()
+      selection.clear()
     },
   }
 }

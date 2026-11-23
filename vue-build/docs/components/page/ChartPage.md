@@ -4,7 +4,7 @@
 
 此元件搭配 `useListPage(table)` 使用：
 - 回傳的 `rows`、`loading`、`error` 直接對應此元件的 prop，`filters` 以 `v-model:filters` 傳入
-- 搜尋、篩選與 `scope` 照常生效，圖表只畫出剩下的列
+- 搜尋、篩選、`match` 與 `scope` 照常生效，圖表只畫出剩下的列
 - 圖表以 `defineChart` 宣告於頁面，只執行一次。宣告於 `useListPage` 之前，`filterKeys` 傳入 `useListPage` 的 `ignoreFilter`
 - 分組欄與系列欄上的條件因此不篩選列，改由圖表加上高光（見 [chart.md](../../topics/chart.md#分組欄與系列欄上的條件)）
 

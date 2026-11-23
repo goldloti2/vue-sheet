@@ -8,7 +8,7 @@
 欄位右側的動作（前往 ref 的父列、開啟網址、改成今天）由 `fieldActions` 決定：
 - 格式為欄位 key → `(row) => PageAction | null`。`null` 表示這一列不適用
 - 每一欄一個動作，整格可點擊
-- 現成的動作從 `use表名Actions()` 取得，見 [actions.md](../../topics/actions.md#欄位動作)
+- 現成的動作從 `useActions(table)` 取得，見 [actions.md](../../topics/actions.md#欄位動作)
 - 未列出的欄位沒有按鈕。前往 ref 父列的動作也須自行列出
 
 schema 的 `virtualColumns`（見 [schema.md](../../topics/schema.md#欄位)）與真實欄位一視同仁：自動顯示，可排進 `detailOrder`。要多顯示計算出的值時，新增虛擬欄位。此元件不接收頁面另外傳入的欄位。

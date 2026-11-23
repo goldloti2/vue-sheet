@@ -19,6 +19,16 @@ const REGISTRY = [
   '',
 ].join('\n')
 
+const ACTIONS_REGISTRY = [
+  'import type { TableKey } from \'@/schema\'',
+  'import { useOrderActions } from \'./useOrderActions\'',
+  '',
+  'export const tableActions = {',
+  '  order: useOrderActions,',
+  '} satisfies { [K in TableKey]?: (...args: never[]) => object }',
+  '',
+].join('\n')
+
 const CONFIG = [
   'const TABLES = {',
   '  order: { sheetName: \'訂單\', idColumn: \'ORD-ID\' },',
@@ -50,6 +60,7 @@ beforeEach(async () => {
   root = await mkdtemp(path.join(tmpdir(), 'editor-tables-'))
   await cp(path.join(repoRoot, 'vue-build/template/table'), path.join(root, 'vue-build/template/table'), { recursive: true })
   await put('vue-build/src/schema/index.ts', REGISTRY)
+  await put('vue-build/src/composables/actions/index.ts', ACTIONS_REGISTRY)
   await put('vue-build/src/services/mock/tables.ts', MOCK_TABLES)
   await put('vue-build/src/schema/tables/order.ts', 'export const orderSchema = {}\n')
   await put('vue-build/mock/order-test.csv', 'ORD-ID\n')
@@ -81,6 +92,8 @@ describe('createTable', () => {
     expect(await read('vue-build/mock/orderLine-test.csv')).toBe('OL-ID,名稱\n')
     expect(await read('vue-build/src/schema/index.ts')).toContain('import { orderLineSchema } from \'./tables/orderLine\'\n')
     expect(await read('vue-build/src/schema/index.ts')).toContain('  order: orderSchema,\n  orderLine: orderLineSchema,\n}')
+    expect(await read('vue-build/src/composables/actions/index.ts')).toContain('import { useOrderLineActions } from \'./useOrderLineActions\'\n')
+    expect(await read('vue-build/src/composables/actions/index.ts')).toContain('  order: useOrderActions,\n  orderLine: useOrderLineActions,\n}')
     expect(await read('vue-build/src/services/mock/tables.ts')).toContain('import orderLineCsv from \'../../../mock/orderLine-test.csv?raw\'\n')
     expect(await read('vue-build/src/services/mock/tables.ts')).toContain('  order: orderCsv,\n  orderLine: orderLineCsv,\n}')
     expect(result.config).toBe(false)
@@ -132,6 +145,7 @@ describe('createTable', () => {
     await expect(createTable(tools, { key: 'Line', label: '明細', prefix: 'L', virtual: false, sheetName: '' })).rejects.toThrow('代號只能使用')
     await expect(createTable(tools, { key: 'line', label: '明細', prefix: 'l', virtual: false, sheetName: '' })).rejects.toThrow('主鍵字首只能使用')
     expect(await read('vue-build/src/schema/index.ts')).toBe(REGISTRY)
+    expect(await read('vue-build/src/composables/actions/index.ts')).toBe(ACTIONS_REGISTRY)
   })
 })
 
@@ -156,6 +170,7 @@ describe('deleteTable', () => {
     expect(await readdir(path.join(root, 'vue-build/src/pages'))).toEqual(['customer'])
     expect(await readdir(path.join(root, 'vue-build/src/pages/customer'))).toEqual(['index.vue'])
     expect(await read('vue-build/src/schema/index.ts')).toBe('\nexport const schemas = {}\n')
+    expect(await read('vue-build/src/composables/actions/index.ts')).toBe('import type { TableKey } from \'@/schema\'\n\nexport const tableActions = {} satisfies { [K in TableKey]?: (...args: never[]) => object }\n')
     expect(await read('vue-build/src/services/mock/tables.ts')).toBe('\nexport const mockCsv = {}\n')
     expect(result.config).toBe(false)
   })

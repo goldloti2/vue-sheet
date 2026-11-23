@@ -182,22 +182,22 @@ schema 有 `rules` 時為虛擬表。虛擬表沒有的設定不顯示：主鍵�
   - Sheet 分頁名稱跟隨表名，使用者修改後不再跟隨。分頁名稱空白時使用表名。
   - 勾選「虛擬表」時不顯示主鍵字首與 Sheet 分頁名稱。
   - 真實表：
-    - 編輯器由範本建立 schema、動作與只有表頭的 CSV，並登記於 `schemas` 與測試資料。schema 只留主鍵與稱呼的欄位。
+    - 編輯器由範本建立 schema、動作與只有表頭的 CSV，並登記於 `schemas`、`tableActions` 與測試資料。schema 只留主鍵與稱呼的欄位。
     - 登記於 `schemas` 時，置於第一張虛擬表之前。
     - 編輯器於 `Config.gs` 的 `TABLES` 的最後登記此表。ID 欄為主鍵的表頭，即「主鍵字首-ID」。
     - 沒有 `Config.gs`，或 `TABLES` 不是以物件寫成時，`Config.gs` 不修改。使用者須自行登記。
   - 虛擬表：
-    - 編輯器由虛擬表的範本建立 schema 與動作，並登記於 `schemas` 的最後。
+    - 編輯器由虛擬表的範本建立 schema 與動作，並登記於 `schemas` 與 `tableActions` 的最後。
     - schema 只留稱呼的欄位，沒有規則。
     - 虛擬表沒有 CSV，不登記於測試資料與 `Config.gs`。
   - 按「新增」後，欄位停用，直到建立完成。建立成功時，編輯器開啟新表的 schema，再關閉小視窗。建立失敗時，小視窗保留輸入的內容。
 - **刪除表**：小視窗以導覽中的位置列出一併刪除的檔案與登記。
   - 檔案：schema、動作、`pages/` 中此表的資料夾、其他表中此表的展開頁、此表的 CSV。
-  - 登記：`schemas`、測試資料與 `Config.gs` 中此表的登記。
+  - 登記：`schemas`、`tableActions`、測試資料與 `Config.gs` 中此表的登記。
   - 導覽：連結為被刪除的頁面的項目，以項目的標題列出。項目所在的組照「導覽」一節的規則整理，有標題的組保留。
   - 其他引用此表的地方列於問題分頁，例如其他表的 `refTable`。
   - 刪除後無法在編輯器中還原。
-- 新增表與刪除表皆立即寫入。`schema/index.ts`、`services/mock/tables.ts`、`Config.gs` 或要刪除的檔案有未儲存的修改時，編輯器不執行。刪除表時，`navigation.ts` 有未儲存的修改也不執行。
+- 新增表與刪除表皆立即寫入。`schema/index.ts`、`composables/actions/index.ts`、`services/mock/tables.ts`、`Config.gs` 或要刪除的檔案有未儲存的修改時，編輯器不執行。刪除表時，`navigation.ts` 有未儲存的修改也不執行。
 - 寫入 `Config.gs` 後，提示使用者推送並更新部署（見「`Config.gs` 儲存之後」）。
 
 ---

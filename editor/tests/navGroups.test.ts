@@ -17,6 +17,7 @@ describe('navGroups', () => {
     const groups = navGroups([
       'apps-script/Config.gs',
       'vue-build/mock/order-test.csv',
+      'vue-build/src/composables/actions/index.ts',
       'vue-build/src/composables/actions/useOrderActions.ts',
       'vue-build/src/config/navigation.ts',
       'vue-build/src/pages/dashboard.vue',
@@ -31,6 +32,7 @@ describe('navGroups', () => {
       { label: 'order', path: 'vue-build/src/schema/tables/order.ts' },
     ])
     expect(groups[1]!.children).toEqual([
+      { label: '總覽', path: 'vue-build/src/composables/actions/index.ts' },
       { label: 'order', path: 'vue-build/src/composables/actions/useOrderActions.ts' },
     ])
     expect(groups[5]!.children!.map(node => node.label)).toEqual(['總覽', 'order-test.csv'])

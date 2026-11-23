@@ -1,4 +1,4 @@
-// 複製到 src/composables/actions/use__Table__Actions.ts
+// 複製到 src/composables/actions/use__Table__Actions.ts，並登記於同一資料夾的 index.ts 的 tableActions
 //
 // 虛擬表不可寫入，只有不修改資料的動作，例如前往 ref 的父列與開啟網址。
 // 內建的 builder 與動作於畫面上的位置，見 docs/topics/actions.md。

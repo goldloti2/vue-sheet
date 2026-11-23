@@ -5,6 +5,7 @@
   import { useFilesStore } from '@/stores/files'
   import { pageRoutes } from '../../../shared/navigationForm'
   import { tableDeletionFiles } from '../../../shared/tableFiles'
+  import { actionsFileOf } from '../../../shared/tableKeys'
 
   const files = useFilesStore()
   const tables = useTableFiles()
@@ -23,6 +24,8 @@
   const title = computed(() => files.tableLabels[key.value] ?? key.value)
   const deleted = computed(() => tableDeletionFiles(key.value, files.paths, files.mockCsv))
   const registered = computed(() => files.tableOrder.includes(key.value))
+  // 有動作檔時，tableActions 中的登記一併刪除
+  const hasActions = computed(() => deleted.value.includes(actionsFileOf(key.value)))
   const inConfig = computed(() => files.configTables?.[key.value] !== undefined)
   // 導覽中連到被刪除的頁面的項目
   const navTitles = computed(() => {
@@ -50,11 +53,12 @@
           <li v-for="path in deleted" :key="path">{{ files.locationOf(path) }}</li>
         </ul>
 
-        <template v-if="registered || files.mockCsv[key] || inConfig || navTitles.length > 0">
+        <template v-if="registered || hasActions || files.mockCsv[key] || inConfig || navTitles.length > 0">
           <p class="mt-3">下列登記一併刪除：</p>
 
           <ul class="delete-table-dialog__list">
             <li v-if="registered">總覽（schemas）中的 {{ key }}</li>
+            <li v-if="hasActions">動作的總覽（tableActions）中的 {{ key }}</li>
             <li v-if="files.mockCsv[key]">本地測試的 CSV 的登記</li>
             <li v-if="inConfig">後端（Config.gs）中的 {{ key }}</li>
             <li v-for="(navTitle, index) in navTitles" :key="index">導覽中的「{{ navTitle }}」</li>

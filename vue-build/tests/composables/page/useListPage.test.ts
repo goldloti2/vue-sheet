@@ -15,6 +15,7 @@ vi.mock('@/config/app', async importOriginal => ({ ...await importOriginal<objec
 interface ListResult {
   rows: Readonly<Ref<readonly ParentRow[]>>
   sort: Ref<SortSpec | null>
+  match: () => Partial<ParentRow>
 }
 
 beforeEach(async () => {
@@ -28,8 +29,8 @@ async function listOf (options: ListPageOptions<ParentRow>, results: ListResult[
   const { useListPage } = await import('@/composables/page/useListPage')
   return defineComponent(() => {
     // PARENTS 的型別為所有真實表的聯集，選項與結果因此轉為父表的型別
-    const { rows, sort } = useListPage(PARENTS, options as never)
-    results.push({ rows: rows as unknown as ListResult['rows'], sort })
+    const { rows, sort, match } = useListPage(PARENTS, options as never)
+    results.push({ rows: rows as unknown as ListResult['rows'], sort, match: match as ListResult['match'] })
     return () => null
   })
 }
@@ -76,5 +77,29 @@ describe('頁面的 defaultSort', () => {
     expect(idsOf(results[0]!)).toEqual(['P-0006', 'P-0003', 'P-0005', 'P-0004', 'P-0007', 'P-0001', 'P-0002'])
     expect(idsOf(results[1]!)).toEqual(SCHEMA_ORDER)
     expect(results[0]!.sort).toBe(results[1]!.sort)
+  })
+})
+
+describe('match', () => {
+  it('只保留各欄等於指定值的列', async () => {
+    const results: ListResult[] = []
+    await renderToString(createSSRApp(await listOf({ match: () => ({ status: '已完成' }) }, results)))
+
+    expect(idsOf(results[0]!)).toEqual(['P-0001', 'P-0002', 'P-0006'])
+  })
+
+  it('與 scope 皆須符合', async () => {
+    const results: ListResult[] = []
+    await renderToString(createSSRApp(await listOf({ match: () => ({ status: '已完成' }), scope: row => row.fee === 0 }, results)))
+
+    expect(idsOf(results[0]!)).toEqual(['P-0001', 'P-0002'])
+  })
+
+  it('值為 undefined 的鍵不篩選，回傳的 match 也不含這個鍵', async () => {
+    const results: ListResult[] = []
+    await renderToString(createSSRApp(await listOf({ match: () => ({ status: undefined, source: '來源甲' }) }, results)))
+
+    expect(idsOf(results[0]!)).toEqual(['P-0003', 'P-0005', 'P-0004', 'P-0007', 'P-0001'])
+    expect(results[0]!.match()).toEqual({ source: '來源甲' })
   })
 })

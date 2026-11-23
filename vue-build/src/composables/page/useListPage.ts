@@ -11,6 +11,7 @@ import { useDashboardPanel } from '@/composables/shell/useDashboardLinks'
 import { useListControls } from '@/composables/shell/useListControls'
 import { useSharedListControls } from '@/composables/shell/useSharedListControls'
 import { schemas } from '@/schema'
+import { compactMatch, matchesRow } from '@/schema/match'
 import { sortRows } from '@/schema/sort'
 
 export interface ListPageOptions<Row extends object> {
@@ -18,7 +19,9 @@ export interface ListPageOptions<Row extends object> {
   search?: boolean
   // 搭配 search: false 使用，每張表傳入同一個 query。省略時自行建立
   query?: Ref<string>
-  // 只保留符合的列（例如頁籤的狀態），於篩選與搜尋之前套用。函式讀取的 ref 改變時重算
+  // 只保留各欄等於指定值的列，並作為新增時的預設值。值為 undefined 的鍵略過。與 scope 同一步套用
+  match?: () => Partial<Row>
+  // 只保留符合的列，用於 match 寫不出的條件，於篩選與搜尋之前套用。函式讀取的 ref 改變時重算
   scope?: (row: Row) => boolean
   // 這些欄的篩選條件不套用至 rows，例如圖表的分組欄與系列欄（見 docs/topics/chart.md）
   ignoreFilter?: readonly string[]
@@ -26,7 +29,7 @@ export interface ListPageOptions<Row extends object> {
   defaultSort?: SortSpec<Row>[]
 }
 
-// 列表頁的資料層：整表 → scope（含 dashboard 面板的輸入）→ 頁面的排序 → 篩選 → 搜尋，以及多選（見 docs/components/page/ListPage.md）。Row 由表的 key 推出
+// 列表頁的資料層：整表 → match 與 scope（含 dashboard 面板的輸入）→ 頁面的排序 → 篩選 → 搜尋，以及多選（見 docs/components/page/ListPage.md）。Row 由表的 key 推出
 export function useListPage<K extends TableKey> (table: K, options: ListPageOptions<RowOf<K>> = {}) {
   return listPage<RowOf<K>>(table, schemas[table], options)
 }
@@ -41,11 +44,14 @@ function listPage<Row extends { id: string }> (
     ? { ...shared.join<Row>(table, schema), query: shared.query }
     : ownControls<Row>(table, schema, options)
 
-  // dashboard 面板的輸入，與 scope 位於同一步
+  // match、scope 與 dashboard 面板的輸入位於同一步
   const { scope } = options
+  const match = () => compactMatch(options.match?.() ?? {}) as Partial<Row>
   const panel = useDashboardPanel()
   const scopedRows = computed(() => {
-    const tests = [scope, panel?.scope()]
+    const matched = match()
+    const byMatch = Object.keys(matched).length > 0 ? (row: Row) => matchesRow(row, matched) : undefined
+    const tests = [byMatch, scope, panel?.scope()]
       .filter(test => !!test)
     if (tests.length === 0) {
       return allRows.value
@@ -65,7 +71,7 @@ function listPage<Row extends { id: string }> (
     : Object.fromEntries(Object.entries(filters.value).filter(([key]) => !ignored.includes(key)))
   const rows = useSearch(query, useFilter(applied, sortedRows, schema), schema)
 
-  return { rows, allRows, loading, error, query, filters, sort, selection: useMultiSelect() }
+  return { rows, allRows, loading, error, query, filters, sort, match, selection: useMultiSelect() }
 }
 
 // 不在容器內時：自行建立排序、篩選與搜尋字串，並自行登記

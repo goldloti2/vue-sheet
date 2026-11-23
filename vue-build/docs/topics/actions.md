@@ -70,22 +70,24 @@ interface PageAction {
 
 ## 內建 builder 一覽
 
-內建 builder 皆為一般函數，位於 `composables/actions/useTableActions.ts`：接收當時的值（表、該列、選取的 id），回傳一個 `PageAction`，不適用時回傳 `null`。
+內建 builder 皆為一般函數，位於 `composables/actions/useTableActions.ts`：接收當時的值（表、該列、列表的選取），回傳一個 `PageAction`，不適用時回傳 `null`。
 
 外觀與行為分開傳入：
 - 有預設外觀的 builder，最後一個參數一律為 `look`（`ActionLook`，`{ label?, icon? }`）。省略時使用預設的文字與圖示
-- 行為的設定（`newAction` 的 `{ defaults, lockId }`、刪除的 `onDone`）放在 `look` 之前。只更換外觀時，該參數傳入 `{}` 或 `undefined`
+- 行為的設定（例如 `newAction` 的選項、列表的選取）放在 `look` 之前。只更換外觀時，該參數傳入 `{}` 或 `undefined`
 - `quickEditAction` 與 `setFieldAction` 沒有預設外觀：`label` 與 `icon` 為必填，與其他設定放在同一個物件中
 - 修改資料的 builder 的 `table` 只接受真實表（`RealTableKey`），傳入虛擬表時型別檢查報錯（見 [schema.md](schema.md#虛擬表)）。`goToRefAction` 與 `openUrlAction` 接受任何一張表
 
 | 函數 | 回傳 | 說明 |
 | --- | --- | --- |
-| `newAction(table, { defaults?, lockId? }?, look?)` | `PageAction` | 開啟新增表單（見 [pages.md](pages.md#表單層)）。`defaults` 可為值、ref 或 getter，於按下時求值。`lockId` 使主鍵唯讀，主鍵只能由 `defaults` 帶入 |
+| `newAction(table, { list?, defaults?, lockId? }?, look?)` | `PageAction` | 開啟新增表單（見 [pages.md](pages.md#表單層)）。預設值為 `newDefaults` 的結果，於按下時求值。`lockId` 使主鍵唯讀，主鍵只能由預設值帶入 |
+| `newDefaults(table, { list?, defaults? })` | 物件 | 新增時的預設值：`list.match()` 中的真實欄位，再以 `defaults` 覆寫。虛擬欄位略過。`defaults` 可為值、ref 或 getter。連續動作的第一步以此帶入預設值 |
 | `editAction(table, row, look?)` | `PageAction` | 開啟該列的編輯表單 |
 | `copyAction(table, row, look?)` | `PageAction \| null` | 確認後複製該列：主鍵重新發號，其餘真實欄位照抄，完成後前往新的一列。子列不複製。表沒有 `newId` 時為 `null` |
-| `deleteAction(table, row, onDone?, look?)` | `PageAction` | 確認後刪除該列，包括 cascade 的子列，完成後呼叫 `onDone`。刪除的是目前詳細頁顯示的那一列時，自動以 `leaveAfterAction` 離開 |
-| `bulkDeleteAction(table, ids, onDone?, look?)` | `PageAction \| null` | 確認後刪除選取的各列，完成後呼叫 `onDone`，列表頁以此清除選取。未選取任何一列時為 `null` |
-| `quickEditAction(table, keys, ids, { label, icon, key?, defaults?, onDone? })` | `PageAction \| null` | 以對話框詢問 `keys` 中的欄位，將選取的各列改為同一個值。未選取任何一列時為 `null`（見「快速編輯對話框」） |
+| `deleteAction(table, row, look?)` | `PageAction` | 確認後刪除該列，包括 cascade 的子列。刪除的是目前詳細頁顯示的那一列時，自動以 `leaveAfterAction` 離開 |
+| `bulkDeleteAction(table, selection, look?)` | `PageAction \| null` | 確認後刪除選取的各列，完成後清除選取。`selection` 為 `undefined` 或未選取任何一列時為 `null` |
+| `quickEditAction(table, keys, selection, { label, icon, key?, defaults? })` | `PageAction \| null` | 以對話框詢問 `keys` 中的欄位，將選取的各列改為同一個值，完成後清除選取。`selection` 為 `undefined` 或未選取任何一列時為 `null`（見「快速編輯對話框」） |
+| `selectionOf(row)` | `ListSelection` | 只含這一列的選取，`clear` 不做任何事。以列為參數的動作以此呼叫接收選取的 builder |
 | `goToRefAction(row, key, refTable, look?)` | `PageAction \| null` | 前往 ref 欄位指向的父列。欄位為空時為 `null` |
 | `openUrlAction(row, key, look?)` | `PageAction \| null` | 以新分頁開啟該欄的網址。值不是 http(s) 網址時為 `null` |
 | `setFieldAction(table, row, key, value, { label, icon, confirm? })` | `PageAction` | 立即將該欄改為 `value()`。`value` 為函數，於按下時求值，例如 `() => new Date()` |
@@ -103,9 +105,16 @@ interface PageAction {
 
 ## 各表的 use表名Actions
 
-每張表的動作一律從 `use表名Actions(options)` 取得，範本為 [template/table/use__Table__Actions.ts](../../template/table/use__Table__Actions.ts)。
+每張表的動作定義於 `use表名Actions(options)`，範本為 [template/table/use__Table__Actions.ts](../../template/table/use__Table__Actions.ts)。
 
-- **呼叫端只提供自身具備的參數**：列表頁提供 `selectedIds`、`onDone`。須設定新增的預設值時，提供 `defaults`。用不到的動作為 `null`
+- **頁面一律以 `useActions(table, options)` 取得**（`composables/actions/index.ts`），不直接匯入 `use表名Actions`：
+  - 各表的 `use表名Actions` 登記於同一個檔案的 `tableActions`，key 為表的 key
+  - `options` 即該表的 `use表名Actions` 的參數。回傳值保留該表專有的動作，型別依 key 推出
+  - 新增表時，`use表名Actions` 須登記於 `tableActions`
+- **選項的型別為 `ActionOptions<Row>`**：`{ list?, defaults?, lockId? }`
+  - `list` 為列表頁交給動作的值，即 `useListPage` 回傳的 `selection` 與 `match`（見 [ListPage.md](../components/page/ListPage.md)）
+  - 新增的預設值為 `list` 的 `match`，再以 `defaults` 覆寫（見 `newDefaults`）
+- **呼叫端只提供自身具備的參數**：列表頁提供 `list`。不在列表中但須設定新增的預設值時，例如子表區塊，提供 `defaults`。用不到的動作為 `null`
 - **回傳物件包含兩種項目**：
   - 不以列為參數的動作（`new`、`bulkDelete`）已以 `useAction` 包裝，型別為 `ComputedRef<PageAction | null>`，可直接交給位置
   - 以列為參數的動作（`edit`、`delete`）為接收一列並回傳動作的函數。詳細頁以 `useRowAction` 綁定至目前那一列。列表於 view 的 `actions` 中直接以該列呼叫（見「列上的動作」）。`fieldActions` 也以一列呼叫
@@ -120,7 +129,7 @@ interface PageAction {
 取用方式見範本：
 
 - **詳細頁**（`template/pages/detail.vue`）：以 `useRowAction` 將 `edit`、`delete` 綁定至目前那一列。編輯交給 `DetailPage` 的 `fab`，刪除以 `useAppBarActions` 放上 App Bar，`fieldActions` 交給 `DetailPage`
-- **列表頁**（`template/pages/list.vue`）：傳入多選的 `selectedIds` 與 `onDone`。新增交給 `ListPage` 的 `fab`，刪除選取的列以 `useAppBarActions` 放上 App Bar
+- **列表頁**（`template/pages/list.vue`）：傳入 `list`。新增交給 `ListPage` 的 `fab`，刪除選取的列以 `useAppBarActions` 放上 App Bar
 - **列上的動作**（`template/pages/profile-list.vue` 等）：於 view 的 `actions` 中以該列呼叫（見「列上的動作」）
 
 `delete` 為 JavaScript 的保留字，解構時須改名，例如 `remove`。
@@ -208,9 +217,10 @@ if (values) {
   2. 否則使用 `options.defaults[key]`，可為值或函數
   3. 兩者皆無時為空
   - **不套用 schema 的 `default`**。多列時不顯示目前的值
-- 通用的用法包裝為 `quickEditAction(table, keys, ids, { label, icon, defaults, onDone })`：
+- 通用的用法包裝為 `quickEditAction(table, keys, selection, { label, icon, defaults })`：
   - 未選取任何一列時回傳 `null`，因此只在多選模式下出現
-  - 確定後，對每個 id 各執行一次 `store.update`，不另外新增操作的種類
+  - 確定後，對每個選取的 id 各執行一次 `store.update`，不另外新增操作的種類，再清除選取
+  - 以列為參數的動作以 `selectionOf(row)` 傳入這一列
 - 對話框是對話框大小的表單層（見 [pages.md](pages.md#表單層)）：返回鍵與點選外側皆只關閉對話框，並回傳 `null`
 - 選擇器不提供「新增…」（見 [schema.md](schema.md#選擇器中新增父列)）
 - 只須詢問是或否時，使用 `confirm(title, text): Promise<boolean>`。動作的 `confirm` 宣告與離開守衛都使用此函數

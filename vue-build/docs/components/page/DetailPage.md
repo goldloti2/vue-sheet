@@ -10,7 +10,7 @@
 
 頁面只須指定「哪張表、哪一列、有哪些動作」。
 
-此元件搭配 `useRecordPage(table)` 使用，其回傳的 `id`、`row`、`loading`、`error` 直接對應此處的 prop。`row` 另交給 `useRowAction`，將 `use表名Actions` 中以列為參數的動作（編輯、刪除）綁定至這一列（見 [actions.md](../../topics/actions.md#各表的-use表名actions)）。
+此元件搭配 `useRecordPage(table)` 使用，其回傳的 `id`、`row`、`loading`、`error` 直接對應此處的 prop。`row` 另交給 `useRowAction`，將 `useActions(table)` 取得的以列為參數的動作（編輯、刪除）綁定至這一列（見 [actions.md](../../topics/actions.md#各表的-use表名actions)）。
 
 ## Usage
 

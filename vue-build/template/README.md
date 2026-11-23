@@ -55,7 +55,7 @@
 | `pages/card-list.vue` | `src/pages/__table__/index.vue` | **選用**：以 card 呈現的列表頁 |
 | `pages/gallery-list.vue` | `src/pages/__table__/index.vue` | **選用**：以 gallery 呈現的列表頁 |
 | `pages/tab-list.vue` | `src/pages/__table__/index.vue` | **選用**：依 select 欄位（範本為 `status`）分頁籤的列表頁，各頁籤放 `_ref/list.vue` |
-| `pages/_ref/list.vue` | `src/pages/__table__/_ref/__Table__List.vue` | **選用**：只供其他頁面引用的列表，不產生路由。以 `status` 或 `scope` 傳入條件，供 `tab-list.vue`、dashboard 或其他頁面使用 |
+| `pages/_ref/list.vue` | `src/pages/__table__/_ref/__Table__List.vue` | **選用**：只供其他頁面引用的列表，不產生路由。以 `status` 或 `match` 傳入條件，供 `tab-list.vue`、dashboard 或其他頁面使用 |
 | `pages/detail.vue` | `src/pages/__table__/[id]/index.vue` | 詳細頁 → `/__table__/:id` |
 | `pages/child-list.vue` | `src/pages/__parent__/[id]/__table__.vue` | **選用**：父表詳細頁中子表區塊的「展開」頁 → `/__parent__/:id/__table__`。一條父子關聯一個檔案 |
 | `pages/dashboard.vue` | `src/pages/dashboard.vue`（檔名可自訂） | **選用**：同時顯示多個面板的總覽頁 → `/dashboard`。<br>・範本為父表列表、父表詳細、子表列表與頁籤面板四個面板，並以 `useDashboardLinks()` 接線<br>・頁籤面板以 `TabPage` 放兩張表的列表，各頁籤以 `DashboardPanel` 的 `tabs` 各自接線<br>・列表使用各表的 `_ref/list.vue`<br>・須加入底部導覽列或側邊欄時，另外加至 `src/config/navigation.ts` |
@@ -67,7 +67,7 @@
 >
 > 新增與編輯的表單無須複製檔案：`newAction`、`editAction` 依 schema 開啟（見 [docs/topics/pages.md](../docs/topics/pages.md#表單層)）。
 
-### 要修改的既有檔案（4 處）
+### 要修改的既有檔案（5 處）
 
 1. **`src/schema/index.ts`**：註冊 schema，`TableKey` 即自動多一個值：
    ```ts
@@ -78,7 +78,16 @@
    }
    ```
 
-2. **`src/services/mock/tables.ts`**：註冊 mock CSV。後端接上後，整個 `mock/` 資料夾刪除：
+2. **`src/composables/actions/index.ts`**：登記動作，頁面以 `useActions('__table__')` 取得：
+   ```ts
+   import { use__Table__Actions } from './use__Table__Actions'
+
+   export const tableActions = {
+     __table__: use__Table__Actions,
+   }
+   ```
+
+3. **`src/services/mock/tables.ts`**：註冊 mock CSV。後端接上後，整個 `mock/` 資料夾刪除：
    ```ts
    import __table__Csv from '../../../mock/__table__-test.csv?raw'
 
@@ -87,11 +96,11 @@
    }
    ```
 
-3. **`mock/__table__-test.csv`**：新建檔案。
+4. **`mock/__table__-test.csv`**：新建檔案。
    - 第一列為 Sheet 的表頭（對外的名稱），須與 schema 的 `sheetHeader` 或 `label` 相符
    - 須包含主鍵欄（`idColumn` 指向的欄位）的表頭
 
-4. **`src/config/navigation.ts`**：須加入導覽時才修改。`navItems` 為底部導覽列，最多 5 項，電腦版列於側邊欄的最上方。`drawerSections` 為側邊欄，依組列出。有 `title` 的組可展開與收合，`icon` 選填。兩處的項目寫法相同：
+5. **`src/config/navigation.ts`**：須加入導覽時才修改。`navItems` 為底部導覽列，最多 5 項，電腦版列於側邊欄的最上方。`drawerSections` 為側邊欄，依組列出。有 `title` 的組可展開與收合，`icon` 選填。兩處的項目寫法相同：
    ```ts
    { title: '範本', icon: mdiLabel, to: '/__table__' }
    ```
@@ -176,7 +185,8 @@
 ### 要修改的既有檔案
 
 1. **`src/schema/index.ts`**：登記 schema，建議置於真實表之後。
-2. **`src/config/navigation.ts`**：須加入導覽時才修改。
+2. **`src/composables/actions/index.ts`**：登記動作。
+3. **`src/config/navigation.ts`**：須加入導覽時才修改。
 
 虛擬表不登記於 `services/mock/tables.ts` 與後端的 `Config.gs`，也沒有 mock CSV。
 

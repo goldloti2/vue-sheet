@@ -8,7 +8,7 @@
 <script lang="ts" setup>
   import DataList from '@/components/ui/list/DataList.vue'
   import ListPage from '@/components/ui/page/ListPage.vue'
-  import { use__Table__Actions } from '@/composables/actions/use__Table__Actions'
+  import { useActions } from '@/composables/actions'
   import { useRecordPage } from '@/composables/page/useRecordPage'
   import { defineView } from '@/schema/view'
 
@@ -18,7 +18,7 @@
   const view = defineView('__table__', { title: 'name', summary: 'amount' })
 
   // 於此新增的子列預設屬於此父列
-  const { new: newAction } = use__Table__Actions({ defaults: () => ({ __parent__: id.value }) })
+  const { new: newAction } = useActions('__table__', { defaults: () => ({ __parent__: id.value }) })
 </script>
 
 <template>

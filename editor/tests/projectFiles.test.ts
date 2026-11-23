@@ -11,6 +11,7 @@ describe('isProjectFile', () => {
     expect(isProjectFile('vue-build/src/schema/tables/order.ts')).toBe(true)
     expect(isProjectFile('vue-build/src/schema/index.ts')).toBe(true)
     expect(isProjectFile('vue-build/src/composables/actions/useOrderActions.ts')).toBe(true)
+    expect(isProjectFile('vue-build/src/composables/actions/index.ts')).toBe(true)
     expect(isProjectFile('vue-build/src/config/navigation.ts')).toBe(true)
     expect(isProjectFile('vue-build/src/config/app.ts')).toBe(true)
     expect(isProjectFile('vue-build/src/services/mock/tables.ts')).toBe(true)

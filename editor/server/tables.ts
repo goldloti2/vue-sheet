@@ -1,4 +1,4 @@
-// 新增與刪除表。檔案的建立與刪除，以及 schemas 與 mock CSV 的登記，皆立即寫入
+// 新增與刪除表。檔案的建立與刪除，以及 schemas、tableActions 與 mock CSV 的登記，皆立即寫入
 import type { DeleteTableResult, NewTableRequest, NewTableResult } from '../shared/tableFiles.ts'
 import type { Formatter } from './files.ts'
 import type { TypeScript } from './vueBuild.ts'
@@ -11,13 +11,13 @@ import { registryAddBefore } from '../shared/registry.ts'
 import { literalText, propertyValue, stringValue } from '../shared/schema.ts'
 import { columnRows } from '../shared/schemaForm.ts'
 import { idPrefixError, MOCK_TABLES_FILE, mockCsvFileOf, PAGES_DIR, schemaFileOf, tableDeletionFiles, tableKeyError } from '../shared/tableFiles.ts'
-import { actionsFileOf, REGISTRY_FILE, tableKeyOf } from '../shared/tableKeys.ts'
+import { ACTIONS_REGISTRY_FILE, actionsFileOf, actionsNameOf, REGISTRY_FILE, tableKeyOf } from '../shared/tableKeys.ts'
 import { applyConfigEdits, readConfigTables } from './configGs.ts'
 import { readProjectFile, writeProjectFile } from './files.ts'
 import { addMockCsv, readMockCsvPaths, removeMockCsv } from './mockTables.ts'
 import { removeNavLinks } from './navigationForm.ts'
 import { absolutePath, listProjectFiles } from './projectFiles.ts'
-import { applyRegistryEdits, parseRegistry } from './schema/registry.ts'
+import { ACTIONS_REGISTRY, applyRegistryEdits, parseRegistry } from './schema/registry.ts'
 import { removeColumn, removeRowMember } from './schema/schemaColumns.ts'
 import { SchemaEditError, setProperty } from './schema/schemaEdits.ts'
 import { parseSchema } from './schema/schemaModel.ts'
@@ -93,11 +93,11 @@ async function writeOrFail (tools: TableTools, filePath: string, text: string, b
   }
 }
 
-/** 由範本建立 schema、動作與 mock CSV，並登記於 schemas 與 mock CSV。真實表另登記於 Config.gs */
+/** 由範本建立 schema、動作與 mock CSV，並登記於 schemas、tableActions 與 mock CSV。真實表另登記於 Config.gs */
 export async function createTable (tools: TableTools, request: NewTableRequest): Promise<NewTableResult> {
   const { ts, root } = tools
   const paths = await listProjectFiles(root)
-  const [registry, mockTables] = await Promise.all([readRequired(root, REGISTRY_FILE), readRequired(root, MOCK_TABLES_FILE)])
+  const [registry, actionsRegistry, mockTables] = await Promise.all([readRequired(root, REGISTRY_FILE), readRequired(root, ACTIONS_REGISTRY_FILE), readRequired(root, MOCK_TABLES_FILE)])
   const registered = parseRegistry(ts, registry.text)?.entries.map(entry => entry.key ?? '') ?? []
   const existing = [...registered, ...paths.map(file => tableKeyOf(file)).filter(key => key !== null)]
   const error = tableKeyError(request.key, existing) ?? (request.virtual ? null : idPrefixError(request.prefix)) ?? (request.label.trim() === '' ? '請輸入表名。' : null)
@@ -126,6 +126,7 @@ export async function createTable (tools: TableTools, request: NewTableRequest):
   const summaries = await readTableSummaries(ts, root, paths)
   const before = registryModel ? registryAddBefore(registryModel, key => summaries[key]?.virtual ?? false, request.virtual) : undefined
   const registryText = applyRegistryEdits(ts, registry.text, [{ kind: 'add', key: request.key, variable, before }])
+  const actionsRegistryText = applyRegistryEdits(ts, actionsRegistry.text, [{ kind: 'add', key: request.key, variable: actionsNameOf(request.key) }], ACTIONS_REGISTRY)
   const mockTablesText = csvFile === null ? null : addMockCsv(ts, mockTables.text, request.key, csvFile)
   const config = request.virtual ? null : await readConfig(ts, root)
   const idHeader = idHeaderOf(readTableSummary(ts, schemaText))
@@ -139,6 +140,7 @@ export async function createTable (tools: TableTools, request: NewTableRequest):
     await writeOrFail(tools, csvFile, csvHeaderText(ts, schemaText), null)
   }
   await writeOrFail(tools, REGISTRY_FILE, registryText, registry.hash)
+  await writeOrFail(tools, ACTIONS_REGISTRY_FILE, actionsRegistryText, actionsRegistry.hash)
   if (mockTablesText !== null) {
     await writeOrFail(tools, MOCK_TABLES_FILE, mockTablesText, mockTables.hash)
   }
@@ -165,15 +167,17 @@ async function removeEmptyFolders (root: string, files: readonly string[]): Prom
   }
 }
 
-/** 刪除表的檔案（見 tableDeletionFiles），以及 schemas、mock CSV 與 Config.gs 的登記 */
+/** 刪除表的檔案（見 tableDeletionFiles），以及 schemas、tableActions、mock CSV 與 Config.gs 的登記 */
 export async function deleteTable (tools: TableTools, key: string): Promise<DeleteTableResult> {
   const { ts, root } = tools
   const paths = await listProjectFiles(root)
-  const [registry, mockTables] = await Promise.all([readRequired(root, REGISTRY_FILE), readRequired(root, MOCK_TABLES_FILE)])
+  const [registry, actionsRegistry, mockTables] = await Promise.all([readRequired(root, REGISTRY_FILE), readRequired(root, ACTIONS_REGISTRY_FILE), readRequired(root, MOCK_TABLES_FILE)])
   const files = tableDeletionFiles(key, paths, readMockCsvPaths(ts, mockTables.text))
   const registered = parseRegistry(ts, registry.text)?.entries.some(entry => entry.key === key) ?? false
   // 先算出登記修改後的內容，失敗時不刪除任何檔案
   const registryText = registered ? applyRegistryEdits(ts, registry.text, [{ kind: 'remove', key }]) : null
+  const actionsRegistered = parseRegistry(ts, actionsRegistry.text, ACTIONS_REGISTRY)?.entries.some(entry => entry.key === key) ?? false
+  const actionsRegistryText = actionsRegistered ? applyRegistryEdits(ts, actionsRegistry.text, [{ kind: 'remove', key }], ACTIONS_REGISTRY) : null
   const mockTablesText = removeMockCsv(ts, mockTables.text, key)
   const config = await readConfig(ts, root)
   const configText = config === null ? null : applyConfigEdits(ts, config.text, [{ kind: 'removeTable', key }])
@@ -183,6 +187,9 @@ export async function deleteTable (tools: TableTools, key: string): Promise<Dele
 
   if (registryText !== null) {
     await writeOrFail(tools, REGISTRY_FILE, registryText, registry.hash)
+  }
+  if (actionsRegistryText !== null) {
+    await writeOrFail(tools, ACTIONS_REGISTRY_FILE, actionsRegistryText, actionsRegistry.hash)
   }
   if (mockTablesText !== mockTables.text) {
     await writeOrFail(tools, MOCK_TABLES_FILE, mockTablesText, mockTables.hash)

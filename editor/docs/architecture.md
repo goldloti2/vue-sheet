@@ -54,6 +54,7 @@
 - `vue-build/src/schema/tables/` 中的各表
 - `vue-build/src/schema/index.ts`
 - `vue-build/src/composables/actions/` 中的 `use表名Actions.ts`，`useTableActions.ts` 除外
+- `vue-build/src/composables/actions/index.ts`
 - `vue-build/src/config/navigation.ts`
 - `vue-build/src/config/app.ts`：只修改各設定項的值。服務以 TypeScript 的 parser 讀取值與型別列出的選項，不執行
 - `vue-build/src/services/mock/tables.ts`
@@ -99,13 +100,13 @@
   2. 取代 `__table__`、`__Table__`、`tableLabel` 與主鍵字首。
   3. 刪除主鍵與稱呼以外的欄位。
   4. 建立只有表頭的 mock CSV。
-  5. 登記於 `schemas` 與測試資料的登記。`schemas` 中有虛擬表時，置於第一張虛擬表之前。
+  5. 登記於 `schemas`、`tableActions` 與測試資料的登記。`schemas` 中有虛擬表時，置於第一張虛擬表之前。`tableActions` 中置於最後。
   6. 登記於 `Config.gs` 的 `TABLES` 的最後。沒有 `Config.gs`，或 `TABLES` 不是以物件寫成時，不登記。
 - 新增虛擬表時，服務改為複製 `vue-build/template/table/virtual/` 的兩個檔案：
   1. 刪除開頭「複製到」的註解。
   2. 取代 `__table__`、`__Table__` 與 `tableLabel`。
   3. 刪除稱呼以外的欄位，`rules` 改為空的陣列，並刪除來源表的匯入與 getter。
-  4. 登記於 `schemas` 的最後。不建立 mock CSV，也不登記於測試資料與 `Config.gs`。
+  4. 登記於 `schemas` 與 `tableActions` 的最後。不建立 mock CSV，也不登記於測試資料與 `Config.gs`。
 - 服務先算出全部的內容，任一項失敗時不寫入任何檔案。
 - 刪除表時，服務刪除表的檔案與登記，包括 `Config.gs` 中的登記，以及 `navigation.ts` 中連結為被刪除的頁面的項目。範圍見 [forms.md](forms.md) 的「新增與刪除表」。刪除後，`pages/` 中變空的資料夾一併刪除。
 - 新增表、刪除表與建立 CSV 皆立即寫入，不經過介面的未儲存修改。

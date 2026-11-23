@@ -5,28 +5,23 @@
   import type { RowOf } from '@/schema/types'
   import DataList from '@/components/ui/list/DataList.vue'
   import ListPage from '@/components/ui/page/ListPage.vue'
-  import { use__Table__Actions } from '@/composables/actions/use__Table__Actions'
+  import { useActions } from '@/composables/actions'
   import { useListPage } from '@/composables/page/useListPage'
   import { useAppBarActions } from '@/composables/shell/useShellActions'
   import { defineView } from '@/schema/view'
 
-  // status：常用且意義固定的條件，定為專屬的 prop。scope：須任意條件時使用。兩者合併套用
-  const { status, scope } = defineProps<{
+  // status：常用且意義固定的條件，定為專屬的 prop。match：須其他條件時使用。兩者合併套用
+  const { status, match: extraMatch } = defineProps<{
     status?: string
-    scope?: (row: RowOf<'__table__'>) => boolean
+    match?: Partial<RowOf<'__table__'>>
   }>()
 
-  // scope 於篩選與搜尋之前套用。判斷寫於函式內，prop 改變時才會重算
-  const { rows, loading, error, selection } = useListPage('__table__', {
-    scope: row => (!status || row.status === status) && (!scope || scope(row)),
+  // match 於篩選與搜尋之前套用，也作為新增時的預設值。條件寫於函式內，prop 改變時才會重算
+  const { rows, loading, error, selection, match } = useListPage('__table__', {
+    match: () => ({ status, ...extraMatch }),
   })
 
-  // 新增時預設為此列表的狀態。沒有 status 時不帶預設值
-  const { new: newAction, bulkDelete } = use__Table__Actions({
-    defaults: () => status ? { status } : {},
-    selectedIds: selection.selectedIds,
-    onDone: selection.clear,
-  })
+  const { new: newAction, bulkDelete } = useActions('__table__', { list: { selection, match } })
   useAppBarActions(() => [bulkDelete.value])
 
   // 每列四個角的欄位：title 左上、subtitle 右上、summary 左下、aside 右下

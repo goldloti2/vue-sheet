@@ -4,9 +4,15 @@
 
 此元件搭配 `useListPage(table)` 使用：
 - `table` 為表的 key，Row 的型別由 key 推出
-- `useListPage` 依序處理：整張表 → `scope` → 頁面的排序 → 篩選 → 搜尋，並提供長按多選
+- `useListPage` 依序處理：整張表 → `match` 與 `scope` → 頁面的排序 → 篩選 → 搜尋，並提供長按多選
 - 回傳的 `rows`、`loading`、`error`、`selection` 直接對應此元件的 prop
-- 選用的 `scope`（`row => boolean`）在篩選與搜尋之前只保留部分的列，例如頁籤的狀態。儀表板面板的 `scope`（例如依所選的父列篩出子列）也位於這一步
+- 選用的 `match`（`() => 物件`）為欄位 key 與值，只保留各欄等於該值的列，例如頁籤的狀態：
+  - 值為 `undefined` 的鍵不篩選。選填的 prop 因此可直接傳入，未傳入時即沒有這個條件。`boolean` 的 prop 須以 `undefined` 為預設值，未指定預設值時 Vue 以 `false` 代入
+  - 值為 `null` 時只保留該欄空白的列
+  - 比較為嚴格相等，與篩選相同，`boolean` 的空白不等於否。日期比較時間值
+  - 虛擬欄位也可篩選
+  - 回傳的 `match` 已略過值為 `undefined` 的鍵，與 `selection` 一同作為 `list` 交給動作（見 [actions.md](../../topics/actions.md#各表的-use表名actions)）。新增時，其中的真實欄位即為預設值
+- 選用的 `scope`（`row => boolean`）用於 `match` 寫不出的條件，例如日期的範圍。`match`、`scope` 與儀表板面板的 `scope`（例如依所選的父列篩出子列）位於同一步，皆須符合
 - 選用的 `ignoreFilter`（欄位 key 的陣列）指定不套用至 `rows` 的條件，抽屜中仍顯示這些條件。圖表以此忽略分組欄與系列欄（見 [chart.md](../../topics/chart.md#分組欄與系列欄上的條件)）
 - 選用的 `defaultSort`（格式與 schema 的 `defaultSort` 相同）為這個列表的預設排序。順序為排序面板的一欄、頁面的 `defaultSort`、schema 的 `defaultSort`。省略時只依 schema 的 `defaultSort`。頁籤頁與儀表板中，同一張表的各個列表可以各有不同的 `defaultSort`（見 [search.md](../../topics/search.md#排序)）
 
@@ -70,7 +76,7 @@ const groups = computed(() => sort.value ? undefined : groupRows(rows.value, gro
 ```
 
 **頁籤**：
-- 將列表拆成只供引用的元件（`_ref/`），每個頁籤放一個，各自以 `useListPage` 的 `scope` 只保留該頁籤的列
+- 將列表拆成只供引用的元件（`_ref/`），每個頁籤放一個，各自以 `useListPage` 的 `match` 只保留該頁籤的列
 - 搜尋、篩選與排序由 `TabPage` 統一登記，並跨頁籤共用（見 [search.md](../../topics/search.md#同一頁面中的多張表)）。範本為 `template/pages/tab-list.vue` 與 `template/pages/_ref/list.vue`
 - 每個頁籤各有一個 `ListPage`，各自計算 FAB、多選與列表順序。FAB 只有目前頁籤的那一份生效，依 `TabPanel` 的訊號判斷。列表順序由被點擊的那個頁籤發布
 - 發布順序前先執行 `flattenGroups`，順序與畫面上的先後一致

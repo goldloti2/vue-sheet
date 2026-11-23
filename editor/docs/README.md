@@ -43,7 +43,7 @@
 | 組 | 檔案與頁面 |
 | --- | --- |
 | **表** | 總覽（`schema/index.ts`），以及各表的 schema。表以 `tableLabel` 與代號顯示 |
-| **動作** | 各表的 `use表名Actions` |
+| **動作** | 總覽（`composables/actions/index.ts`），以及各表的 `use表名Actions` |
 | **頁面** | `pages/` 中的檔案。依序為登入頁、首頁、各表的資料夾、其他頁面 |
 | **導覽** | 導覽列（`config/navigation.ts`） |
 | **設定** | 後端表頭（`apps-script/Config.gs`），以及 App 設定（`config/app.ts` 與 `Config.gs` 的各項設定） |

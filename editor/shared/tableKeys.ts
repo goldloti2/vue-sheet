@@ -4,6 +4,8 @@ export const TABLES_DIR = 'vue-build/src/schema/tables/'
 export const ACTIONS_DIR = 'vue-build/src/composables/actions/'
 // schemas 所在的檔案，於導覽中為表的總覽
 export const REGISTRY_FILE = 'vue-build/src/schema/index.ts'
+// tableActions 所在的檔案：各表的動作的登記
+export const ACTIONS_REGISTRY_FILE = 'vue-build/src/composables/actions/index.ts'
 
 // schema 檔 tables/<代號>.ts
 export function tableKeyOf (filePath: string): string | null {
@@ -27,7 +29,12 @@ export function tableKeyOfFile (filePath: string, tableKeys: ReadonlySet<string>
   return key !== null && tableKeys.has(key) ? key : null
 }
 
+// 表的動作函數名 use<代號，首字大寫>Actions，即動作檔的檔名
+export function actionsNameOf (key: string): string {
+  return `use${key.charAt(0).toUpperCase()}${key.slice(1)}Actions`
+}
+
 // 表的動作檔 use<代號，首字大寫>Actions.ts
 export function actionsFileOf (key: string): string {
-  return `${ACTIONS_DIR}use${key.charAt(0).toUpperCase()}${key.slice(1)}Actions.ts`
+  return `${ACTIONS_DIR}${actionsNameOf(key)}.ts`
 }

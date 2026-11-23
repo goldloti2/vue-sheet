@@ -37,7 +37,7 @@
 `newChild` 為子表的新增動作，預設值指向目前這個父列。`childView` 指定子列顯示的欄位（見 [DataList](../list/DataList.md) 的「view」）：
 
 ```ts
-const { new: newChild } = use__Table__Actions({ defaults: () => ({ __parent__: id.value }) })
+const { new: newChild } = useActions('__table__', { defaults: () => ({ __parent__: id.value }) })
 const childView = defineView('__table__', { title: '$label' })
 ```
 

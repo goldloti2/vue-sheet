@@ -29,7 +29,7 @@
 | 此元件之中，但不屬於某一個面板的規則 | `useCurrentTab()` | 「目前選的是哪個頁籤」 |
 
 - 同一條規則只接其中一個，依規則回答的問題選擇。`useMultiSelect` 在切換頁籤時清空選取，使用 `useCurrentTab()`
-- `useCurrentTab()` 由此元件 provide，讀取最近一層 `TabPage` 的頁籤。此元件之外為 `null`。頁面本身須知道目前的頁籤時，直接讀取自己的 `v-model`
+- `useCurrentTab()` 由此元件 provide，讀取最近一層 `TabPage` 的頁籤。此元件之外為 `null`。頁面本身須知道目前的頁籤時，綁定 `v-model` 並直接讀取
 
 常見的用法是依某個 `select` 欄位篩選列表，頁籤直接讀取該欄位的 `options`。讀取的方式見 [schema.md](../../topics/schema.md) 的 `optionsOf`。
 
@@ -41,7 +41,7 @@
 
 | prop | 型別 | 說明 |
 | --- | --- | --- |
-| `v-model` | `string` | **必填**，目前選取的頁籤 |
+| `v-model` | `string?` | 目前選取的頁籤。不綁定時由此元件保存，預設為第一個頁籤。頁面須控制或讀取目前的頁籤時才綁定 |
 | `tabs` | `string[]` | **必填**，同時決定頁籤的順序與滑動的方向 |
 
 ## Slots

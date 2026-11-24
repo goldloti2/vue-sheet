@@ -11,7 +11,8 @@
     tabs: string[]
   }>()
 
-  const model = defineModel<string>({ required: true })
+  // 目前的頁籤，不綁定時由此元件保存，預設為第一個頁籤
+  const model = defineModel<string>({ default: (props: Record<string, unknown>) => (props.tabs as string[])[0] })
 
   // 目前的頁籤，供頁籤中的頁面得知使用者切換頁籤（例如取消多選）
   provide(currentTabKey, model)

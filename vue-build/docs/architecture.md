@@ -33,7 +33,7 @@ src/
     dialog/            AppDialog、ConfirmDialog、FieldsDialog
     list/              DataList、DataProfile、DataCard、DataGallery、ListLayout、ListField、GroupedList、ExpandAllRow、DataTable、CountLabel
     record/            DataDetail、DetailField、DetailHeader、DataForm、FieldInput、InlineField、RecordNav
-    page/              整頁的版型：PageState（載入中、失敗、找不到）、DetailPage、ListPage、ChildList、ChartPage
+    page/              整頁的版型：PageState（載入中、失敗、找不到）、PageActions（FAB 與 App Bar 的動作）、DetailPage、ListPage、ChildList、ChartPage
     panel/             含多個面板的頁面：TabPage、TabPanel（頁籤）、DashboardPage、DashboardPanel（dashboard），
                        以及排版的 placePanels、dashboardContext
     view/              ViewActions（view 的列上動作，DataList、DataProfile、DataCard、DataGallery 與 DetailHeader 共用）、
@@ -56,7 +56,7 @@ src/
     navigation/        路由的接力：useRouteId、useListOrder、useFlow
     list/              列表的互動：useMultiSelect、useLongPress、useRowClick、useColumnWidths（表格的欄寬）
     page/              頁面的資料層：useRecordPage、useListPage
-    actions/           useTableActions：PageAction 型別、通用的動作 builder、useAction、useRowAction
+    actions/           useTableActions：PageAction 型別、通用的動作 builder、useAction、bindActions
     auth/              useLogin（登入頁的資料層）
   stores/tables/       共用快取、待推送佇列、列上的 getter（見 topics/store.md）
   services/            appScript.ts 為對後端唯一的出入口。未設定 VITE_APPS_SCRIPT_URL 時，改用 mock/ 的假後端。

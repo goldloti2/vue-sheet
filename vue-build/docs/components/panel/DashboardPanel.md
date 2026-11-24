@@ -55,7 +55,7 @@
 | 列表頁取得的 `rows` | 依序經過面板的 `scope`、篩選、搜尋 |
 | 列表的每一列以 `to` 換頁 | 面板開啟 `selects` 時改為選取：`ListPage` 交給每一列的 `props` 另含 `current`、`pickable` 與 `pick`，選取的那一列另有標示。展開時只含 `current`，點擊照常換頁 |
 | `ListPage` 與 `ChartPage` 顯示的列，`DetailPage` 顯示的那一列 | 輸出為面板的 `shown`。`ListPage` 另輸出選取的列 |
-| `useAppBarActions`、FAB、`DetailPage` 的上一列與下一列、左右滑動 | 見 [DashboardPage](DashboardPage.md) 的「App Bar、FAB 與搜尋」與「展開」 |
+| `appBar`、`useAppBarActions`、FAB、`DetailPage` 的上一列與下一列、左右滑動 | 見 [DashboardPage](DashboardPage.md) 的「App Bar、FAB 與搜尋」與「展開」 |
 | 刪除目前那一列後自動離開 | 只在網址為 `/表/id` 時觸發，dashboard 中不觸發 |
 | 頁面中的換頁（例如前往詳細頁） | 照常換頁，離開 dashboard。這類動作只在展開時出現 |
 | 開啟表單 | 表單層蓋在 dashboard 上，關閉後回到原處 |

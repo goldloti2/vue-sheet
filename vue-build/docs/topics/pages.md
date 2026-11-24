@@ -23,7 +23,7 @@
 | --- | --- | --- |
 | **App Bar** | `AppShell` | 標題取自 `route.meta.title`，沒有時使用 `config/app.ts` 的 App 名稱。以 `useAppBarHeading()` 登記時，改以登記的標題與返回動作取代路由的標題與 ← 按鈕，用於儀表板的展開 |
 | **左側圖示** | `AppShell` | 有 App 內的上一頁時為返回箭頭，否則為漢堡選單 |
-| **App Bar 的動作** | `useAppBarActions()` | 右側的圖示按鈕，三個以上收進「⋮」 |
+| **App Bar 的動作** | 頁面元件的 `appBar`，或 `useAppBarActions()` | 右側的圖示按鈕，三個以上收進「⋮」 |
 | **搜尋按鈕、搜尋列** | `useListControls()` | 為獨立的一個按鈕，不收進「⋮」。多選時隱藏 |
 | **篩選按鈕** | `useListControls()` | 位於搜尋輸入框內的最右側。有表可篩選時才出現 |
 | **排序按鈕** | `useListControls()` | 表有提供 `sort` 且有可排序的欄位時才出現。多選時與搜尋一同隱藏 |
@@ -32,7 +32,7 @@
 | **內容區** | `pages/*.vue` | 換頁時左右滑動的即為此區 |
 | **側邊欄** | [`NavDrawer`](../components/shell/NavDrawer.md) | 項目為 `config/navigation.ts` 的 `drawerSections`，電腦版另於最上方列出 `navItems`。「登出」在 `config/app.ts` 的 `authMethod` 不是 `'none'` 時出現 |
 | **篩選、排序抽屜** | `AppShell` 與 `FilterPanel`、`SortPanel` | 抽屜本身屬於 `AppShell`，兩個面板只提供內容，一次顯示一種（見 [search.md](search.md)） |
-| **FAB** | `PageFab` | 頁面或版型元件以 `fab` 交給 `PageFab` |
+| **FAB** | `PageFab` | 頁面元件的 `fab`，由 `PageActions` 交給 `PageFab` |
 | **底部導覽列** | `config/navigation.ts` | 只有手機版有。項目為 `navItems`，最多 5 項。超過時只顯示前 5 項，開發模式下以 console 警告。電腦版的側邊欄也只列出前 5 項 |
 | **snackbar** | `notify()` | 全 App 同時只有一則，例如 `notify('已推送')`、`notify('推送失敗', 'error')`。第二個參數為 Vuetify 的 color |
 | **上一列、下一列的箭頭** | `RecordNav` | 由 `DetailPage` 放置 |

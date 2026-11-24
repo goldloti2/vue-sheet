@@ -6,7 +6,7 @@
 
 `PageAction` 一律使用 `onClick`。須導覽時，在 `onClick` 中自行呼叫 `router.push`。`useAppBarActions()` 也使用同一種型別，因此同一份動作定義可任選置於右下角或右上角。
 
-**列表頁與詳細頁無須自行放置此元件**：將動作交給 [ListPage](../page/ListPage.md) 或 [DetailPage](../page/DetailPage.md) 的 `fab` prop 即可，兩者內部即放置此元件。直接使用的場合為自行組合版面的頁面。
+**列表頁、詳細頁與圖表頁無須自行放置此元件**：將動作交給 [ListPage](../page/ListPage.md)、[DetailPage](../page/DetailPage.md) 或 [ChartPage](../page/ChartPage.md) 的 `fab` prop 即可，由其中的 [PageActions](../page/PageActions.md) 放置。直接使用的場合為自行組合版面的頁面。
 
 位於儀表板的面板中時，此元件只在該面板展開後顯示。判斷依據為 `usePanelFullPage()`，不在面板中時一律為 `true`。
 

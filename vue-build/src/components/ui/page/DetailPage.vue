@@ -1,16 +1,17 @@
 <script lang="ts" setup generic="Row extends object">
-  import type { FieldActions, PageAction } from '@/composables/actions/useTableActions'
+  import type { FieldActions, RowAction } from '@/composables/actions/useTableActions'
   import type { DetailFieldLayout } from '@/config/app'
   import type { TableKey } from '@/schema'
   import type { RowKey } from '@/schema/types'
   import type { RowView } from '@/schema/view'
   import { computed, watch } from 'vue'
   import { Touch as vTouch } from 'vuetify/directives'
+  import PageActions from '@/components/ui/page/PageActions.vue'
   import PageState from '@/components/ui/page/PageState.vue'
   import DataDetail from '@/components/ui/record/DataDetail.vue'
   import DetailHeader from '@/components/ui/record/DetailHeader.vue'
   import RecordNav from '@/components/ui/record/RecordNav.vue'
-  import PageFab from '@/components/ui/shell/PageFab.vue'
+  import { bindActions } from '@/composables/actions/useTableActions'
   import { useSiblingNav } from '@/composables/navigation/useListOrder'
   import { useDashboardPanel } from '@/composables/shell/useDashboardLinks'
   import { usePanelFullPage, usePanelVisible } from '@/composables/shell/usePanelActive'
@@ -34,13 +35,18 @@
     fieldActions?: FieldActions<Row>
     // 快速編輯的欄位：直接顯示為輸入元件，修改後即寫入（見 DataDetail）
     editable?: readonly RowKey<Row>[]
-    // 右下角的 FAB，通常為編輯
-    fab?: (PageAction | null)[]
+    // 右下角的 FAB，通常為編輯。以列為參數的動作綁定至目前的列，尚未載入時為 null
+    fab?: readonly RowAction<Row>[]
+    // App Bar 右側的動作，通常為刪除。綁定的規則與 fab 相同
+    appBar?: readonly RowAction<Row>[]
     // 選用：整頁最上方的標頭區塊（defineView，見 DetailHeader）
     header?: RowView<Row>
     // 欄位的排法，覆寫 config/app.ts 的 detailFieldLayout（見 DetailField）
     layout?: DetailFieldLayout
   }>()
+
+  const fabActions = computed(() => bindActions(props.fab, props.row))
+  const appBarActions = computed(() => bindActions(props.appBar, props.row))
 
   // 左右滑動與 RecordNav 的箭頭使用同一份順序，只在整頁呈現時啟用，dashboard 的面板中停用
   const { swipe } = useSiblingNav(props.table, () => props.id)
@@ -94,6 +100,6 @@
 
     <RecordNav v-if="fullPage" :id="id" :table="table" />
 
-    <PageFab :actions="fab ?? []" />
+    <PageActions :app-bar="appBarActions" :fab="fabActions" />
   </div>
 </template>

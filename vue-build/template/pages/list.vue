@@ -9,7 +9,6 @@
   import ListPage from '@/components/ui/page/ListPage.vue'
   import { useActions } from '@/composables/actions'
   import { useListPage } from '@/composables/page/useListPage'
-  import { useAppBarActions } from '@/composables/shell/useShellActions'
   import { defineView } from '@/schema/view'
 
   // 整表 → 篩選 → 搜尋（搜尋、篩選與排序按鈕自動登記至 App Bar），以及長按多選
@@ -22,12 +21,12 @@
 
   // 不須多選時，不將 selection 交給 ListPage。defaults 可傳 getter，依頁面狀態預填新增表單
   const { new: newAction, bulkDelete } = useActions('__table__', { list: { selection, match } })
-  useAppBarActions(() => [bulkDelete.value])
 </script>
 
 <template>
   <!-- 載入狀態、FAB 與列表順序（詳細頁的上一列、下一列）皆由 ListPage 處理 -->
   <ListPage
+    :app-bar="[bulkDelete]"
     :error="error"
     :fab="[newAction]"
     item="list"

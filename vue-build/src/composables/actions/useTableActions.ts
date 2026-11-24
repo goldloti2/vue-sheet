@@ -25,6 +25,9 @@ export interface PageAction {
 // 詳細頁的欄位動作：欄位 key → 接收一列並回傳動作的函式，每欄一個
 export type FieldActions<Row extends object> = Record<string, (row: Row) => PageAction | null>
 
+// 詳細頁的 FAB 與 App Bar 的一項：動作，或接收一列並回傳動作的函式
+export type RowAction<Row> = PageAction | null | ((row: Row) => PageAction | null)
+
 // 框架內建動作的預設圖示
 export const actionIcons = {
   new: mdiPlus,
@@ -46,9 +49,9 @@ export function useAction (build: () => PageAction | null): ComputedRef<PageActi
   return computed(build)
 }
 
-// 供詳細頁使用：將以列為參數的動作綁定至目前的列，尚未載入時為 null
-export function useRowAction<Row> (row: Ref<Row | null>, build: (row: Row) => PageAction | null): ComputedRef<PageAction | null> {
-  return useAction(() => row.value ? build(row.value) : null)
+// 供 DetailPage 使用：將以列為參數的動作綁定至目前的列，尚未載入時為 null。沒有提供動作時為 undefined
+export function bindActions<Row> (actions: readonly RowAction<Row>[] | undefined, row: Row | null): (PageAction | null)[] | undefined {
+  return actions?.map(action => typeof action === 'function' ? (row === null ? null : action(row)) : action)
 }
 
 // 以下的 builder 皆為一般函式，接收當下的值並回傳動作，不適用時回傳 null（包裝方式見 docs/topics/actions.md）

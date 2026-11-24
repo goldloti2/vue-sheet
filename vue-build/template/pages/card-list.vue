@@ -9,7 +9,6 @@
   import ListPage from '@/components/ui/page/ListPage.vue'
   import { useActions } from '@/composables/actions'
   import { useListPage } from '@/composables/page/useListPage'
-  import { useAppBarActions } from '@/composables/shell/useShellActions'
   import { defineCardView } from '@/schema/view'
 
   // 整表 → 篩選 → 搜尋（搜尋、篩選與排序按鈕自動登記至 App Bar），以及長按多選
@@ -18,7 +17,6 @@
 
   // 不須多選時，不將 selection 交給 ListPage
   const { new: newAction, bulkDelete, edit, delete: remove } = useActions('__table__', { list: { selection, match } })
-  useAppBarActions(() => [bulkDelete.value])
 
   // header 為第 1 層，body 為第 2、3 層，actions 為第 4 層（見 docs/components/list/DataCard.md）
   const view = defineCardView('__table__', {
@@ -31,6 +29,7 @@
 <template>
   <!-- 載入狀態、FAB 與列表順序（詳細頁的上一列、下一列）皆由 ListPage 處理 -->
   <ListPage
+    :app-bar="[bulkDelete]"
     :error="error"
     :fab="[newAction]"
     item="card"

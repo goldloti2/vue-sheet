@@ -2,7 +2,7 @@
 
 詳細頁整頁最上方的**標頭區塊**，顯示這一列的重要資訊。結構為 [DataCard](../list/DataCard.md) 去掉第 1 層：標題、副標與摘要疊於大圖上，動作接於圖片下方。
 
-**一般無須直接使用此元件**：將 `defineView` 的結果交給 [DetailPage](../page/DetailPage.md) 的 `header` prop 即可，DetailPage 將標頭置於 `#top` slot 之上。標頭於資料載入後才顯示，`row` 必定存在。因此 `actions` 可直接呼叫以列為參數的動作，無須經過 `useRowAction`。
+**一般無須直接使用此元件**：將 `defineView` 的結果交給 [DetailPage](../page/DetailPage.md) 的 `header` prop 即可，DetailPage 將標頭置於 `#top` slot 之上。標頭於資料載入後才顯示，`row` 必定存在。因此 `actions` 可直接呼叫以列為參數的動作。
 
 ## Usage
 

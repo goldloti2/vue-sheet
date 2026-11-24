@@ -45,8 +45,8 @@ interface PageAction {
 
 | 位置 | 登記方式 | 用途 |
 | --- | --- | --- |
-| 右下角的 FAB | `ListPage`、`DetailPage` 的 `fab` prop。自行組合版面時，使用 `<PageFab :actions="...">` | 主要的動作。2 個以下固定顯示，3 個以上收合為 speed-dial |
-| App Bar 右側 | `useAppBarActions(() => [...])` | 次要的動作。2 個以下直接顯示，3 個以上收進「⋮」選單。多選的「取消」例外：一律在選單外、同步按鈕左側，由 `useMultiSelect` 自行登記 |
+| 右下角的 FAB | `ListPage`、`DetailPage`、`ChartPage` 的 `fab` prop。自行組合版面時，使用 `<PageFab :actions="...">` | 主要的動作。2 個以下固定顯示，3 個以上收合為 speed-dial |
+| App Bar 右側 | `ListPage`、`DetailPage`、`ChartPage` 的 `appBar` prop。自行組合版面時，使用 `useAppBarActions(() => [...])` | 次要的動作。2 個以下直接顯示，3 個以上收進「⋮」選單。多選的「取消」例外：一律在選單外、同步按鈕左側，由 `useMultiSelect` 自行登記 |
 | 詳細頁的單一欄位 | `DataDetail`、`DetailPage` 的 `fieldActions` | 該欄的動作：右側出現圖示，整格可點擊（見「欄位動作」） |
 | 子表區塊 | `ChildList` 的 `actions` prop | 排在「展開」旁，通常為新增 |
 | 列表的每一列 | view 的 `actions` | 該列的動作。deck 置於右下角欄位的下一行，profile 收於右側的 ⋮ 選單，gallery 收於右下角的 ⋮ 選單（見「列上的動作」） |
@@ -97,7 +97,7 @@ interface PageAction {
 | 函數 | 回傳 | 說明 |
 | --- | --- | --- |
 | `useAction(build)` | `ComputedRef<PageAction \| null>` | 供各表的 `use表名Actions` 使用。`build` 回傳一個動作或 `null`，資料變更時重新求值 |
-| `useRowAction(row, build)` | `ComputedRef<PageAction \| null>` | 供詳細頁使用，將以列為參數的動作綁定至目前那一列。`row` 為 Ref。尚未載入時為 `null`，載入後以該列呼叫 `build` |
+| `bindActions(actions, row)` | `(PageAction \| null)[] \| undefined` | 供 `DetailPage` 使用，將其中以列為參數的動作綁定至目前那一列。尚未載入時為 `null` |
 
 欄位動作與列上的動作直接以該列呼叫，無須包裝。
 
@@ -117,7 +117,7 @@ interface PageAction {
 - **呼叫端只提供自身具備的參數**：列表頁提供 `list`。不在列表中但須設定新增的預設值時，例如子表區塊，提供 `defaults`。用不到的動作為 `null`
 - **回傳物件包含兩種項目**：
   - 不以列為參數的動作（`new`、`bulkDelete`）已以 `useAction` 包裝，型別為 `ComputedRef<PageAction | null>`，可直接交給位置
-  - 以列為參數的動作（`edit`、`delete`）為接收一列並回傳動作的函數。詳細頁以 `useRowAction` 綁定至目前那一列。列表於 view 的 `actions` 中直接以該列呼叫（見「列上的動作」）。`fieldActions` 也以一列呼叫
+  - 以列為參數的動作（`edit`、`delete`）為接收一列並回傳動作的函數。詳細頁直接交給 `DetailPage` 的 `fab` 與 `appBar`，由它綁定至目前那一列。列表於 view 的 `actions` 中直接以該列呼叫（見「列上的動作」）。`fieldActions` 也以一列呼叫
 - **自訂的動作**（包括連續動作）也定義於此：不以列為參數的，以 `useAction(() => ({ … }))` 包裝。以列為參數的，寫成 `(row) => …`。範本回傳物件的末尾附有連續動作的示範
 - **一個位置放置哪些動作，由頁面決定**：頁面取出需要的動作，組成陣列交給該位置
 - **動作屬於其所在資料的那張表**（對照 AppSheet）：
@@ -128,8 +128,8 @@ interface PageAction {
 
 取用方式見範本：
 
-- **詳細頁**（`template/pages/detail.vue`）：以 `useRowAction` 將 `edit`、`delete` 綁定至目前那一列。編輯交給 `DetailPage` 的 `fab`，刪除以 `useAppBarActions` 放上 App Bar，`fieldActions` 交給 `DetailPage`
-- **列表頁**（`template/pages/list.vue`）：傳入 `list`。新增交給 `ListPage` 的 `fab`，刪除選取的列以 `useAppBarActions` 放上 App Bar
+- **詳細頁**（`template/pages/detail.vue`）：編輯交給 `DetailPage` 的 `fab`，刪除交給 `appBar`，欄位動作交給 `fieldActions`
+- **列表頁**（`template/pages/list.vue`）：傳入 `list`。新增交給 `ListPage` 的 `fab`，刪除選取的列交給 `appBar`
 - **列上的動作**（`template/pages/profile-list.vue` 等）：於 view 的 `actions` 中以該列呼叫（見「列上的動作」）
 
 `delete` 為 JavaScript 的保留字，解構時須改名，例如 `remove`。
@@ -163,7 +163,7 @@ const fieldActions: FieldActions<__Table__Row> = {
 - **profile**：由 ViewActions 的 `variant="menu"` 收入卡片右側的 ⋮ 選單，只有一個動作時也收入選單。沒有動作時不顯示 ⋮。多選模式下隱藏。⋮ 與卡片的連結並列，點擊 ⋮ 不進入詳細頁（見 [DataProfile](../components/list/DataProfile.md)）
 - **gallery**：與 profile 相同，收入 ⋮ 選單，置於格子的右下角（見 [DataGallery](../components/list/DataGallery.md)）
 - **card**：由 ViewActions 的 `variant="slots"` 呈現於第 4 層，前兩格靠左，後兩格靠右，`null` 保留為空格，第五個以後不顯示。四格皆為 `null` 時整層隱藏。多選模式下隱藏。點擊按鈕不進入詳細頁，按鈕之間的空白處仍屬於連結（見 [DataCard](../components/list/DataCard.md)）
-- **詳細頁的標頭**：與 card 相同，由 ViewActions 的 `variant="slots"` 呈現於標頭圖片（或文字）的下方。標頭於資料載入後才顯示，`row` 必定存在，因此直接呼叫以列為參數的動作，無須經過 `useRowAction`（見 [DetailHeader](../components/record/DetailHeader.md)）
+- **詳細頁的標頭**：與 card 相同，由 ViewActions 的 `variant="slots"` 呈現於標頭圖片（或文字）的下方。標頭於資料載入後才顯示，`row` 必定存在，因此直接呼叫以列為參數的動作（見 [DetailHeader](../components/record/DetailHeader.md)）
 
 ---
 

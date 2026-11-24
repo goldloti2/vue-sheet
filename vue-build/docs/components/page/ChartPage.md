@@ -22,6 +22,8 @@
 | `loading` | `boolean?` | 載入中，於圖表上方顯示長條進度列 |
 | `error` | `string \| null?` | 載入失敗的訊息 |
 | `clickable` | `boolean?` | 預設 `true`。`false` 時點擊圖表與圖例皆沒有反應，見下方「點擊」 |
+| `fab` | `(PageAction \| null)[]?` | 右下角的 FAB。`null` 略過 |
+| `appBar` | `(PageAction \| null)[]?` | App Bar 右側的動作。`null` 略過。沒有提供時不登記 |
 
 ## v-model
 

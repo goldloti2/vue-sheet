@@ -153,3 +153,21 @@ describe('newDefaults', () => {
     expect(actions.newDefaults(CHILDREN, { defaults: { name: '乙' } })).toEqual({ name: '乙' })
   })
 })
+
+describe('bindActions', () => {
+  const action = { key: 'x', label: 'X', icon: 'x', onClick: () => {} }
+  const build = (row: { id: string }) => row.id === 'C-0001' ? { ...action, key: row.id } : null
+
+  it('以列為參數的動作綁定至這一列，不適用時為 null，其他照原樣', () => {
+    expect(actions.bindActions([action, null, build], { id: 'C-0001' })).toEqual([action, null, { ...action, key: 'C-0001' }])
+    expect(actions.bindActions([build], { id: 'C-0002' })).toEqual([null])
+  })
+
+  it('尚未載入時，以列為參數的動作為 null', () => {
+    expect(actions.bindActions([action, build], null)).toEqual([action, null])
+  })
+
+  it('沒有提供動作時為 undefined', () => {
+    expect(actions.bindActions(undefined, { id: 'C-0001' })).toBeUndefined()
+  })
+})

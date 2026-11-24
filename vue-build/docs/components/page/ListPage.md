@@ -37,6 +37,7 @@
 | `error` | `string \| null?` | 載入失敗的訊息 |
 | `selection` | `MultiSelect?` | 提供時才綁定長按多選，即 `useListPage` 的 `selection` |
 | `fab` | `(PageAction \| null)[]?` | 右下角的 FAB，通常為新增。`null` 略過 |
+| `appBar` | `(PageAction \| null)[]?` | App Bar 右側的動作，通常為對選取的列的動作。`null` 略過。沒有提供時不登記 |
 | `item` | `'list' \| 'profile' \| 'gallery' \| 'card'` | 每一列的版面，`'list'` 為 deck。提供 `view` 時**必填**，以 slot 呈現時可省略。各列的排法隨之決定：`'gallery'` 為格狀排列，其他依序往下排列（見 [ListLayout](../list/ListLayout.md)） |
 | `view` | `RowView<Row>?` 或 `CardView<Row>?` | 每個位置顯示的欄位。`item` 為 `'card'` 時使用 `defineCardView` 的結果，其他使用 `defineView` 的結果。兩者不符時型別檢查報錯，開發模式下另以 console 警告 |
 | `rowTo` | `((row: Row) => string)?` | 每一列的連結。省略時為純顯示的一列 |

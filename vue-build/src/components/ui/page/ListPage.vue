@@ -12,8 +12,8 @@
   import ExpandAllRow from '@/components/ui/list/ExpandAllRow.vue'
   import GroupedList from '@/components/ui/list/GroupedList.vue'
   import ListLayout from '@/components/ui/list/ListLayout.vue'
+  import PageActions from '@/components/ui/page/PageActions.vue'
   import PageState from '@/components/ui/page/PageState.vue'
-  import PageFab from '@/components/ui/shell/PageFab.vue'
   import { provideListOrder } from '@/composables/navigation/useListOrder'
   import { useListGrouping } from '@/composables/page/listGrouping'
   import { useDashboardPanel } from '@/composables/shell/useDashboardLinks'
@@ -32,6 +32,8 @@
     selection?: MultiSelect
     // 右下角的 FAB，通常為新增
     fab?: (PageAction | null)[]
+    // App Bar 右側的動作，通常為對選取的列的動作
+    appBar?: (PageAction | null)[]
     // 每一列的連結。省略時不可點擊
     rowTo?: (row: Row) => string
   } & (
@@ -136,7 +138,7 @@
       </PageState>
     </v-container>
 
-    <PageFab :actions="fab ?? []" />
+    <PageActions :app-bar="appBar" :fab="fab" />
   </div>
 </template>
 

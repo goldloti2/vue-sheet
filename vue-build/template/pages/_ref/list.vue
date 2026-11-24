@@ -6,7 +6,6 @@
   import ListPage from '@/components/ui/page/ListPage.vue'
   import { useActions } from '@/composables/actions'
   import { useListPage } from '@/composables/page/useListPage'
-  import { useAppBarActions } from '@/composables/shell/useShellActions'
   import { defineView } from '@/schema/view'
 
   // status：常用且意義固定的條件，定為專屬的 prop。match：須其他條件時使用。兩者合併套用
@@ -21,7 +20,6 @@
   })
 
   const { new: newAction, bulkDelete } = useActions('__table__', { list: { selection, match } })
-  useAppBarActions(() => [bulkDelete.value])
 
   // 每列四個角的欄位：title 左上、subtitle 右上、summary 左下、aside 右下
   const view = defineView('__table__', { title: 'name', subtitle: 'date', summary: 'amount' })
@@ -30,6 +28,7 @@
 <template>
   <!-- FAB、多選與列表順序各自計算。置於 TabPage 中時，只有目前頁籤的列表生效 -->
   <ListPage
+    :app-bar="[bulkDelete]"
     :error="error"
     :fab="[newAction]"
     item="list"

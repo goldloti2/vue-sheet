@@ -9,7 +9,6 @@
   import ListPage from '@/components/ui/page/ListPage.vue'
   import { useActions } from '@/composables/actions'
   import { useListPage } from '@/composables/page/useListPage'
-  import { useAppBarActions } from '@/composables/shell/useShellActions'
   import { defineView } from '@/schema/view'
 
   // 整表 → 篩選 → 搜尋（搜尋、篩選與排序按鈕自動登記至 App Bar），以及長按多選
@@ -18,7 +17,6 @@
 
   // 不須多選時，不將 selection 交給 ListPage
   const { new: newAction, bulkDelete, edit, delete: remove } = useActions('__table__', { list: { selection, match } })
-  useAppBarActions(() => [bulkDelete.value])
 
   // gallery 只使用 image、title 與 subtitle，actions 收於右下角的 ⋮ 選單（見 docs/components/list/DataGallery.md）
   const view = defineView('__table__', {
@@ -31,6 +29,7 @@
 <template>
   <!-- item 為 gallery 時各格格狀排列，手機上為兩欄 -->
   <ListPage
+    :app-bar="[bulkDelete]"
     :error="error"
     :fab="[newAction]"
     item="gallery"

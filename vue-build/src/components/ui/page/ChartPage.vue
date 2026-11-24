@@ -1,4 +1,5 @@
 <script generic="Row extends { id: string }" lang="ts" setup>
+  import type { PageAction } from '@/composables/actions/useTableActions'
   import type { TableKey } from '@/schema'
   import type { ChartDefinition, ChartGroupData, GroupFilter } from '@/schema/chart'
   import type { Filters } from '@/schema/filter'
@@ -6,6 +7,7 @@
   import { useRouter } from 'vue-router'
   import DataChart from '@/components/ui/chart/DataChart.vue'
   import DataStat from '@/components/ui/chart/DataStat.vue'
+  import PageActions from '@/components/ui/page/PageActions.vue'
   import PageState from '@/components/ui/page/PageState.vue'
   import { publishListOrder } from '@/composables/navigation/useListOrder'
   import { useDashboardPanel } from '@/composables/shell/useDashboardLinks'
@@ -13,7 +15,7 @@
   import { pickElement, toggleLegend } from '@/schema/chart'
 
   // 圖表的整頁版型：載入狀態、高光，以及點擊後進入詳細頁或寫入條件（見 docs/components/page/ChartPage.md）
-  const { table, chart, rows, loading = false, error = null, clickable = true } = defineProps<{
+  const { table, chart, rows, loading = false, error = null, clickable = true, fab, appBar } = defineProps<{
     table: TableKey
     chart: ChartDefinition<Row>
     // 已篩選、搜尋的列，通常為 useListPage 的 rows
@@ -22,6 +24,10 @@
     error?: string | null
     // false：點擊圖表與圖例皆沒有反應，不進入詳細頁，也不寫入條件
     clickable?: boolean
+    // 右下角的 FAB
+    fab?: (PageAction | null)[]
+    // App Bar 右側的動作
+    appBar?: (PageAction | null)[]
   }>()
 
   // 該表的篩選條件，通常為 useListPage 的 filters。分組欄與系列欄上的條件以高光標示，點擊圖例與加入共用的儀表板面板中的點擊寫入此處
@@ -73,34 +79,38 @@
 </script>
 
 <template>
-  <!-- stat 以文字顯示，高度隨內容，不使用 Chart.js -->
-  <div v-if="chart.type === 'stat'" class="chart-page-stat" :class="{ 'chart-page-stat--bordered': bordered }">
-    <PageState :error="error" :loading="loading" spinner="linear">
-      <DataStat
-        :chart="chart"
-        :clickable="clickable"
-        :filters="filters"
-        :rows="rows"
-        @group="onGroup"
-      />
-    </PageState>
-  </div>
-
-  <v-container v-else class="chart-page" :class="{ 'chart-page--panel': !fullPage }">
-    <div class="chart-page__chart">
+  <div>
+    <!-- stat 以文字顯示，高度隨內容，不使用 Chart.js -->
+    <div v-if="chart.type === 'stat'" class="chart-page-stat" :class="{ 'chart-page-stat--bordered': bordered }">
       <PageState :error="error" :loading="loading" spinner="linear">
-        <DataChart
+        <DataStat
           :chart="chart"
           :clickable="clickable"
           :filters="filters"
           :rows="rows"
           @group="onGroup"
-          @legend="onLegend"
-          @row="onRow"
         />
       </PageState>
     </div>
-  </v-container>
+
+    <v-container v-else class="chart-page" :class="{ 'chart-page--panel': !fullPage }">
+      <div class="chart-page__chart">
+        <PageState :error="error" :loading="loading" spinner="linear">
+          <DataChart
+            :chart="chart"
+            :clickable="clickable"
+            :filters="filters"
+            :rows="rows"
+            @group="onGroup"
+            @legend="onLegend"
+            @row="onRow"
+          />
+        </PageState>
+      </div>
+    </v-container>
+
+    <PageActions :app-bar="appBar" :fab="fab" />
+  </div>
 </template>
 
 <style scoped>

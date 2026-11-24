@@ -21,7 +21,7 @@ export function use__Table__Actions (options: ActionOptions<__Table__Row> = {}) 
     // 新增的預設值為列表的 match，再以 defaults 覆寫。刪除選取的列後清除選取
     new: useAction(() => newAction(TABLE, options)),
     bulkDelete: useAction(() => bulkDeleteAction(TABLE, options.list?.selection)),
-    // 以列為參數的動作：列表於 view 中直接呼叫，詳細頁以 useRowAction 綁定至目前的列。接收選取的 builder 以 selectionOf(row) 傳入這一列
+    // 以列為參數的動作：列表於 view 中直接呼叫，詳細頁直接交給 DetailPage，由它綁定至目前的列。接收選取的 builder 以 selectionOf(row) 傳入這一列
     edit: (row: __Table__Row) => editAction(TABLE, row),
     delete: (row: __Table__Row) => deleteAction(TABLE, row),
     // 複製一列，另須 import copyAction。表須有 newId

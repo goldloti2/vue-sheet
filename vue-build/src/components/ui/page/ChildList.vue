@@ -15,6 +15,8 @@
     to?: string
     actions?: (PageAction | null)[]
     emptyText?: string
+    // 沒有子列時整塊不顯示，包括標題與動作
+    hideEmpty?: boolean
   }>(), {
     limit: 5,
     emptyText: '還沒有資料',
@@ -46,7 +48,7 @@
 
 <template>
   <!-- 子列與列表頁相同，貼齊畫面的左右，留白由內容決定（見 ListLayout）。標題、說明與按鈕留白 -->
-  <v-container class="child-list">
+  <v-container v-if="rows.length > 0 || !hideEmpty" class="child-list">
     <div class="child-list__inset text-title-medium font-weight-bold mb-2">
       <CountLabel :count="rows.length" :label="title" />
     </div>

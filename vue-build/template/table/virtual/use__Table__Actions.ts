@@ -7,6 +7,6 @@
 export function use__Table__Actions () {
   return {
     // 前往 ref 的父列，另須 import __Table__Row 與 goToRefAction。詳細頁以 fieldActions 安排至欄位
-    // goToSource: (row: __Table__Row) => goToRefAction(row, 'source', 'source'),
+    // goToSource: (row: __Table__Row) => goToRefAction('source', row.source),
   }
 }

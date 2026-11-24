@@ -432,6 +432,9 @@ payload 較大，但省去在表單中比對原始值的複雜度。
 **為什麼 `FieldActions` 以 `keyof Row` 宣告，不以 `RowKey` 宣告**
 只有以 `keyof Row` 列舉的型別，其成員與 Row 的成員有對應關係。編輯器修改欄位的 key 時，TypeScript 才找得到頁面中的 key。
 
+**為什麼 `openUrlAction` 接收網址，`goToRefAction` 接收 id，不接收列與欄位 key**
+開啟網址只有一種功能，從欄位取值與組出字串只是網址的兩種來源，因此不拆成兩個 builder。欄位以 `row.欄位` 讀取，寫錯時型別檢查報錯，編輯器修改 key 時也一併修改。`setFieldAction` 須寫入欄位，因此仍接收 key。
+
 **為什麼欄位動作不是內建的**
 前往 ref 的父列，與開啟網址、改為今天一樣，都是 builder。需要就列入，不需要就不列，不設「空陣列表示內建」這種第三種狀態。
 

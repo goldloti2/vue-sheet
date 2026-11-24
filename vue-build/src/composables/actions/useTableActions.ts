@@ -207,30 +207,33 @@ export function quickEditAction<Row extends { id: string }> (
 
 // 以下三個 builder 常用於詳細頁的欄位動作（DataDetail 的 fieldActions）
 
-// ref 欄位：以 push 前往父列的詳細頁，返回時目前的頁面仍在
-export function goToRefAction (row: object, key: string, refTable: TableKey, look: ActionLook = {}): PageAction | null {
-  const id = (row as Record<string, unknown>)[key]
-  if (typeof id !== 'string' || id === '') {
+// 同一個位置有數個連結的動作時，以 key 區分
+export interface LinkLook extends ActionLook {
+  key?: string
+}
+
+// 以 push 前往 refTable 中該列的詳細頁，返回時目前的頁面仍在。id 通常為 ref 欄位的值，空白時為 null
+export function goToRefAction (refTable: TableKey, id: string | null | undefined, look: LinkLook = {}): PageAction | null {
+  if (!id) {
     return null
   }
 
   return {
-    key: `go-to-${key}`,
+    key: look.key ?? `go-to-${refTable}`,
     label: look.label ?? '前往',
     icon: look.icon ?? actionIcons.goToRef,
     onClick: () => void router.push(`/${refTable}/${id}`),
   }
 }
 
-// 文字欄位的值為網址時，於新分頁開啟
-export function openUrlAction (row: object, key: string, look: ActionLook = {}): PageAction | null {
-  const url = (row as Record<string, unknown>)[key]
-  if (typeof url !== 'string' || !/^https?:\/\//.test(url)) {
+// 於新分頁開啟網址，可為欄位的值或組出的字串。不是 http(s) 網址時為 null
+export function openUrlAction (url: string | null | undefined, look: LinkLook = {}): PageAction | null {
+  if (!url || !/^https?:\/\//.test(url)) {
     return null
   }
 
   return {
-    key: `open-${key}`,
+    key: look.key ?? 'open-url',
     label: look.label ?? '開啟',
     icon: look.icon ?? actionIcons.openUrl,
     onClick: () => {

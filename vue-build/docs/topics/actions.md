@@ -75,6 +75,7 @@ interface PageAction {
 外觀與行為分開傳入：
 - 有預設外觀的 builder，最後一個參數一律為 `look`（`ActionLook`，`{ label?, icon? }`）。省略時使用預設的文字與圖示
 - 行為的設定（例如 `newAction` 的選項、列表的選取）放在 `look` 之前。只更換外觀時，該參數傳入 `{}` 或 `undefined`
+- `goToRefAction` 與 `openUrlAction` 的 `look` 另可指定 `key`（`LinkLook`）。省略時為 `go-to-表` 與 `open-url`，同一個位置有兩個時須指定
 - `quickEditAction` 與 `setFieldAction` 沒有預設外觀：`label` 與 `icon` 為必填，與其他設定放在同一個物件中
 - 修改資料的 builder 的 `table` 只接受真實表（`RealTableKey`），傳入虛擬表時型別檢查報錯（見 [schema.md](schema.md#虛擬表)）。`goToRefAction` 與 `openUrlAction` 接受任何一張表
 
@@ -88,8 +89,8 @@ interface PageAction {
 | `bulkDeleteAction(table, selection, look?)` | `PageAction \| null` | 確認後刪除選取的各列，完成後清除選取。`selection` 為 `undefined` 或未選取任何一列時為 `null` |
 | `quickEditAction(table, keys, selection, { label, icon, key?, defaults? })` | `PageAction \| null` | 以對話框詢問 `keys` 中的欄位，將選取的各列改為同一個值，完成後清除選取。`selection` 為 `undefined` 或未選取任何一列時為 `null`（見「快速編輯對話框」） |
 | `selectionOf(row)` | `ListSelection` | 只含這一列的選取，`clear` 不做任何事。以列為參數的動作以此呼叫接收選取的 builder |
-| `goToRefAction(row, key, refTable, look?)` | `PageAction \| null` | 前往 ref 欄位指向的父列。欄位為空時為 `null` |
-| `openUrlAction(row, key, look?)` | `PageAction \| null` | 以新分頁開啟該欄的網址。值不是 http(s) 網址時為 `null` |
+| `goToRefAction(refTable, id, look?)` | `PageAction \| null` | 前往 `refTable` 中該列的詳細頁。`id` 通常為 ref 欄位的值，例如 `row.parent`，空白時為 `null` |
+| `openUrlAction(url, look?)` | `PageAction \| null` | 以新分頁開啟網址。`url` 為欄位的值或組出的字串，不是 http(s) 網址時為 `null` |
 | `setFieldAction(table, row, key, value, { label, icon, confirm? })` | `PageAction` | 立即將該欄改為 `value()`。`value` 為函數，於按下時求值，例如 `() => new Date()` |
 
 交給 FAB、App Bar 等位置的動作須隨資料更新，以下列兩個函數包裝：

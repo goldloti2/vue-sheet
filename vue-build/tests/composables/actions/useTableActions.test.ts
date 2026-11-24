@@ -171,3 +171,46 @@ describe('bindActions', () => {
     expect(actions.bindActions(undefined, { id: 'C-0001' })).toBeUndefined()
   })
 })
+
+describe('goToRefAction', () => {
+  it('前往該表中這一列的詳細頁', () => {
+    const action = actions.goToRefAction(PARENTS, childRow('C-0001').parent)
+    void action?.onClick()
+
+    expect(action).toMatchObject({ key: `go-to-${PARENTS}`, label: '前往' })
+    expect(router.push).toHaveBeenCalledWith(`/${PARENTS}/${childRow('C-0001').parent}`)
+  })
+
+  it('id 為空白時為 null', () => {
+    expect(actions.goToRefAction(PARENTS, null)).toBeNull()
+    expect(actions.goToRefAction(PARENTS, undefined)).toBeNull()
+    expect(actions.goToRefAction(PARENTS, '')).toBeNull()
+  })
+
+  it('可替換 key、文字與圖示', () => {
+    expect(actions.goToRefAction(PARENTS, 'P-0001', { key: 'k', label: '甲', icon: 'x' })).toMatchObject({ key: 'k', label: '甲', icon: 'x' })
+  })
+})
+
+describe('openUrlAction', () => {
+  it('以新分頁開啟網址', () => {
+    const open = vi.fn()
+    vi.stubGlobal('window', { open })
+    const action = actions.openUrlAction('https://example.com/?q=1')
+    void action?.onClick()
+    vi.unstubAllGlobals()
+
+    expect(action).toMatchObject({ key: 'open-url', label: '開啟' })
+    expect(open).toHaveBeenCalledWith('https://example.com/?q=1', '_blank', 'noopener')
+  })
+
+  it('不是 http(s) 網址時為 null', () => {
+    for (const url of [null, undefined, '', '備註', 'javascript:alert(1)', '見 https://example.com']) {
+      expect(actions.openUrlAction(url)).toBeNull()
+    }
+  })
+
+  it('可替換 key、文字與圖示', () => {
+    expect(actions.openUrlAction('https://example.com', { key: 'k', label: '甲', icon: 'x' })).toMatchObject({ key: 'k', label: '甲', icon: 'x' })
+  })
+})

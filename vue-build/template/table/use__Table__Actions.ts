@@ -22,7 +22,7 @@ export function use__Table__Actions (options: ActionOptions<__Table__Row> = {}) 
     // 複製一列，另須 import copyAction。表須有 newId
     // copy: (row: __Table__Row) => copyAction(TABLE, row),
     // 前往 ref 的父列，另須 import goToRefAction。詳細頁以 fieldActions 安排至欄位
-    // goToParent: (row: __Table__Row) => goToRefAction(row, 'parent', 'parent'),
+    // goToParent: (row: __Table__Row) => goToRefAction('parent', row.parent),
     // 連續動作：新增一列，再以其 id 新增一列子列（child），最後前往該列的詳細頁
     // 另須 import mdiPlus、newDefaults、runFlow 與 runStep（composables/navigation/useFlow）及 router
     // newWithChild: useAction(() => ({

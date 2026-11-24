@@ -2,7 +2,7 @@
 //
 // 內建的 builder、動作於畫面上的位置、連續動作（runFlow、runStep）
 // 與快速編輯對話框（quickEditAction、askFields），見 docs/topics/actions.md。
-import type { ActionOptions, FieldActions } from '@/composables/actions/useTableActions'
+import type { ActionOptions } from '@/composables/actions/useTableActions'
 import type { TableKey } from '@/schema'
 import type { __Table__Row } from '@/schema/tables/__table__'
 import { bulkDeleteAction, deleteAction, editAction, newAction, useAction } from '@/composables/actions/useTableActions'
@@ -11,11 +11,6 @@ const TABLE = '__table__' satisfies TableKey
 
 // 此表的所有動作皆由此取得，頁面以 useActions('__table__', options) 呼叫。呼叫端只提供自身具備的參數，缺少參數的動作為 null（列表頁提供 list）
 export function use__Table__Actions (options: ActionOptions<__Table__Row> = {}) {
-  // 詳細頁的欄位動作：欄位 key → 動作，每欄一個。未列出的欄位沒有按鈕
-  const fieldActions: FieldActions<__Table__Row> = {
-    // parent: row => goToRefAction(row, 'parent', 'parent'),
-  }
-
   // 內建 builder 的文字與圖示皆有預設值，需要更換時以最後一個參數覆寫：editAction(TABLE, row, { label: '修改', icon: mdiFileEdit })
   return {
     // 新增的預設值為列表的 match，再以 defaults 覆寫。刪除選取的列後清除選取
@@ -26,7 +21,8 @@ export function use__Table__Actions (options: ActionOptions<__Table__Row> = {}) 
     delete: (row: __Table__Row) => deleteAction(TABLE, row),
     // 複製一列，另須 import copyAction。表須有 newId
     // copy: (row: __Table__Row) => copyAction(TABLE, row),
-    fieldActions,
+    // 前往 ref 的父列，另須 import goToRefAction。詳細頁以 fieldActions 安排至欄位
+    // goToParent: (row: __Table__Row) => goToRefAction(row, 'parent', 'parent'),
     // 連續動作：新增一列，再以其 id 新增一列子列（child），最後前往該列的詳細頁
     // 另須 import mdiPlus、newDefaults、runFlow 與 runStep（composables/navigation/useFlow）及 router
     // newWithChild: useAction(() => ({

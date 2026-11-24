@@ -15,20 +15,20 @@
   const { id, row, loading, error } = useRecordPage('__table__')
 
   // 以列為參數的動作由 DetailPage 綁定至此列。刪除此列後自動離開
-  const { delete: remove, edit, fieldActions } = useActions('__table__')
+  const { delete: remove, edit } = useActions('__table__')
 
   // 選用：整頁最上方的標頭區塊。actions 為圖片下方的左右各兩格（見 docs/components/record/DetailHeader.md）
   const header = defineView('__table__', { title: 'name', subtitle: 'date' })
 </script>
 
 <template>
-  <!-- 此表額外顯示的內容（例如子表格、說明）置於 default slot，scope 提供的 row 不為 null -->
+  <!-- 此表額外顯示的內容（例如子表格、說明）置於 default slot，scope 提供的 row 不為 null。
+       欄位動作以 field-actions 安排：欄位 key → 動作，例如 :field-actions="{ parent: goToParent }" -->
   <DetailPage
     :id="id"
     :app-bar="[remove]"
     :error="error"
     :fab="[edit]"
-    :field-actions="fieldActions"
     :header="header"
     :loading="loading"
     :row="row"

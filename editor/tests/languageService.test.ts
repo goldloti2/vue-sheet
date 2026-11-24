@@ -121,6 +121,32 @@ describe('createCodeLanguageService', () => {
     })
   })
 
+  // 型別的宣告取自框架的檔案，於此專案中組成同樣的元件與頁面
+  it('finds the field action keys written in a page', async () => {
+    const declaration = async (source: string, name: string) => {
+      const text = await readFile(path.join(vueBuildRoot, 'src', source), 'utf8')
+      const start = text.indexOf(`export type ${name}<`)
+      expect(start).toBeGreaterThan(-1)
+      return text.slice(start, text.indexOf('\n\n', start))
+    }
+    const types = [
+      await declaration('schema/types.ts', 'ColumnKey'),
+      await declaration('schema/types.ts', 'RowKey'),
+      'interface PageAction { key: string }',
+      await declaration('composables/actions/useTableActions.ts', 'FieldActions'),
+    ].join('\n')
+    const page = '<script setup lang="ts">\nimport type { Row } from \'./row\'\nimport Detail from \'./Detail.vue\'\ndefineProps<{ row: Row | null }>()\nconst open = (_row: Row) => null\n</script>\n\n<template><Detail :field-actions="{ title: open }" :row="row" /></template>\n'
+
+    const locations = create().rename(file('row.ts'), ROW_TEXT, ROW_TEXT.indexOf('title'), 'name', [
+      { file: file('fieldActions.ts'), text: `${types}\n` },
+      { file: file('Detail.vue'), text: '<script setup lang="ts" generic="Row extends object">\nimport type { FieldActions } from \'./fieldActions\'\ndefineProps<{ row: Row | null, fieldActions?: FieldActions<Row> }>()\n</script>\n\n<template><div /></template>\n' },
+      { file: file('FieldPage.vue'), text: page },
+    ])
+
+    const found = locations.filter(location => location.file === file('FieldPage.vue'))
+    expect(found.map(({ from, to, text }) => [from, page.slice(from, to), text])).toEqual([[page.indexOf('title: open'), 'title', 'name']])
+  })
+
   it('renames with the unsaved text of other files', () => {
     const service = create()
     const draft = 'import { row } from \'./row\'\nexport const copy = row.title\n'

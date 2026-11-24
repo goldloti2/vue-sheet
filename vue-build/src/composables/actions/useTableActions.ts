@@ -1,5 +1,6 @@
 import type { AskFieldsOptions } from '@/composables/shell/useAskFields'
 import type { RealTableKey, TableKey } from '@/schema'
+import type { RowKey } from '@/schema/types'
 import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue'
 import { mdiChevronRightCircleOutline, mdiContentCopy, mdiDelete, mdiOpenInNew, mdiPencil, mdiPlus } from '@mdi/js'
 import { computed, shallowRef, toValue } from 'vue'
@@ -22,8 +23,10 @@ export interface PageAction {
   display?: 'icon' | 'text'
 }
 
-// 詳細頁的欄位動作：欄位 key → 接收一列並回傳動作的函式，每欄一個
-export type FieldActions<Row extends object> = Record<string, (row: Row) => PageAction | null>
+// 詳細頁的欄位動作：欄位 key → 接收一列並回傳動作的函式，每欄一個。以 keyof Row 宣告，修改 Row 的成員名稱時，TypeScript 才找得到頁面中的 key
+export type FieldActions<Row extends object> = {
+  [K in keyof Row as K extends RowKey<Row> ? K : never]?: (row: Row) => PageAction | null
+}
 
 // 詳細頁的 FAB 與 App Bar 的一項：動作，或接收一列並回傳動作的函式
 export type RowAction<Row> = PageAction | null | ((row: Row) => PageAction | null)

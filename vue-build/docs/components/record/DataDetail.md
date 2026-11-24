@@ -6,9 +6,9 @@
 - `type: 'ref'` 的欄位顯示父列的名稱，即父表 schema 的 `labelColumn`，未設定時為 id。父表自動載入共用快取
 
 欄位右側的動作（前往 ref 的父列、開啟網址、改成今天）由 `fieldActions` 決定：
-- 格式為欄位 key → `(row) => PageAction | null`。`null` 表示這一列不適用
+- 格式為欄位 key → `(row) => PageAction | null`。`null` 表示這一列不適用。key 限於此表的欄位，真實欄位與虛擬欄位皆可
 - 每一欄一個動作，整格可點擊
-- 現成的動作從 `useActions(table)` 取得，見 [actions.md](../../topics/actions.md#欄位動作)
+- 動作從 `useActions(table)` 取得，由頁面安排至欄位，見 [actions.md](../../topics/actions.md#欄位動作)
 - 未列出的欄位沒有按鈕。前往 ref 父列的動作也須自行列出
 
 schema 的 `virtualColumns`（見 [schema.md](../../topics/schema.md#欄位)）與真實欄位一視同仁：自動顯示，可排進 `detailOrder`。要多顯示計算出的值時，新增虛擬欄位。此元件不接收頁面另外傳入的欄位。
@@ -19,7 +19,7 @@ schema 的 `virtualColumns`（見 [schema.md](../../topics/schema.md#欄位)）�
 
 ```vue
 <template>
-  <DataDetail :field-actions="fieldActions" :row="row" table="__table__" />
+  <DataDetail :field-actions="{ parent: goToParent }" :row="row" table="__table__" />
 </template>
 ```
 

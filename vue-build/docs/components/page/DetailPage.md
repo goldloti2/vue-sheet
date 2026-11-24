@@ -10,7 +10,7 @@
 
 頁面只須指定「哪張表、哪一列、有哪些動作」。
 
-此元件搭配 `useRecordPage(table)` 使用，其回傳的 `id`、`row`、`loading`、`error` 直接對應此處的 prop。`useActions(table)` 取得的以列為參數的動作（編輯、刪除）直接交給 `fab` 與 `appBar`，由此元件綁定至這一列（見 [actions.md](../../topics/actions.md#各表的-use表名actions)）。
+此元件搭配 `useRecordPage(table)` 使用，其回傳的 `id`、`row`、`loading`、`error` 直接對應此處的 prop。`useActions(table)` 取得的以列為參數的動作（編輯、刪除）直接交給 `fab`、`appBar` 與 `fieldActions`，由此元件綁定至這一列（見 [actions.md](../../topics/actions.md#各表的-use表名actions)）。
 
 ## Usage
 
@@ -26,7 +26,7 @@
 | `loading` | `boolean?` | 載入中 |
 | `error` | `string \| null?` | 載入失敗的訊息 |
 | `order` | `RowKey<Row>[]?` | 這一頁的欄位順序，覆寫 schema 的 `detailOrder`（見 [DataDetail](../record/DataDetail.md)） |
-| `fieldActions` | `FieldActions<Row>?` | 欄位 key → 動作，每一欄一個，整格可點擊 |
+| `fieldActions` | `FieldActions<Row>?` | 欄位 key → 以列為參數的動作，每一欄一個，整格可點擊（見 [actions.md](../../topics/actions.md#欄位動作)） |
 | `editable` | `RowKey<Row>[]?` | 快速編輯的欄位：直接顯示為輸入元件，修改後即寫入（見 [DataDetail](../record/DataDetail.md#快速編輯)） |
 | `layout` | `('side' \| 'stacked')?` | 這一頁欄位的排法，覆寫 `config/app.ts` 的 `detailFieldLayout`（見 [DetailField](../record/DetailField.md)） |
 | `fab` | `RowAction<Row>[]?` | 右下角的 FAB，通常為編輯。每一項為動作、`null`，或接收一列並回傳動作的函式。函式綁定至目前的列，尚未載入時為 `null`。`null` 略過 |

@@ -117,7 +117,7 @@ interface PageAction {
 - **呼叫端只提供自身具備的參數**：列表頁提供 `list`。不在列表中但須設定新增的預設值時，例如子表區塊，提供 `defaults`。用不到的動作為 `null`
 - **回傳物件包含兩種項目**：
   - 不以列為參數的動作（`new`、`bulkDelete`）已以 `useAction` 包裝，型別為 `ComputedRef<PageAction | null>`，可直接交給位置
-  - 以列為參數的動作（`edit`、`delete`）為接收一列並回傳動作的函數。詳細頁直接交給 `DetailPage` 的 `fab` 與 `appBar`，由它綁定至目前那一列。列表於 view 的 `actions` 中直接以該列呼叫（見「列上的動作」）。`fieldActions` 也以一列呼叫
+  - 以列為參數的動作（`edit`、`delete`）為接收一列並回傳動作的函數。詳細頁直接交給 `DetailPage` 的 `fab`、`appBar` 與 `fieldActions`，由它綁定至目前那一列。列表於 view 的 `actions` 中直接以該列呼叫（見「列上的動作」）
 - **自訂的動作**（包括連續動作）也定義於此：不以列為參數的，以 `useAction(() => ({ … }))` 包裝。以列為參數的，寫成 `(row) => …`。範本回傳物件的末尾附有連續動作的示範
 - **一個位置放置哪些動作，由頁面決定**：頁面取出需要的動作，組成陣列交給該位置
 - **動作屬於其所在資料的那張表**（對照 AppSheet）：
@@ -140,14 +140,9 @@ interface PageAction {
 
 詳細頁欄位右側的動作由 `fieldActions` 決定，型別為 `FieldActions<Row>`：欄位 key → `(row) => PageAction | null`，每一欄一個。`DataDetail` 以目前那一列呼叫，回傳 `null` 時該欄沒有動作。
 
-```ts
-const fieldActions: FieldActions<__Table__Row> = {
-  parent: row => goToRefAction(row, 'parent', 'parent'),
-  date: row => setFieldAction('__table__', row, 'date', () => new Date(), { label: '改成今天', icon: mdiCalendarToday }),
-}
-```
-
-- **欄位動作不是內建的**：前往 ref 的父列、開啟網址、改為今天，同樣是 builder，須使用時才列入
+- **動作定義於 `use表名Actions`，由詳細頁安排至欄位**：詳細頁以 `useActions` 取得動作，交給 `DetailPage` 的 `fieldActions`，不直接呼叫 builder。範本見 [template/pages/detail.vue](../../template/pages/detail.vue)
+- **key 限於此表的欄位**：真實欄位與虛擬欄位皆可，寫錯時型別檢查報錯。動作使用的欄位與其所在的欄位可以不同
+- **欄位動作不是內建的**：前往 ref 的父列、開啟網址、改為今天，同樣以 builder 定義，須使用時才列入
 
 ---
 

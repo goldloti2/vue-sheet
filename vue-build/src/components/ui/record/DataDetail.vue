@@ -54,6 +54,11 @@
     return schema.columns.find(column => column.key === key)
   }
 
+  function actionOf (key: string, row: Row): PageAction | null | undefined {
+    const actions = props.fieldActions as Record<string, ((row: Row) => PageAction | null) | undefined> | undefined
+    return actions?.[key]?.(row)
+  }
+
   // 真實與虛擬欄位依 order（省略時為 detailOrder）排列。showIf 不成立的欄位不顯示，row 為 null 時一律顯示
   const fields = computed<Field[]>(() => {
     const row = props.row
@@ -65,7 +70,7 @@
         label: column.label,
         value: displayValue(row, schema.value, column),
         image: column.type === 'image' ? imageSrc((row as Record<string, unknown>)[column.key]) : null,
-        action: props.fieldActions?.[column.key]?.(row),
+        action: actionOf(column.key, row),
         multiline: column.type === 'text' && Boolean(column.multiline),
         editColumn: editColumnOf(column.key),
       }

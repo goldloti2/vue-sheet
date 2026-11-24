@@ -271,7 +271,7 @@ row.$child_parent  // 指向這一列的子列陣列
 
 - **顯示**：任何地方皆顯示父列的名稱，即父表 schema 的 `labelColumn`，不顯示 id
 - **表單**：`DataForm` 呈現為可搜尋的下拉清單（`v-autocomplete`），父表整張表載入共用快取
-- **從詳細頁前往父列**：在 `fieldActions` 列一個 `goToRefAction`
+- **從詳細頁前往父列**：在 `use表名Actions` 以 `goToRefAction` 定義動作，詳細頁以 `fieldActions` 安排至欄位
 - **兩個方向皆可讀取**：子列以 `row.$欄位key` 讀取父列，父列以 `row.$子表_欄位key` 讀取子列，子列依子表的 `defaultSort` 排序
 - **不驗證目標是否存在**：選擇器只能選到現有的列
 

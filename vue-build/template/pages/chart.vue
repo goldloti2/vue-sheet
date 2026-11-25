@@ -1,4 +1,4 @@
-<!-- 複製到 src/pages/__table__-chart.vue（檔名可自訂）
+<!-- 複製到 src/pages/__table__/chart.vue（檔名可自訂）→ /__table__/chart
      版型見 docs/components/page/ChartPage.md，宣告方式與計算規則見 docs/topics/chart.md。
      外觀與用途見 docs/design/chart.md -->
 <route lang="json5">

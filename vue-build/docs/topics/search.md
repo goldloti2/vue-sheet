@@ -82,7 +82,7 @@
 - **篩選條件只套用至該表自己的列**。跨表的影響由 `DashboardPage` 的接線傳遞，例如子表面板只列出父表面板列出的列的子列（見 [DashboardPage.md](../components/panel/DashboardPage.md) 的「連動」）
 
 **同一張表依狀態切分的頁籤頁**：
-- 將列表拆成只供引用的元件，置於該表資料夾的 `_ref/`，不產生路由。元件以 `match` 只保留該狀態的列
+- 將列表拆成只供引用的元件，置於 `_ref/`（位置見 [architecture.md](../architecture.md#頁面的位置)），不產生路由。元件以 `match` 只保留該狀態的列
 - 頁籤頁只保留 `TabPage`，每個頁籤放一個列表並傳入狀態
 - `match` 位於篩選與搜尋之前，各頁籤只比對各自的部分
 - FAB 屬於列表，新增時預設的狀態取自 `match`

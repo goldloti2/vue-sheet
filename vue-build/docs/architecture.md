@@ -1,6 +1,6 @@
 # 前端架構
 
-程式碼與檔案的組織方式：模組化的範圍、資料夾，以及頁面範本的型態。頁面在執行時與外殼、導覽的配合方式，見 [pages.md](topics/pages.md)。動作本身（包括連續動作與快速編輯對話框），見 [actions.md](topics/actions.md)。
+程式碼與檔案的組織方式：模組化的範圍、資料夾、頁面的位置，以及頁面範本的型態。頁面在執行時與外殼、導覽的配合方式，見 [pages.md](topics/pages.md)。動作本身（包括連續動作與快速編輯對話框），見 [actions.md](topics/actions.md)。
 
 > **前置**：建議先閱讀 [schema.md](topics/schema.md)。此處常提到 schema 與列上的 getter。
 
@@ -74,7 +74,7 @@ src/
   styles/              全域的 CSS：list.css（列表中一列與卡片共用的樣式，見 docs/components/list/ListLayout.md。
                        動作選單的樣式，見 docs/components/view/ViewActions.md）
   router/index.ts      路由實例、登入檢查、換頁動畫與方向判定、leaveAfterAction
-  pages/               檔案即路由。任意層的 _ref/ 只供其他頁面引用，不產生路由
+  pages/               檔案即路由，見「頁面的位置」
 tests/               Vitest 的測試，結構對應 src/（例如 tests/schema/filter.test.ts 測 src/schema/filter.ts）
   setup.ts             每個測試檔執行前載入：替換 fetch，測試中的請求一律失敗
   fixtures/            測試共用的 schema，不使用 src/schema/tables 中的表
@@ -87,13 +87,51 @@ tests/               Vitest 的測試，結構對應 src/（例如 tests/schema/
 - 每個測試前呼叫 `freshBackend()`：重新載入模組並建立新的 Pinia，假後端的資料與 store 的狀態回到初始值
 - 測試不讀取 `.env`，未設定 `VITE_APPS_SCRIPT_URL`，因此使用假後端
 
+---
+
+## 頁面的位置
+
 頁面的檔名直接對應網址：
 
-| 檔案 | 網址 |
-| --- | --- |
-| `pages/表名/index.vue` | `/表名`，列表 |
-| `pages/表名/[id]/index.vue` | `/表名/:id`，詳細 |
-| `pages/表名/_ref/*.vue` | 不產生路由，只供其他頁面引用，例如從頁籤頁拆出的列表。<br>・`vite.config.mts` 的路由插件以 `exclude: ['src/pages/**/_ref/**']` 排除，新增表時無須修改設定<br>・`_ref` 表示「供其他頁面引用」，與 `ref` 欄位型別及 Vue 的 `ref()` 無關 |
+| 檔案 | 網址 | 內容 |
+| --- | --- | --- |
+| `pages/index.vue` | `/` | 首頁。專案通常改為轉址至其他頁面 |
+| `pages/login.vue` | `/login` | 登入頁 |
+| `pages/表名/index.vue` | `/表名` | 表的預設頁，通常為列表，也可以是頁籤、儀表板或圖表 |
+| `pages/表名/[id]/index.vue` | `/表名/:id` | 一列的預設頁，即詳細頁 |
+| `pages/表名/[id]/檔名.vue` | `/表名/:id/檔名` | 一列的其他頁面，例如子表的展開頁 |
+| `pages/表名/檔名.vue` | `/表名/檔名` | 表的其他頁面，例如圖表 |
+| `pages/頁面名/index.vue` | `/頁面名` | 獨立頁面的預設頁，例如儀表板 |
+| `pages/頁面名/檔名.vue` | `/頁面名/檔名` | 獨立頁面的其他頁面 |
+| 任意資料夾的 `_ref/檔名.vue` | 沒有網址 | 只供其他頁面導入，例如從頁籤頁拆出的列表 |
+
+**資料夾**
+- `pages/` 下的資料夾為表或獨立頁面。表的資料夾以表的代稱為名。獨立頁面的資料夾自由命名，但不可與表的代稱相同
+- `pages/` 下的單一檔案只有 `index.vue` 與 `login.vue`
+- 檔案的位置與導覽無關。修改導覽時不搬移檔案
+
+**檔案**
+- `index.vue` 與 `[id]/index.vue` 以外的檔案自由命名
+- 表與獨立頁面的 `index.vue` 直接寫出預設頁的內容
+- 表沒有預設頁時，可以沒有 `index.vue`
+- 頁面可以由其他頁面導入，無須移至 `_ref/`
+
+**子表的展開頁**
+- 每個子表區塊都有一個展開頁，位於父表的 `[id]/`
+- 取得子列的方式、每一列的版面與動作只寫在展開頁。父表的詳細頁以 [ChildList](components/page/ChildList.md) 導入展開頁
+- 同一張子表有數張父表時，各父表各有自己的展開頁
+
+**`_ref/`**
+- 任何資料夾都可以有 `_ref/`。`_ref/` 中的檔案也可以互相導入
+- 建議的位置依序為：
+  1. 用到它的資料夾
+  2. 對應的表的資料夾，即它所顯示的資料的表
+  3. 其他表的資料夾
+  4. 獨立頁面的資料夾
+- 數個資料夾用到同一個檔案時，於這些資料夾中依第 2 項至第 4 項的順序選擇
+- 建立之後，使用它的資料夾增加時無須搬移
+- 路由插件於 `vite.config.mts` 以 `exclude: ['src/pages/**/_ref/**']` 排除 `_ref/`，新增表時無須修改設定
+- `_ref` 表示「供其他頁面引用」，與 `ref` 欄位型別及 Vue 的 `ref()` 無關
 
 > **注意**：同一個動態片段不能同時有 `[id].vue` 檔案與 `[id]/` 資料夾。unplugin-vue-router 將前者視為後者的 parent layout，子路由須經由 `<router-view>` 才顯示。一律使用資料夾的寫法。
 
@@ -110,7 +148,7 @@ tests/               Vitest 的測試，結構對應 src/（例如 tests/schema/
 | **列表**（list） | `list.vue`（deck），另有 `profile-list.vue`、`card-list.vue`、`gallery-list.vue` | `useListPage` + `ListPage` | 版面與 view、是否多選、分組、FAB |
 | **頁籤**（tab） | `tab-list.vue` + `_ref/list.vue` | `TabPage`，各頁籤中為 `useListPage` + `ListPage` | 依哪個欄位分頁籤、各頁籤的內容 |
 | **詳細**（detail） | `detail.vue`。子表區塊與展開頁為 `child-list.vue` | `useRecordPage` + `DetailPage` | 選用的標頭、欄位的動作、子表區塊等 slot 中的內容 |
-| **儀表板**（dashboard） | `dashboard.vue` | `DashboardPage` + `DashboardPanel`，面板中放置各表 `_ref/` 中的列表與詳細頁 | 放入哪些面板、各自的大小、面板之間如何接線 |
+| **儀表板**（dashboard） | `dashboard.vue` | `DashboardPage` + `DashboardPanel`，面板中放置 `_ref/` 中的列表、詳細頁與其他頁面 | 放入哪些面板、各自的大小、面板之間如何接線 |
 | **圖表**（chart） | `chart.vue` | `useListPage` + `defineChart` + `ChartPage` | 圖表的種類、分組的欄位與每組的數值 |
 
 - 表單不是頁面，無須範本，由 `openForm` 開啟（見 [pages.md](topics/pages.md#表單層)）

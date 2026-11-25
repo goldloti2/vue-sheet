@@ -58,10 +58,10 @@
 | `pages/_ref/list.vue` | `src/pages/__table__/_ref/__Table__List.vue` | **選用**：只供其他頁面引用的列表，不產生路由。以 `status` 或 `match` 傳入條件，供 `tab-list.vue`、dashboard 或其他頁面使用 |
 | `pages/detail.vue` | `src/pages/__table__/[id]/index.vue` | 詳細頁 → `/__table__/:id` |
 | `pages/child-list.vue` | `src/pages/__parent__/[id]/__table__.vue` | **選用**：子表的展開頁 → `/__parent__/:id/__table__`，同時供父表的詳細頁導入為子表區塊（見 [ChildList.md](../docs/components/page/ChildList.md)）。一條父子關聯一個檔案 |
-| `pages/dashboard.vue` | `src/pages/dashboard.vue`（檔名可自訂） | **選用**：同時顯示多個面板的總覽頁 → `/dashboard`。<br>・範本為父表列表、父表詳細、子表列表與頁籤面板四個面板，並以 `useDashboardLinks()` 接線<br>・頁籤面板以 `TabPage` 放兩張表的列表，各頁籤以 `DashboardPanel` 的 `tabs` 各自接線<br>・列表使用各表的 `_ref/list.vue`<br>・須加入底部導覽列或側邊欄時，另外加至 `src/config/navigation.ts` |
-| `pages/chart.vue` | `src/pages/__table__-chart.vue`（檔名可自訂） | **選用**：一張圖表的頁面 → `/__table__-chart`。<br>・範本為各狀態的列數與金額的總和，長條加折線<br>・也可改為 `_ref/` 中的元件，置於 dashboard 的面板或頁籤頁的頁籤<br>・須加入底部導覽列或側邊欄時，另外加至 `src/config/navigation.ts` |
+| `pages/dashboard.vue` | `src/pages/dashboard/index.vue`（資料夾名稱可自訂，不可與表的代稱相同） | **選用**：同時顯示多個面板的總覽頁 → `/dashboard`。<br>・範本為父表列表、父表詳細、子表列表與頁籤面板四個面板，並以 `useDashboardLinks()` 接線<br>・頁籤面板以 `TabPage` 放兩張表的列表，各頁籤以 `DashboardPanel` 的 `tabs` 各自接線<br>・列表使用各表的 `_ref/list.vue`<br>・須加入底部導覽列或側邊欄時，另外加至 `src/config/navigation.ts` |
+| `pages/chart.vue` | `src/pages/__table__/chart.vue`（檔名可自訂） | **選用**：一張圖表的頁面 → `/__table__/chart`。<br>・範本為各狀態的列數與金額的總和，長條加折線<br>・也可改為 `_ref/` 中的元件，置於 dashboard 的面板或頁籤頁的頁籤<br>・須加入底部導覽列或側邊欄時，另外加至 `src/config/navigation.ts` |
 
-> 路由為檔案式（unplugin-vue-router），檔案放進 `pages/` 即自動生效，無須維護路由表。
+> 路由為檔案式（unplugin-vue-router），檔案放進 `pages/` 即自動生效，無須維護路由表。表中的位置為建議的位置，規則見 [docs/architecture.md](../docs/architecture.md#頁面的位置)。
 >
 > 注意：同一個 `:id` 一律使用 `[id]/index.vue` 的**資料夾**寫法，不使用 `[id].vue`。
 >
@@ -178,7 +178,7 @@
 | `table/virtual/use__Table__Actions.ts` | `src/composables/actions/use__Table__Actions.ts` | 不修改資料的動作，例如前往父列 |
 | `pages/list.vue` 等列表頁 | `src/pages/__table__/index.vue` | **選用**：複製後刪除新增與刪除選取的列等寫入的動作 |
 | `pages/detail.vue` | `src/pages/__table__/[id]/index.vue` | **選用**：複製後刪除編輯與刪除的動作 |
-| `pages/chart.vue` | 檔名可自訂 | **選用**：一張圖表的頁面 |
+| `pages/chart.vue` | `src/pages/__table__/chart.vue`（檔名可自訂） | **選用**：一張圖表的頁面 |
 
 `table/virtual/schema.ts` 另有一組佔位字串：`__source__` 為規則的來源表的代稱，`__Source__` 為來源表的 PascalCase 前綴。
 

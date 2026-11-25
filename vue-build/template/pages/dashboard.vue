@@ -1,4 +1,4 @@
-<!-- 選用：同時顯示多個面板的總覽頁，複製到 src/pages/dashboard.vue（檔名即路由，可自訂）→ /dashboard
+<!-- 選用：同時顯示多個面板的總覽頁，複製到 src/pages/dashboard/index.vue（資料夾名稱即路由，可自訂）→ /dashboard
      __parent__ 為父表，__table__ 為子表（子表有 ref 欄位指向父表）。兩張表各需一份 _ref/list.vue，父表另需 detail.vue
      最後一個面板以 TabPage 放兩張表的列表，各頁籤以 DashboardPanel 的 tabs 各自接線
      排版見 docs/design/dashboard.md，互動與各面板的行為見 docs/components/panel/DashboardPage.md 與 DashboardPanel.md -->
@@ -13,9 +13,9 @@
   import TabPage from '@/components/ui/panel/TabPage.vue'
   import { useDashboardLinks } from '@/composables/shell/useDashboardLinks'
   // 既有的頁面以元件 import，其 <route> 不生效
-  import ParentDetail from './__parent__/[id]/index.vue'
-  import ParentList from './__parent__/_ref/__Parent__List.vue'
-  import ChildTableList from './__table__/_ref/__Table__List.vue'
+  import ParentDetail from '@/pages/__parent__/[id]/index.vue'
+  import ParentList from '@/pages/__parent__/_ref/__Parent__List.vue'
+  import ChildTableList from '@/pages/__table__/_ref/__Table__List.vue'
 
   // 面板之間的連動。不須連動時省略，DashboardPage 也不傳 links
   const links = useDashboardLinks()

@@ -33,7 +33,8 @@ src/
     dialog/            AppDialog、ConfirmDialog、FieldsDialog
     list/              DataList、DataProfile、DataCard、DataGallery、ListLayout、ListField、GroupedList、ExpandAllRow、DataTable、CountLabel
     record/            DataDetail、DetailField、DetailHeader、DataForm、FieldInput、InlineField、RecordNav
-    page/              整頁的版型：PageState（載入中、失敗、找不到）、PageActions（FAB 與 App Bar 的動作）、DetailPage、ListPage、ChildList、ChartPage
+    page/              整頁的版型：PageState（載入中、失敗、找不到）、PageActions（FAB 與 App Bar 的動作）、DetailPage、ListPage、
+                       ChildList（詳細頁的子表區塊）、ChildBlock（區塊的外觀，供 ListPage 使用）、ChartPage
     panel/             含多個面板的頁面：TabPage、TabPanel（頁籤）、DashboardPage、DashboardPanel（dashboard），
                        以及排版的 placePanels、dashboardContext
     view/              ViewActions（view 的列上動作，DataList、DataProfile、DataCard、DataGallery 與 DetailHeader 共用）、
@@ -55,7 +56,7 @@ src/
                        useOverlay、useActionRunner、useDialogs（confirm、notify）、useAskFields
     navigation/        路由的接力：useRouteId、useListOrder、useFlow
     list/              列表的互動：useMultiSelect、useLongPress、useRowClick、useColumnWidths（表格的欄寬）
-    page/              頁面的資料層：useRecordPage、useListPage
+    page/              頁面的資料層：useRecordPage、useListPage，以及 childBlock（子表區塊的設定）
     actions/           useTableActions：PageAction 型別、通用的動作 builder、useAction、bindActions
     auth/              useLogin（登入頁的資料層）
   stores/tables/       共用快取、待推送佇列、列上的 getter（見 topics/store.md）
@@ -108,7 +109,7 @@ tests/               Vitest 的測試，結構對應 src/（例如 tests/schema/
 | --- | --- | --- | --- |
 | **列表**（list） | `list.vue`（deck），另有 `profile-list.vue`、`card-list.vue`、`gallery-list.vue` | `useListPage` + `ListPage` | 版面與 view、是否多選、分組、FAB |
 | **頁籤**（tab） | `tab-list.vue` + `_ref/list.vue` | `TabPage`，各頁籤中為 `useListPage` + `ListPage` | 依哪個欄位分頁籤、各頁籤的內容 |
-| **詳細**（detail） | `detail.vue`。子表的完整列表為 `child-list.vue` | `useRecordPage` + `DetailPage` | 選用的標頭、欄位的動作、子表區塊等 slot 中的內容 |
+| **詳細**（detail） | `detail.vue`。子表區塊與展開頁為 `child-list.vue` | `useRecordPage` + `DetailPage` | 選用的標頭、欄位的動作、子表區塊等 slot 中的內容 |
 | **儀表板**（dashboard） | `dashboard.vue` | `DashboardPage` + `DashboardPanel`，面板中放置各表 `_ref/` 中的列表與詳細頁 | 放入哪些面板、各自的大小、面板之間如何接線 |
 | **圖表**（chart） | `chart.vue` | `useListPage` + `defineChart` + `ChartPage` | 圖表的種類、分組的欄位與每組的數值 |
 

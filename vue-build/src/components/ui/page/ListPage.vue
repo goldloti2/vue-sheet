@@ -12,9 +12,11 @@
   import ExpandAllRow from '@/components/ui/list/ExpandAllRow.vue'
   import GroupedList from '@/components/ui/list/GroupedList.vue'
   import ListLayout from '@/components/ui/list/ListLayout.vue'
+  import ChildBlock from '@/components/ui/page/ChildBlock.vue'
   import PageActions from '@/components/ui/page/PageActions.vue'
   import PageState from '@/components/ui/page/PageState.vue'
   import { provideListOrder } from '@/composables/navigation/useListOrder'
+  import { useChildBlock } from '@/composables/page/childBlock'
   import { useListGrouping } from '@/composables/page/listGrouping'
   import { useDashboardPanel } from '@/composables/shell/useDashboardLinks'
   import { usePanelFullPage, usePanelVisible } from '@/composables/shell/usePanelActive'
@@ -51,8 +53,11 @@
     rows?: (slotProps: { rows: Row[] }) => unknown
   }>()
 
+  // 位於子表區塊中時以區塊呈現：只顯示前幾列，fab 為按鈕，沒有 App Bar 的動作、分組、多選與面板的輸入、輸出
+  const block = useChildBlock()
+
   // 分組與平鋪。表格式列表（#rows）不分組
-  const grouping = useListGrouping<Row>(props.table)
+  const grouping = block ? null : useListGrouping<Row>(props.table)
   const flat = ref(false)
   const arrangement = computed(() => arrangeRows(props.rows, slots.rows ? undefined : grouping?.levels(), {
     sorted: grouping?.sorted() ?? false,
@@ -63,9 +68,12 @@
   const shown = computed(() => arrangement.value.rows)
   provideListOrder(props.table, () => shown.value.map(row => row.id))
 
+  // 子表區塊顯示的列，發布的順序仍為全部的列
+  const blockRows = computed(() => block && block.limit > 0 ? props.rows.slice(0, block.limit) : props.rows)
+
   // dashboard 的面板中，輸出列出的列。頁籤中的列表只在目前的頁籤時輸出，載入中不輸出
   // 刻意用 watch 而非 watchEffect：回呼不追蹤面板的輸出，同一個面板中的兩個列表不會互相觸發
-  const panel = useDashboardPanel()
+  const panel = block ? null : useDashboardPanel()
   const visible = usePanelVisible()
   if (panel) {
     watch([visible, () => props.loading, shown], ([isVisible, loading, rows]) => {
@@ -78,6 +86,9 @@
   // 每一列的綁定：多選、面板的 mark，加上面板開啟 selects 時的選取（標示選取的那一列，未展開時點擊改為選取）
   const fullPage = usePanelFullPage()
   function rowProps (id: string): object {
+    if (block) {
+      return {}
+    }
     const marked = panel?.marked(id) ? { marked: true } : {}
     const picks = panel?.selects() && !fullPage.value
     const linked = panel?.selects()
@@ -110,7 +121,21 @@
 </script>
 
 <template>
-  <div>
+  <ChildBlock
+    v-if="block"
+    :actions="fab"
+    :block="block"
+    :count="rows.length"
+    :layout="layout"
+  >
+    <slot v-if="$slots.rows" name="rows" :rows="blockRows" />
+
+    <template v-else>
+      <RowItem v-for="row in blockRows" :key="row.id" :row="row" />
+    </template>
+  </ChildBlock>
+
+  <div v-else>
     <v-container class="list-page__container">
       <PageState :error="error" :loading="loading" spinner="linear">
         <template v-if="arrangement.groups || arrangement.switchable">

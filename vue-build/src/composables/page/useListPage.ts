@@ -8,6 +8,7 @@ import { useFilter } from '@/composables/data/useFilter'
 import { useSearch } from '@/composables/data/useSearch'
 import { useSortedTableList } from '@/composables/data/useTable'
 import { useMultiSelect } from '@/composables/list/useMultiSelect'
+import { useChildBlock } from '@/composables/page/childBlock'
 import { provideListGrouping } from '@/composables/page/listGrouping'
 import { useDashboardPanel } from '@/composables/shell/useDashboardLinks'
 import { useListControls } from '@/composables/shell/useListControls'
@@ -43,15 +44,18 @@ function listPage<Row extends { id: string }> (
   schema: AnyTableSchema,
   options: ListPageOptions<Row>,
 ) {
-  const shared = options.search === false ? null : useSharedListControls()
+  // 位於子表區塊中時，不登記搜尋、篩選與排序，也不套用 dashboard 面板的輸入
+  const inBlock = useChildBlock() !== null
+  const search = options.search !== false && !inBlock
+  const shared = search ? useSharedListControls() : null
   const { allRows, loading, error, filters, sort, query } = shared
     ? { ...shared.join<Row>(table, schema), query: shared.query }
-    : ownControls<Row>(table, schema, options)
+    : ownControls<Row>(table, schema, search, options.query)
 
   // match、scope 與 dashboard 面板的輸入位於同一步
   const { scope } = options
   const match = () => compactMatch(options.match?.() ?? {}) as Partial<Row>
-  const panel = useDashboardPanel()
+  const panel = inBlock ? null : useDashboardPanel()
   const scopedRows = computed(() => {
     const matched = match()
     const byMatch = Object.keys(matched).length > 0 ? (row: Row) => matchesRow(row, matched) : undefined
@@ -81,15 +85,15 @@ function listPage<Row extends { id: string }> (
 }
 
 // 不在容器內時：自行建立排序、篩選與搜尋字串，並自行登記
-function ownControls<Row extends { id: string }> (table: TableKey, schema: AnyTableSchema, options: ListPageOptions<Row>) {
+function ownControls<Row extends { id: string }> (table: TableKey, schema: AnyTableSchema, search: boolean, ownQuery?: Ref<string>) {
   // 使用者選擇的單欄排序，null 表示 schema.defaultSort。defaultSort 一律作為次要排序
   const sort = ref<SortSpec | null>(null)
   const { data, loading, error } = useSortedTableList(table, () => sort.value ? [sort.value] : null)
   const allRows = data as unknown as ComputedRef<Row[]>
 
-  const query = options.query ?? ref('')
+  const query = ownQuery ?? ref('')
   const filters = ref<Filters>({})
-  if (options.search !== false) {
+  if (search) {
     useListControls(query, { tables: [{ table, filters, rows: allRows, sort }] })
   }
 

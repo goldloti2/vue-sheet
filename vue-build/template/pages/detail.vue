@@ -1,5 +1,5 @@
 <!-- 複製到 src/pages/__table__/[id]/index.vue
-     版型（標頭、上一列與下一列、FAB、子表格的 slot）見 docs/components/page/DetailPage.md。
+     版型（標頭、上一列與下一列、FAB、子表區塊的 slot）見 docs/components/page/DetailPage.md。
      欄位的顯示與欄位動作見 docs/components/record/DataDetail.md -->
 <route lang="json5">
 { meta: { title: '範本詳細' } }
@@ -22,7 +22,8 @@
 </script>
 
 <template>
-  <!-- 此表額外顯示的內容（例如子表格、說明）置於 default slot，scope 提供的 row 不為 null。
+  <!-- 此表額外顯示的內容（例如子表區塊、說明）置於 default slot，scope 提供的 row 不為 null。
+       子表區塊為 ChildList，其中放置導入的展開頁（child-list.vue），見 docs/components/page/ChildList.md。
        欄位動作以 field-actions 安排：欄位 key → 動作，例如 :field-actions="{ parent: goToParent }" -->
   <DetailPage
     :id="id"

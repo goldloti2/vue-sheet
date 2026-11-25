@@ -48,11 +48,11 @@ interface PageAction {
 | 右下角的 FAB | `ListPage`、`DetailPage`、`ChartPage` 的 `fab` prop。自行組合版面時，使用 `<PageFab :actions="...">` | 主要的動作。2 個以下固定顯示，3 個以上收合為 speed-dial |
 | App Bar 右側 | `ListPage`、`DetailPage`、`ChartPage` 的 `appBar` prop。自行組合版面時，使用 `useAppBarActions(() => [...])` | 次要的動作。2 個以下直接顯示，3 個以上收進「⋮」選單。多選的「取消」例外：一律在選單外、同步按鈕左側，由 `useMultiSelect` 自行登記 |
 | 詳細頁的單一欄位 | `DataDetail`、`DetailPage` 的 `fieldActions` | 該欄的動作：右側出現圖示，整格可點擊（見「欄位動作」） |
-| 子表區塊 | `ChildList` 的 `actions` prop | 排在「展開」旁，通常為新增 |
+| 子表區塊 | 展開頁的 `ListPage` 的 `fab` prop | 排在「展開」旁，通常為新增 |
 | 列表的每一列 | view 的 `actions` | 該列的動作。deck 置於右下角欄位的下一行，profile 收於右側的 ⋮ 選單，gallery 收於右下角的 ⋮ 選單（見「列上的動作」） |
 | 詳細頁的標頭 | `DetailPage` 的 `header`，即 view 的 `actions` | 這一列的動作，置於標頭圖片下方的左右各兩格（見「列上的動作」） |
 
-- **每個位置都接收 `(PageAction | null)[]`**：`null`（不適用的動作）略過，因此頁面組合陣列時無須判斷。略過由最後繪製按鈕的元件負責（`PageFab`、`ChildList`、`AppShell`），中間的版面元件與登記機制一律原樣轉交
+- **每個位置都接收 `(PageAction | null)[]`**：`null`（不適用的動作）略過，因此頁面組合陣列時無須判斷。略過由最後繪製按鈕的元件負責（`PageFab`、`ChildBlock`、`AppShell`），中間的版面元件與登記機制一律原樣轉交
 - **陣列的順序即顯示的順序**
 - **`useAppBarActions` 接收 getter**：回傳值改變時，自動重新登記。通常寫成 `() => [xxx.value]`
 - **一次只有一個頁面的動作生效**：被 `<KeepAlive>` 收起的頁面，以及 `TabPage` 中不是目前頁籤的面板，其動作與 FAB 自動讓開（見 [TabPage.md](../components/panel/TabPage.md)）。頁面無須自行判斷
@@ -115,7 +115,7 @@ interface PageAction {
 - **選項的型別為 `ActionOptions<Row>`**：`{ list?, defaults?, lockId? }`
   - `list` 為列表頁交給動作的值，即 `useListPage` 回傳的 `selection` 與 `match`（見 [ListPage.md](../components/page/ListPage.md)）
   - 新增的預設值為 `list` 的 `match`，再以 `defaults` 覆寫（見 `newDefaults`）
-- **呼叫端只提供自身具備的參數**：列表頁提供 `list`。不在列表中但須設定新增的預設值時，例如子表區塊，提供 `defaults`。用不到的動作為 `null`
+- **呼叫端只提供自身具備的參數**：列表頁提供 `list`。不在列表中但須設定新增的預設值時，例如展開頁，提供 `defaults`。用不到的動作為 `null`
 - **回傳物件包含兩種項目**：
   - 不以列為參數的動作（`new`、`bulkDelete`）已以 `useAction` 包裝，型別為 `ComputedRef<PageAction | null>`，可直接交給位置
   - 以列為參數的動作（`edit`、`delete`）為接收一列並回傳動作的函數。詳細頁直接交給 `DetailPage` 的 `fab`、`appBar` 與 `fieldActions`，由它綁定至目前那一列。列表於 view 的 `actions` 中直接以該列呼叫（見「列上的動作」）
@@ -123,7 +123,7 @@ interface PageAction {
 - **一個位置放置哪些動作，由頁面決定**：頁面取出需要的動作，組成陣列交給該位置
 - **動作屬於其所在資料的那張表**（對照 AppSheet）：
   - 詳細頁本身的 FAB、App Bar 與欄位動作，屬於這一頁的表
-  - 子表區塊與子表列表中的動作（例如「新增」）屬於子表，以子表的 `use表名Actions` 帶入父列的預設值
+  - 子表區塊與展開頁的動作（例如「新增」）屬於子表，以子表的 `use表名Actions` 帶入父列的預設值
 - **虛擬表的 `use表名Actions` 沒有寫入的動作**：範本為 [template/table/virtual/use__Table__Actions.ts](../../template/table/virtual/use__Table__Actions.ts)。虛擬表只有不修改資料的動作，例如 `goToRefAction`、`openUrlAction`
 - **一張表的 `use表名Actions` 不呼叫其他表的 `use表名Actions`**：須對其他表操作時（例如從訂單的詳細頁，為它的第一列明細新增出貨單），以內建 builder（例如 `newAction`）在自己的 `use表名Actions` 中組出，透過 ref 的 getter 讀取所需的資料
 

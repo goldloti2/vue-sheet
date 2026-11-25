@@ -139,6 +139,7 @@ useListControls(query, {
 ## 備註
 
 - **版面確實不同時，才自行組合**：總覽頁那類混合的版面不使用此元件，資料層仍可使用 `useListPage`。此時頁面須自行呼叫 `provideListOrder(table, computed(() => 畫面上的順序))`（見 [RecordNav](../record/RecordNav.md)）
+- **位於 [ChildList](ChildList.md) 中時，以子表區塊呈現**：只顯示前幾列，`fab` 為區塊的按鈕。其他的差異見 [ChildList.md](ChildList.md#展開頁於區塊中的差異)
 - 空列表即顯示為空，不顯示「找不到資料」（見 [PageState](PageState.md)）
 - **位於 dashboard 的面板中時，自動輸出列出的列與選取的列**（見 [DashboardPage](../panel/DashboardPage.md#面板的輸出)）。頁籤中的列表只在目前的頁籤時輸出，載入中不輸出。不使用此元件的自訂列表沒有輸出
 - **內容區不留白**，由內容決定：list 式的列與分組列貼齊外緣，卡片四周留白（見 [ListLayout](../list/ListLayout.md) 的「留白」）。`#rows` 的表格四周留白

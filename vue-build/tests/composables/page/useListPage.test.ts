@@ -3,7 +3,7 @@ import type { ListPageOptions } from '@/composables/page/useListPage'
 import type { SortSpec } from '@/schema/types'
 import type { Component, Ref } from 'vue'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { createSSRApp, defineComponent, h } from 'vue'
+import { createSSRApp, defineComponent, h, provide } from 'vue'
 import { renderToString } from 'vue/server-renderer'
 import { freshBackend } from '../../fixtures/backend/fresh'
 import { CHILDREN, PARENTS } from '../../fixtures/backend/schema'
@@ -147,5 +147,40 @@ describe('levels', () => {
     const { grouping } = await groupingIn({ levels }, CHILDREN)
 
     expect(grouping).toBeNull()
+  })
+})
+
+describe('子表區塊中的列表', () => {
+  // 以 ChildList 與 dashboard 面板包住的列表。block 為 false 時沒有 ChildList
+  async function listIn (block: boolean) {
+    const { provideChildBlock } = await import('@/composables/page/childBlock')
+    const { provideSharedListControls } = await import('@/composables/shell/useSharedListControls')
+    const { dashboardPanelKey } = await import('@/composables/shell/useDashboardLinks')
+    const results: ListResult[] = []
+    const list = await listOf({}, results)
+    let controls: ReturnType<typeof provideSharedListControls> | undefined
+    await renderToString(createSSRApp(defineComponent(() => {
+      controls = provideSharedListControls()
+      provide(dashboardPanelKey, { scope: () => (row: object) => (row as ParentRow).id === 'P-0001' } as never)
+      if (block) {
+        provideChildBlock({ title: '', limit: 5, emptyText: '' })
+      }
+      return () => h(list)
+    })))
+    return { rows: idsOf(results[0]!), controls: controls!.value }
+  }
+
+  it('不加入搜尋、篩選與排序，也不套用面板的輸入', async () => {
+    const { rows, controls } = await listIn(true)
+
+    expect(rows).toEqual(SCHEMA_ORDER)
+    expect(controls).toBeNull()
+  })
+
+  it('不在子表區塊中時照常', async () => {
+    const { rows, controls } = await listIn(false)
+
+    expect(rows).toEqual(['P-0001'])
+    expect(controls).not.toBeNull()
   })
 })

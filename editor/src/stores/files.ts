@@ -142,7 +142,7 @@ export const useFilesStore = defineStore('files', () => {
     }
   }
 
-  /** 檔案於導覽中的位置，例如 頁面/訂單/列表頁。不在導覽中時為路徑 */
+  /** 檔案於導覽中的位置，例如 頁面/訂單/預設頁。不在導覽中時為路徑 */
   function locationOf (path: string): string {
     return navLocation(navTree.value, path) ?? path
   }

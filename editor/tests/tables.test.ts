@@ -147,6 +147,13 @@ describe('createTable', () => {
     expect(await read('vue-build/src/schema/index.ts')).toBe(REGISTRY)
     expect(await read('vue-build/src/composables/actions/index.ts')).toBe(ACTIONS_REGISTRY)
   })
+
+  it('rejects a table key that is the folder of a page', async () => {
+    await put('vue-build/src/pages/report/index.vue', '')
+
+    await expect(createTable(tools, { key: 'report', label: '報表', prefix: 'RPT', virtual: false, sheetName: '' })).rejects.toThrow('頁面中已有資料夾 report。')
+    expect(await read('vue-build/src/schema/index.ts')).toBe(REGISTRY)
+  })
 })
 
 describe('deleteTable', () => {
@@ -162,13 +169,12 @@ describe('deleteTable', () => {
     expect(result.deleted).toEqual([
       'vue-build/mock/order-test.csv',
       'vue-build/src/composables/actions/useOrderActions.ts',
-      'vue-build/src/pages/customer/[id]/order.vue',
       'vue-build/src/pages/order/[id]/index.vue',
       'vue-build/src/pages/order/index.vue',
       'vue-build/src/schema/tables/order.ts',
     ])
     expect(await readdir(path.join(root, 'vue-build/src/pages'))).toEqual(['customer'])
-    expect(await readdir(path.join(root, 'vue-build/src/pages/customer'))).toEqual(['index.vue'])
+    expect(await readdir(path.join(root, 'vue-build/src/pages/customer'))).toEqual(['[id]', 'index.vue'])
     expect(await read('vue-build/src/schema/index.ts')).toBe('\nexport const schemas = {}\n')
     expect(await read('vue-build/src/composables/actions/index.ts')).toBe('import type { TableKey } from \'@/schema\'\n\nexport const tableActions = {} satisfies { [K in TableKey]?: (...args: never[]) => object }\n')
     expect(await read('vue-build/src/services/mock/tables.ts')).toBe('\nexport const mockCsv = {}\n')
@@ -246,7 +252,6 @@ describe('tableDeletionFiles', () => {
       'vue-build/src/schema/tables/order.ts',
       'vue-build/src/schema/tables/orderLine.ts',
     ], {})).toEqual([
-      'vue-build/src/pages/customer/[id]/order.vue',
       'vue-build/src/pages/order/index.vue',
       'vue-build/src/schema/tables/order.ts',
     ])

@@ -9,7 +9,7 @@ import { actionsFileOf, tableKeyOf, TABLES_DIR } from './tableKeys.ts'
 export interface TableFiles {
   schema: string | null
   actions: string | null
-  /** 列表頁。沒有列表頁時為詳細頁，再沒有時為資料夾中的第一個頁面 */
+  /** 預設頁。沒有預設頁時為詳細頁，再沒有時為資料夾中的第一個頁面 */
   pages: string | null
   csv: string | null
 }

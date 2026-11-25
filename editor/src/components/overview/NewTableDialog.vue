@@ -45,7 +45,7 @@
 
   const existing = computed(() => [...files.tableOrder, ...files.paths.map(path => tableKeyOf(path)).filter(item => item !== null)])
   // 建立中不檢查：新表寫入後，代號已在 existing 中
-  const keyError = computed(() => key.value === '' || saving.value ? null : tableKeyError(key.value, existing.value))
+  const keyError = computed(() => key.value === '' || saving.value ? null : tableKeyError(key.value, existing.value, files.paths))
   const prefixError = computed(() => prefix.value === '' ? null : idPrefixError(prefix.value))
   // 虛擬表沒有主鍵字首
   const prefixValid = computed(() => virtual.value || (prefix.value !== '' && prefixError.value === null))

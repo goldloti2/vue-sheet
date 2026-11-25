@@ -1,6 +1,6 @@
 <script lang="ts" setup>
   import type { NavNode } from '../../../shared/navGroups'
-  import { mdiCircleMedium } from '@mdi/js'
+  import { mdiCardTextOutline, mdiCircleMedium, mdiViewListOutline } from '@mdi/js'
   import { computed } from 'vue'
   import { nodeFiles, nodeTarget } from '../../../shared/navGroups'
 
@@ -18,7 +18,13 @@
   }>()
 
   const value = computed(() => `${props.parent}/${props.node.label}`)
-  const itemClass = computed(() => ({ 'nav-tree-node--detail': props.node.detail !== undefined }))
+  // 只有預設頁與詳細頁有圖示
+  const icon = computed(() => props.node.kind === 'default' ? mdiViewListOutline : (props.node.kind === 'detail' ? mdiCardTextOutline : undefined))
+  const itemClass = computed(() => ({
+    'nav-tree-node--detail': props.node.detail !== undefined,
+    'nav-tree-node--main': icon.value !== undefined,
+    'nav-tree-node--record': props.node.kind === 'record',
+  }))
   const target = computed(() => nodeTarget(props.node))
   // 頁面的任一個檔案未儲存時，頁面標示未儲存
   const dirty = computed(() => target.value !== null && nodeFiles(props.node).some(path => props.dirtyPaths.has(path)))
@@ -51,6 +57,10 @@
     :title="node.label"
     @click="emit('select', target)"
   >
+    <template v-if="icon" #prepend>
+      <v-icon :icon="icon" size="18" />
+    </template>
+
     <span v-if="node.detail" class="nav-tree-node__detail">{{ node.detail }}</span>
 
     <template v-if="dirty" #append>
@@ -60,6 +70,15 @@
 </template>
 
 <style scoped>
+/* [id] 中的其他檔案縮排於詳細頁之下（數值見 docs/layout.md） */
+.nav-tree-node--record.v-list-item {
+  padding-inline-start: calc(16px + var(--indent-padding, 0px) + 20px);
+}
+
+.nav-tree-node--main {
+  --v-list-prepend-gap: 8px;
+}
+
 /* 代號的左緣對齊項目的中心線，名稱只用到中心線之前 */
 .nav-tree-node--detail {
   container-type: inline-size;

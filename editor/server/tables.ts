@@ -100,7 +100,7 @@ export async function createTable (tools: TableTools, request: NewTableRequest):
   const [registry, actionsRegistry, mockTables] = await Promise.all([readRequired(root, REGISTRY_FILE), readRequired(root, ACTIONS_REGISTRY_FILE), readRequired(root, MOCK_TABLES_FILE)])
   const registered = parseRegistry(ts, registry.text)?.entries.map(entry => entry.key ?? '') ?? []
   const existing = [...registered, ...paths.map(file => tableKeyOf(file)).filter(key => key !== null)]
-  const error = tableKeyError(request.key, existing) ?? (request.virtual ? null : idPrefixError(request.prefix)) ?? (request.label.trim() === '' ? '請輸入表名。' : null)
+  const error = tableKeyError(request.key, existing, paths) ?? (request.virtual ? null : idPrefixError(request.prefix)) ?? (request.label.trim() === '' ? '請輸入表名。' : null)
   if (error) {
     throw new SchemaEditError(error)
   }

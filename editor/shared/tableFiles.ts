@@ -41,15 +41,18 @@ export function mockCsvFileOf (key: string): string {
 
 const TABLE_KEY = /^[a-z][a-z\d]*$/i
 
-/** 表的代號不可使用時的原因。可以使用時為 null */
-export function tableKeyError (key: string, existing: Iterable<string>): string | null {
+/** 表的代號不可使用時的原因。可以使用時為 null。paths 為專案的檔案，pages/ 中同名的資料夾為獨立頁面 */
+export function tableKeyError (key: string, existing: Iterable<string>, paths: readonly string[]): string | null {
   if (key === '') {
     return '請輸入代號。'
   }
   if (!TABLE_KEY.test(key) || key.charAt(0) !== key.charAt(0).toLowerCase()) {
     return '代號只能使用英文字母與數字，且第一個字為小寫英文字母。'
   }
-  return new Set(existing).has(key) ? `已有表 ${key}。` : null
+  if (new Set(existing).has(key)) {
+    return `已有表 ${key}。`
+  }
+  return paths.some(path => path.startsWith(`${PAGES_DIR}${key}/`)) ? `頁面中已有資料夾 ${key}。` : null
 }
 
 /** 主鍵的字首不可使用時的原因。可以使用時為 null */
@@ -60,13 +63,11 @@ export function idPrefixError (prefix: string): string | null {
   return /^[A-Z\d]+$/.test(prefix) ? null : '主鍵字首只能使用大寫英文字母與數字。'
 }
 
-/** 刪除表時一併刪除的檔案：schema、動作、頁面的資料夾、其他表中此表的展開頁，以及 mock CSV */
+/** 刪除表時一併刪除的檔案：schema、動作、頁面的資料夾，以及 mock CSV */
 export function tableDeletionFiles (key: string, paths: readonly string[], mockCsv: Readonly<Record<string, string>>): string[] {
-  const expanded = new RegExp(String.raw`^vue-build/src/pages/\w+/\[id\]/${key}\.vue$`)
   const files = paths.filter(path => path === schemaFileOf(key)
     || path === actionsFileOf(key)
     || path.startsWith(`${PAGES_DIR}${key}/`)
-    || expanded.test(path)
     || path === mockCsv[key])
   return files.toSorted()
 }

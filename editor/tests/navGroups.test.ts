@@ -20,7 +20,7 @@ describe('navGroups', () => {
       'vue-build/src/composables/actions/index.ts',
       'vue-build/src/composables/actions/useOrderActions.ts',
       'vue-build/src/config/navigation.ts',
-      'vue-build/src/pages/dashboard.vue',
+      'vue-build/src/pages/dashboard/index.vue',
       'vue-build/src/schema/index.ts',
       'vue-build/src/schema/tables/order.ts',
       'vue-build/src/services/mock/tables.ts',
@@ -63,11 +63,11 @@ describe('navGroups', () => {
     const [pages] = navGroups([
       'vue-build/src/pages/order/index.vue',
       'vue-build/src/pages/order/[id]/index.vue',
-      'vue-build/src/pages/dashboard.vue',
+      'vue-build/src/pages/dashboard/index.vue',
     ])
 
     expect(nodeFiles(pages!).toSorted()).toEqual([
-      'vue-build/src/pages/dashboard.vue',
+      'vue-build/src/pages/dashboard/index.vue',
       'vue-build/src/pages/order/[id]/index.vue',
       'vue-build/src/pages/order/index.vue',
     ])
@@ -102,15 +102,15 @@ describe('navGroups', () => {
     ])
   })
 
-  it('shows pages by their fixed names with [id] flattened into the table folder', () => {
+  it('names the default and detail pages and lists the [id] pages in the table folder', () => {
     const groups = navGroups([
       'vue-build/src/pages/order/index.vue',
       'vue-build/src/pages/order/[id]/index.vue',
       'vue-build/src/pages/order/[id]/customer.vue',
       'vue-build/src/pages/order/[id]/orderLine.vue',
       'vue-build/src/pages/order/[id]/history.vue',
+      'vue-build/src/pages/order/chart.vue',
       'vue-build/src/pages/order/_ref/OrderList.vue',
-      'vue-build/src/pages/dashboard.vue',
       'vue-build/src/pages/index.vue',
       'vue-build/src/pages/login.vue',
       'vue-build/src/pages/sales/index.vue',
@@ -126,18 +126,18 @@ describe('navGroups', () => {
         label: '訂單',
         detail: 'order',
         children: [
-          { label: '列表頁', path: 'vue-build/src/pages/order/index.vue' },
-          { label: '詳細頁', path: 'vue-build/src/pages/order/[id]/index.vue' },
-          { label: '展開頁：客戶', path: 'vue-build/src/pages/order/[id]/customer.vue' },
-          { label: '展開頁：訂單明細', path: 'vue-build/src/pages/order/[id]/orderLine.vue' },
-          { label: 'history', path: 'vue-build/src/pages/order/[id]/history.vue' },
+          { label: '預設頁', kind: 'default', path: 'vue-build/src/pages/order/index.vue' },
+          { label: '詳細頁', kind: 'detail', path: 'vue-build/src/pages/order/[id]/index.vue' },
+          { label: 'customer', kind: 'record', path: 'vue-build/src/pages/order/[id]/customer.vue' },
+          { label: 'history', kind: 'record', path: 'vue-build/src/pages/order/[id]/history.vue' },
+          { label: 'orderLine', kind: 'record', path: 'vue-build/src/pages/order/[id]/orderLine.vue' },
+          { label: 'chart', path: 'vue-build/src/pages/order/chart.vue' },
           { label: '引用畫面', children: [{ label: 'OrderList', path: 'vue-build/src/pages/order/_ref/OrderList.vue' }] },
         ],
       },
-      { label: 'dashboard', path: 'vue-build/src/pages/dashboard.vue' },
       {
         label: 'sales',
-        children: [{ label: '列表頁', path: 'vue-build/src/pages/sales/index.vue' }],
+        children: [{ label: '預設頁', kind: 'default', path: 'vue-build/src/pages/sales/index.vue' }],
       },
     ])
   })
@@ -148,7 +148,7 @@ describe('navGroups', () => {
       'vue-build/src/composables/actions/useOrderActions.ts',
       'vue-build/src/pages/customer/index.vue',
       'vue-build/src/pages/order/index.vue',
-      'vue-build/src/pages/report.vue',
+      'vue-build/src/pages/report/index.vue',
       'vue-build/src/schema/tables/customer.ts',
       'vue-build/src/schema/tables/draft.ts',
       'vue-build/src/schema/tables/order.ts',
@@ -162,13 +162,15 @@ describe('navGroups', () => {
   it('lists the folder values on the way to a file', () => {
     const pages = navGroups([
       'vue-build/src/pages/order/index.vue',
+      'vue-build/src/pages/login.vue',
       'vue-build/src/pages/order/_ref/OrderList.vue',
-      'vue-build/src/pages/report.vue',
+      'vue-build/src/pages/report/index.vue',
       'vue-build/src/schema/tables/order.ts',
     ], { tableLabels: { order: '訂單' } }).find(group => group.label === '頁面')
 
     expect(navFolderValues(pages!, 'vue-build/src/pages/order/_ref/OrderList.vue')).toEqual(['頁面/訂單', '頁面/訂單/引用畫面'])
-    expect(navFolderValues(pages!, 'vue-build/src/pages/report.vue')).toEqual([])
+    expect(navFolderValues(pages!, 'vue-build/src/pages/report/index.vue')).toEqual(['頁面/report'])
+    expect(navFolderValues(pages!, 'vue-build/src/pages/login.vue')).toEqual([])
     expect(navFolderValues(pages!, 'vue-build/src/pages/missing.vue')).toBeNull()
   })
 
@@ -203,7 +205,7 @@ describe('navGroups', () => {
       'vue-build/src/schema/tables/order.ts',
     ], { tableLabels: { order: '訂單' } })
 
-    expect(navLocation(groups, 'vue-build/src/pages/order/index.vue')).toBe('頁面/訂單/列表頁')
+    expect(navLocation(groups, 'vue-build/src/pages/order/index.vue')).toBe('頁面/訂單/預設頁')
     expect(navLocation(groups, 'vue-build/src/config/navigation.ts')).toBe('導覽/導覽列')
     expect(navLocation(groups, 'vue-build/src/pages/missing.vue')).toBeNull()
   })

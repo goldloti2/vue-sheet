@@ -209,7 +209,7 @@ describe('routeOfPage', () => {
   it('maps the static pages to their routes', () => {
     expect(routeOfPage('vue-build/src/pages/index.vue')).toBe('/')
     expect(routeOfPage('vue-build/src/pages/order/index.vue')).toBe('/order')
-    expect(routeOfPage('vue-build/src/pages/order-chart.vue')).toBe('/order-chart')
+    expect(routeOfPage('vue-build/src/pages/order/chart.vue')).toBe('/order/chart')
     expect(routeOfPage('vue-build/src/pages/order/[id]/index.vue')).toBeNull()
     expect(routeOfPage('vue-build/src/pages/order/_ref/OrderList.vue')).toBeNull()
     expect(routeOfPage('vue-build/src/pages/login.vue')).toBeNull()

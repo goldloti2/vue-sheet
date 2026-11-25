@@ -13,6 +13,8 @@ export interface NavNode {
   path?: string
   /** 頁面的識別值（見 editorPages.ts）。檔案、資料夾與有子項的組為 undefined */
   page?: string
+  /** 頁面的種類：預設頁、詳細頁、[id] 中的其他檔案。其他節點為 undefined */
+  kind?: 'default' | 'detail' | 'record'
   children?: NavNode[]
 }
 
@@ -79,38 +81,27 @@ function buildTree (files: string[], prefix: string): NavNode[] {
   ]
 }
 
-// 頁面的資料夾以固定名稱顯示，[id] 中的檔案與列表頁列於同一層
-// 依序為列表頁、詳細頁、展開頁、其他檔案、其他資料夾、引用畫面。同一類依檔名排序
-function pageFolderChildren (children: NavNode[], tableName: (key: string) => string | null): NavNode[] {
-  const list: NavNode[] = []
+// 預設頁與詳細頁以固定名稱顯示，[id] 中的檔案與預設頁列於同一層
+// 依序為預設頁、詳細頁、[id] 中的其他檔案、其他檔案、其他資料夾、引用畫面。同一類依檔名排序
+function pageFolderChildren (children: NavNode[]): NavNode[] {
+  const main: NavNode[] = []
   const detail: NavNode[] = []
-  const expanded: NavNode[] = []
+  const recordFiles: NavNode[] = []
   const files: NavNode[] = []
   const folders: NavNode[] = []
   const refs: NavNode[] = []
 
-  const addPage = (page: NavNode) => {
-    if (!page.path) {
-      folders.push(page)
-      return
-    }
-    const childTable = tableName(page.label)
-    if (childTable === null) {
-      files.push(page)
-    } else {
-      expanded.push({ ...page, label: `展開頁：${childTable}` })
-    }
-  }
-
   for (const child of children) {
     if (child.path && child.label === 'index') {
-      list.push({ ...child, label: '列表頁' })
+      main.push({ ...child, label: '預設頁', kind: 'default' })
     } else if (child.children && child.label === '[id]') {
       for (const page of child.children) {
         if (page.path && page.label === 'index') {
-          detail.push({ ...page, label: '詳細頁' })
+          detail.push({ ...page, label: '詳細頁', kind: 'detail' })
+        } else if (page.path) {
+          recordFiles.push({ ...page, kind: 'record' })
         } else {
-          addPage(page)
+          folders.push(page)
         }
       }
     } else if (child.children && child.label === '_ref') {
@@ -122,8 +113,7 @@ function pageFolderChildren (children: NavNode[], tableName: (key: string) => st
     }
   }
 
-  const byFile = (a: NavNode, b: NavNode) => byPath(a.path ?? a.label, b.path ?? b.label)
-  return [...list, ...detail, ...expanded.toSorted(byFile), ...files.toSorted(byFile), ...folders, ...refs]
+  return [...main, ...detail, ...recordFiles, ...files, ...folders, ...refs]
 }
 
 // 以固定名稱顯示的頁面，依此順序列於最上方
@@ -134,7 +124,6 @@ const NAMED_PAGES: readonly (readonly [string, string])[] = [
 
 // 依序為固定名稱的頁面、各表的資料夾（依表的順序）、其他檔案與資料夾
 function pageNodes (files: string[], tableKeys: ReadonlySet<string>, tableLabels: Readonly<Record<string, string>>, tableOrder: readonly string[]): NavNode[] {
-  const tableName = (key: string) => tableKeys.has(key) ? tableLabels[key] ?? key : null
   const named = NAMED_PAGES.filter(([filePath]) => files.includes(filePath)).map(([filePath, label]) => fileNode(filePath, label))
   const tree = buildTree(files, PAGES).filter(node => !NAMED_PAGES.some(([filePath]) => filePath === node.path))
   const isTableFolder = (node: NavNode) => node.children !== undefined && tableKeys.has(node.label)
@@ -145,7 +134,7 @@ function pageNodes (files: string[], tableKeys: ReadonlySet<string>, tableLabels
     if (!node.children) {
       return node
     }
-    const children = pageFolderChildren(node.children, tableName)
+    const children = pageFolderChildren(node.children)
     return isTableFolder(node) ? tableNode(node.label, tableLabels, { children }) : { label: node.label, children }
   })
 }
@@ -178,7 +167,7 @@ export function singleTarget (group: NavNode): string | null {
   return rest.length === 0 && only !== undefined ? nodeTarget(only) : null
 }
 
-/** 對象於導覽中的位置，例如 頁面/訂單/列表頁。不在導覽中時為 null */
+/** 對象於導覽中的位置，例如 頁面/訂單/預設頁。不在導覽中時為 null */
 export function navLocation (nodes: readonly NavNode[], target: string): string | null {
   for (const node of nodes) {
     if (nodeTarget(node) === target) {

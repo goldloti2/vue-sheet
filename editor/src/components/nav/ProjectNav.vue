@@ -228,6 +228,11 @@
   padding-inline: 0;
 }
 
+/* 清單中有圖示時，Vuetify 另外縮排資料夾中的每一項，此處取消 */
+.project-nav__list {
+  --v-list-group-prepend: 0px;
+}
+
 /* 名稱的行高容得下 g、p 等字母的下緣 */
 .project-nav__list :deep(.v-list-item-title) {
   line-height: 1.25rem;

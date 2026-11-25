@@ -44,10 +44,10 @@
 - 佇列只存於記憶體
 
 ### 共用元件庫
-- 列表：`DataList`、`DataProfile`、`DataCard`、`DataGallery`、`DataTable`、`GroupedList`、`ListLayout`、`ListField`、`CountLabel`
+- 列表：`DataList`、`DataProfile`、`DataCard`、`DataGallery`、`DataTable`、`GroupedList`、`ExpandAllRow`、`ListLayout`、`ListField`、`CountLabel`
 - 詳細：`DataDetail`、`DetailField`、`DetailHeader`、`InlineField`、`RecordNav`
 - 表單：`DataForm`、`FieldInput`
-- 整頁版型：`PageState`、`DetailPage`、`ListPage`、`ChildList`、`ChartPage`
+- 整頁版型：`PageState`、`PageActions`、`DetailPage`、`ListPage`、`ChildList`、`ChartPage`
 - 頁籤與儀表板：`TabPage`、`DashboardPage`、`DashboardPanel`
 - 其他：`ViewActions`、`PageFab`、`AppDialog`、`ConfirmDialog`、`FieldsDialog`、`FormattedValue`
 - 子表區塊的「展開」是一個真正的頁面。見 [ChildList](vue-build/docs/components/page/ChildList.md)
@@ -147,6 +147,8 @@
 - 表的總覽：順序、啟用與停用、新增與刪除表
 - 測試資料：測試資料的總覽、建立 CSV、唯讀的 CSV 表格與表頭的比對
 - 虛擬表：規則分頁與規則的小視窗、新增虛擬表（v1.17）
+- `Config.gs` 的表單，以及與表的連動：新增表時登記於 `TABLES`，刪除表時刪除登記，主鍵的表頭隨欄位修改（v1.18）
+- 導覽（`navigation.ts`）的表單（v1.18）
 
 ---
 
@@ -176,8 +178,16 @@
 ### 編輯器
 - 🔲 **第二階段**：
   - 關聯（`$ref` 的 getter）
-  - `Config.gs` 的表單，以及與表的連動：新增表時登記於 `TABLES`，刪除表時刪除登記，主鍵的表頭隨欄位修改
-  - 導覽（`navigation.ts`）的表單
   - 由範本新增頁面
   - mock 資料的編輯：於 CSV 的表格中修改格子，新增與刪除列
   - 唯讀的關聯圖：表之間的 `ref`，以及頁面之間的連結
+- 🔲 **第三階段**：頁面（`.vue`）中設定的表單
+- 🔲 **第四階段：公式函數**：
+  - 框架提供函數庫 `schema/formula.ts`。函數名稱為大寫，每個函數各有測試
+  - 公式用於 `value`、`showIf`、`formatRules` 的 `when`、`validate`、`suggestedValues` 與 `default`
+  - 整個運算式為函數庫中的單一運算式時，編輯器以公式顯示。其他寫法顯示為自訂程式碼
+  - 編輯時的檢查：以中文訊息回報的公式檢查、TypeScript 的檢查與問題分頁
+  - `ORDERBY`：依欄位取得分組的排序鍵。select 依選項的順序，date 依年、月或日，空白可在前或在後。頁面中自行撰寫的 `sortKey` 改用此函數
+  - 圖表分組的 `excludeBlank` 併入 `blank`，值為在前、在後或不列入，與 `ORDERBY` 的空白使用同一套規則
+  - `OPTIONS`：取得 select 欄位的選項，對應框架的 `optionsOf`。函數於編輯時檢查欄位是否存在、是否為 select
+- 🔲 **第五階段：動作的表單**：常用的動作以填空的方式設定。連續動作為選取多個動作。其他動作於文字編輯器中修改

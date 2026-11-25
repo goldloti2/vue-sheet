@@ -1,5 +1,52 @@
 # 版本紀錄
 
+## v1.19
+
+### 框架
+
+- **頁面用的函數與元件只收表的 key**：schema 由 `schemas` 查找，Row 的型別由 key 推出，頁面無須寫出 Row 的型別。須寫出時以 `RowOf<表的 key>` 取得，頁面不再匯入各表的 schema 檔
+- **`optionsOf(table, key)`**：讀取 `select` 欄位的選項，頁面無須匯入 schema 並自行縮小型別
+- **`useListPage` 的 `match`**：以欄位與值指定固定的條件，只保留符合的列，也作為新增時的預設值。值為 `undefined` 的鍵略過，虛擬欄位只用於篩選
+- **頁面以 `useActions(table, options)` 取得各表的動作**：各表的 `use表名Actions` 登記於 `composables/actions/index.ts` 的 `tableActions`
+- **列表頁以 `list` 把 `selection` 與 `match` 交給動作**：刪除選取的列與快速編輯完成後自動清除選取，新增的預設值取自 `match`
+- **`ListPage` 依 `item` 放置每一列的元件**：頁面傳入 `item`（`'list'`、`'profile'`、`'gallery'`、`'card'`）、`view` 與 `row-to`，無須以 slot 放置列表元件。default slot 用於自訂每一列
+- **`useListPage` 的 `levels`**：分組的設定由 `ListPage` 套用，使用者選了排序時不分組。分組的列表最上方有全展開列，展開時依分組的順序平鋪
+- **`ListPage`、`DetailPage`、`ChartPage` 接收 `fab` 與 `appBar`**：頁面無須自行呼叫 `useAppBarActions`。`DetailPage` 的動作可為以列為參數的函數，由它綁定至目前的列
+- **`openUrlAction` 可開啟組出的網址**：接收網址，不限於單一欄位的值。`look` 可指定 `key`
+- **`TabPage` 的 `v-model` 改為選填**：不綁定時預設為第一個頁籤
+- **`ChildList` 的 `hideEmpty`**：沒有子列時整塊不顯示
+- **子表區塊導入展開頁**：`ChildList` 中放置展開頁，子列、版面與動作只寫在展開頁。展開頁的 FAB 顯示為區塊的按鈕
+- **頁面的位置**：訂定 `pages/` 中各種頁面的位置與命名，包括獨立頁面的資料夾、展開頁與 `_ref/`。說明見 [vue-build/docs/architecture.md](vue-build/docs/architecture.md#頁面的位置)
+  - 儀表板範本的位置改為 `頁面名/index.vue`，圖表範本改為 `表名/chart.vue`
+- **列表頁的範本**：`list.vue` 以 `item` 選擇 list、profile 或 gallery，取代 `profile-list.vue` 與 `gallery-list.vue`
+- **欄位動作由詳細頁安排至欄位**：動作定義於各表的 `use表名Actions`，頁面以 `fieldActions` 指定欄位 key 與動作。key 受型別檢查
+
+#### 不相容的變更
+
+- `useListPage(table, schema, options)` 改為 `useListPage(table, options)`
+- `defineView`、`defineCardView`、`defineChart` 的第一個參數由 schema 改為表的 key。直接接收 schema 的圖表改用 `buildChart`
+- `useRecordPage`、`useTableList`、`useTableRow` 不再接收 Row 的泛型，Row 由 key 推出
+- `useSortedTableList(table, schema, sort)` 改為 `useSortedTableList(table, sort)`，不再接收 Row 的泛型
+- `DetailPage` 拿掉 `schema` prop。`DataTable` 與 `DataDetail` 的 `schema` prop 改為 `table`
+- `useListControls` 的 `tables` 中，各表以 `table` 指定，不再以 `schema` 指定
+- 各表的 `use表名Actions` 的選項改為 `ActionOptions`（`{ list?, defaults?, lockId? }`），不再接收 `selectedIds` 與 `onDone`。`NewActionOptions` 改名為 `ActionOptions`。新增表時須登記於 `tableActions`
+- `bulkDeleteAction(table, ids, onDone?, look?)` 改為 `bulkDeleteAction(table, selection, look?)`。`quickEditAction` 的第三個參數由 `ids` 改為 `selection`，選項拿掉 `onDone`
+- `deleteAction` 拿掉 `onDone` 參數
+- 刪除 `useRowAction`，以列為參數的動作直接交給 `DetailPage` 的 `fab` 與 `appBar`
+- 各表的 `use表名Actions` 不再回傳 `fieldActions`，改為回傳各個動作。`FieldActions` 的 key 限於 Row 的欄位
+- `openUrlAction(row, key, look?)` 改為 `openUrlAction(url, look?)`。`goToRefAction(row, key, refTable, look?)` 改為 `goToRefAction(refTable, id, look?)`
+- `ChildList` 拿掉 `rows` 與 `actions`，slot 不再提供 `rows`，改為放置展開頁。每個子表區塊須有展開頁
+- `ListPage` 拿掉 `groups`，改由 `useListPage` 的 `levels` 指定。`rows` 改為必填
+- `ListPage` 拿掉 `layout`，改由 `item` 決定各列的排法。`CardView` 帶有 `kind: 'card'`，自行撰寫的 card view 須以 `defineCardView` 定義
+
+### 編輯器
+
+- 修改欄位的 key 時，頁面的 `fieldActions` 中的 key 一併修改
+- **動作的登記**：新增表時，動作登記於 `composables/actions/index.ts` 的 `tableActions`。刪除表時一併刪除登記。導覽的「動作」組多出「總覽」
+- **導覽中頁面的名稱**：`index.vue` 的「列表頁」改為「預設頁」。展開頁以檔名顯示。預設頁與詳細頁有圖示，`[id]/` 中的其他檔案縮排於詳細頁之下
+- 新增表時，代號不可與 `pages/` 中現有的資料夾同名
+- 刪除表時，不再刪除其他表中此表的展開頁。留下的展開頁列於問題分頁
+
 ## v1.18
 
 ### 編輯器

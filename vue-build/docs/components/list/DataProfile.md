@@ -9,7 +9,7 @@ profile 式列表的**單一張卡片**：左側為圓形頭像，中間上下�
 
 ## Usage
 
-範本見 `template/pages/profile-list.vue`。
+範本見 `template/pages/list.vue`，將 `item` 改為 `'profile'`。
 
 ## 使用的位置
 

@@ -131,7 +131,7 @@ interface PageAction {
 
 - **詳細頁**（`template/pages/detail.vue`）：編輯交給 `DetailPage` 的 `fab`，刪除交給 `appBar`，欄位動作交給 `fieldActions`
 - **列表頁**（`template/pages/list.vue`）：傳入 `list`。新增交給 `ListPage` 的 `fab`，刪除選取的列交給 `appBar`
-- **列上的動作**（`template/pages/profile-list.vue` 等）：於 view 的 `actions` 中以該列呼叫（見「列上的動作」）
+- **列上的動作**（`template/pages/card-list.vue`）：於 view 的 `actions` 中以該列呼叫（見「列上的動作」）
 
 `delete` 為 JavaScript 的保留字，解構時須改名，例如 `remove`。
 
@@ -149,7 +149,7 @@ interface PageAction {
 
 ## 列上的動作
 
-每一列的動作與欄位一起定義於 view（見 [DataList](../components/list/DataList.md) 的「view」）：從 `use表名Actions` 取出以列為參數的動作，於 view 的 `actions` 中以該列呼叫，回傳動作的陣列。範本見 `template/pages/profile-list.vue`、`gallery-list.vue`，左右各兩格的寫法見 `card-list.vue`。
+每一列的動作與欄位一起定義於 view（見 [DataList](../components/list/DataList.md) 的「view」）：從 `use表名Actions` 取出以列為參數的動作，於 view 的 `actions` 中以該列呼叫，回傳動作的陣列。範本見 `template/pages/list.vue`，左右各兩格的寫法見 `card-list.vue`。
 
 - **陣列依位置排列，`null` 表示空位**：
   - card 與詳細頁標頭的前兩個置於左側，後兩個置於右側。deck、profile 與 gallery 略過空位

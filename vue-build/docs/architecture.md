@@ -145,7 +145,7 @@ tests/               Vitest 的測試，結構對應 src/（例如 tests/schema/
 
 | 型態 | 範本（`template/pages/`） | 資料層與版型 | 頁面須決定的事 |
 | --- | --- | --- | --- |
-| **列表**（list） | `list.vue`（deck），另有 `profile-list.vue`、`card-list.vue`、`gallery-list.vue` | `useListPage` + `ListPage` | 版面與 view、是否多選、分組、FAB |
+| **列表**（list） | `list.vue`（deck、profile、gallery）、`card-list.vue` | `useListPage` + `ListPage` | 版面與 view、是否多選、分組、FAB |
 | **頁籤**（tab） | `tab-list.vue` + `_ref/list.vue` | `TabPage`，各頁籤中為 `useListPage` + `ListPage` | 依哪個欄位分頁籤、各頁籤的內容 |
 | **詳細**（detail） | `detail.vue`。子表區塊與展開頁為 `child-list.vue` | `useRecordPage` + `DetailPage` | 選用的標頭、欄位的動作、子表區塊等 slot 中的內容 |
 | **儀表板**（dashboard） | `dashboard.vue` | `DashboardPage` + `DashboardPanel`，面板中放置 `_ref/` 中的列表、詳細頁與其他頁面 | 放入哪些面板、各自的大小、面板之間如何接線 |

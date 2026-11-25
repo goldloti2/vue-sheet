@@ -7,7 +7,6 @@
 </route>
 
 <script lang="ts" setup>
-  import { shallowRef } from 'vue'
   import DashboardPage from '@/components/ui/panel/DashboardPage.vue'
   import DashboardPanel from '@/components/ui/panel/DashboardPanel.vue'
   import TabPage from '@/components/ui/panel/TabPage.vue'
@@ -26,9 +25,6 @@
     parent: { mobile: { h: 12 }, desktop: { w: 32, h: 14 } },
     children: { desktop: { w: 32, h: 14 } },
   }
-
-  // 頁籤面板目前的頁籤
-  const tab = shallowRef('父表')
 </script>
 
 <template>
@@ -65,7 +61,7 @@
       :tabs="{ 父表: { table: '__parent__', selects: true }, 子表: { table: '__table__' } }"
       title="頁籤"
     >
-      <TabPage v-model="tab" :tabs="['父表', '子表']">
+      <TabPage :tabs="['父表', '子表']">
         <template #default="{ tab: current }">
           <ParentList v-if="current === '父表'" />
           <ChildTableList v-else />

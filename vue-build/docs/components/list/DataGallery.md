@@ -9,7 +9,7 @@ gallery 式列表的**單一格**：上方為正方形圖片，下方為標題�
 
 ## Usage
 
-範本見 `template/pages/gallery-list.vue`。
+範本見 `template/pages/list.vue`，將 `item` 改為 `'gallery'`。
 
 ## 使用的位置
 

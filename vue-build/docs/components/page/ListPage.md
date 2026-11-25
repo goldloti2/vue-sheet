@@ -25,7 +25,7 @@
 
 ## Usage
 
-範本見 `template/pages/list.vue`。以其他版面呈現時，見同資料夾的 `profile-list.vue`、`card-list.vue`、`gallery-list.vue`。依狀態分頁籤時，見 `tab-list.vue`。
+範本見 `template/pages/list.vue`，以 `item` 選擇 deck、profile 或 gallery。以 card 呈現時，見同資料夾的 `card-list.vue`。依狀態分頁籤時，見 `tab-list.vue`。
 
 ## Props
 
@@ -134,7 +134,7 @@ useListControls(query, {
 - **deck、profile、card、gallery 皆支援長按多選**，提供 `selection` 即可。自訂每一列時，以 `v-bind` 綁定 slot 提供的 `props`。多選模式下，各版面的動作皆隱藏
 - **排序與分組與版面無關**：順序來自 `useListPage`（`defaultSort` 或使用者選的排序）與 `levels`，各版面皆依同一個順序呈現。gallery 由左往右、再由上往下排列
 - **間距、陰影與點擊、選取的樣式為各版面共用**，定義於 `src/styles/list.css`（見 [ListLayout](../list/ListLayout.md) 的「共用的樣式」）
-- 範本見 `template/pages/` 中的 `list.vue`（deck）、`profile-list.vue`、`card-list.vue`、`gallery-list.vue`
+- 範本見 `template/pages/` 中的 `list.vue`（deck、profile、gallery）與 `card-list.vue`
 
 ## 備註
 

@@ -50,10 +50,8 @@
 | --- | --- | --- |
 | `table/schema.ts` | `src/schema/tables/__table__.ts` | 欄位定義、排序、顯示順序 |
 | `table/use__Table__Actions.ts` | `src/composables/actions/use__Table__Actions.ts` | 該表的新增、編輯、刪除等動作 |
-| `pages/list.vue` | `src/pages/__table__/index.vue` | 列表頁 → `/__table__` |
-| `pages/profile-list.vue` | `src/pages/__table__/index.vue` | **選用**：以 profile 呈現的列表頁 |
+| `pages/list.vue` | `src/pages/__table__/index.vue` | 列表頁 → `/__table__`。以 `item` 選擇版面：`list`（deck）、`profile` 或 `gallery` |
 | `pages/card-list.vue` | `src/pages/__table__/index.vue` | **選用**：以 card 呈現的列表頁 |
-| `pages/gallery-list.vue` | `src/pages/__table__/index.vue` | **選用**：以 gallery 呈現的列表頁 |
 | `pages/tab-list.vue` | `src/pages/__table__/index.vue` | **選用**：依 select 欄位（範本為 `status`）分頁籤的列表頁，各頁籤放 `_ref/list.vue` |
 | `pages/_ref/list.vue` | `src/pages/__table__/_ref/__Table__List.vue` | **選用**：只供其他頁面引用的列表，不產生路由。以 `status` 或 `match` 傳入條件，供 `tab-list.vue`、dashboard 或其他頁面使用 |
 | `pages/detail.vue` | `src/pages/__table__/[id]/index.vue` | 詳細頁 → `/__table__/:id` |
@@ -209,7 +207,7 @@
 - **路由**：檔案即路由，無須註冊
 - **跨表關聯**：schema 欄位標示 `{ type: 'ref', refTable: '另一張表' }` 即完成。兩邊的列自動掛上 getter，關聯的表自動一起載入
 - **表單**：無須頁面檔。欄位型別決定輸入元件。取消、送出與「是否放棄變更」皆由表單層處理
-- **搜尋、篩選與排序**：`useListPage(table, schema)` 一行即接好。放大鏡、篩選抽屜與排序按鈕自動出現，schema 的 `searchable`、`sortable` 清單決定有哪些欄位與順序
+- **搜尋、篩選與排序**：`useListPage(table)` 一行即接好。放大鏡、篩選抽屜與排序按鈕自動出現，schema 的 `searchable`、`sortable` 清單決定有哪些欄位與順序
 - **載入中、載入失敗、找不到資料**：版型元件（`ListPage`、`DetailPage`）與表單層內建
 - **確認框、snackbar**：`AppShell` 各掛一個實例，頁面直接呼叫 `confirm()`、`notify()`
 - **表單與詢問欄位的對話框**：`AppShell` 掛載 `FormLayerHost`，頁面直接呼叫 `openForm()`、`askFields()`
